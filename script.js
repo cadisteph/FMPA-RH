@@ -1052,23 +1052,28 @@ async function connecterFichierReseau() {
             }
         }
 
+      // 1. Injection des données
         listeAgents = agentsReseau;
 
-        // Mise à jour explicite du tableau et du DOM
-        if (typeof actualiserTableauRH === 'function') {
-            actualiserTableauRH();
-        } else if (typeof afficherAgents === 'function') {
-            afficherAgents();
-        } else if (typeof renderTable === 'function') {
-            renderTable();
+        // 2. Mettre à jour le tableau
+        actualiserTableauRH();
+        if (typeof actualiserTableauSuivi === 'function') actualiserTableauSuivi();
+
+        // 3. Forcer l'affichage de la section RH si elle était masquée
+        const sectionRH = document.getElementById("section-rh") 
+                       || document.getElementById("contenu-rh")
+                       || document.querySelector("main")
+                       || document.querySelector(".tab-content");
+                       
+        if (sectionRH) {
+            sectionRH.style.display = "block";
         }
 
-        // Mettre à jour le statut visuel
+        // 4. Mettre à jour le texte de statut
         const statusElem = document.getElementById("statusReseau");
         if (statusElem) statusElem.innerText = `Connecté à : ${file.name}`;
 
         alert(`✅ Connecté ! ${listeAgents.length} agent(s) chargé(s) depuis : ${file.name}`);
-
     } catch (err) {
         if (err.name !== 'AbortError') {
             console.error(err);
