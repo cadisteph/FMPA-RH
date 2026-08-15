@@ -295,9 +295,30 @@
                 <option value="70%">70 %</option>
                 <option value="60%">60 %</option>
                 <option value="50%">50 %</option>
-            </select>
+          </select>
         </div>
 
+
+
+        <div class="form-group" id="groupEngagementDiff" style="display:none;">
+          <label>Engagement Différencié (SPV)</label>
+          <select id="agentEngagementDiff">
+                <option value="">Toutes missions</option>
+                <option value="SUAP">SUAP uniquement</option>
+                <option value="SUAP/PPABE">SUAP / PPABE</option>
+           </select>
+        </div>
+        
+        <div class="form-group" id="groupDisponibilite" style="display:none; align-items:flex-start; justify-content:center;">
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; margin-top:12px;">
+                <input type="checkbox" id="agentDisponibilite">
+                  En Dispo SPV
+          </label>
+        </div>
+
+
+
+        
         <!-- Encadré Objectif Gardes -->
         <div class="gardes-box">
           <div class="gardes-header">
