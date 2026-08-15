@@ -326,6 +326,24 @@
   border-radius: 6px;
   padding: 15px;
 }
+
+
+/* Style de la barre de défilement pour le formulaire */
+.form-card::-webkit-scrollbar {
+  width: 6px;
+}
+.form-card::-webkit-scrollbar-thumb {
+  background-color: #0056b3;
+  border-radius: 4px;
+}
+.form-card::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+
+
+
+
 .form-title {
   color: #0056b3;
   font-size: 1em;
