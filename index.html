@@ -29,80 +29,190 @@
     <h1>Cis Le Havre - Cauriauville : Suivi RH & FMA</h1>
   </header>
 
-  <main class="conteneur-principal">
-  <!-- Colonne Gauche : Filtres et Tableau -->
-  <section class="colonne-gauche">
-    <div class="barre-filtres">
-      <input type="text" id="rh_recherche" placeholder="Rechercher un agent...">
-      <span id="compteurAgentsRH">0 agent(s)</span>
-    </div>
+  
+  <main class="app-container">
 
-    <table class="table-rh">
-      <thead>
-        <tr>
-          <th>Matricule</th>
-          <th>Sexe</th>
-          <th>Nom / Prénom</th>
-          <th>Équipe</th>
-          <th>Statut</th>
-          <th>Grade</th>
-          <th>Fonction</th>
-          <th>Spécialités</th>
-          <th>Régime</th>
-          <th>Téléphone</th>
-        </tr>
-      </thead>
-      <tbody id="corpsRH">
-        <!-- Les agents s'affichent ici -->
-      </tbody>
-    </table>
+  <!-- 1. BARRE D'ONGLETS -->
+  <nav class="tabs-nav">
+    <button class="tab-btn">📊 Suivi FMA Socle</button>
+    <button class="tab-btn">🎯 Suivi FMA Spécialités</button>
+    <button class="tab-btn active">👥 Gestion Effectifs RH</button>
+    <button class="tab-btn">⚙️ Catalogue & Config</button>
+  </nav>
+
+  <!-- 2. PANNEAU DE FILTRES ET BOUTONS -->
+  <section class="toolbar-card">
+    <div class="filters-row">
+      <div class="filter-group">
+        <label>SEXE</label>
+        <select id="rh_sexe"><option value="">Tous</option></select>
+      </div>
+      <div class="filter-group">
+        <label>EQUIPE</label>
+        <select id="rh_equipe"><option value="">Toutes</option></select>
+      </div>
+      <div class="filter-group">
+        <label>STATUT</label>
+        <select id="rh_statut"><option value="">Tous</option></select>
+      </div>
+      <div class="filter-group">
+        <label>GRADE</label>
+        <select id="rh_grade"><option value="">Tous</option></select>
+      </div>
+      <div class="filter-group">
+        <label>FONCTION</label>
+        <select id="rh_fonction"><option value="">Toutes</option></select>
+      </div>
+      <div class="filter-group">
+        <label>RÉGIME</label>
+        <select id="rh_regime"><option value="">Tous</option></select>
+      </div>
+      <div class="filter-group">
+        <label>COMPÉTENCE / SPÉ</label>
+        <select id="rh_spe"><option value="">Toutes</option></select>
+      </div>
+      <div class="filter-group">
+        <label>EN DISPO SPV</label>
+        <select id="rh_dispo"><option value="">Toutes</option></select>
+      </div>
+      <div class="filter-group search-group">
+        <label>RECHERCHE</label>
+        <input type="text" id="rh_recherche" placeholder="Matricule, nom...">
+      </div>
+      
+      <div class="action-buttons">
+        <button class="btn-dark" onclick="reinitialiserFiltres()">Réinitialiser</button>
+        <button class="btn-success">📊 Export CSV</button>
+        <button class="btn-primary" onclick="connecterFichierReseau()">📥 Import CSV</button>
+      </div>
+    </div>
+    
+    <div class="counter-badge">
+      <span id="compteurAgentsRH">3 / 3 agent(s)</span>
+    </div>
   </section>
 
-  <!-- Colonne Droite : Formulaire de saisie -->
-  <aside class="colonne-droite">
-    <div class="carte-formulaire">
-      <h3>Saisie / Édition Agent</h3>
-      <form id="formAgent" onsubmit="event.preventDefault(); doubleSauvegarde();">
-        <input type="hidden" id="agentId">
-
-        <label for="matricule">Matricule</label>
-        <input type="text" id="matricule" required>
-
-        <label for="nom">Nom</label>
-        <input type="text" id="nom" required>
-
-        <label for="prenom">Prénom</label>
-        <input type="text" id="prenom" required>
-
-        <label for="equipe">Équipe</label>
-        <select id="equipe">
-          <option value="Equipe A">Équipe A</option>
-          <option value="Equipe B">Équipe B</option>
-          <option value="Encadrement">Encadrement</option>
-          <option value="SPV">SPV</option>
-        </select>
-
-        <label for="statut">Statut</label>
-        <select id="statut">
-          <option value="SPP">SPP</option>
-          <option value="SPV">SPV</option>
-        </select>
-
-        <label for="telephone">Téléphone</label>
-        <input type="text" id="telephone">
-
-        <label for="email">Email</label>
-        <input type="email" id="email">
-
-        <div class="actions-form">
-          <button type="submit" class="btn-valider">💾 Enregistrer l'agent</button>
-          <button type="reset" class="btn-annuler">❌ Réinitialiser</button>
-        </div>
-      </form>
+  <!-- 3. ZONE PRINCIPALE : TABLEAU (GAUCHE) + FICHE INDIVIDUELLE (DROITE) -->
+  <div class="content-layout">
+    
+    <!-- Colonne Gauche : Tableau -->
+    <div class="table-container">
+      <table class="table-rh">
+        <thead>
+          <tr>
+            <th>Matricule</th>
+            <th>Sexe</th>
+            <th>Agent</th>
+            <th>Equipe</th>
+            <th>Statut</th>
+            <th>Grade</th>
+            <th>Fonction</th>
+            <th>Spécialités & Compétences</th>
+            <th>Régime</th>
+            <th>% Travail / Diff. SPV</th>
+            <th>Gardes</th>
+            <th>Détail</th>
+          </tr>
+        </thead>
+        <tbody id="corpsRH">
+          <!-- Chargé dynamiquement par JS -->
+        </tbody>
+      </table>
     </div>
-  </aside>
+
+    <!-- Colonne Droite : Formulaire (Fiche Individuelle) -->
+    <aside class="form-card">
+      <h3 class="form-title">FICHE INDIVIDUELLE AGENT</h3>
+      <form id="formAgent" onsubmit="event.preventDefault();">
+        
+        <div class="form-row">
+          <div class="form-group col-4">
+            <label>Matricule *</label>
+            <input type="text" id="matricule">
+          </div>
+          <div class="form-group col-4">
+            <label>Sexe</label>
+            <select id="sexe"><option>Homme</option><option>Femme</option></select>
+          </div>
+          <div class="form-group col-4">
+            <label>Nom *</label>
+            <input type="text" id="nom">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-4">
+            <label>Prénom *</label>
+            <input type="text" id="prenom">
+          </div>
+          <div class="form-group col-4">
+            <label>Régime *</label>
+            <select id="regime"><option>G24</option></select>
+          </div>
+          <div class="form-group col-4">
+            <label>Equipe *</label>
+            <select id="equipe"><option>Equipe A</option></select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-4">
+            <label>Statut *</label>
+            <select id="statut"><option>SPP</option><option>SPV</option></select>
+          </div>
+          <div class="form-group col-4">
+            <label>Grade</label>
+            <select id="grade"><option>- Aucun -</option></select>
+          </div>
+          <div class="form-group col-4">
+            <label>Fonction</label>
+            <select id="fonction"><option>Equipier</option></select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Temps Partiel (SPP/PATS)</label>
+          <select id="tempsPartiel"><option>100 % (Plein)</option></select>
+        </div>
+
+        <!-- Encadré Objectif Gardes -->
+        <div class="gardes-box">
+          <div class="gardes-header">
+            <strong>OBJECTIF GARDES ANNUELLES :</strong>
+            <span class="badge-gardes">-</span>
+          </div>
+          <small>Répartition Semestrielle : -</small>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-6">
+            <label>Date de Naissance</label>
+            <input type="date" id="naissanceDate">
+          </div>
+          <div class="form-group col-6">
+            <label>Lieu de Naissance</label>
+            <input type="text" id="naissanceLieu">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-6">
+            <label>Date Entrée SDIS</label>
+            <input type="date" id="entreeSdis">
+          </div>
+          <div class="form-group col-6">
+            <label>Téléphone</label>
+            <input type="text" id="telephone">
+          </div>
+        </div>
+
+      </form>
+    </aside>
+
+  </div>
 </main>
 
+  
   <!-- 1. Bibliothèque externe pour la gestion des fichiers Excel -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
