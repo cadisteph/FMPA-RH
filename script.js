@@ -977,3 +977,21 @@ window.onload = function() {
     actualiserFormulaireCompetencesRH();
     actualiserTableauRH();
 };
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btnReseau = document.getElementById('btnConnecterReseau');
+    
+    if (btnReseau) {
+        btnReseau.addEventListener('click', () => {
+            // Placez le code de votre fonction ici, ou appelez-la :
+            console.log("Tentative de connexion au réseau...");
+            
+            // Si votre fonction existe déjà plus bas/haut dans le script :
+            if (typeof connecterFichierReseau === 'function') {
+                connecterFichierReseau();
+            } else {
+                alert("La logique de connexion reste à définir dans le script.");
+            }
+        });
+    }
+});
