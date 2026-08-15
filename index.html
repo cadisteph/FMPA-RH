@@ -10,17 +10,18 @@
 </head>
 <body>
 
-  <!-- Barre d'action / Connexion au fichier réseau -->
-  <div class="barre-reseau">
-    <button type="button" id="connecterFichierReseau()">Se connecter au fichier réseau</button>
-      🔗 Connecter le fichier réseau (baseAgents.xlsx)
-    </button>
+<!-- Bouton Connecter (votre bouton d'origine avec l'icône lien) -->
+<button type="button" class="btn-reseau" onclick="connecterFichierReseau()">
+    🔗 Connecter le fichier réseau (baseAgents.xlsx)
+</button>
 
-    <button type="button" id="btnEnregistrerReseau">Enregistrer sur le réseau</button>
-      💾 Enregistrer les modifications sur le réseau
-    </button>
+<!-- Bouton Enregistrer (votre bouton d'origine avec l'icône disquette) -->
+<button type="button" class="btn-reseau" onclick="enregistrerFichierReseau()">
+    💾 Enregistrer les modifications sur le réseau
+</button>
 
-    <span id="statusFichier" class="status-text">Aucun fichier connecté</span>
+<!-- Texte de statut -->
+<span id="statusReseau">Aucun fichier connecté</span>
   </div>
 
   <!-- Contenu principal de votre application (Formulaire, filtres, tableaux...) -->
