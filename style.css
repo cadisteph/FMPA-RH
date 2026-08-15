@@ -204,3 +204,159 @@
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             @page { size: auto; margin: 12mm; }
         }
+
+
+/* Layout global */
+.app-container {
+  padding: 15px;
+  background-color: #f4f6f9;
+  font-family: Arial, sans-serif;
+}
+
+/* 1. Onglets haut */
+.tabs-nav {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+.tab-btn {
+  padding: 8px 16px;
+  border: 1px solid #dcdcdc;
+  background-color: #eef2f5;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #495057;
+}
+.tab-btn.active {
+  background-color: #1b263b;
+  color: #fff;
+  border-color: #1b263b;
+}
+
+/* 2. Barre de filtres */
+.toolbar-card {
+  background: #eef2f6;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 15px;
+}
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+.filter-group {
+  display: flex;
+  flex-direction: column;
+}
+.filter-group label {
+  font-size: 0.7em;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 3px;
+}
+.filter-group select, .filter-group input {
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+.action-buttons {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.btn-dark { background: #4a5568; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+.btn-success { background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+.btn-primary { background: #1b263b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+
+.counter-badge {
+  text-align: right;
+  margin-top: 8px;
+  font-weight: bold;
+  color: #0056b3;
+}
+
+/* 3. Disposition Côte à Côte (Tableau + Formulaire) */
+.content-layout {
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+}
+
+.table-container {
+  flex: 1 1 65%; /* Occupe 65% de la largeur */
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+}
+
+.table-rh {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85em;
+}
+.table-rh th {
+  background-color: #1b263b;
+  color: white;
+  padding: 8px;
+  text-align: left;
+}
+.table-rh td {
+  padding: 8px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+/* Formulaire à droite */
+.form-card {
+  flex: 0 0 33%; /* Occupe 33% de la largeur */
+  background: #fff;
+  border: 1px solid #0056b3;
+  border-radius: 6px;
+  padding: 15px;
+}
+.form-title {
+  color: #0056b3;
+  font-size: 1em;
+  margin-top: 0;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 5px;
+}
+.form-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+.col-4 { flex: 1; }
+.col-6 { flex: 1; }
+.form-group label {
+  font-size: 0.75em;
+  color: #495057;
+  margin-bottom: 2px;
+}
+.form-group input, .form-group select {
+  padding: 5px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+/* Boîte Gardes */
+.gardes-box {
+  background-color: #e8f4f8;
+  border: 1px solid #bce1ec;
+  border-radius: 6px;
+  padding: 10px;
+  margin: 12px 0;
+  font-size: 0.8em;
+  color: #0056b3;
+}
