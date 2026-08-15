@@ -995,3 +995,109 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+
+// Variable globale pour conserver l'accès au fichier sélectionné
+let fileHandleReseau = null;
+
+// 1. Fonction de connexion et lecture directe du fichier réseau
+async function connecterFichierReseau() {
+    try {
+        [fileHandleReseau] = await window.showOpenFilePicker({
+            types: [{
+                description: 'Fichier Réseau CSV / Excel',
+                accept: { 'text/csv': ['.csv'], 'text/plain': ['.txt'] }
+            }],
+            multiple: false
+        });
+
+        const file = await fileHandleReseau.getFile();
+        const contenuTexte = await file.text();
+
+        // Extraction et chargement des données dans l'application
+        const lignes = contenuTexte.split('\n');
+        let agentsReseau = [];
+
+        for (let i = 1; i < lignes.length; i++) {
+            if (!lignes[i].trim()) continue;
+            const cols = parseCSVLine(lignes[i]);
+            if (cols.length >= 4) {
+                const mat = cols[0].replace(/"/g, '').trim();
+                if (!mat) continue;
+
+                agentsReseau.push({
+                    id: Date.now() + i,
+                    matricule: mat,
+                    sexe: cols[1] ? cols[1].replace(/"/g, '').trim() : "Homme",
+                    nom: cols[2] ? cols[2].replace(/"/g, '').trim().toUpperCase() : "",
+                    prenom: cols[3] ? formaterPrenom(cols[3].replace(/"/g, '')) : "",
+                    equipe: cols[4] ? cols[4].replace(/"/g, '').trim() : "Equipe A",
+                    statut: cols[5] ? cols[5].replace(/"/g, '').trim() : "SPP",
+                    grade: cols[6] ? cols[6].replace(/"/g, '').trim() : "",
+                    fonction: cols[7] ? cols[7].replace(/"/g, '').trim() : "Equ",
+                    regime: cols[8] ? cols[8].replace(/"/g, '').trim() : "G24",
+                    tempsPartiel: cols[9] ? cols[9].replace(/"/g, '').trim() : "",
+                    naissanceDate: cols[10] ? normaliserDate(cols[10]) : "",
+                    naissanceLieu: cols[11] ? cols[11].replace(/"/g, '').trim() : "",
+                    entreeSdis: cols[12] ? normaliserDate(cols[12]) : "",
+                    datePL: cols[13] ? normaliserDate(cols[13]) : "",
+                    dateVMA: cols[14] ? normaliserDate(cols[14]) : "",
+                    telephone: cols[15] ? formaterTelephone(cols[15]) : "",
+                    email: cols[16] ? cols[16].replace(/"/g, '').trim() : "",
+                    adresse: cols[17] ? cols[17].replace(/"/g, '').trim() : "",
+                    disponibilite: cols[18] ? cols[18].replace(/"/g, '').trim().toLowerCase() === 'oui' : false,
+                    specialites: cols[19] ? cols[19].replace(/"/g, '').split(',').filter(s => s) : [],
+                    commentaire: cols[20] ? cols[20].replace(/"/g, '').trim() : "",
+                    heuresFaites: {}
+                });
+            }
+        }
+
+        listeAgents = agentsReseau;
+
+        if (typeof actualiserTableauRH === 'function') actualiserTableauRH();
+        if (typeof actualiserTableauSuivi === 'function') actualiserTableauSuivi();
+
+        alert(`✅ Connecté ! ${listeAgents.length} agent(s) chargé(s) depuis : ${file.name}`);
+
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            console.error(err);
+            alert("⚠️ Impossible d'accéder au fichier réseau.");
+        }
+    }
+}
+
+// 2. Fonction d'écriture directe sur le fichier réseau
+async function enregistrerFichierReseau() {
+    if (!fileHandleReseau) {
+        alert("⚠️ Aucun fichier réseau n'est connecté. Cliquez d'abord sur 'Se connecter au fichier réseau'.");
+        return;
+    }
+
+    try {
+        const options = { mode: 'readwrite' };
+        if ((await fileHandleReseau.queryPermission(options)) !== 'granted') {
+            if ((await fileHandleReseau.requestPermission(options)) !== 'granted') {
+                alert("❌ Permission refusée pour modifier le fichier.");
+                return;
+            }
+        }
+
+        let csvContent = "\uFEFFMatricule;Sexe;Nom;Prenom;Equipe;Statut;Grade;Fonction;Regime;TempsPartiel_Diff;DateNaissance;LieuNaissance;DateEntreeSDIS;DatePL;DateVMA;Telephone;Email;Adresse;DispoSPV;Specialites;Commentaire\n";
+        listeAgents.forEach(a => {
+            const specs = (a.specialites || []).join(",");
+            csvContent += `"${a.matricule || ''}";"${a.sexe || 'Homme'}";"${a.nom || ''}";"${a.prenom || ''}";"${a.equipe || ''}";"${a.statut || ''}";"${a.grade || ''}";"${a.fonction || ''}";"${a.regime || ''}";"${a.tempsPartiel || a.engagementDiff || ''}";"${a.naissanceDate || ''}";"${a.naissanceLieu || ''}";"${a.entreeSdis || ''}";"${a.datePL || ''}";"${a.dateVMA || ''}";"${a.telephone || ''}";"${a.email || ''}";"${a.adresse || ''}";"${a.disponibilite ? 'Oui' : 'Non'}";"${specs}";"${(a.commentaire || '').replace(/"/g, '""')}"\n`;
+        });
+
+        const writable = await fileHandleReseau.createWritable();
+        await writable.write(csvContent);
+        await writable.close();
+
+        alert("💾 Modifications enregistrées dans le fichier réseau !");
+
+    } catch (err) {
+        console.error(err);
+        alert("❌ Erreur lors de la sauvegarde sur le réseau : " + err.message);
+    }
+}
