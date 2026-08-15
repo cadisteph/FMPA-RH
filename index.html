@@ -29,46 +29,78 @@
     <h1>Cis Le Havre - Cauriauville : Suivi RH & FMA</h1>
   </header>
 
-  <main>
-  <!-- 1. VOS FILTRES RH (Exemple) -->
-  <div class="barre-filtres">
-     <input type="text" id="rh_recherche" placeholder="Rechercher un agent...">
-     <!-- vos autres filtres -->
-  </div>
+  <main class="conteneur-principal">
+  <!-- Colonne Gauche : Filtres et Tableau -->
+  <section class="colonne-gauche">
+    <div class="barre-filtres">
+      <input type="text" id="rh_recherche" placeholder="Rechercher un agent...">
+      <span id="compteurAgentsRH">0 agent(s)</span>
+    </div>
 
-  <!-- 2. VOTRE TABLEAU RH (Indispensable) -->
-  <table class="table-rh">
+    <table class="table-rh">
       <thead>
-          <tr>
-              <th>Matricule</th>
-              <th>Sexe</th>
-              <th>Nom / Prénom</th>
-              <th>Équipe</th>
-              <th>Statut</th>
-              <th>Grade</th>
-              <th>Fonction</th>
-              <th>Spécialités</th>
-              <th>Régime</th>
-              <th>Temps partiel</th>
-              <th>Gardes</th>
-              <th>Répartition</th>
-              <th>Entrée SDIS</th>
-              <th>Date PL</th>
-              <th>Date VMA</th>
-              <th>Téléphone</th>
-              <th>Email</th>
-              <th>Naissance</th>
-              <th>Lieu</th>
-              <th>Adresse</th>
-              <th>Dispo SPV</th>
-              <th>Commentaire</th>
-          </tr>
+        <tr>
+          <th>Matricule</th>
+          <th>Sexe</th>
+          <th>Nom / Prénom</th>
+          <th>Équipe</th>
+          <th>Statut</th>
+          <th>Grade</th>
+          <th>Fonction</th>
+          <th>Spécialités</th>
+          <th>Régime</th>
+          <th>Téléphone</th>
+        </tr>
       </thead>
-      <!-- C'EST CETTE BALISE QUE LE SCRIPT DÉTECTE POUR INSÉRER LES AGENTS : -->
       <tbody id="corpsRH">
-          <!-- Les 3 agents apparaîtront automatiquement ici ! -->
+        <!-- Les agents s'affichent ici -->
       </tbody>
-  </table>
+    </table>
+  </section>
+
+  <!-- Colonne Droite : Formulaire de saisie -->
+  <aside class="colonne-droite">
+    <div class="carte-formulaire">
+      <h3>Saisie / Édition Agent</h3>
+      <form id="formAgent" onsubmit="event.preventDefault(); doubleSauvegarde();">
+        <input type="hidden" id="agentId">
+
+        <label for="matricule">Matricule</label>
+        <input type="text" id="matricule" required>
+
+        <label for="nom">Nom</label>
+        <input type="text" id="nom" required>
+
+        <label for="prenom">Prénom</label>
+        <input type="text" id="prenom" required>
+
+        <label for="equipe">Équipe</label>
+        <select id="equipe">
+          <option value="Equipe A">Équipe A</option>
+          <option value="Equipe B">Équipe B</option>
+          <option value="Encadrement">Encadrement</option>
+          <option value="SPV">SPV</option>
+        </select>
+
+        <label for="statut">Statut</label>
+        <select id="statut">
+          <option value="SPP">SPP</option>
+          <option value="SPV">SPV</option>
+        </select>
+
+        <label for="telephone">Téléphone</label>
+        <input type="text" id="telephone">
+
+        <label for="email">Email</label>
+        <input type="email" id="email">
+
+        <div class="actions-form">
+          <button type="submit" class="btn-valider">💾 Enregistrer l'agent</button>
+          <button type="reset" class="btn-annuler">❌ Réinitialiser</button>
+        </div>
+      </form>
+    </div>
+  </aside>
 </main>
 
   <!-- 1. Bibliothèque externe pour la gestion des fichiers Excel -->
