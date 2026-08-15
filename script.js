@@ -1054,8 +1054,14 @@ async function connecterFichierReseau() {
 
         listeAgents = agentsReseau;
 
-        if (typeof actualiserTableauRH === 'function') actualiserTableauRH();
-        if (typeof actualiserTableauSuivi === 'function') actualiserTableauSuivi();
+        // Mise à jour explicite du tableau et du DOM
+        if (typeof actualiserTableauRH === 'function') {
+            actualiserTableauRH();
+        } else if (typeof afficherAgents === 'function') {
+            afficherAgents();
+        } else if (typeof renderTable === 'function') {
+            renderTable();
+        }
 
         // Mettre à jour le statut visuel
         const statusElem = document.getElementById("statusReseau");
