@@ -224,100 +224,7 @@
             @page { size: auto; margin: 12mm; }
         }
     </style>
-</head>
-
-<script>
-// 1. Configuration de l'URL SharePoint (URL racine du site nettoyée)
-const SHAREPOINT_SITE_URL = "https://sdis76.sharepoint.com/ESP_CIS_CAUC";
-const LIST_NAME = "baseAgents";
-
-// 2. Charger tous les agents (READ)
-async function chargerAgents() {
-  try {
-    const response = await fetch(`${SHAREPOINT_SITE_URL}/_api/web/lists/getbytitle('${LIST_NAME}')/items`, {
-      method: "GET",
-      headers: { "Accept": "application/json;odata=verbose" },
-      credentials: "include"
-    });
-    const data = await response.json();
-    const agents = data.d.results;
-    console.log("Agents récupérés :", agents);
-  } catch (error) {
-    console.error("Erreur lors du chargement des agents :", error);
-  }
-}
-
-// 3. Ajouter un agent (CREATE)
-async function ajouterAgent(nouvelAgent) {
-  try {
-    const digestResponse = await fetch(`${SHAREPOINT_SITE_URL}/_api/contextinfo`, {
-      method: "POST",
-      headers: { "Accept": "application/json;odata=verbose" },
-      credentials: "include"
-    });
-    const digestData = await digestResponse.json();
-    const formDigestValue = digestData.d.GetContextWebInformation.FormDigestValue;
-
-    const response = await fetch(`${SHAREPOINT_SITE_URL}/_api/web/lists/getbytitle('${LIST_NAME}')/items`, {
-      method: "POST",
-      headers: { 
-        "Accept": "application/json;odata=verbose", 
-        "Content-Type": "application/json;odata=verbose", 
-        "X-RequestDigest": formDigestValue 
-      },
-      credentials: "include",
-      body: JSON.stringify({
-        "__metadata": { "type": `SP.Data.${LIST_NAME}ListItem` },
-        "Title": nouvelAgent.nom,
-        "Prenom": nouvelAgent.prenom,
-        "DateNaissance": nouvelAgent.dateNaissance,
-        "Service": nouvelAgent.service
-      })
-    });
-
-    if (response.ok) {
-      alert("Agent ajouté avec succès !");
-      chargerAgents();
-    }
-  } catch (error) {
-    console.error("Erreur lors de l'ajout :", error);
-  }
-}
-
-// 4. Supprimer un agent (DELETE)
-async function supprimerAgent(idAgent) {
-  if (!confirm("Voulez-vous vraiment supprimer cet agent ?")) return;
-  
-  try {
-    const digestResponse = await fetch(`${SHAREPOINT_SITE_URL}/_api/contextinfo`, {
-      method: "POST",
-      headers: { "Accept": "application/json;odata=verbose" },
-      credentials: "include"
-    });
-    const digestData = await digestResponse.json();
-    const formDigestValue = digestData.d.GetContextWebInformation.FormDigestValue;
-
-    await fetch(`${SHAREPOINT_SITE_URL}/_api/web/lists/getbytitle('${LIST_NAME}')/items(${idAgent})`, {
-      method: "POST",
-      headers: {
-        "Accept": "application/json;odata=verbose",
-        "X-RequestDigest": formDigestValue,
-        "IF-MATCH": "*",
-        "X-HTTP-Method": "DELETE"
-      },
-      credentials: "include"
-    });
-
-    chargerAgents();
-  } catch (error) {
-    console.error("Erreur lors de la suppression :", error);
-  }
-}
-
-// Lancement automatique
-document.addEventListener("DOMContentLoaded", chargerAgents);
-</script>
-    
+</head>    
 <body>
 
 <div class="container">
@@ -1788,5 +1695,109 @@ document.addEventListener("DOMContentLoaded", chargerAgents);
         actualiserTableauRH();
     };
 </script>
+
+<!-- ... Tout le reste de votre code HTML existant se trouve au-dessus ... -->
+
+    <!-- VOS BALISES EXISTANTES ICI -->
+
+    <!-- VOS STYLES OU AUTRES ÉLÉMENTS -->
+
+    <!-- COLLES LE SCRIPT ICI, JUSTE AVANT LA FERMETURE DU BODY -->
+    <script>
+    // 1. Configuration de l'URL SharePoint
+    const SHAREPOINT_SITE_URL = "https://sdis76.sharepoint.com/ESP_CIS_CAUC";
+    const LIST_NAME = "baseAgents";
+
+    // 2. Charger tous les agents (READ)
+    async function chargerAgents() {
+      try {
+        const response = await fetch(`${SHAREPOINT_SITE_URL}/_api/web/lists/getbytitle('${LIST_NAME}')/items`, {
+          method: "GET",
+          headers: { "Accept": "application/json;odata=verbose" },
+          credentials: "include"
+        });
+        const data = await response.json();
+        const agents = data.d.results;
+        console.log("Agents récupérés :", agents);
+      } catch (error) {
+        console.error("Erreur lors du chargement des agents :", error);
+      }
+    }
+
+    // 3. Ajouter un agent (CREATE)
+    async function ajouterAgent(nouvelAgent) {
+      try {
+        const digestResponse = await fetch(`${SHAREPOINT_SITE_URL}/_api/contextinfo`, {
+          method: "POST",
+          headers: { "Accept": "application/json;odata=verbose" },
+          credentials: "include"
+        });
+        const digestData = await digestResponse.json();
+        const formDigestValue = digestData.d.GetContextWebInformation.FormDigestValue;
+
+        const response = await fetch(`${SHAREPOINT_SITE_URL}/_api/web/lists/getbytitle('${LIST_NAME}')/items`, {
+          method: "POST",
+          headers: { 
+            "Accept": "application/json;odata=verbose", 
+            "Content-Type": "application/json;odata=verbose", 
+            "X-RequestDigest": formDigestValue 
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            "__metadata": { "type": `SP.Data.${LIST_NAME}ListItem` },
+            "Title": nouvelAgent.nom,
+            "Prenom": nouvelAgent.prenom,
+            "DateNaissance": nouvelAgent.dateNaissance,
+            "Service": nouvelAgent.service
+          })
+        });
+
+        if (response.ok) {
+          alert("Agent ajouté avec succès !");
+          chargerAgents();
+        }
+      } catch (error) {
+        console.error("Erreur lors de l'ajout :", error);
+      }
+    }
+
+    // 4. Supprimer un agent (DELETE)
+    async function supprimerAgent(idAgent) {
+      if (!confirm("Voulez-vous vraiment supprimer cet agent ?")) return;
+      
+      try {
+        const digestResponse = await fetch(`${SHAREPOINT_SITE_URL}/_api/contextinfo`, {
+          method: "POST",
+          headers: { "Accept": "application/json;odata=verbose" },
+          credentials: "include"
+        });
+        const digestData = await digestResponse.json();
+        const formDigestValue = digestData.d.GetContextWebInformation.FormDigestValue;
+
+        await fetch(`${SHAREPOINT_SITE_URL}/_api/web/lists/getbytitle('${LIST_NAME}')/items(${idAgent})`, {
+          method: "POST",
+          headers: {
+            "Accept": "application/json;odata=verbose",
+            "X-RequestDigest": formDigestValue,
+            "IF-MATCH": "*",
+            "X-HTTP-Method": "DELETE"
+          },
+          credentials: "include"
+        });
+
+        chargerAgents();
+      } catch (error) {
+        console.error("Erreur lors de la suppression :", error);
+      }
+    }
+
+    // Lancement automatique
+    document.addEventListener("DOMContentLoaded", chargerAgents);
+    </script>
+
+</body>
+</html>
+
+    
 </body>
 </html>
