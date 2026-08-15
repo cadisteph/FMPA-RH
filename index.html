@@ -45,39 +45,96 @@
     <div class="filters-row">
       <div class="filter-group">
         <label>SEXE</label>
-        <select id="rh_sexe"><option value="">Tous</option></select>
+        <select id="rh_sexe" onchange="actualiserTableauRH()">
+                <option value="">Tous</option>
+                <option value="Homme">Homme</option>
+                <option value="Femme">Femme</option>
+            </select>
       </div>
       <div class="filter-group">
         <label>EQUIPE</label>
-        <select id="rh_equipe"><option value="">Toutes</option></select>
+        <select id="rh_equipe" onchange="actualiserTableauRH()">
+                <option value="">Toutes</option>
+                <option value="Equipe A">Equipe A</option>
+                <option value="Equipe B">Equipe B</option>
+                <option value="Equipe C">Equipe C</option>
+                <option value="Equipe G12">Equipe G12</option>
+                <option value="Encadrement">Encadrement</option>
+                <option value="SPV">SPV</option>
+            </select>
       </div>
       <div class="filter-group">
         <label>STATUT</label>
-        <select id="rh_statut"><option value="">Tous</option></select>
+        <select id="rh_statut" onchange="actualiserTableauRH()">
+                <option value="">Tous</option>
+                <option value="SPP">SPP</option>
+                <option value="SPV">SPV</option>
+                <option value="PATS">PATS</option>
+            </select>
       </div>
       <div class="filter-group">
         <label>GRADE</label>
-        <select id="rh_grade"><option value="">Tous</option></select>
+        <select id="rh_grade" onchange="actualiserTableauRH()">
+                <option value="">Tous</option>
+                <option value="SAP">SAP</option>
+                <option value="CPL">CPL</option>
+                <option value="CCH">CCH</option>
+                <option value="SGT">SGT</option>
+                <option value="SCH">SCH</option>
+                <option value="ADJ">ADJ</option>
+                <option value="ADC">ADC</option>
+                <option value="LTN">LTN</option>
+                <option value="CNE">CNE</option>
+                <option value="CDT">CDT</option>
+                <option value="PATS">PATS</option>
+            </select>
       </div>
       <div class="filter-group">
         <label>FONCTION</label>
-        <select id="rh_fonction"><option value="">Toutes</option></select>
+        <select id="rh_fonction" onchange="actualiserTableauRH()">
+                <option value="">Toutes</option>
+                <option value="Equ">Equipier</option>
+                <option value="CEqu">Chef d'Equipe</option>
+                <option value="CA1E">Chef d'Agrès Une Equipe</option>
+                <option value="CATE">Chef d'Agrès Tout Engin</option>
+                <option value="ACDG2">2è Adjoint au Chef de Garde</option>
+                <option value="ACDG1">1er Adjoint au Chef de Garde</option>
+                <option value="CDG">Chef de Garde</option>
+                <option value="SOFTECH">S/Off Technique</option>
+                <option value="SOFPAO">S/Off PAO</option>
+                <option value="OFTECH">Officier Technique</option>
+                <option value="OFPAO">Officier PAO</option>
+                <option value="ACDC">Adjoint au chef de centre</option>
+                <option value="CDC">Chef de Centre</option>
+                <option value="Assistante">Assistante</option>
+            </select>
       </div>
       <div class="filter-group">
         <label>RÉGIME</label>
-        <select id="rh_regime"><option value="">Tous</option></select>
+        <select id="rh_regime" onchange="actualiserTableauRH()">
+                <option value="">Tous</option>
+                <option value="G24">G24</option>
+                <option value="Mixte">Mixte</option>
+                <option value="G12">G12</option>
+                <option value="SHR">SHR</option>
+                <option value="SPV">SPV</option>
+            </select>
       </div>
       <div class="filter-group">
         <label>COMPÉTENCE / SPÉ</label>
-        <select id="rh_spe"><option value="">Toutes</option></select>
+        <select id="rh_spe" onchange="actualiserTableauRH()"></select>
       </div>
       <div class="filter-group">
         <label>EN DISPO SPV</label>
-        <select id="rh_dispo"><option value="">Toutes</option></select>
+        <select id="rh_dispo" onchange="actualiserTableauRH()">
+                <option value="">Toutes</option>
+                <option value="Oui">🔴 Oui</option>
+                <option value="Non">🟢 Non</option>
+            </select>
       </div>
       <div class="filter-group search-group">
         <label>RECHERCHE</label>
-        <input type="text" id="rh_recherche" placeholder="Matricule, nom...">
+        <input type="text" id="rh_recherche" placeholder="Matricule, nom..." oninput="actualiserTableauRH()">
       </div>
       
       <div class="action-buttons">
