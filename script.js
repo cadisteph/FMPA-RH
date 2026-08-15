@@ -997,10 +997,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// Variable globale pour conserver l'accès au fichier sélectionné
+// Variable globale
 let fileHandleReseau = null;
 
-// 1. Fonction de connexion et lecture directe du fichier réseau
+// 1. Fonction appelée par le bouton "Connecter le fichier réseau"
 async function connecterFichierReseau() {
     try {
         [fileHandleReseau] = await window.showOpenFilePicker({
@@ -1014,7 +1014,6 @@ async function connecterFichierReseau() {
         const file = await fileHandleReseau.getFile();
         const contenuTexte = await file.text();
 
-        // Extraction et chargement des données dans l'application
         const lignes = contenuTexte.split('\n');
         let agentsReseau = [];
 
@@ -1058,6 +1057,10 @@ async function connecterFichierReseau() {
         if (typeof actualiserTableauRH === 'function') actualiserTableauRH();
         if (typeof actualiserTableauSuivi === 'function') actualiserTableauSuivi();
 
+        // Mettre à jour le statut visuel
+        const statusElem = document.getElementById("statusReseau");
+        if (statusElem) statusElem.innerText = `Connecté à : ${file.name}`;
+
         alert(`✅ Connecté ! ${listeAgents.length} agent(s) chargé(s) depuis : ${file.name}`);
 
     } catch (err) {
@@ -1068,10 +1071,10 @@ async function connecterFichierReseau() {
     }
 }
 
-// 2. Fonction d'écriture directe sur le fichier réseau
+// 2. Fonction appelée par le bouton "Enregistrer les modifications"
 async function enregistrerFichierReseau() {
     if (!fileHandleReseau) {
-        alert("⚠️ Aucun fichier réseau n'est connecté. Cliquez d'abord sur 'Se connecter au fichier réseau'.");
+        alert("⚠️ Aucun fichier réseau n'est connecté. Cliquez d'abord sur 'Connecter le fichier réseau'.");
         return;
     }
 
@@ -1094,10 +1097,10 @@ async function enregistrerFichierReseau() {
         await writable.write(csvContent);
         await writable.close();
 
-        alert("💾 Modifications enregistrées dans le fichier réseau !");
+        alert("💾 Modifications enregistrées avec succès dans le fichier réseau !");
 
     } catch (err) {
         console.error(err);
-        alert("❌ Erreur lors de la sauvegarde sur le réseau : " + err.message);
+        alert("❌ Erreur lors de la sauvegarde : " + err.message);
     }
 }
