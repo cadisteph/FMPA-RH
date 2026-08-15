@@ -30,8 +30,46 @@
   </header>
 
   <main>
-    <!-- Mettez ici l'ensemble du contenu HTML existant de votre application -->
-  </main>
+  <!-- 1. VOS FILTRES RH (Exemple) -->
+  <div class="barre-filtres">
+     <input type="text" id="rh_recherche" placeholder="Rechercher un agent...">
+     <!-- vos autres filtres -->
+  </div>
+
+  <!-- 2. VOTRE TABLEAU RH (Indispensable) -->
+  <table class="table-rh">
+      <thead>
+          <tr>
+              <th>Matricule</th>
+              <th>Sexe</th>
+              <th>Nom / Prénom</th>
+              <th>Équipe</th>
+              <th>Statut</th>
+              <th>Grade</th>
+              <th>Fonction</th>
+              <th>Spécialités</th>
+              <th>Régime</th>
+              <th>Temps partiel</th>
+              <th>Gardes</th>
+              <th>Répartition</th>
+              <th>Entrée SDIS</th>
+              <th>Date PL</th>
+              <th>Date VMA</th>
+              <th>Téléphone</th>
+              <th>Email</th>
+              <th>Naissance</th>
+              <th>Lieu</th>
+              <th>Adresse</th>
+              <th>Dispo SPV</th>
+              <th>Commentaire</th>
+          </tr>
+      </thead>
+      <!-- C'EST CETTE BALISE QUE LE SCRIPT DÉTECTE POUR INSÉRER LES AGENTS : -->
+      <tbody id="corpsRH">
+          <!-- Les 3 agents apparaîtront automatiquement ici ! -->
+      </tbody>
+  </table>
+</main>
 
   <!-- 1. Bibliothèque externe pour la gestion des fichiers Excel -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
