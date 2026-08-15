@@ -226,8 +226,9 @@
     </style>
 </head>
 
-// 1. Configuration de l'URL SharePoint
-const SHAREPOINT_SITE_URL = "https://sdis76.sharepoint.com/ESP_CIS_CAUC/SitePages/Accueil(1).aspx";
+<script>
+// 1. Configuration de l'URL SharePoint (URL racine du site nettoyée)
+const SHAREPOINT_SITE_URL = "https://sdis76.sharepoint.com/ESP_CIS_CAUC";
 const LIST_NAME = "baseAgents";
 
 // 2. Charger tous les agents (READ)
@@ -236,14 +237,11 @@ async function chargerAgents() {
     const response = await fetch(`${SHAREPOINT_SITE_URL}/_api/web/lists/getbytitle('${LIST_NAME}')/items`, {
       method: "GET",
       headers: { "Accept": "application/json;odata=verbose" },
-      credentials: "include" // Transmet la session Microsoft de l'utilisateur
+      credentials: "include"
     });
     const data = await response.json();
     const agents = data.d.results;
-    
     console.log("Agents récupérés :", agents);
-    // Appeler ici votre fonction d'affichage de la table dans l'interface
-    // ex: afficherTableauAgents(agents);
   } catch (error) {
     console.error("Erreur lors du chargement des agents :", error);
   }
@@ -252,7 +250,6 @@ async function chargerAgents() {
 // 3. Ajouter un agent (CREATE)
 async function ajouterAgent(nouvelAgent) {
   try {
-    // Récupération du jeton de sécurité SharePoint (FormDigest)
     const digestResponse = await fetch(`${SHAREPOINT_SITE_URL}/_api/contextinfo`, {
       method: "POST",
       headers: { "Accept": "application/json;odata=verbose" },
@@ -261,14 +258,17 @@ async function ajouterAgent(nouvelAgent) {
     const digestData = await digestResponse.json();
     const formDigestValue = digestData.d.GetContextWebInformation.FormDigestValue;
 
-    // Envoi des données
     const response = await fetch(`${SHAREPOINT_SITE_URL}/_api/web/lists/getbytitle('${LIST_NAME}')/items`, {
       method: "POST",
-      headers: { "Accept": "application/json;odata=verbose", "Content-Type": "application/json;odata=verbose", "X-RequestDigest": formDigestValue },
+      headers: { 
+        "Accept": "application/json;odata=verbose", 
+        "Content-Type": "application/json;odata=verbose", 
+        "X-RequestDigest": formDigestValue 
+      },
       credentials: "include",
       body: JSON.stringify({
         "__metadata": { "type": `SP.Data.${LIST_NAME}ListItem` },
-        "Title": nouvelAgent.nom,        // 'Title' est le champ Nom par défaut
+        "Title": nouvelAgent.nom,
         "Prenom": nouvelAgent.prenom,
         "DateNaissance": nouvelAgent.dateNaissance,
         "Service": nouvelAgent.service
@@ -277,7 +277,7 @@ async function ajouterAgent(nouvelAgent) {
 
     if (response.ok) {
       alert("Agent ajouté avec succès !");
-      chargerAgents(); // Rafraîchit la liste
+      chargerAgents();
     }
   } catch (error) {
     console.error("Erreur lors de l'ajout :", error);
@@ -308,16 +308,15 @@ async function supprimerAgent(idAgent) {
       credentials: "include"
     });
 
-    chargerAgents(); // Rafraîchit la liste
+    chargerAgents();
   } catch (error) {
     console.error("Erreur lors de la suppression :", error);
   }
 }
 
-// Lancement automatique au chargement de la page
+// Lancement automatique
 document.addEventListener("DOMContentLoaded", chargerAgents);
-
-
+</script>
     
 <body>
 
