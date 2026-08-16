@@ -476,63 +476,57 @@ html, body {
 .btn:hover { opacity: 0.9; }
 
 
-/* 1. Blocage du défilement général de la page */
+/* Blocage de la page globale pour éviter le scroll général */
 html, body {
-  height: 100vh;
-  margin: 0;
-  padding: 0;
-  overflow: hidden; /* Empêche la barre de défilement globale */
-  display: flex;
-  flex-direction: column;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
-/* 2. Container principal sous le menu/header */
-.app-container {
-  display: flex;
-  flex: 1; /* Occupe tout l'espace sous les menus */
-  height: calc(100vh - 60px); /* Ajustez 60px selon la hauteur réelle de votre menu/header */
-  overflow: hidden;
-  padding: 10px;
-  gap: 15px;
-  box-sizing: border-box;
+/* Zone principale occupant l'espace restant sous les filtres */
+#sectionRH {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 15px !important;
+  flex: 1 !important;
+  height: calc(100vh - 220px) !important;
+  overflow: hidden !important;
+  align-items: stretch !important;
 }
 
-/* 3. Section GAUCHE : Zone Tableau RH */
-.table-section {
-  flex: 2; /* Prend 2/3 de la largeur (ajustable) */
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  background: #ffffff;
-  border: 1px solid #cbd5e0;
-  border-radius: 6px;
+/* Tableau à gauche (60% de largeur + scroll interne) */
+.table-container {
+  flex: 1 1 60% !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e0 !important;
+  border-radius: 6px !important;
 }
 
-/* Conteneur défilant pour le tableau */
-.table-scroll-container {
-  flex: 1;
-  overflow-y: auto; /* Active la scrollbar verticale pour le tableau */
-  overflow-x: auto; /* Scrollbar horizontale si le tableau est très large */
+/* En-tête du tableau collé en haut */
+.table-rh thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 2 !important;
+  background-color: #1a365d !important;
+  color: white !important;
 }
 
-/* Fixation des en-têtes du tableau lors du scroll */
-.table-scroll-container table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background-color: #2b6cb0; /* Couleur de fond obligatoire pour ne pas voir le texte défiler derrière */
-  color: white;
-}
-
-/* 4. Section DROITE : Zone Fiche Agent */
+/* Formulaire à droite (38% de largeur + scroll interne) */
 .form-card {
-  flex: 1; /* Prend 1/3 de la largeur */
-  height: 100%;
-  overflow-y: auto; /* Active la scrollbar verticale pour le formulaire */
-  background: #ffffff;
-  border: 1px solid #cbd5e0;
-  border-radius: 6px;
-  padding: 12px;
-  box-sizing: border-box;
+  flex: 0 0 38% !important;
+  max-width: 38% !important;
+  height: 100% !important;
+  overflow-y: auto !important;
+  background: #ffffff !important;
+  border: 1px solid #0056b3 !important;
+  border-radius: 6px !important;
+  padding: 15px !important;
+  box-sizing: border-box !important;
 }
