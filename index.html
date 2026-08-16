@@ -3,30 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cis Le Havre - Cauriauville : Suivi RH & FMA</title>
+  <title>Cis Le Havre - Caucriauville : Suivi RH & FMA</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- EN-TÊTE PRINCIPAL (Bandeau sombre) -->
-  <header style="background: #1a202c; color: white; padding: 15px; text-align: center;">
-    <h1 style="margin: 0 0 10px 0; font-size: 1.5rem;">Cis Le Havre - Cauriauville : Suivi RH & FMA</h1>
-    
-    <!-- Boutons Réseau et Statut placés dans l'en-tête -->
-    <div style="display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;">
+  <!-- BANDEAU HAUT COMPLET -->
+  <header class="main-header">
+    <!-- 1. Titre principal -->
+    <h1 class="app-title">Cis Le Havre - Caucriauville : Suivi RH & FMA</h1>
+    <hr class="header-divider">
+
+    <!-- 2. Barre d'outils Réseau (Bandeau Sombre) -->
+    <div class="network-bar">
       <button type="button" class="btn-reseau" onclick="connecterFichierReseau()">
-          🔗 Connecter le fichier réseau (baseAgents.xlsx)
+        🔗 Connecter le fichier réseau (baseAgents.xlsx)
       </button>
 
       <button type="button" class="btn-reseau" onclick="enregistrerFichierReseau()">
-          💾 Enregistrer les modifications sur le réseau
+        💾 Enregistrer les modifications sur le réseau
       </button>
 
-      <span id="statusReseau" style="font-size: 0.9em; opacity: 0.8;">Aucun fichier connecté</span>
+      <span id="statusReseau" class="status-reseau">Connecté à : baseAgents.csv</span>
     </div>
+
+    <!-- 3. Barre des Onglets -->
+    <nav class="tabs-nav">
+      <button class="tab-btn">📊 Suivi FMA Socle</button>
+      <button class="tab-btn">🎯 Suivi FMA Spécialités</button>
+      <button class="tab-btn active">👥 Gestion Effectifs RH</button>
+      <button class="tab-btn">⚙️ Catalogue & Config</button>
+    </nav>
   </header>
 
-  <!-- CONTENEUR PRINCIPAL -->
+  <!-- CONTENU DE L'APPLICATION -->
   <main class="app-container">
 
     <!-- BARRE D'ONGLETS (Horizontale sous le titre) -->
