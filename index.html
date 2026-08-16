@@ -4,38 +4,38 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cis Le Havre - Cauriauville : Suivi RH & FMA</title>
-  
-  <!-- Liaison vers votre feuille de style CSS -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Boutons réseau -->
-  <button type="button" class="btn-reseau" onclick="connecterFichierReseau()">
-      🔗 Connecter le fichier réseau (baseAgents.xlsx)
-  </button>
+  <!-- EN-TÊTE PRINCIPAL (Bandeau sombre) -->
+  <header style="background: #1a202c; color: white; padding: 15px; text-align: center;">
+    <h1 style="margin: 0 0 10px 0; font-size: 1.5rem;">Cis Le Havre - Cauriauville : Suivi RH & FMA</h1>
+    
+    <!-- Boutons Réseau et Statut placés dans l'en-tête -->
+    <div style="display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;">
+      <button type="button" class="btn-reseau" onclick="connecterFichierReseau()">
+          🔗 Connecter le fichier réseau (baseAgents.xlsx)
+      </button>
 
-  <button type="button" class="btn-reseau" onclick="enregistrerFichierReseau()">
-      💾 Enregistrer les modifications sur le réseau
-  </button>
+      <button type="button" class="btn-reseau" onclick="enregistrerFichierReseau()">
+          💾 Enregistrer les modifications sur le réseau
+      </button>
 
-  <!-- Texte de statut -->
-  <span id="statusReseau">Aucun fichier connecté</span>
-
-  <!-- En-tête principal (Attribut style remis À L'INTÉRIEUR de la balise) -->
-  <header style="height: 60px; background: #1a202c; color: white; padding: 10px;">
-    <h1>Cis Le Havre - Cauriauville : Suivi RH & FMA</h1>
+      <span id="statusReseau" style="font-size: 0.9em; opacity: 0.8;">Aucun fichier connecté</span>
+    </div>
   </header>
 
+  <!-- CONTENEUR PRINCIPAL -->
   <main class="app-container">
 
-  <!-- 1. BARRE D'ONGLETS -->
-  <nav class="tabs-nav">
-    <button class="tab-btn">📊 Suivi FMA Socle</button>
-    <button class="tab-btn">🎯 Suivi FMA Spécialités</button>
-    <button class="tab-btn active">👥 Gestion Effectifs RH</button>
-    <button class="tab-btn">⚙️ Catalogue & Config</button>
-  </nav>
+    <!-- BARRE D'ONGLETS (Horizontale sous le titre) -->
+    <nav class="tabs-nav">
+      <button class="tab-btn">📊 Suivi FMA Socle</button>
+      <button class="tab-btn">🎯 Suivi FMA Spécialités</button>
+      <button class="tab-btn active">👥 Gestion Effectifs RH</button>
+      <button class="tab-btn">⚙️ Catalogue & Config</button>
+    </nav>
 
   <!-- 2. PANNEAU DE FILTRES ET BOUTONS -->
   <section class="toolbar-card">
