@@ -562,7 +562,7 @@ main > div:nth-last-child(1) {
     justify-content: space-between !important;
     gap: 15px !important;
     width: 100% !important;
-    margin-bottom: 15px !important; /* Décale le bas du tableau/fiche vers le haut */
+    margin-bottom: 70px !important; /* Décale le bas du tableau/fiche vers le haut */
     padding-bottom: 10px !important;
     box-sizing: border-box !important;
 }
