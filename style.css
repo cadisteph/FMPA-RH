@@ -56,320 +56,95 @@ h1 {
   background: #1a202c;
   color: white;
 }
-/* ==========================================
-   3. BARRE DE FILTRES
-   ========================================== */
-.filter-bar, .toolbar-card {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  background: #edf2f7;
-  padding: 8px 12px;
-  border-radius: 6px;
-  margin-bottom: 10px;
-  align-items: flex-end;
-  border: 1px solid #cbd5e0;
+/* ==========================================================================
+   AGENCEMENT FLEXBOX : TABLEAU RH (GAUCHE) & FICHE AGENT (DROITE)
+   ========================================================================== */
+
+/* 1. Blocage strict du défilement de la page globale */
+html, body {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important; /* Pas de scrollbar générale sur la fenêtre */
+  display: flex !important;
+  flex-direction: column !important;
 }
 
-.filter-item, .filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+/* 2. Container principal de l'application sous l'en-tête */
+.app-container, .container {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: calc(100vh - 80px) !important;
+  overflow: hidden !important;
+  padding: 10px 15px !important;
+  box-sizing: border-box !important;
+  max-width: 100% !important;
 }
 
-.filter-item label, .filter-group label {
-  font-size: 0.72em;
-  font-weight: bold;
-  color: #4a5568;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.filter-item select, .filter-item input,
-.filter-group select, .filter-group input {
-  height: 26px;
-  font-size: 0.8em;
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid #cbd5e0;
-  background-color: white;
-}
-
-.filter-counter, .counter-badge {
-  margin-left: auto;
-  font-size: 0.8em;
-  font-weight: bold;
-  color: #2b6cb0;
-  background: #ebf8ff;
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: 1px solid #bee3f8;
-  align-self: center;
-}
-
-/* ==========================================
-   4. AGENCEMENT DU CONTENU (TABLE + FICHE)
-   ========================================== */
-.content-layout, .grid-2, .app-container {
+/* 3. Section RH : Disposition en 2 colonnes principales */
+#sectionRH, #onglet-rh, .grid-2 {
   display: flex !important;
   flex-direction: row !important;
-  gap: 15px;
+  gap: 15px !important;
   flex: 1 !important;
-  min-height: 0 !important; /* Obligatoire pour declencher le scroll interne */
-  width: 100%;
-  box-sizing: border-box;
+  height: 100% !important;
+  min-height: 0 !important; /* Indispensable pour activer le scroll interne Flexbox */
+  overflow: hidden !important;
+  align-items: stretch !important;
 }
 
-/* Zone Tableau à gauche */
-.table-container, .table-section {
-  flex: 1 1 58% !important;
+/* --- COLONNE GAUCHE : TABLEAU RH (60% de largeur) --- */
+.table-container, .table-section, .table-scroll-container {
+  flex: 1 1 60% !important;
   min-width: 0 !important;
   height: 100% !important;
-  overflow-y: auto !important;
-  overflow-x: auto !important;
-  background: #fff;
-  border: 1px solid #cbd5e0;
-  border-radius: 6px;
+  overflow-y: auto !important; /* Scrollbar verticale réservée au tableau */
+  overflow-x: auto !important; /* Scrollbar horizontale si colonnes larges */
+  background: #ffffff !important;
+  border: 1px solid #cbd5e0 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
 }
 
-/* Zone Fiche Agent à droite */
-.form-card {
-  flex: 0 0 40% !important;
-  max-width: 40%;
-  height: 100% !important;
-  overflow-y: auto !important;
-  background: #fff;
-  border: 1px solid #cbd5e0;
-  border-radius: 6px;
-  padding: 15px;
-  box-sizing: border-box;
-}
-
-/* Scrollbar personnalisée pour la fiche */
-.form-card::-webkit-scrollbar { width: 6px; }
-.form-card::-webkit-scrollbar-thumb { background-color: #0056b3; border-radius: 4px; }
-.form-card::-webkit-scrollbar-track { background: #f1f1f1; }
-
-/* ==========================================
-   5. TABLEAUX ET EN-TÊTES FIXES
-   ========================================== */
-table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
-th, td { padding: 5px 6px; text-align: left; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
-#corpsSuivi td, #corpsSuiviSpe td { padding: 3px 6px !important; font-size: 0.92em !important; line-height: 1.2; }
-
-th, .table-rh thead th, .table-scroll-container table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background-color: #1b263b !important;
+/* En-tête du tableau toujours visible lors du défilement */
+table thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+  background-color: #1a365d !important;
   color: white !important;
-  font-size: 0.85em;
 }
 
-.clickable-row { cursor: pointer; }
-.clickable-row:hover { background-color: #edf2f7; }
-
-/* ==========================================
-   6. FORMULAIRES & ELEMENTS INTERNES
-   ========================================== */
-.form-title {
-  color: #0056b3;
-  font-size: 1em;
-  font-weight: bold;
-  margin-top: 0;
-  margin-bottom: 15px;
-  border-bottom: 1px solid #e9ecef;
-  padding-bottom: 5px;
+/* --- COLONNE DROITE : FICHE AGENT (40% de largeur) --- */
+.sidebar-fiche, .panel, .form-card {
+  flex: 0 0 38% !important;
+  max-width: 38% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow-y: auto !important; /* Scrollbar verticale réservée au formulaire */
+  background: #ffffff !important;
+  border: 1px solid #0056b3 !important;
+  border-radius: 6px !important;
+  padding: 12px 15px !important;
+  box-sizing: border-box !important;
 }
 
-.form-row { display: flex; gap: 8px; margin-bottom: 10px; }
-.form-group { display: flex; flex-direction: column; gap: 2px; }
-.col-4 { flex: 1; }
-.col-6 { flex: 1; }
-
-.form-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 8px; }
-.form-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
-
-label { font-weight: 600; font-size: 0.78em; color: #4a5568; white-space: nowrap; }
-
-select, input, textarea {
-  padding: 4px 6px;
+/* Personnalisation esthétique de la scrollbar du formulaire */
+.sidebar-fiche::-webkit-scrollbar, 
+.form-card::-webkit-scrollbar,
+.table-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.sidebar-fiche::-webkit-scrollbar-thumb, 
+.form-card::-webkit-scrollbar-thumb,
+.table-container::-webkit-scrollbar-thumb {
+  background-color: #cbd5e0;
   border-radius: 4px;
-  border: 1px solid #cbd5e0;
-  font-size: 12px;
-  height: 28px;
-  box-sizing: border-box;
-  width: 100%;
 }
-
-input[type="checkbox"] { width: 18px !important; height: 18px !important; cursor: pointer; }
-textarea { height: 48px; }
-
-/* Gardes box */
-.gardes-box, .card-gardes-container {
-  background-color: #e8f4f8;
-  border: 1px solid #bce1ec;
-  border-radius: 6px;
-  padding: 10px;
-  margin: 12px 0;
-  font-size: 0.8em;
-  color: #0056b3;
+.sidebar-fiche::-webkit-scrollbar-thumb:hover, 
+.form-card::-webkit-scrollbar-thumb:hover {
+  background-color: #2b6cb0;
 }
-
-/* ==========================================
-   7. BOUTONS & BADGES
-   ========================================== */
-.form-actions { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
-.form-actions .btn { flex: 1; }
-
-.btn {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  font-weight: bold;
-  font-size: 0.85em;
-  cursor: pointer;
-  transition: opacity 0.2s;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
-}
-.btn:hover { opacity: 0.9; }
-
-.btn-primary { background: #1a365d; color: white; }
-.btn-secondary { background: #4a5568; color: white; }
-.btn-danger { background: #e53e3e; color: white; }
-.btn-warning { background: #dd6b20; color: white; }
-.btn-success { background: #38a169; color: white; }
-.btn-excel { background: #107c41; color: white; }
-.btn-purple { background: #6b46c1; color: white; }
-
-.badge { padding: 2px 6px; border-radius: 3px; font-size: 0.75em; font-weight: bold; display: inline-block; }
-.badge-spp { background-color: #e2e8f0; color: #2d3748; }
-.badge-spv { background-color: #feebc8; color: #c05621; }
-.badge-pats { background-color: #e9d8fd; color: #553c9a; }
-.badge-spe { background-color: #a0a4e7; color: #fff; border: 1px solid #062dff6b; }
-
-.status-danger { background-color: #fed7d7; color: #9b2c2c; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-.status-warning { background-color: #feebc8; color: #c05621; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid #fbd38d; }
-.status-success { background-color: #c6f6d5; color: #15803d; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid #9ae6b4; }
-
-/* ==========================================
-   8. MODALES ET IMPRESSION
-   ========================================== */
-.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); }
-.modal-content { background-color: #fff; margin: 2% auto; padding: 20px; border-radius: 8px; width: 92%; max-width: 1400px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
-
-@media print {
-  body * { visibility: hidden; }
-  .modal, .modal * { visibility: visible; }
-  .no-print, button { display: none !important; }
-  .modal { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; height: auto !important; background: white !important; padding: 0 !important; margin: 0 !important; }
-  .modal-content { max-height: none !important; height: auto !important; overflow: visible !important; border: none !important; }
-  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  @page { size: auto; margin: 12mm; }
-}
-
-
-
-/* --- RESTRUCTURATION DE L'EN-TÊTE --- */
-
-body {
-  margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
-  background-color: #f8fafc;
-}
-
-/* En-tête global */
-.main-header {
-  width: 100%;
-  background: white;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-/* Titre bleu */
-.app-title {
-  color: #1a365d;
-  font-size: 1.6rem;
-  font-weight: bold;
-  margin: 15px 20px 10px 20px;
-}
-
-/* Ligne rouge sous le titre */
-.header-divider {
-  border: none;
-  height: 3px;
-  background-color: #e53e3e;
-  margin: 0 0 10px 0;
-}
-
-/* Bandeau sombre Réseau (Image 2) */
-.network-bar {
-  background-color: #1a202c;
-  color: white;
-  padding: 10px 20px;
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center;
-  gap: 15px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.btn-reseau {
-  background: #edf2f7;
-  border: 1px solid #cbd5e0;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-weight: 500;
-  cursor: pointer;
-  color: #2d3748;
-}
-
-.btn-reseau:hover {
-  background: #e2e8f0;
-}
-
-.status-reseau {
-  font-size: 0.9rem;
-  color: #e2e8f0;
-  margin-left: 10px;
-}
-
-/* Barre des Onglets (Image 1) */
-.tabs-nav {
-  display: flex !important;
-  flex-direction: row !important;
-  gap: 10px;
-  padding: 15px 20px 0 20px;
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.tab-btn {
-  padding: 10px 18px;
-  border: none;
-  background: #e2e8f0;
-  color: #2d3748;
-  font-weight: bold;
-  border-radius: 6px 6px 0 0;
-  cursor: pointer;
-}
-
-.tab-btn.active {
-  background: #1a365d;
-  color: white;
-}
-
-/* Conteneur principal sous l'en-tête */
-.app-container {
-  width: 100%;
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-
-
-
