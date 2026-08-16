@@ -562,7 +562,7 @@ main > div:nth-last-child(1) {
     justify-content: space-between !important;
     gap: 15px !important;
     width: 100% !important;
-    margin-bottom: 15px !important; /* Décale le bas du tableau/fiche vers le haut */
+    margin-bottom: 5px !important; /* Décale le bas du tableau/fiche vers le haut */
     padding-bottom: 10px !important;
     box-sizing: border-box !important;
 }
@@ -597,6 +597,6 @@ aside {
     background: #ffffff !important;
     border: 1px solid #0056b3 !important;
     border-radius: 6px !important;
-    padding: 15px 15px 15px 15px !important; /* Padding de 30px en bas à l'intérieur du formulaire */
+    padding: 15px 15px 10px 15px !important; /* Padding de 30px en bas à l'intérieur du formulaire */
     box-sizing: border-box !important;
 }
