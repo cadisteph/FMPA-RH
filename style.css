@@ -270,3 +270,106 @@ textarea { height: 48px; }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   @page { size: auto; margin: 12mm; }
 }
+
+
+
+/* --- RESTRUCTURATION DE L'EN-TÊTE --- */
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f8fafc;
+}
+
+/* En-tête global */
+.main-header {
+  width: 100%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Titre bleu */
+.app-title {
+  color: #1a365d;
+  font-size: 1.6rem;
+  font-weight: bold;
+  margin: 15px 20px 10px 20px;
+}
+
+/* Ligne rouge sous le titre */
+.header-divider {
+  border: none;
+  height: 3px;
+  background-color: #e53e3e;
+  margin: 0 0 10px 0;
+}
+
+/* Bandeau sombre Réseau (Image 2) */
+.network-bar {
+  background-color: #1a202c;
+  color: white;
+  padding: 10px 20px;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.btn-reseau {
+  background: #edf2f7;
+  border: 1px solid #cbd5e0;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #2d3748;
+}
+
+.btn-reseau:hover {
+  background: #e2e8f0;
+}
+
+.status-reseau {
+  font-size: 0.9rem;
+  color: #e2e8f0;
+  margin-left: 10px;
+}
+
+/* Barre des Onglets (Image 1) */
+.tabs-nav {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 10px;
+  padding: 15px 20px 0 20px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tab-btn {
+  padding: 10px 18px;
+  border: none;
+  background: #e2e8f0;
+  color: #2d3748;
+  font-weight: bold;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+}
+
+.tab-btn.active {
+  background: #1a365d;
+  color: white;
+}
+
+/* Conteneur principal sous l'en-tête */
+.app-container {
+  width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+
+
+
