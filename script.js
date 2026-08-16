@@ -1052,22 +1052,25 @@ async function connecterFichierReseau() {
             }
         }
 
-      // 1. Injection des données
+        // 1. Injection des données
         listeAgents = agentsReseau;
 
-        // 2. Mettre à jour le tableau
+        // 2. Mettre à jour les tableaux
         actualiserTableauRH();
         if (typeof actualiserTableauSuivi === 'function') actualiserTableauSuivi();
 
-        // 3. Forcer l'affichage de la section RH si elle était masquée
-        const sectionRH = document.getElementById("section-rh") 
-                       || document.getElementById("contenu-rh")
-                       || document.querySelector("main")
-                       || document.querySelector(".tab-content");
-                       
-        if (sectionRH) {
-            sectionRH.style.display = "block";
+        // 3. Mettre à jour le texte de statut dans l'en-tête
+        const statusElem = document.getElementById("statusReseau");
+        if (statusElem) statusElem.innerText = `Connecté à : ${file.name}`;
+
+        alert(`✅ Connecté ! ${listeAgents.length} agent(s) chargé(s) depuis : ${file.name}`);
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            console.error(err);
+            alert("⚠️ Impossible d'accéder au fichier réseau.");
         }
+    }
+}
 
         // 4. Mettre à jour le texte de statut
         const statusElem = document.getElementById("statusReseau");
