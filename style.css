@@ -60,91 +60,57 @@ h1 {
    AGENCEMENT FLEXBOX : TABLEAU RH (GAUCHE) & FICHE AGENT (DROITE)
    ========================================================================== */
 
-/* 1. Blocage strict du défilement de la page globale */
+/* Blocage de la page globale pour éviter le scroll général */
 html, body {
   height: 100vh !important;
-  max-height: 100vh !important;
   margin: 0 !important;
   padding: 0 !important;
-  overflow: hidden !important; /* Pas de scrollbar générale sur la fenêtre */
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-/* 2. Container principal de l'application sous l'en-tête */
-.app-container, .container {
-  flex: 1 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  height: calc(100vh - 80px) !important;
   overflow: hidden !important;
-  padding: 10px 15px !important;
-  box-sizing: border-box !important;
-  max-width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
-/* 3. Section RH : Disposition en 2 colonnes principales */
-#sectionRH, #onglet-rh, .grid-2 {
+/* Zone principale occupant l'espace restant sous les filtres */
+#sectionRH {
   display: flex !important;
   flex-direction: row !important;
   gap: 15px !important;
   flex: 1 !important;
-  height: 100% !important;
-  min-height: 0 !important; /* Indispensable pour activer le scroll interne Flexbox */
+  height: calc(100vh - 220px) !important;
   overflow: hidden !important;
   align-items: stretch !important;
 }
 
-/* --- COLONNE GAUCHE : TABLEAU RH (60% de largeur) --- */
-.table-container, .table-section, .table-scroll-container {
+/* Tableau à gauche (60% de largeur + scroll interne) */
+.table-container {
   flex: 1 1 60% !important;
   min-width: 0 !important;
   height: 100% !important;
-  overflow-y: auto !important; /* Scrollbar verticale réservée au tableau */
-  overflow-x: auto !important; /* Scrollbar horizontale si colonnes larges */
+  overflow-y: auto !important;
+  overflow-x: auto !important;
   background: #ffffff !important;
   border: 1px solid #cbd5e0 !important;
   border-radius: 6px !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
 }
 
-/* En-tête du tableau toujours visible lors du défilement */
-table thead th {
+/* En-tête du tableau collé en haut */
+.table-rh thead th {
   position: sticky !important;
   top: 0 !important;
-  z-index: 10 !important;
+  z-index: 2 !important;
   background-color: #1a365d !important;
   color: white !important;
 }
 
-/* --- COLONNE DROITE : FICHE AGENT (40% de largeur) --- */
-.sidebar-fiche, .panel, .form-card {
+/* Formulaire à droite (38% de largeur + scroll interne) */
+.form-card {
   flex: 0 0 38% !important;
   max-width: 38% !important;
   height: 100% !important;
-  max-height: 100% !important;
-  overflow-y: auto !important; /* Scrollbar verticale réservée au formulaire */
+  overflow-y: auto !important;
   background: #ffffff !important;
   border: 1px solid #0056b3 !important;
   border-radius: 6px !important;
-  padding: 12px 15px !important;
+  padding: 15px !important;
   box-sizing: border-box !important;
-}
-
-/* Personnalisation esthétique de la scrollbar du formulaire */
-.sidebar-fiche::-webkit-scrollbar, 
-.form-card::-webkit-scrollbar,
-.table-container::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.sidebar-fiche::-webkit-scrollbar-thumb, 
-.form-card::-webkit-scrollbar-thumb,
-.table-container::-webkit-scrollbar-thumb {
-  background-color: #cbd5e0;
-  border-radius: 4px;
-}
-.sidebar-fiche::-webkit-scrollbar-thumb:hover, 
-.form-card::-webkit-scrollbar-thumb:hover {
-  background-color: #2b6cb0;
 }
