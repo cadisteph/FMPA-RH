@@ -534,26 +534,27 @@ html, body {
 
 
 /* ==========================================================================
-   PAGE BLOCKED & FIXE : DEFILEMENT UNIQUEMENT DANS TABLEAU ET FORMULAIRE
+   AJUSTEMENT HAUTEUR EXACTE + MARGE DE SÉCURITÉ EN BAS
    ========================================================================== */
 
-/* 1. Bloquer strictement le défilement de la page entière */
+/* 1. Bloquer le défilement global et laisser une marge en bas */
 html, body {
     height: 100vh !important;
     max-height: 100vh !important;
     margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important; /* Empeche TOUT défilement de la page globale */
+    padding: 0 0 20px 0 !important; /* Marge de sécurité de 20px en bas */
+    overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
+    box-sizing: border-box !important;
 }
 
-/* 2. Le conteneur sous les filtres prend tout l'espace restant verticalement */
+/* 2. Le conteneur s'arrête avant le bas de l'écran */
 #sectionRH, 
 .app-container > div:last-child, 
 main > div:nth-last-child(1) {
-    flex: 1 !important; /* Occupe 100% de la hauteur disponible restante */
-    min-height: 0 !important; /* CRUCIAL pour que les enfants respectent le scroll */
+    flex: 1 !important;
+    min-height: 0 !important;
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
@@ -561,25 +562,28 @@ main > div:nth-last-child(1) {
     justify-content: space-between !important;
     gap: 15px !important;
     width: 100% !important;
+    margin-bottom: 15px !important; /* Décale le bas du tableau/fiche vers le haut */
     padding-bottom: 10px !important;
     box-sizing: border-box !important;
 }
 
-/* 3. Colonne GAUCHE : Tableau avec son propre scroll */
+/* 3. Colonne GAUCHE : Tableau */
 .table-container, 
 .table-section {
     flex: 0 0 60% !important;
     width: 60% !important;
     max-width: 60% !important;
-    height: 100% !important; /* Remplit exactement la hauteur du conteneur parent */
-    overflow-x: auto !important; /* Scroll horizontal si besoin */
-    overflow-y: auto !important; /* Scroll vertical pour la liste des agents */
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
     background: #ffffff !important;
     border: 1px solid #cbd5e0 !important;
     border-radius: 6px !important;
+    box-sizing: border-box !important;
 }
 
-/* 4. Colonne DROITE : Formulaire avec son propre scroll */
+/* 4. Colonne DROITE : Formulaire avec espace de défilement au fond */
 .form-card, 
 .sidebar-fiche, 
 aside#panelFiche, 
@@ -587,11 +591,12 @@ aside {
     flex: 0 0 38% !important;
     width: 38% !important;
     max-width: 38% !important;
-    height: 100% !important; /* Remplit exactement la hauteur du conteneur parent */
-    overflow-y: auto !important; /* Scroll vertical pour voir tout le formulaire jusqu'en bas */
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow-y: auto !important;
     background: #ffffff !important;
     border: 1px solid #0056b3 !important;
     border-radius: 6px !important;
-    padding: 15px !important;
+    padding: 15px 15px 30px 15px !important; /* Padding de 30px en bas à l'intérieur du formulaire */
     box-sizing: border-box !important;
 }
