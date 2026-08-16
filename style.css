@@ -280,46 +280,48 @@
   color: #0056b3;
 }
 
-/* 3. Disposition Côte à Côte (Tableau + Formulaire) */
+/* --- REMPLACER LA SECTION 3 PAR CE CODE --- */
+
+/* Conteneur principal (englobe le tableau et la fiche agent) */
 .content-layout {
   display: flex !important;
   flex-direction: row !important;
   gap: 15px;
-  align-items: flex-start;
+  align-items: stretch;
   width: 100%;
+  /* Fixe la hauteur totale sous le menu pour éviter que la page globale ne scrolle */
+  height: calc(100vh - 220px) !important; 
+  overflow: hidden !important;
   box-sizing: border-box;
 }
 
+/* Zone de gauche : Tableau RH avec son propre scroll */
 .table-container {
-  flex: 1 1 58% !important; /* Ajusté à 58% pour laisser respirer la fiche à droite */
-  min-width: 0 !important;   /* CRUCIAL : autorise le tableau à se réduire sans casser le layout */
-  overflow-x: auto;
+  flex: 1 1 58% !important;
+  min-width: 0 !important;
+  height: 100% !important;        /* OBLIGATOIRE : remplit la hauteur du layout */
+  overflow-y: auto !important;    /* Active le scroll vertical uniquement pour la table */
+  overflow-x: auto !important;    /* Active le scroll horizontal si besoin */
   background: #fff;
   border: 1px solid #d0d7de;
   border-radius: 6px;
 }
 
-.table-rh {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85em;
-}
-.table-rh th {
+/* En-têtes fixes pour le tableau lors du défilement */
+.table-rh thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   background-color: #1b263b;
   color: white;
-  padding: 8px;
-  text-align: left;
-  white-space: nowrap;      /* Garde des en-têtes propres */
-}
-.table-rh td {
-  padding: 8px;
-  border-bottom: 1px solid #e9ecef;
 }
 
-/* Formulaire à droite */
+/* Zone de droite : Fiche Agent avec son propre scroll */
 .form-card {
-  flex: 0 0 40% !important; /* Ajusté à 40% pour que les champs et boutons tiennent bien */
+  flex: 0 0 40% !important;
   max-width: 40%;
+  height: 100% !important;        /* OBLIGATOIRE : remplit la hauteur du layout */
+  overflow-y: auto !important;    /* Active le scroll vertical uniquement pour la fiche */
   box-sizing: border-box;
   background: #fff;
   border: 1px solid #0056b3;
