@@ -34,34 +34,28 @@ h1 {
   padding-bottom: 8px;
 }
 
+/* Alignement horizontal de la barre d'onglets */
+.tabs-nav {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  margin: 15px 0;
+  border-bottom: 2px solid #cbd5e0;
+}
+
 .tab-btn {
+  padding: 10px 16px;
+  border: none;
   background: #edf2f7;
-  border: 1px solid #cbd5e0;
-  padding: 8px 16px;
-  font-weight: bold;
   cursor: pointer;
-  border-radius: 4px;
-  color: #4a5568;
-  font-size: 0.9em;
-  transition: background 0.2s;
+  font-weight: bold;
+  border-radius: 6px 6px 0 0;
 }
 
-.tab-btn:hover { background: #cbd5e0; }
 .tab-btn.active {
-  background: #1a365d;
+  background: #1a202c;
   color: white;
-  border-color: #1a365d;
 }
-
-.tab-content { display: none; }
-.tab-content.active { 
-  display: flex; 
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  padding: 0 15px 15px 15px;
-}
-
 /* ==========================================
    3. BARRE DE FILTRES
    ========================================== */
