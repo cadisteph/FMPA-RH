@@ -189,174 +189,216 @@
 
     <!-- Colonne Droite : Formulaire (Fiche Individuelle) -->
     <aside class="form-card">
-      <h3 class="form-title">FICHE INDIVIDUELLE AGENT</h3>
-      <form id="formAgent" onsubmit="event.preventDefault();">
-        
-        <div class="form-row">
-          <div class="form-group col-4">
-            <label>Matricule *</label>
-            <input type="text" id="agentMatricule" required pattern="\d+" title="Chiffres uniquement">
-          </div>
-          <div class="form-group col-4">
-            <label>Sexe</label>
-            <select id="sexe"><option>Homme</option><option>Femme</option></select>
-          </div>
-          <div class="form-group col-4">
-            <label>Nom *</label>
-            <input type="text" id="nom" required style="text-transform: uppercase;">
-          </div>
-        </div>
+  <div class="form-title">FICHE INDIVIDUELLE AGENT</div>
 
-        <div class="form-row">
-          <div class="form-group col-4">
-            <label>Prénom *</label>
-            <input type="text" id="prenom">
-          </div>
-          <div class="form-group col-4">
-            <label>Régime *</label>
-            <select id="regime" onchange="actualiserTableauRH()">
-                <option value="">Tous</option>
-                <option value="G24">G24</option>
-                <option value="Mixte">Mixte</option>
-                <option value="G12">G12</option>
-                <option value="SHR">SHR</option>
-                <option value="SPV">SPV</option>
-            </select>
-          </div>
-          <div class="form-group col-4">
-            <label>Equipe *</label>
-            <select id="equipe" onchange="actualiserTableauRH()">
-                <option value="">Toutes</option>
-                <option value="Equipe A">Equipe A</option>
-                <option value="Equipe B">Equipe B</option>
-                <option value="Equipe C">Equipe C</option>
-                <option value="Equipe G12">Equipe G12</option>
-                <option value="Encadrement">Encadrement</option>
-                <option value="SPV">SPV</option>
-            </select>
-          </div>
-        </div>
+  <form id="formRH" onsubmit="event.preventDefault(); enregistrerAgent();">
+    <input type="hidden" id="agentId">
 
-        <div class="form-row">
-          <div class="form-group col-4">
-            <label>Statut *</label>
-            <select id="statut" onchange="actualiserTableauRH()">
-                <option value="">Tous</option>
-                <option value="SPP">SPP</option>
-                <option value="SPV">SPV</option>
-                <option value="PATS">PATS</option>
-            </select>
-          </div>
-          <div class="form-group col-4">
-            <label>Grade</label>
-            <select id="grade" onchange="actualiserTableauRH()">
-                <option value="">Tous</option>
-                <option value="SAP">SAP</option>
-                <option value="CPL">CPL</option>
-                <option value="CCH">CCH</option>
-                <option value="SGT">SGT</option>
-                <option value="SCH">SCH</option>
-                <option value="ADJ">ADJ</option>
-                <option value="ADC">ADC</option>
-                <option value="LTN">LTN</option>
-                <option value="CNE">CNE</option>
-                <option value="CDT">CDT</option>
-                <option value="PATS">PATS</option>
-            </select>
-          </div>
-          <div class="form-group col-4">
-            <label>Fonction</label>
-            <select id="fonction" onchange="actualiserTableauRH()">
-                <option value="">Toutes</option>
-                <option value="Equ">Equipier</option>
-                <option value="CEqu">Chef d'Equipe</option>
-                <option value="CA1E">Chef d'Agrès Une Equipe</option>
-                <option value="CATE">Chef d'Agrès Tout Engin</option>
-                <option value="ACDG2">2è Adjoint au Chef de Garde</option>
-                <option value="ACDG1">1er Adjoint au Chef de Garde</option>
-                <option value="CDG">Chef de Garde</option>
-                <option value="SOFTECH">S/Off Technique</option>
-                <option value="SOFPAO">S/Off PAO</option>
-                <option value="OFTECH">Officier Technique</option>
-                <option value="OFPAO">Officier PAO</option>
-                <option value="ACDC">Adjoint au chef de centre</option>
-                <option value="CDC">Chef de Centre</option>
-                <option value="Assistante">Assistante</option>
-            </select>
-          </div>
-        </div>
+    <!-- 3 COLONNES : IDENTITÉ BASE -->
+    <div class="form-grid-3">
+      <div class="form-group">
+        <label for="agentMatricule">Matricule *</label>
+        <input type="text" id="agentMatricule" required pattern="\d+" title="Chiffres uniquement">
+      </div>
+      <div class="form-group">
+        <label for="agentSexe">Sexe</label>
+        <select id="agentSexe">
+          <option value="Homme">Homme</option>
+          <option value="Femme">Femme</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="agentNom">Nom *</label>
+        <input type="text" id="agentNom" required style="text-transform: uppercase;">
+      </div>
+    </div>
 
-        <div class="form-group">
-          <label>Temps Partiel (SPP/PATS)</label>
-          <select id="tempsPartiel"onchange="actualiserIndicateurGardes()">
-                <option value="100%">100 % (Plein)</option>
-                <option value="90%">90 %</option>
-                <option value="80%">80 %</option>
-                <option value="70%">70 %</option>
-                <option value="60%">60 %</option>
-                <option value="50%">50 %</option>
+    <!-- 3 COLONNES : PRÉNOM, RÉGIME, ÉQUIPE -->
+    <div class="form-grid-3">
+      <div class="form-group">
+        <label for="agentPrenom">Prénom *</label>
+        <input type="text" id="agentPrenom" required>
+      </div>
+      <div class="form-group">
+        <label for="agentRegime">Régime *</label>
+        <select id="agentRegime" onchange="gererChangementRegime(); actualiserIndicateurGardes();">
+          <option value="G24">G24</option>
+          <option value="Mixte">Mixte</option>
+          <option value="G12">G12</option>
+          <option value="SHR">SHR</option>
+          <option value="SPV">SPV</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="agentEquipe">Equipe *</label>
+        <select id="agentEquipe" onchange="gererChangementEquipe()">
+          <option value="Equipe A">Equipe A</option>
+          <option value="Equipe B">Equipe B</option>
+          <option value="Equipe C">Equipe C</option>
+          <option value="Equipe G12">Equipe G12</option>
+          <option value="Encadrement">Encadrement</option>
+          <option value="SPV">SPV</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 3 COLONNES : STATUT, GRADE, FONCTION -->
+    <div class="form-grid-3">
+      <div class="form-group">
+        <label for="agentStatut">Statut *</label>
+        <select id="agentStatut" onchange="adapterFormulaireSelonStatut()">
+          <option value="SPP">SPP</option>
+          <option value="SPV">SPV</option>
+          <option value="PATS">PATS</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="agentGrade">Grade</label>
+        <select id="agentGrade">
+          <option value="">- Aucun -</option>
+          <option value="SAP">SAP</option>
+          <option value="CPL">CPL</option>
+          <option value="CCH">CCH</option>
+          <option value="SGT">SGT</option>
+          <option value="SCH">SCH</option>
+          <option value="ADJ">ADJ</option>
+          <option value="ADC">ADC</option>
+          <option value="LTN">LTN</option>
+          <option value="CNE">CNE</option>
+          <option value="CDT">CDT</option>
+          <option value="PATS">PATS</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="agentFonction">Fonction</label>
+        <select id="agentFonction" onchange="actualiserIndicateurGardes()">
+          <option value="Equ">Equipier</option>
+          <option value="CEqu">Chef d'Equipe</option>
+          <option value="CA1E">Chef d'Agrès Une Equipe</option>
+          <option value="CATE">Chef d'Agrès Tout Engin</option>
+          <option value="ACDG2">2è Adjoint au Chef de Garde</option>
+          <option value="ACDG1">1er Adjoint au Chef de Garde</option>
+          <option value="CDG">Chef de Garde</option>
+          <option value="SOFTECH">S/Off Technique</option>
+          <option value="SOFPAO">S/Off PAO</option>
+          <option value="OFTECH">Officier Technique</option>
+          <option value="OFPAO">Officier PAO</option>
+          <option value="ACDC">Adjoint au chef de centre</option>
+          <option value="CDC">Chef de Centre</option>
+          <option value="Assistante">Assistante</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- OPTIONS ET CARTE OBJECTIF GARDES -->
+    <div class="form-grid-2">
+      <div>
+        <div class="form-group" id="groupTempsPartiel">
+          <label for="agentTempsPartiel">Temps Partiel (SPP/PATS)</label>
+          <select id="agentTempsPartiel" onchange="actualiserIndicateurGardes()">
+            <option value="100%">100 % (Plein)</option>
+            <option value="90%">90 %</option>
+            <option value="80%">80 %</option>
+            <option value="70%">70 %</option>
+            <option value="60%">60 %</option>
+            <option value="50%">50 %</option>
           </select>
         </div>
 
-
-
-        <div class="form-row">
-  <!-- Engagement Différencié (SPV) -->
-  <div class="form-group col-6" id="groupEngagementDiff" style="display: none;">
-    <label for="agentEngagementDiff">Engagement Différencié (SPV)</label>
-    <select id="agentEngagementDiff">
-      <option value="">Toutes missions</option>
-      <option value="SUAP">SUAP uniquement</option>
-      <option value="SUAP/PPABE">SUAP / PPABE</option>
-    </select>
-  </div>
-  <!-- En Dispo SPV -->
-  <div class="form-group col-6" id="groupDisponibilite" style="display: none; justify-content: flex-end; flex-direction: column;">
-    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 0; font-weight: bold;">
-      <input type="checkbox" id="agentDisponibilite" style="width: auto; margin: 0;">
-      En Dispo SPV
-    </label>
-  </div>
-</div>
-
-
-
-        
-        <!-- Encadré Objectif Gardes -->
-        <div class="gardes-box">
-          <div class="gardes-header">
-            <strong>OBJECTIF GARDES ANNUELLES :</strong>
-            <span class="badge-gardes">-</span>
-          </div>
-          <small>Répartition Semestrielle : -</small>
+        <div class="form-group" id="groupEngagementDiff" style="display:none;">
+          <label for="agentEngagementDiff">Engagement Différencié (SPV)</label>
+          <select id="agentEngagementDiff">
+            <option value="">Toutes missions</option>
+            <option value="SUAP">SUAP uniquement</option>
+            <option value="SUAP/PPABE">SUAP / PPABE</option>
+          </select>
         </div>
 
-        <div class="form-row">
-          <div class="form-group col-6">
-            <label>Date de Naissance</label>
-            <input type="date" id="naissanceDate">
-          </div>
-          <div class="form-group col-6">
-            <label>Lieu de Naissance</label>
-            <input type="text" id="naissanceLieu">
-          </div>
+        <div class="form-group" id="groupDisponibilite" style="display:none;">
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; margin-top:8px; font-size:0.8em;">
+            <input type="checkbox" id="agentDisponibilite" style="width:auto;">
+            En Dispo SPV
+          </label>
         </div>
+      </div>
 
-        <div class="form-row">
-          <div class="form-group col-6">
-            <label>Date Entrée SDIS</label>
-            <input type="date" id="entreeSdis">
-          </div>
-          <div class="form-group col-6">
-            <label>Téléphone</label>
-            <input type="text" id="telephone">
-          </div>
+      <div class="gardes-box">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <strong>OBJECTIF GARDES :</strong>
+          <span id="valeurGardesDefault" style="font-weight:bold;">-</span>
         </div>
+        <div style="font-size:0.85em; margin-top:4px;">
+          Répartition Semestrielle : <span id="ratioSemestriel" style="font-weight:bold;">-</span>
+        </div>
+      </div>
+    </div>
 
-      </form>
-    </aside>
+    <!-- 2 COLONNES : NAISSANCE -->
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label for="agentNaissanceDate">Date de Naissance <span id="labelAge" style="color:#2b6cb0;"></span></label>
+        <input type="date" id="agentNaissanceDate" onchange="mettreAJourAffichageAge(); actualiserIndicateurGardes();">
+      </div>
+      <div class="form-group">
+        <label for="agentNaissanceLieu">Lieu de Naissance</label>
+        <input type="text" id="agentNaissanceLieu">
+      </div>
+    </div>
 
-  </div>
+    <!-- 2 COLONNES : ENTRÉE SDIS & TÉLÉPHONE -->
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label for="agentEntreeSdis">Date Entrée SDIS</label>
+        <input type="date" id="agentEntreeSdis" onchange="actualiserIndicateurGardes()">
+      </div>
+      <div class="form-group">
+        <label for="agentTelephone">Téléphone</label>
+        <input type="text" id="agentTelephone" placeholder="06-XX-XX-XX-XX">
+      </div>
+    </div>
+
+    <!-- 2 COLONNES : EMAIL & ADRESSE -->
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label for="agentEmail">Email</label>
+        <input type="email" id="agentEmail">
+      </div>
+      <div class="form-group">
+        <label for="agentAdresse">Adresse</label>
+        <input type="text" id="agentAdresse" style="text-transform: uppercase;">
+      </div>
+    </div>
+
+    <!-- 2 COLONNES : DATES PL & VMA -->
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label for="agentDatePL">Date PL</label>
+        <input type="date" id="agentDatePL">
+      </div>
+      <div class="form-group">
+        <label for="agentDateVMA">Date VMA</label>
+        <input type="date" id="agentDateVMA">
+      </div>
+    </div>
+
+    <!-- CONTENEUR DES COMPÉTENCES ET SPÉCIALITÉS DYNAMIQUES -->
+    <div id="containerCompetencesForm" style="margin-top:8px; background:#f8f9fa; padding:8px; border:1px solid #cbd5e0; border-radius:4px;"></div>
+
+    <!-- COMMENTAIRES -->
+    <div class="form-group" style="margin-top:6px;">
+      <label for="agentCommentaire">Commentaires / Remarques</label>
+      <textarea id="agentCommentaire" rows="2" style="width:100%; box-sizing:border-box; border:1px solid #ced4da; border-radius:4px; padding:5px;"></textarea>
+    </div>
+
+    <!-- BOUTONS D'ACTION -->
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Enregistrer Agent</button>
+      <button type="button" class="btn btn-secondary" onclick="viderFormulaireRH()">Nouveau</button>
+      <button type="button" id="btnSupprimerAgent" class="btn btn-danger" onclick="supprimerAgent()" style="display:none;">Supprimer</button>
+      <button type="button" id="btnRazFmaAgent" class="btn btn-warning" onclick="reinitialiserFmaAgent()" style="display:none;" title="Remettre les heures de formation à zéro">RAZ FMA</button>
+    </div>
+  </form>
+</aside>
 </main>
 
   
