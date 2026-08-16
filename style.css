@@ -425,3 +425,65 @@
 .btn-warning { background-color: #ffc107; color: #212529; }
 
 .btn:hover { opacity: 0.9; }
+
+
+/* 1. Blocage du défilement général de la page */
+html, body {
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Empêche la barre de défilement globale */
+  display: flex;
+  flex-direction: column;
+}
+
+/* 2. Container principal sous le menu/header */
+.app-container {
+  display: flex;
+  flex: 1; /* Occupe tout l'espace sous les menus */
+  height: calc(100vh - 60px); /* Ajustez 60px selon la hauteur réelle de votre menu/header */
+  overflow: hidden;
+  padding: 10px;
+  gap: 15px;
+  box-sizing: border-box;
+}
+
+/* 3. Section GAUCHE : Zone Tableau RH */
+.table-section {
+  flex: 2; /* Prend 2/3 de la largeur (ajustable) */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+}
+
+/* Conteneur défilant pour le tableau */
+.table-scroll-container {
+  flex: 1;
+  overflow-y: auto; /* Active la scrollbar verticale pour le tableau */
+  overflow-x: auto; /* Scrollbar horizontale si le tableau est très large */
+}
+
+/* Fixation des en-têtes du tableau lors du scroll */
+.table-scroll-container table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: #2b6cb0; /* Couleur de fond obligatoire pour ne pas voir le texte défiler derrière */
+  color: white;
+}
+
+/* 4. Section DROITE : Zone Fiche Agent */
+.form-card {
+  flex: 1; /* Prend 1/3 de la largeur */
+  height: 100%;
+  overflow-y: auto; /* Active la scrollbar verticale pour le formulaire */
+  background: #ffffff;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  padding: 12px;
+  box-sizing: border-box;
+}
