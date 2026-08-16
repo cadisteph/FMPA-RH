@@ -262,12 +262,12 @@
   padding: 4px 6px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  font-size: 0.85em;
+  font-size: 0.8em;
 }
 .action-buttons {
   display: flex;
   gap: 6px;
-  margin-left: auto;
+  margin-right: auto;
 }
 .btn-dark { background: #4a5568; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
 .btn-success { background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
