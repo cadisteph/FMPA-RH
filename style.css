@@ -532,53 +532,66 @@ html, body {
 }
 
 
+
 /* ==========================================================================
-   FORCE L'AFFICHAGE CÔTE À CÔTE (TABLEAU À GAUCHE / FICHE À DROITE)
+   PAGE BLOCKED & FIXE : DEFILEMENT UNIQUEMENT DANS TABLEAU ET FORMULAIRE
    ========================================================================== */
 
-/* 1. Aligner le conteneur principal sous les filtres en mode HORIZONTAL */
+/* 1. Bloquer strictement le défilement de la page entière */
+html, body {
+    height: 100vh !important;
+    max-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important; /* Empeche TOUT défilement de la page globale */
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* 2. Le conteneur sous les filtres prend tout l'espace restant verticalement */
 #sectionRH, 
 .app-container > div:last-child, 
 main > div:nth-last-child(1) {
+    flex: 1 !important; /* Occupe 100% de la hauteur disponible restante */
+    min-height: 0 !important; /* CRUCIAL pour que les enfants respectent le scroll */
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
-    align-items: flex-start !important;
+    align-items: stretch !important;
     justify-content: space-between !important;
     gap: 15px !important;
     width: 100% !important;
+    padding-bottom: 10px !important;
     box-sizing: border-box !important;
 }
 
-/* 2. Colonne GAUCHE : Tableau (prend ~62% de la largeur) */
+/* 3. Colonne GAUCHE : Tableau avec son propre scroll */
 .table-container, 
 .table-section {
-    flex: 0 0 62% !important;
-    width: 62% !important;
-    max-width: 62% !important;
-    min-width: 0 !important; /* Empêche le tableau de pousser le formulaire vers le bas */
-    overflow-x: auto !important;
-    overflow-y: auto !important;
-    max-height: calc(100vh - 230px) !important;
+    flex: 0 0 60% !important;
+    width: 60% !important;
+    max-width: 60% !important;
+    height: 100% !important; /* Remplit exactement la hauteur du conteneur parent */
+    overflow-x: auto !important; /* Scroll horizontal si besoin */
+    overflow-y: auto !important; /* Scroll vertical pour la liste des agents */
     background: #ffffff !important;
     border: 1px solid #cbd5e0 !important;
     border-radius: 6px !important;
 }
 
-/* 3. Colonne DROITE : Formulaire Fiche Individuelle (prend ~36% de la largeur) */
+/* 4. Colonne DROITE : Formulaire avec son propre scroll */
 .form-card, 
 .sidebar-fiche, 
 aside#panelFiche, 
 aside {
-    flex: 0 0 36% !important;
-    width: 36% !important;
-    max-width: 36% !important;
-    max-height: calc(100vh - 230px) !important;
-    overflow-y: auto !important;
+    flex: 0 0 38% !important;
+    width: 38% !important;
+    max-width: 38% !important;
+    height: 100% !important; /* Remplit exactement la hauteur du conteneur parent */
+    overflow-y: auto !important; /* Scroll vertical pour voir tout le formulaire jusqu'en bas */
     background: #ffffff !important;
     border: 1px solid #0056b3 !important;
     border-radius: 6px !important;
-    padding: 12px !important;
+    padding: 15px !important;
     box-sizing: border-box !important;
-    margin-top: 0 !important; /* Empêche tout décalage vers le bas */
 }
