@@ -574,7 +574,7 @@ main > div:nth-last-child(1) {
     width: 60% !important;
     max-width: 60% !important;
     height: 100% !important;
-    max-height: 75% !important;
+    max-height: 100% !important;
     overflow-x: auto !important;
     overflow-y: auto !important;
     background: #ffffff !important;
@@ -591,8 +591,8 @@ aside {
     flex: 0 0 38% !important;
     width: 38% !important;
     max-width: 38% !important;
-    height: 100% !important;
-    max-height: 75% !important;
+    height: 90% !important;
+    max-height: 100% !important;
     overflow-y: auto !important;
     background: #ffffff !important;
     border: 1px solid #0056b3 !important;
