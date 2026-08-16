@@ -530,3 +530,55 @@ html, body {
   padding: 15px !important;
   box-sizing: border-box !important;
 }
+
+
+/* ==========================================================================
+   FORCE L'AFFICHAGE CÔTE À CÔTE (TABLEAU À GAUCHE / FICHE À DROITE)
+   ========================================================================== */
+
+/* 1. Aligner le conteneur principal sous les filtres en mode HORIZONTAL */
+#sectionRH, 
+.app-container > div:last-child, 
+main > div:nth-last-child(1) {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 15px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* 2. Colonne GAUCHE : Tableau (prend ~62% de la largeur) */
+.table-container, 
+.table-section {
+    flex: 0 0 62% !important;
+    width: 62% !important;
+    max-width: 62% !important;
+    min-width: 0 !important; /* Empêche le tableau de pousser le formulaire vers le bas */
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    max-height: calc(100vh - 230px) !important;
+    background: #ffffff !important;
+    border: 1px solid #cbd5e0 !important;
+    border-radius: 6px !important;
+}
+
+/* 3. Colonne DROITE : Formulaire Fiche Individuelle (prend ~36% de la largeur) */
+.form-card, 
+.sidebar-fiche, 
+aside#panelFiche, 
+aside {
+    flex: 0 0 36% !important;
+    width: 36% !important;
+    max-width: 36% !important;
+    max-height: calc(100vh - 230px) !important;
+    overflow-y: auto !important;
+    background: #ffffff !important;
+    border: 1px solid #0056b3 !important;
+    border-radius: 6px !important;
+    padding: 12px !important;
+    box-sizing: border-box !important;
+    margin-top: 0 !important; /* Empêche tout décalage vers le bas */
+}
