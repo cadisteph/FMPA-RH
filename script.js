@@ -957,12 +957,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// Variable globale
-let fileHandleReseau = null;
+
 
 // 1. Fonction appelée par le bouton "Connecter le fichier réseau"
-// A placer TOUT EN HAUT du fichier script.js s'il n'y est pas :
-// let fileHandleReseau = null;
 
 async function connecterFichierReseau() {
     try {
