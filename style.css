@@ -571,10 +571,10 @@ main > div:nth-last-child(1) {
 .table-container, 
 .table-section {
     flex: 0 0 78% !important;
-    width: 60% !important;
-    max-width: 60% !important;
+    width: 78% !important;
+    max-width: 78% !important;
     height: 100% !important;
-    max-height: 75% !important;
+    max-height: 85% !important;
     overflow-x: auto !important;
     overflow-y: auto !important;
     background: #ffffff !important;
@@ -589,10 +589,10 @@ main > div:nth-last-child(1) {
 aside#panelFiche, 
 aside {
     flex: 0 0 20% !important;
-    width: 38% !important;
-    max-width: 38% !important;
+    width: 20% !important;
+    max-width: 20% !important;
     height: 100% !important;
-    max-height: 75% !important;
+    max-height: 85% !important;
     overflow-y: auto !important;
     background: #ffffff !important;
     border: 1px solid #0056b3 !important;
