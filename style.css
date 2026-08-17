@@ -570,7 +570,7 @@ main > div:nth-last-child(1) {
 /* 3. Colonne GAUCHE : Tableau */
 .table-container, 
 .table-section {
-    flex: 0 0 60% !important;
+    flex: 0 0 78% !important;
     width: 60% !important;
     max-width: 60% !important;
     height: 100% !important;
@@ -588,7 +588,7 @@ main > div:nth-last-child(1) {
 .sidebar-fiche, 
 aside#panelFiche, 
 aside {
-    flex: 0 0 38% !important;
+    flex: 0 0 20% !important;
     width: 38% !important;
     max-width: 38% !important;
     height: 100% !important;
