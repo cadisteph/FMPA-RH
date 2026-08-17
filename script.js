@@ -176,32 +176,6 @@ function mettreAJourAffichageAge() {
     if (dateInput && label) label.innerText = calculerAge(dateInput.value);
 }
 
-
-// 1. Récupération des valeurs du formulaire
-    const dateNaissanceStr = document.getElementById("agentNaissanceDate").value;
-    const dateEntreeStr = document.getElementById("agentEntreeSdis").value;
-
-    // 2. Calcul des gardes (CODE B)
-const bases = calculerBasesGardes(agent.naissanceDate, agent.entreeSdis, agent.regime, agent.fonction);    if (regime === "G24") {
-        
-    let total = Math.ceil(bases.g24 * ratioPartiel);
-        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
-        valeurGardesSpan.innerText = total.toString();
-        ratioSemestreSpan.innerHTML = `S1: ${gS1} (${gS1*17}h) | S2: ${gS2} (${gS2*17}h) <span class="total-annuel-highlight">[${total*17}h]</span>`;
-    } else if (regime === "Mixte") {
-        let g24_total = Math.ceil(bases.g24 * ratioPartiel), g12_total = Math.ceil(bases.g12 * ratioPartiel);
-        let g24_S1 = Math.floor(g24_total / 2), g24_S2 = g24_total - g24_S1;
-        let g12_S1 = Math.floor(g12_total / 2), g12_S2 = g12_total - g12_S1;
-        let hS1 = (g24_S1 * 17) + (g12_S1 * 12), hS2 = (g24_S2 * 17) + (g12_S2 * 12);
-        valeurGardesSpan.innerText = `${g24_total}/${g12_total}`;
-        ratioSemestreSpan.innerHTML = `S1: ${g24_S1}/${g12_S1} (${hS1}h) | S2: ${g24_S2}/${g12_S2} (${hS2}h) <span class="total-annuel-highlight">[${hS1+hS2}h]</span>`;
-    } else if (regime === "G12") {
-        let total = Math.ceil(bases.g12 * ratioPartiel);
-        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
-        valeurGardesSpan.innerText = total.toString();
-        ratioSemestreSpan.innerHTML = `S1: ${gS1} (${gS1*12}h) | S2: ${gS2} (${gS2*12}h) <span class="total-annuel-highlight">[${total*12}h]</span>`;
-    }
-
 function adapterFormulaireSelonStatut() {
     const statutEl = document.getElementById("agentStatut");
     if (!statutEl) return;
@@ -226,7 +200,6 @@ function adapterFormulaireSelonStatut() {
 }
 
 function gererChangementRegime() {
-    
     const regime = document.getElementById("agentRegime") ? document.getElementById("agentRegime").value : "";
     const selectEquipe = document.getElementById("agentEquipe");
     const selectStatut = document.getElementById("agentStatut");
@@ -942,10 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (btnReseau) {
         btnReseau.addEventListener('click', () => {
-            // Placez le code de votre fonction ici, ou appelez-la :
             console.log("Tentative de connexion au réseau...");
-            
-            // Si votre fonction existe déjà plus bas/haut dans le script :
             if (typeof connecterFichierReseau === 'function') {
                 connecterFichierReseau();
             } else {
@@ -955,11 +925,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-
-
-
 // 1. Fonction appelée par le bouton "Connecter le fichier réseau"
-
 async function connecterFichierReseau() {
     try {
         [window.fileHandleReseau] = await window.showOpenFilePicker({
@@ -984,7 +950,6 @@ async function connecterFichierReseau() {
             const ligne = lignes[i].trim();
             if (!ligne) continue;
             
-            // Détection automatique du séparateur (; ou ,)
             let cols = [];
             if (typeof parseCSVLine === "function") {
                 cols = parseCSVLine(ligne);
@@ -1025,16 +990,12 @@ async function connecterFichierReseau() {
             }
         }
 
-        // Mise à jour sur toutes les variables globales possibles
         if (typeof listeAgents !== "undefined") listeAgents = agentsReseau;
         if (typeof agents !== "undefined") agents = agentsReseau;
         if (typeof globalAgents !== "undefined") globalAgents = agentsReseau;
         
-        // Rafraîchissement de l'affichage
-        if (typeof afficherAgents === "function") afficherAgents();
-        if (typeof actualiserTableau === "function") actualiserTableau();
-        if (typeof rendreTableau === "function") rendreTableau();
-        if (typeof filtrerAgents === "function") filtrerAgents();
+        if (typeof actualiserTableauRH === "function") actualiserTableauRH();
+        if (typeof actualiserTableauSuivi === "function") actualiserTableauSuivi();
 
         alert(`Données du fichier réseau chargées avec succès ! (${agentsReseau.length} agents trouvés)`);
 
@@ -1048,14 +1009,12 @@ async function connecterFichierReseau() {
 
 // 2. Fonction appelée par le bouton "Enregistrer les modifications"
 async function enregistrerFichierReseau() {
-    // 1. Vérification avec la variable globale window
     if (!window.fileHandleReseau) {
         alert("⚠️ Aucun fichier réseau n'est connecté. Cliquez d'abord sur 'Connecter le fichier réseau'.");
         return;
     }
 
     try {
-        // 2. Demande des droits d'écriture
         const options = { mode: 'readwrite' };
         if ((await window.fileHandleReseau.queryPermission(options)) !== 'granted') {
             if ((await window.fileHandleReseau.requestPermission(options)) !== 'granted') {
@@ -1064,7 +1023,6 @@ async function enregistrerFichierReseau() {
             }
         }
 
-        // 3. Récupération de la liste des agents active
         const sourceAgents = (typeof listeAgents !== "undefined") ? listeAgents : ((typeof agents !== "undefined") ? agents : []);
 
         if (sourceAgents.length === 0) {
@@ -1073,17 +1031,15 @@ async function enregistrerFichierReseau() {
             }
         }
 
-        // 4. Génération du contenu CSV avec séparateur point-virgule et BOM UTF-8 (\uFEFF)
         let csvContent = "\uFEFFMatricule;Sexe;Nom;Prenom;Equipe;Statut;Grade;Fonction;Regime;TempsPartiel_Diff;DateNaissance;LieuNaissance;DateEntreeSDIS;DatePL;DateVMA;Telephone;Email;Adresse;DispoSPV;Specialites;Commentaire\n";
         
         sourceAgents.forEach(a => {
             const specs = Array.isArray(a.specialites) ? a.specialites.join(",") : (a.specialites || '');
-            const comm = (a.commentaire || '').replace(/"/g, '""'); // Échappement des guillemets
+            const comm = (a.commentaire || '').replace(/"/g, '""');
             
             csvContent += `"${a.matricule || ''}";"${a.sexe || 'Homme'}";"${a.nom || ''}";"${a.prenom || ''}";"${a.equipe || ''}";"${a.statut || ''}";"${a.grade || ''}";"${a.fonction || ''}";"${a.regime || ''}";"${a.tempsPartiel || a.engagementDiff || ''}";"${a.naissanceDate || ''}";"${a.naissanceLieu || ''}";"${a.entreeSdis || ''}";"${a.datePL || ''}";"${a.dateVMA || ''}";"${a.telephone || ''}";"${a.email || ''}";"${a.adresse || ''}";"${a.disponibilite ? 'Oui' : 'Non'}";"${specs}";"${comm}"\n`;
         });
 
-        // 5. Écriture directe dans le fichier réseau connecté
         const writable = await window.fileHandleReseau.createWritable();
         await writable.write(csvContent);
         await writable.close();
@@ -1095,7 +1051,6 @@ async function enregistrerFichierReseau() {
         alert("❌ Erreur lors de la sauvegarde : " + err.message);
     }
 }
-
 
 // ==========================================
 // CALCUL ET AFFICHAGE DES GARDES
@@ -1165,58 +1120,15 @@ function obtenirDetailsGardes(agent) {
         let g24_S1 = Math.floor(g24_total / 2), g24_S2 = g24_total - g24_S1;
         let g12_S1 = Math.floor(g12_total / 2), g12_S2 = g12_total - g12_S1;
         let hS1 = (g24_S1 * 17) + (g12_S1 * 12), hS2 = (g24_S2 * 17) + (g12_S2 * 12);
-        return { total: `${g24_total}/${g12_total}`, repartition: `S1: ${g24_S1}/${g12_S1} (${hS1}h) | S2: ${g24_S2}/${g12_S2} (${hS2}h) <span class="total-annuel-highlight">[${hS1+hS2}h]</span>` };
+        return { 
+            total: `${g24_total}/${g12_total}`, 
+            repartition: `S1: ${g24_S1}/${g12_S1} (${hS1}h) | S2: ${g24_S2}/${g12_S2} (${hS2}h) <span class="total-annuel-highlight">[${hS1+hS2}h]</span>` 
+        };
     } else if (agent.regime === "G12") {
         let total = Math.ceil(bases.g12 * ratioPartiel);
         let gS1 = Math.floor(total / 2), gS2 = total - gS1;
         return { total: total.toString(), repartition: `S1: ${gS1} (${gS1*12}h) | S2: ${gS2} (${gS2*12}h) <span class="total-annuel-highlight">[${total*12}h]</span>` };
     }
+
     return { total: "-", repartition: "-" };
-}
-
-function actualiserIndicateurGardes() {
-    const elRegime = document.getElementById("agentRegime");
-    const elStatut = document.getElementById("agentStatut");
-    const elTempsPartiel = document.getElementById("agentTempsPartiel");
-    const elNaissance = document.getElementById("agentNaissanceDate");
-    const elEntree = document.getElementById("agentEntreeSdis");
-    const elFonction = document.getElementById("agentFonction");
-
-    const valeurGardesSpan = document.getElementById("valeurGardesDefault");
-    const ratioSemestreSpan = document.getElementById("ratioSemestriel");
-
-    if (!elRegime || !valeurGardesSpan || !ratioSemestreSpan) return;
-
-    const regime = elRegime.value;
-    const statut = elStatut ? elStatut.value : "";
-    const ratioPartiel = elTempsPartiel ? (parseFloat(elTempsPartiel.value) / 100) : 1;
-    const dateNaissanceStr = elNaissance ? elNaissance.value : "";
-    const dateEntreeStr = elEntree ? elEntree.value : "";
-    const fonction = elFonction ? elFonction.value : "";
-
-    if (regime === "SHR" || regime === "SPV" || statut === "PATS") {
-        valeurGardesSpan.innerText = "-";
-        ratioSemestreSpan.innerText = (regime === "SHR" || statut === "PATS") ? "Non applicable" : "Non applicable (SPV)";
-        return;
-    }
-
-    const bases = calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction);
-    if (regime === "G24") {
-        let total = Math.ceil(bases.g24 * ratioPartiel);
-        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
-        valeurGardesSpan.innerText = total.toString();
-        ratioSemestreSpan.innerHTML = `S1: ${gS1} (${gS1*17}h) | S2: ${gS2} (${gS2*17}h) <span class="total-annuel-highlight">[${total*17}h]</span>`;
-    } else if (regime === "Mixte") {
-        let g24_total = Math.ceil(bases.g24 * ratioPartiel), g12_total = Math.ceil(bases.g12 * ratioPartiel);
-        let g24_S1 = Math.floor(g24_total / 2), g24_S2 = g24_total - g24_S1;
-        let g12_S1 = Math.floor(g12_total / 2), g12_S2 = g12_total - g12_S1;
-        let hS1 = (g24_S1 * 17) + (g12_S1 * 12), hS2 = (g24_S2 * 17) + (g12_S2 * 12);
-        valeurGardesSpan.innerText = `${g24_total}/${g12_total}`;
-        ratioSemestreSpan.innerHTML = `S1: ${g24_S1}/${g12_S1} (${hS1}h) | S2: ${g24_S2}/${g12_S2} (${hS2}h) <span class="total-annuel-highlight">[${hS1+hS2}h]</span>`;
-    } else if (regime === "G12") {
-        let total = Math.ceil(bases.g12 * ratioPartiel);
-        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
-        valeurGardesSpan.innerText = total.toString();
-        ratioSemestreSpan.innerHTML = `S1: ${gS1} (${gS1*12}h) | S2: ${gS2} (${gS2*12}h) <span class="total-annuel-highlight">[${total*12}h]</span>`;
-    }
 }
