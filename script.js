@@ -964,7 +964,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function connecterFichierReseau() {
     try {
         // 1. Sélection du fichier (Accepte CSV, TXT et XLSX)
-        [fileHandleReseau] = await window.showOpenFilePicker({
+        [window.fileHandleReseau] = await window.showOpenFilePicker({
     types: [{
         description: 'Fichier Réseau CSV / Excel',
         accept: { 
@@ -976,7 +976,7 @@ async function connecterFichierReseau() {
     multiple: false
 });
 
-        const file = await fileHandleReseau.getFile();
+        const file = await window.fileHandleReseau.getFile();
         const contenuTexte = await file.text();
 
         const lignes = contenuTexte.split(/\r?\n/);
@@ -1043,15 +1043,15 @@ async function connecterFichierReseau() {
 
 // 2. Fonction appelée par le bouton "Enregistrer les modifications"
 async function enregistrerFichierReseau() {
-    if (!fileHandleReseau) {
+    if (!window.fileHandleReseau) {
         alert("⚠️ Aucun fichier réseau n'est connecté. Cliquez d'abord sur 'Connecter le fichier réseau'.");
         return;
     }
 
     try {
         const options = { mode: 'readwrite' };
-        if ((await fileHandleReseau.queryPermission(options)) !== 'granted') {
-            if ((await fileHandleReseau.requestPermission(options)) !== 'granted') {
+        if ((await window.fileHandleReseau.queryPermission(options)) !== 'granted') {
+            if ((await window.fileHandleReseau.requestPermission(options)) !== 'granted') {
                 alert("❌ Permission refusée pour modifier le fichier.");
                 return;
             }
@@ -1063,7 +1063,7 @@ async function enregistrerFichierReseau() {
             csvContent += `"${a.matricule || ''}";"${a.sexe || 'Homme'}";"${a.nom || ''}";"${a.prenom || ''}";"${a.equipe || ''}";"${a.statut || ''}";"${a.grade || ''}";"${a.fonction || ''}";"${a.regime || ''}";"${a.tempsPartiel || a.engagementDiff || ''}";"${a.naissanceDate || ''}";"${a.naissanceLieu || ''}";"${a.entreeSdis || ''}";"${a.datePL || ''}";"${a.dateVMA || ''}";"${a.telephone || ''}";"${a.email || ''}";"${a.adresse || ''}";"${a.disponibilite ? 'Oui' : 'Non'}";"${specs}";"${(a.commentaire || '').replace(/"/g, '""')}"\n`;
         });
 
-        const writable = await fileHandleReseau.createWritable();
+        const writable = await window.fileHandleReseau.createWritable();
         await writable.write(csvContent);
         await writable.close();
 
