@@ -174,129 +174,6 @@ function mettreAJourAffichageAge() {
     if (dateInput && label) label.innerText = calculerAge(dateInput.value);
 }
 
-// ==========================================
-// CALCUL ET AFFICHAGE DES GARDES
-// ==========================================
-
-function calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction) {
-    let baseG24 = 0, baseG12 = 0;
-    if (!dateNaissanceStr || !dateEntreeStr) {
-        if (regime === "G24") baseG24 = (fonction === "CDG") ? 74 : 92;
-        else if (regime === "Mixte") { baseG24 = (fonction === "CDG") ? 67 : 83; baseG12 = (fonction === "CDG") ? 10 : 14; }
-        else if (regime === "G12") baseG12 = 133;
-        return { g24: baseG24, g12: baseG12 };
-    }
-
-    const dateEntree = new Date(dateEntreeStr);
-    const dateNaissance = new Date(dateNaissanceStr);
-    const estListe2 = (dateEntree < new Date("2013-10-01") && dateNaissance <= new Date("1976-12-31"));
-    const age = 2026 - dateNaissance.getFullYear();
-
-    if (regime === "G12") {
-        if (age < 45) baseG12 = 133;
-        else if (age <= 49) baseG12 = 132;
-        else if (age <= 54) baseG12 = 131;
-        else if (age <= 59) baseG12 = 130;
-        else baseG12 = 129;
-    } else if (regime === "G24") {
-        if (fonction === "CDG") {
-            if (estListe2) {
-                if (age < 45) baseG24 = 74; else if (age <= 49) baseG24 = 71; else if (age <= 54) baseG24 = 70; else if (age <= 59) baseG24 = 69; else baseG24 = 68;
-            } else {
-                if (age < 45) baseG24 = 74; else if (age <= 49) baseG24 = 73; else if (age <= 54) baseG24 = 71; else if (age <= 59) baseG24 = 70; else baseG24 = 69;
-            }
-        } else {
-            if (age < 45) baseG24 = 92; else if (age <= 49) baseG24 = 91; else if (age <= 54) baseG24 = 89; else if (age <= 59) baseG24 = 88; else baseG24 = 87;
-        }
-    } else if (regime === "Mixte") {
-        if (fonction === "CDG") {
-            if (estListe2) {
-                if (age < 47) { baseG24 = 67; baseG12 = 10; } else if (age === 47) { baseG24 = 67; baseG12 = 9; } else if (age === 48) { baseG24 = 67; baseG12 = 8; } else if (age === 49) { baseG24 = 67; baseG12 = 7; } else if (age <= 54) { baseG24 = 66; baseG12 = 7; } else if (age <= 59) { baseG24 = 65; baseG12 = 7; } else { baseG24 = 64; baseG12 = 7; }
-            } else {
-                if (age < 45) { baseG24 = 67; baseG12 = 10; } else if (age <= 49) { baseG24 = 67; baseG12 = 9; } else if (age <= 54) { baseG24 = 66; baseG12 = 9; } else if (age <= 59) { baseG24 = 65; baseG12 = 9; } else { baseG24 = 64; baseG12 = 9; }
-            }
-        } else {
-            if (estListe2) {
-                if (age < 47) { baseG24 = 83; baseG12 = 14; } else if (age === 47) { baseG24 = 83; baseG12 = 13; } else if (age === 48) { baseG24 = 83; baseG12 = 12; } else if (age === 49) { baseG24 = 83; baseG12 = 11; } else if (age <= 54) { baseG24 = 82; baseG12 = 11; } else if (age <= 59) { baseG24 = 81; baseG12 = 11; } else { baseG24 = 80; baseG12 = 11; }
-            } else {
-                if (age < 45) { baseG24 = 83; baseG12 = 14; } else if (age <= 49) { baseG24 = 83; baseG12 = 13; } else if (age <= 54) { baseG24 = 82; baseG12 = 13; } else if (age <= 59) { baseG24 = 81; baseG12 = 13; } else { baseG24 = 80; baseG12 = 13; }
-            }
-        }
-    }
-    return { g24: baseG24, g12: baseG12 };
-}
-
-function obtenirDetailsGardes(agent) {
-    if (!agent || agent.regime === "SHR" || agent.regime === "SPV" || agent.statut === "SPV" || agent.statut === "PATS") {
-        return { total: "-", repartition: "-" };
-    }
-    const bases = calculerBasesGardes(agent.naissanceDate, agent.entreeSdis, agent.regime, agent.fonction);
-    const ratioPartiel = parseFloat(agent.tempsPartiel || "100%") / 100;
-
-    if (agent.regime === "G24") {
-        let total = Math.ceil(bases.g24 * ratioPartiel);
-        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
-        return { total: total.toString(), repartition: `S1: ${gS1} (${gS1*17}h) | S2: ${gS2} (${gS2*17}h) <span class="total-annuel-highlight">[${total*17}h]</span>` };
-    } else if (agent.regime === "Mixte") {
-        let g24_total = Math.ceil(bases.g24 * ratioPartiel), g12_total = Math.ceil(bases.g12 * ratioPartiel);
-        let g24_S1 = Math.floor(g24_total / 2), g24_S2 = g24_total - g24_S1;
-        let g12_S1 = Math.floor(g12_total / 2), g12_S2 = g12_total - g12_S1;
-        let hS1 = (g24_S1 * 17) + (g12_S1 * 12), hS2 = (g24_S2 * 17) + (g12_S2 * 12);
-        return { total: `${g24_total}/${g12_total}`, repartition: `S1: ${g24_S1}/${g12_S1} (${hS1}h) | S2: ${g24_S2}/${g12_S2} (${hS2}h) <span class="total-annuel-highlight">[${hS1+hS2}h]</span>` };
-    } else if (agent.regime === "G12") {
-        let total = Math.ceil(bases.g12 * ratioPartiel);
-        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
-        return { total: total.toString(), repartition: `S1: ${gS1} (${gS1*12}h) | S2: ${gS2} (${gS2*12}h) <span class="total-annuel-highlight">[${total*12}h]</span>` };
-    }
-    return { total: "-", repartition: "-" };
-}
-
-function actualiserIndicateurGardes() {
-    const elRegime = document.getElementById("agentRegime");
-    const elStatut = document.getElementById("agentStatut");
-    const elTempsPartiel = document.getElementById("agentTempsPartiel");
-    const elNaissance = document.getElementById("agentNaissanceDate");
-    const elEntree = document.getElementById("agentEntreeSdis");
-    const elFonction = document.getElementById("agentFonction");
-
-    const valeurGardesSpan = document.getElementById("valeurGardesDefault");
-    const ratioSemestreSpan = document.getElementById("ratioSemestriel");
-
-    if (!elRegime || !valeurGardesSpan || !ratioSemestreSpan) return;
-
-    const regime = elRegime.value;
-    const statut = elStatut ? elStatut.value : "";
-    const ratioPartiel = elTempsPartiel ? (parseFloat(elTempsPartiel.value) / 100) : 1;
-    const dateNaissanceStr = elNaissance ? elNaissance.value : "";
-    const dateEntreeStr = elEntree ? elEntree.value : "";
-    const fonction = elFonction ? elFonction.value : "";
-
-    if (regime === "SHR" || regime === "SPV" || statut === "PATS") {
-        valeurGardesSpan.innerText = "-";
-        ratioSemestreSpan.innerText = (regime === "SHR" || statut === "PATS") ? "Non applicable" : "Non applicable (SPV)";
-        return;
-    }
-
-    const bases = calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction);
-    if (regime === "G24") {
-        let total = Math.ceil(bases.g24 * ratioPartiel);
-        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
-        valeurGardesSpan.innerText = total.toString();
-        ratioSemestreSpan.innerHTML = `S1: ${gS1} (${gS1*17}h) | S2: ${gS2} (${gS2*17}h) <span class="total-annuel-highlight">[${total*17}h]</span>`;
-    } else if (regime === "Mixte") {
-        let g24_total = Math.ceil(bases.g24 * ratioPartiel), g12_total = Math.ceil(bases.g12 * ratioPartiel);
-        let g24_S1 = Math.floor(g24_total / 2), g24_S2 = g24_total - g24_S1;
-        let g12_S1 = Math.floor(g12_total / 2), g12_S2 = g12_total - g12_S1;
-        let hS1 = (g24_S1 * 17) + (g12_S1 * 12), hS2 = (g24_S2 * 17) + (g12_S2 * 12);
-        valeurGardesSpan.innerText = `${g24_total}/${g12_total}`;
-        ratioSemestreSpan.innerHTML = `S1: ${g24_S1}/${g12_S1} (${hS1}h) | S2: ${g24_S2}/${g12_S2} (${hS2}h) <span class="total-annuel-highlight">[${hS1+hS2}h]</span>`;
-    } else if (regime === "G12") {
-        let total = Math.ceil(bases.g12 * ratioPartiel);
-        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
-        valeurGardesSpan.innerText = total.toString();
-        ratioSemestreSpan.innerHTML = `S1: ${gS1} (${gS1*12}h) | S2: ${gS2} (${gS2*12}h) <span class="total-annuel-highlight">[${total*12}h]</span>`;
-    }
-}
 
 // 1. Récupération des valeurs du formulaire
     const dateNaissanceStr = document.getElementById("agentNaissanceDate").value;
@@ -1193,5 +1070,131 @@ async function enregistrerFichierReseau() {
     } catch (err) {
         console.error(err);
         alert("❌ Erreur lors de la sauvegarde : " + err.message);
+    }
+}
+
+
+
+// ==========================================
+// CALCUL ET AFFICHAGE DES GARDES
+// ==========================================
+
+function calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction) {
+    let baseG24 = 0, baseG12 = 0;
+    if (!dateNaissanceStr || !dateEntreeStr) {
+        if (regime === "G24") baseG24 = (fonction === "CDG") ? 74 : 92;
+        else if (regime === "Mixte") { baseG24 = (fonction === "CDG") ? 67 : 83; baseG12 = (fonction === "CDG") ? 10 : 14; }
+        else if (regime === "G12") baseG12 = 133;
+        return { g24: baseG24, g12: baseG12 };
+    }
+
+    const dateEntree = new Date(dateEntreeStr);
+    const dateNaissance = new Date(dateNaissanceStr);
+    const estListe2 = (dateEntree < new Date("2013-10-01") && dateNaissance <= new Date("1976-12-31"));
+    const age = 2026 - dateNaissance.getFullYear();
+
+    if (regime === "G12") {
+        if (age < 45) baseG12 = 133;
+        else if (age <= 49) baseG12 = 132;
+        else if (age <= 54) baseG12 = 131;
+        else if (age <= 59) baseG12 = 130;
+        else baseG12 = 129;
+    } else if (regime === "G24") {
+        if (fonction === "CDG") {
+            if (estListe2) {
+                if (age < 45) baseG24 = 74; else if (age <= 49) baseG24 = 71; else if (age <= 54) baseG24 = 70; else if (age <= 59) baseG24 = 69; else baseG24 = 68;
+            } else {
+                if (age < 45) baseG24 = 74; else if (age <= 49) baseG24 = 73; else if (age <= 54) baseG24 = 71; else if (age <= 59) baseG24 = 70; else baseG24 = 69;
+            }
+        } else {
+            if (age < 45) baseG24 = 92; else if (age <= 49) baseG24 = 91; else if (age <= 54) baseG24 = 89; else if (age <= 59) baseG24 = 88; else baseG24 = 87;
+        }
+    } else if (regime === "Mixte") {
+        if (fonction === "CDG") {
+            if (estListe2) {
+                if (age < 47) { baseG24 = 67; baseG12 = 10; } else if (age === 47) { baseG24 = 67; baseG12 = 9; } else if (age === 48) { baseG24 = 67; baseG12 = 8; } else if (age === 49) { baseG24 = 67; baseG12 = 7; } else if (age <= 54) { baseG24 = 66; baseG12 = 7; } else if (age <= 59) { baseG24 = 65; baseG12 = 7; } else { baseG24 = 64; baseG12 = 7; }
+            } else {
+                if (age < 45) { baseG24 = 67; baseG12 = 10; } else if (age <= 49) { baseG24 = 67; baseG12 = 9; } else if (age <= 54) { baseG24 = 66; baseG12 = 9; } else if (age <= 59) { baseG24 = 65; baseG12 = 9; } else { baseG24 = 64; baseG12 = 9; }
+            }
+        } else {
+            if (estListe2) {
+                if (age < 47) { baseG24 = 83; baseG12 = 14; } else if (age === 47) { baseG24 = 83; baseG12 = 13; } else if (age === 48) { baseG24 = 83; baseG12 = 12; } else if (age === 49) { baseG24 = 83; baseG12 = 11; } else if (age <= 54) { baseG24 = 82; baseG12 = 11; } else if (age <= 59) { baseG24 = 81; baseG12 = 11; } else { baseG24 = 80; baseG12 = 11; }
+            } else {
+                if (age < 45) { baseG24 = 83; baseG12 = 14; } else if (age <= 49) { baseG24 = 83; baseG12 = 13; } else if (age <= 54) { baseG24 = 82; baseG12 = 13; } else if (age <= 59) { baseG24 = 81; baseG12 = 13; } else { baseG24 = 80; baseG12 = 13; }
+            }
+        }
+    }
+    return { g24: baseG24, g12: baseG12 };
+}
+
+function obtenirDetailsGardes(agent) {
+    if (!agent || agent.regime === "SHR" || agent.regime === "SPV" || agent.statut === "SPV" || agent.statut === "PATS") {
+        return { total: "-", repartition: "-" };
+    }
+    const bases = calculerBasesGardes(agent.naissanceDate, agent.entreeSdis, agent.regime, agent.fonction);
+    const ratioPartiel = parseFloat(agent.tempsPartiel || "100%") / 100;
+
+    if (agent.regime === "G24") {
+        let total = Math.ceil(bases.g24 * ratioPartiel);
+        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
+        return { total: total.toString(), repartition: `S1: ${gS1} (${gS1*17}h) | S2: ${gS2} (${gS2*17}h) <span class="total-annuel-highlight">[${total*17}h]</span>` };
+    } else if (agent.regime === "Mixte") {
+        let g24_total = Math.ceil(bases.g24 * ratioPartiel), g12_total = Math.ceil(bases.g12 * ratioPartiel);
+        let g24_S1 = Math.floor(g24_total / 2), g24_S2 = g24_total - g24_S1;
+        let g12_S1 = Math.floor(g12_total / 2), g12_S2 = g12_total - g12_S1;
+        let hS1 = (g24_S1 * 17) + (g12_S1 * 12), hS2 = (g24_S2 * 17) + (g12_S2 * 12);
+        return { total: `${g24_total}/${g12_total}`, repartition: `S1: ${g24_S1}/${g12_S1} (${hS1}h) | S2: ${g24_S2}/${g12_S2} (${hS2}h) <span class="total-annuel-highlight">[${hS1+hS2}h]</span>` };
+    } else if (agent.regime === "G12") {
+        let total = Math.ceil(bases.g12 * ratioPartiel);
+        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
+        return { total: total.toString(), repartition: `S1: ${gS1} (${gS1*12}h) | S2: ${gS2} (${gS2*12}h) <span class="total-annuel-highlight">[${total*12}h]</span>` };
+    }
+    return { total: "-", repartition: "-" };
+}
+
+function actualiserIndicateurGardes() {
+    const elRegime = document.getElementById("agentRegime");
+    const elStatut = document.getElementById("agentStatut");
+    const elTempsPartiel = document.getElementById("agentTempsPartiel");
+    const elNaissance = document.getElementById("agentNaissanceDate");
+    const elEntree = document.getElementById("agentEntreeSdis");
+    const elFonction = document.getElementById("agentFonction");
+
+    const valeurGardesSpan = document.getElementById("valeurGardesDefault");
+    const ratioSemestreSpan = document.getElementById("ratioSemestriel");
+
+    if (!elRegime || !valeurGardesSpan || !ratioSemestreSpan) return;
+
+    const regime = elRegime.value;
+    const statut = elStatut ? elStatut.value : "";
+    const ratioPartiel = elTempsPartiel ? (parseFloat(elTempsPartiel.value) / 100) : 1;
+    const dateNaissanceStr = elNaissance ? elNaissance.value : "";
+    const dateEntreeStr = elEntree ? elEntree.value : "";
+    const fonction = elFonction ? elFonction.value : "";
+
+    if (regime === "SHR" || regime === "SPV" || statut === "PATS") {
+        valeurGardesSpan.innerText = "-";
+        ratioSemestreSpan.innerText = (regime === "SHR" || statut === "PATS") ? "Non applicable" : "Non applicable (SPV)";
+        return;
+    }
+
+    const bases = calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction);
+    if (regime === "G24") {
+        let total = Math.ceil(bases.g24 * ratioPartiel);
+        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
+        valeurGardesSpan.innerText = total.toString();
+        ratioSemestreSpan.innerHTML = `S1: ${gS1} (${gS1*17}h) | S2: ${gS2} (${gS2*17}h) <span class="total-annuel-highlight">[${total*17}h]</span>`;
+    } else if (regime === "Mixte") {
+        let g24_total = Math.ceil(bases.g24 * ratioPartiel), g12_total = Math.ceil(bases.g12 * ratioPartiel);
+        let g24_S1 = Math.floor(g24_total / 2), g24_S2 = g24_total - g24_S1;
+        let g12_S1 = Math.floor(g12_total / 2), g12_S2 = g12_total - g12_S1;
+        let hS1 = (g24_S1 * 17) + (g12_S1 * 12), hS2 = (g24_S2 * 17) + (g12_S2 * 12);
+        valeurGardesSpan.innerText = `${g24_total}/${g12_total}`;
+        ratioSemestreSpan.innerHTML = `S1: ${g24_S1}/${g12_S1} (${hS1}h) | S2: ${g24_S2}/${g12_S2} (${hS2}h) <span class="total-annuel-highlight">[${hS1+hS2}h]</span>`;
+    } else if (regime === "G12") {
+        let total = Math.ceil(bases.g12 * ratioPartiel);
+        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
+        valeurGardesSpan.innerText = total.toString();
+        ratioSemestreSpan.innerHTML = `S1: ${gS1} (${gS1*12}h) | S2: ${gS2} (${gS2*12}h) <span class="total-annuel-highlight">[${total*12}h]</span>`;
     }
 }
