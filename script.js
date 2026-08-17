@@ -227,7 +227,8 @@ function adapterFormulaireSelonStatut() {
 }
 
 function gererChangementRegime() {
-    const regime = document.getElementById("agentRegime").value;
+    
+    const regime = document.getElementById("agentRegime") ? document.getElementById("agentRegime").value : "";
     const selectEquipe = document.getElementById("agentEquipe");
     const selectStatut = document.getElementById("agentStatut");
 
