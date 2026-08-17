@@ -965,16 +965,16 @@ async function connecterFichierReseau() {
     try {
         // 1. Sélection du fichier (Accepte CSV, TXT et XLSX)
         [fileHandleReseau] = await window.showOpenFilePicker({
-            types: [{
-                description: 'Fichier Réseau CSV / Excel',
-                accept: { 
-                    'text/csv': ['.csv'], 
-                    'text/plain': ['.txt'],
-                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
-                }
-            }],
-            multiple: false
-        });
+    types: [{
+        description: 'Fichier Réseau CSV / Excel',
+        accept: { 
+            'text/csv': ['.csv'], 
+            'text/plain': ['.txt'],
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
+        }
+    }],
+    multiple: false
+});
 
         const file = await fileHandleReseau.getFile();
         const contenuTexte = await file.text();
