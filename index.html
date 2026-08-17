@@ -287,48 +287,52 @@
             </div>
           </div>
 
-          <!-- OPTIONS ET CARTE OBJECTIF GARDES -->
           <div class="form-grid-2">
-            <div>
-              <div class="form-group" id="groupTempsPartiel">
-                <label for="agentTempsPartiel">Temps Partiel (SPP/PATS)</label>
-                <select id="agentTempsPartiel" onchange="actualiserIndicateurGardes()">
-                  <option value="100%">100 % (Plein)</option>
-                  <option value="90%">90 %</option>
-                  <option value="80%">80 %</option>
-                  <option value="70%">70 %</option>
-                  <option value="60%">60 %</option>
-                  <option value="50%">50 %</option>
-                </select>
-              </div>
+  <!-- COLONNE 1 : Temps Partiel / Engagement Différencié -->
+  <div>
+    <div class="form-group" id="groupTempsPartiel">
+      <label for="agentTempsPartiel">Temps Partiel (SPP/PATS)</label>
+      <select id="agentTempsPartiel" onchange="actualiserIndicateurGardes()">
+        <option value="100%">100 % (Plein)</option>
+        <option value="90%">90 %</option>
+        <option value="80%">80 %</option>
+        <option value="70%">70 %</option>
+        <option value="60%">60 %</option>
+        <option value="50%">50 %</option>
+      </select>
+    </div>
 
-              <div class="form-group" id="groupEngagementDiff" style="display:none;">
-                <label for="agentEngagementDiff">Engagement Différencié (SPV)</label>
-                <select id="agentEngagementDiff">
-                  <option value="">Toutes missions</option>
-                  <option value="SUAP">SUAP uniquement</option>
-                  <option value="SUAP/PPABE">SUAP / PPABE</option>
-                </select>
-              </div>
+    <div class="form-group" id="groupEngagementDiff" style="display:none;">
+      <label for="agentEngagementDiff">Engagement Différencié (SPV)</label>
+      <select id="agentEngagementDiff">
+        <option value="">Toutes missions</option>
+        <option value="SUAP">SUAP uniquement</option>
+        <option value="SUAP/PPABE">SUAP / PPABE</option>
+      </select>
+    </div>
+  </div>
 
-              <div class="form-group" id="groupDisponibilite" style="display:none;">
-                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; margin-top:8px; font-size:0.8em;">
-                  <input type="checkbox" id="agentDisponibilite" style="width:auto;">
-                  En Dispo SPV
-                </label>
-              </div>
-            </div>
+  <!-- COLONNE 2 : Disponibilité SPV -->
+  <div>
+    <div class="form-group" id="groupDisponibilite" style="display:none;">
+      <label style="display:flex; align-items:center; gap:6px; cursor:pointer; margin-top:24px; font-weight:600; font-size:0.85em;">
+        <input type="checkbox" id="agentDisponibilite" style="width:auto;">
+        En Dispo SPV
+      </label>
+    </div>
+  </div>
 
-            <div class="gardes-box">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <strong>OBJECTIF GARDES :</strong>
-                <span id="valeurGardesDefault" style="font-weight:bold;">-</span>
-              </div>
-              <div style="font-size:0.85em; margin-top:4px;">
-                Répartition Semestrielle : <span id="ratioSemestriel" style="font-weight:bold;">-</span>
-              </div>
-            </div>
-          </div>
+  <!-- PLEINE LARGEUR : Carte Objectif Gardes (occupe les 2 colonnes) -->
+  <div class="card-gardes-container" style="grid-column: span 2; margin-top: 6px;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <label style="color:#2b6cb0; font-weight:bold;">OBJECTIF GARDES ANNUELLES :</label>
+      <span id="valeurGardesDefault" class="card-gardes-valeur">-</span>
+    </div>
+    <div style="font-size:0.75em; color:#4a5568; margin-top:3px;">
+      Répartition Semestrielle : <span id="ratioSemestriel" style="font-weight:bold; color:#2d3748;">-</span>
+    </div>
+  </div>
+</div>
 
           <!-- 2 COLONNES : NAISSANCE -->
           <div class="form-grid-2">
