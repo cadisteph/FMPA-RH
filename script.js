@@ -960,12 +960,20 @@ document.addEventListener('DOMContentLoaded', () => {
 let fileHandleReseau = null;
 
 // 1. Fonction appelée par le bouton "Connecter le fichier réseau"
+// A placer TOUT EN HAUT du fichier script.js s'il n'y est pas :
+// let fileHandleReseau = null;
+
 async function connecterFichierReseau() {
     try {
+        // 1. Sélection du fichier (Accepte CSV, TXT et XLSX)
         [fileHandleReseau] = await window.showOpenFilePicker({
             types: [{
                 description: 'Fichier Réseau CSV / Excel',
-                accept: { 'text/csv': ['.csv'], 'text/plain': ['.txt'] }
+                accept: { 
+                    'text/csv': ['.csv'], 
+                    'text/plain': ['.txt'],
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
+                }
             }],
             multiple: false
         });
@@ -973,12 +981,15 @@ async function connecterFichierReseau() {
         const file = await fileHandleReseau.getFile();
         const contenuTexte = await file.text();
 
-        const lignes = contenuTexte.split('\n');
+        const lignes = contenuTexte.split(/\r?\n/);
         let agentsReseau = [];
 
         for (let i = 1; i < lignes.length; i++) {
             if (!lignes[i].trim()) continue;
-            const cols = parseCSVLine(lignes[i]);
+            
+            // Sécurité : vérifie que parseCSVLine existe
+            const cols = (typeof parseCSVLine === "function") ? parseCSVLine(lignes[i]) : lignes[i].split(';');
+            
             if (cols.length >= 4) {
                 const mat = cols[0].replace(/"/g, '').trim();
                 if (!mat) continue;
@@ -988,19 +999,19 @@ async function connecterFichierReseau() {
                     matricule: mat,
                     sexe: cols[1] ? cols[1].replace(/"/g, '').trim() : "Homme",
                     nom: cols[2] ? cols[2].replace(/"/g, '').trim().toUpperCase() : "",
-                    prenom: cols[3] ? formaterPrenom(cols[3].replace(/"/g, '')) : "",
+                    prenom: cols[3] ? (typeof formaterPrenom === "function" ? formaterPrenom(cols[3].replace(/"/g, '')) : cols[3].trim()) : "",
                     equipe: cols[4] ? cols[4].replace(/"/g, '').trim() : "Equipe A",
                     statut: cols[5] ? cols[5].replace(/"/g, '').trim() : "SPP",
                     grade: cols[6] ? cols[6].replace(/"/g, '').trim() : "",
                     fonction: cols[7] ? cols[7].replace(/"/g, '').trim() : "Equ",
                     regime: cols[8] ? cols[8].replace(/"/g, '').trim() : "G24",
                     tempsPartiel: cols[9] ? cols[9].replace(/"/g, '').trim() : "",
-                    naissanceDate: cols[10] ? normaliserDate(cols[10]) : "",
+                    naissanceDate: cols[10] ? (typeof normaliserDate === "function" ? normaliserDate(cols[10]) : cols[10].trim()) : "",
                     naissanceLieu: cols[11] ? cols[11].replace(/"/g, '').trim() : "",
-                    entreeSdis: cols[12] ? normaliserDate(cols[12]) : "",
-                    datePL: cols[13] ? normaliserDate(cols[13]) : "",
-                    dateVMA: cols[14] ? normaliserDate(cols[14]) : "",
-                    telephone: cols[15] ? formaterTelephone(cols[15]) : "",
+                    entreeSdis: cols[12] ? (typeof normaliserDate === "function" ? normaliserDate(cols[12]) : cols[12].trim()) : "",
+                    datePL: cols[13] ? (typeof normaliserDate === "function" ? normaliserDate(cols[13]) : cols[13].trim()) : "",
+                    dateVMA: cols[14] ? (typeof normaliserDate === "function" ? normaliserDate(cols[14]) : cols[14].trim()) : "",
+                    telephone: cols[15] ? (typeof formaterTelephone === "function" ? formaterTelephone(cols[15]) : cols[15].trim()) : "",
                     email: cols[16] ? cols[16].replace(/"/g, '').trim() : "",
                     adresse: cols[17] ? cols[17].replace(/"/g, '').trim() : "",
                     disponibilite: cols[18] ? cols[18].replace(/"/g, '').trim().toLowerCase() === 'oui' : false,
@@ -1011,32 +1022,23 @@ async function connecterFichierReseau() {
             }
         }
 
-      // 1. Injection des données
-        listeAgents = agentsReseau;
-
-        // 2. Mettre à jour le tableau
-        actualiserTableauRH();
-        if (typeof actualiserTableauSuivi === 'function') actualiserTableauSuivi();
-
-        // 3. Forcer l'affichage de la section RH si elle était masquée
-        const sectionRH = document.getElementById("section-rh") 
-                       || document.getElementById("contenu-rh")
-                       || document.querySelector("main")
-                       || document.querySelector(".tab-content");
-                       
-        if (sectionRH) {
-            sectionRH.style.display = "block";
+        // 2. Mise à jour de la liste globale et réaffichage
+        if (typeof agents !== "undefined") {
+            agents = agentsReseau;
+        }
+        
+        if (typeof afficherAgents === "function") {
+            afficherAgents();
+        } else if (typeof actualiserTableau === "function") {
+            actualiserTableau();
         }
 
-        // 4. Mettre à jour le texte de statut
-        const statusElem = document.getElementById("statusReseau");
-        if (statusElem) statusElem.innerText = `Connecté à : ${file.name}`;
+        alert("Données du fichier réseau chargées avec succès !");
 
-        alert(`✅ Connecté ! ${listeAgents.length} agent(s) chargé(s) depuis : ${file.name}`);
     } catch (err) {
         if (err.name !== 'AbortError') {
-            console.error(err);
-            alert("⚠️ Impossible d'accéder au fichier réseau.");
+            console.error("Erreur d'accès au fichier :", err);
+            alert("Impossible de charger le fichier réseau.");
         }
     }
 }
