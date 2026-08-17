@@ -963,18 +963,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function connecterFichierReseau() {
     try {
-        // 1. Sélection du fichier (Accepte CSV, TXT et XLSX)
         [window.fileHandleReseau] = await window.showOpenFilePicker({
-    types: [{
-        description: 'Fichier Réseau CSV / Excel',
-        accept: { 
-            'text/csv': ['.csv'], 
-            'text/plain': ['.txt'],
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
-        }
-    }],
-    multiple: false
-});
+            types: [{
+                description: 'Fichier Réseau CSV / Excel',
+                accept: { 
+                    'text/csv': ['.csv'], 
+                    'text/plain': ['.txt'],
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
+                }
+            }],
+            multiple: false
+        });
 
         const file = await window.fileHandleReseau.getFile();
         const contenuTexte = await file.text();
@@ -983,12 +982,19 @@ async function connecterFichierReseau() {
         let agentsReseau = [];
 
         for (let i = 1; i < lignes.length; i++) {
-            if (!lignes[i].trim()) continue;
+            const ligne = lignes[i].trim();
+            if (!ligne) continue;
             
-            // Sécurité : vérifie que parseCSVLine existe
-            const cols = (typeof parseCSVLine === "function") ? parseCSVLine(lignes[i]) : lignes[i].split(';');
+            // Détection automatique du séparateur (; ou ,)
+            let cols = [];
+            if (typeof parseCSVLine === "function") {
+                cols = parseCSVLine(ligne);
+            } else {
+                const sep = ligne.includes(';') ? ';' : ',';
+                cols = ligne.split(sep);
+            }
             
-            if (cols.length >= 4) {
+            if (cols.length >= 2) {
                 const mat = cols[0].replace(/"/g, '').trim();
                 if (!mat) continue;
 
@@ -997,19 +1003,19 @@ async function connecterFichierReseau() {
                     matricule: mat,
                     sexe: cols[1] ? cols[1].replace(/"/g, '').trim() : "Homme",
                     nom: cols[2] ? cols[2].replace(/"/g, '').trim().toUpperCase() : "",
-                    prenom: cols[3] ? (typeof formaterPrenom === "function" ? formaterPrenom(cols[3].replace(/"/g, '')) : cols[3].trim()) : "",
+                    prenom: cols[3] ? (typeof formaterPrenom === "function" ? formaterPrenom(cols[3].replace(/"/g, '')) : cols[3].replace(/"/g, '').trim()) : "",
                     equipe: cols[4] ? cols[4].replace(/"/g, '').trim() : "Equipe A",
                     statut: cols[5] ? cols[5].replace(/"/g, '').trim() : "SPP",
                     grade: cols[6] ? cols[6].replace(/"/g, '').trim() : "",
                     fonction: cols[7] ? cols[7].replace(/"/g, '').trim() : "Equ",
                     regime: cols[8] ? cols[8].replace(/"/g, '').trim() : "G24",
                     tempsPartiel: cols[9] ? cols[9].replace(/"/g, '').trim() : "",
-                    naissanceDate: cols[10] ? (typeof normaliserDate === "function" ? normaliserDate(cols[10]) : cols[10].trim()) : "",
+                    naissanceDate: cols[10] ? (typeof normaliserDate === "function" ? normaliserDate(cols[10]) : cols[10].replace(/"/g, '').trim()) : "",
                     naissanceLieu: cols[11] ? cols[11].replace(/"/g, '').trim() : "",
-                    entreeSdis: cols[12] ? (typeof normaliserDate === "function" ? normaliserDate(cols[12]) : cols[12].trim()) : "",
-                    datePL: cols[13] ? (typeof normaliserDate === "function" ? normaliserDate(cols[13]) : cols[13].trim()) : "",
-                    dateVMA: cols[14] ? (typeof normaliserDate === "function" ? normaliserDate(cols[14]) : cols[14].trim()) : "",
-                    telephone: cols[15] ? (typeof formaterTelephone === "function" ? formaterTelephone(cols[15]) : cols[15].trim()) : "",
+                    entreeSdis: cols[12] ? (typeof normaliserDate === "function" ? normaliserDate(cols[12]) : cols[12].replace(/"/g, '').trim()) : "",
+                    datePL: cols[13] ? (typeof normaliserDate === "function" ? normaliserDate(cols[13]) : cols[13].replace(/"/g, '').trim()) : "",
+                    dateVMA: cols[14] ? (typeof normaliserDate === "function" ? normaliserDate(cols[14]) : cols[14].replace(/"/g, '').trim()) : "",
+                    telephone: cols[15] ? (typeof formaterTelephone === "function" ? formaterTelephone(cols[15]) : cols[15].replace(/"/g, '').trim()) : "",
                     email: cols[16] ? cols[16].replace(/"/g, '').trim() : "",
                     adresse: cols[17] ? cols[17].replace(/"/g, '').trim() : "",
                     disponibilite: cols[18] ? cols[18].replace(/"/g, '').trim().toLowerCase() === 'oui' : false,
@@ -1020,18 +1026,18 @@ async function connecterFichierReseau() {
             }
         }
 
-        // 2. Mise à jour de la liste globale et réaffichage
-        if (typeof agents !== "undefined") {
-            agents = agentsReseau;
-        }
+        // Mise à jour sur toutes les variables globales possibles
+        if (typeof listeAgents !== "undefined") listeAgents = agentsReseau;
+        if (typeof agents !== "undefined") agents = agentsReseau;
+        if (typeof globalAgents !== "undefined") globalAgents = agentsReseau;
         
-        if (typeof afficherAgents === "function") {
-            afficherAgents();
-        } else if (typeof actualiserTableau === "function") {
-            actualiserTableau();
-        }
+        // Rafraîchissement de l'affichage
+        if (typeof afficherAgents === "function") afficherAgents();
+        if (typeof actualiserTableau === "function") actualiserTableau();
+        if (typeof rendreTableau === "function") rendreTableau();
+        if (typeof filtrerAgents === "function") filtrerAgents();
 
-        alert("Données du fichier réseau chargées avec succès !");
+        alert(`Données du fichier réseau chargées avec succès ! (${agentsReseau.length} agents trouvés)`);
 
     } catch (err) {
         if (err.name !== 'AbortError') {
@@ -1043,38 +1049,53 @@ async function connecterFichierReseau() {
 
 // 2. Fonction appelée par le bouton "Enregistrer les modifications"
 async function enregistrerFichierReseau() {
+    // 1. Vérification avec la variable globale window
     if (!window.fileHandleReseau) {
         alert("⚠️ Aucun fichier réseau n'est connecté. Cliquez d'abord sur 'Connecter le fichier réseau'.");
         return;
     }
 
     try {
+        // 2. Demande des droits d'écriture
         const options = { mode: 'readwrite' };
         if ((await window.fileHandleReseau.queryPermission(options)) !== 'granted') {
             if ((await window.fileHandleReseau.requestPermission(options)) !== 'granted') {
-                alert("❌ Permission refusée pour modifier le fichier.");
+                alert("❌ Permission refusée pour modifier le fichier réseau.");
                 return;
             }
         }
 
+        // 3. Récupération de la liste des agents active
+        const sourceAgents = (typeof listeAgents !== "undefined") ? listeAgents : ((typeof agents !== "undefined") ? agents : []);
+
+        if (sourceAgents.length === 0) {
+            if (!confirm("⚠️ La liste des agents est vide. Voulez-vous vraiment écraser le fichier réseau avec un fichier vide ?")) {
+                return;
+            }
+        }
+
+        // 4. Génération du contenu CSV avec séparateur point-virgule et BOM UTF-8 (\uFEFF)
         let csvContent = "\uFEFFMatricule;Sexe;Nom;Prenom;Equipe;Statut;Grade;Fonction;Regime;TempsPartiel_Diff;DateNaissance;LieuNaissance;DateEntreeSDIS;DatePL;DateVMA;Telephone;Email;Adresse;DispoSPV;Specialites;Commentaire\n";
-        listeAgents.forEach(a => {
-            const specs = (a.specialites || []).join(",");
-            csvContent += `"${a.matricule || ''}";"${a.sexe || 'Homme'}";"${a.nom || ''}";"${a.prenom || ''}";"${a.equipe || ''}";"${a.statut || ''}";"${a.grade || ''}";"${a.fonction || ''}";"${a.regime || ''}";"${a.tempsPartiel || a.engagementDiff || ''}";"${a.naissanceDate || ''}";"${a.naissanceLieu || ''}";"${a.entreeSdis || ''}";"${a.datePL || ''}";"${a.dateVMA || ''}";"${a.telephone || ''}";"${a.email || ''}";"${a.adresse || ''}";"${a.disponibilite ? 'Oui' : 'Non'}";"${specs}";"${(a.commentaire || '').replace(/"/g, '""')}"\n`;
+        
+        sourceAgents.forEach(a => {
+            const specs = Array.isArray(a.specialites) ? a.specialites.join(",") : (a.specialites || '');
+            const comm = (a.commentaire || '').replace(/"/g, '""'); // Échappement des guillemets
+            
+            csvContent += `"${a.matricule || ''}";"${a.sexe || 'Homme'}";"${a.nom || ''}";"${a.prenom || ''}";"${a.equipe || ''}";"${a.statut || ''}";"${a.grade || ''}";"${a.fonction || ''}";"${a.regime || ''}";"${a.tempsPartiel || a.engagementDiff || ''}";"${a.naissanceDate || ''}";"${a.naissanceLieu || ''}";"${a.entreeSdis || ''}";"${a.datePL || ''}";"${a.dateVMA || ''}";"${a.telephone || ''}";"${a.email || ''}";"${a.adresse || ''}";"${a.disponibilite ? 'Oui' : 'Non'}";"${specs}";"${comm}"\n`;
         });
 
+        // 5. Écriture directe dans le fichier réseau connecté
         const writable = await window.fileHandleReseau.createWritable();
         await writable.write(csvContent);
         await writable.close();
 
-        alert("💾 Modifications enregistrées avec succès dans le fichier réseau !");
+        alert(`💾 Modifications enregistrées avec succès (${sourceAgents.length} agent(s) sauvegardé(s)) !`);
 
     } catch (err) {
-        console.error(err);
+        console.error("Erreur de sauvegarde :", err);
         alert("❌ Erreur lors de la sauvegarde : " + err.message);
     }
 }
-
 
 
 // ==========================================
