@@ -1,3 +1,5 @@
+let fileHandleReseau = null;
+
 const CODE_ACCES_RH = "1811";
 let estAuthentifieRH = false;
 let ongletCibleApresConnexion = "";
