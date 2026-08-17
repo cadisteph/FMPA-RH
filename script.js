@@ -182,9 +182,9 @@ function mettreAJourAffichageAge() {
     const dateEntreeStr = document.getElementById("agentEntreeSdis").value;
 
     // 2. Calcul des gardes (CODE B)
-const bases = calculerBasesGardes(a.naissanceDate, a.entreeSdis, a.regime, a.fonction);    
-    if (regime === "G24") {
-        let total = Math.ceil(bases.g24 * ratioPartiel);
+const bases = calculerBasesGardes(agent.naissanceDate, agent.entreeSdis, agent.regime, agent.fonction);    if (regime === "G24") {
+        
+    let total = Math.ceil(bases.g24 * ratioPartiel);
         let gS1 = Math.floor(total / 2), gS2 = total - gS1;
         valeurGardesSpan.innerText = total.toString();
         ratioSemestreSpan.innerHTML = `S1: ${gS1} (${gS1*17}h) | S2: ${gS2} (${gS2*17}h) <span class="total-annuel-highlight">[${total*17}h]</span>`;
