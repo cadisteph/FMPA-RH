@@ -232,17 +232,31 @@ function actualiserIndicateurGardes() {
         return;
     }
 
-    const bases = calculerBasesGardes(document.getElementById("agentNaissanceDate").value, document.getElementById("agentEntreeSdis").value, regime, document.getElementById("agentFonction").value);
+// 1. Récupération des valeurs du formulaire
+    const dateNaissanceStr = document.getElementById("agentNaissanceDate").value;
+    const dateEntreeStr = document.getElementById("agentEntreeSdis").value;
+
+    // 2. Calcul des gardes (CODE B)
+    const bases = calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction);
+    
     if (regime === "G24") {
         let total = Math.ceil(bases.g24 * ratioPartiel);
+        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
         valeurGardesSpan.innerText = total.toString();
-        ratioSemestreSpan.innerHTML = `Total annuel : ${total*17}h`;
+        ratioSemestreSpan.innerHTML = `S1: ${gS1} (${gS1*17}h) | S2: ${gS2} (${gS2*17}h) <span class="total-annuel-highlight">[${total*17}h]</span>`;
+    } else if (regime === "Mixte") {
+        let g24_total = Math.ceil(bases.g24 * ratioPartiel), g12_total = Math.ceil(bases.g12 * ratioPartiel);
+        let g24_S1 = Math.floor(g24_total / 2), g24_S2 = g24_total - g24_S1;
+        let g12_S1 = Math.floor(g12_total / 2), g12_S2 = g12_total - g12_S1;
+        let hS1 = (g24_S1 * 17) + (g12_S1 * 12), hS2 = (g24_S2 * 17) + (g12_S2 * 12);
+        valeurGardesSpan.innerText = `${g24_total}/${g12_total}`;
+        ratioSemestreSpan.innerHTML = `S1: ${g24_S1}/${g12_S1} (${hS1}h) | S2: ${g24_S2}/${g12_S2} (${hS2}h) <span class="total-annuel-highlight">[${hS1+hS2}h]</span>`;
     } else if (regime === "G12") {
         let total = Math.ceil(bases.g12 * ratioPartiel);
+        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
         valeurGardesSpan.innerText = total.toString();
-        ratioSemestreSpan.innerHTML = `Total annuel : ${total*12}h`;
+        ratioSemestreSpan.innerHTML = `S1: ${gS1} (${gS1*12}h) | S2: ${gS2} (${gS2*12}h) <span class="total-annuel-highlight">[${total*12}h]</span>`;
     }
-}
 
 function adapterFormulaireSelonStatut() {
     const statutEl = document.getElementById("agentStatut");
