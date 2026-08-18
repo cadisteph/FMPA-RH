@@ -1180,3 +1180,23 @@ function actualiserIndicateurGardes() {
         ratioSemestreSpan.innerHTML = `S1: ${gS1} (${gS1*12}h) | S2: ${gS2} (${gS2*12}h) <span class="total-annuel-highlight">[${total*12}h]</span>`;
     }
 }
+
+function adapterFormulaireSelonStatut() {
+  const statut = document.getElementById('agentStatut').value;
+  
+  const groupTempsPartiel = document.getElementById('groupTempsPartiel');
+  const groupEngagementDiff = document.getElementById('groupEngagementDiff');
+  const groupDisponibilite = document.getElementById('groupDisponibilite');
+
+  if (statut === 'SPV') {
+    // Si l'agent est SPV : on masque Temps Partiel et on affiche Engagement + Dispo
+    if (groupTempsPartiel) groupTempsPartiel.style.display = 'none';
+    if (groupEngagementDiff) groupEngagementDiff.style.display = 'flex';
+    if (groupDisponibilite) groupDisponibilite.style.display = 'flex';
+  } else {
+    // Si l'agent est SPP ou PATS : on affiche Temps Partiel et on masque le reste
+    if (groupTempsPartiel) groupTempsPartiel.style.display = 'flex';
+    if (groupEngagementDiff) groupEngagementDiff.style.display = 'none';
+    if (groupDisponibilite) groupDisponibilite.style.display = 'none';
+  }
+}
