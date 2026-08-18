@@ -292,3 +292,10 @@ button:hover { opacity: 0.9; }
     cursor: pointer !important;
     margin: 0 !important;
 }
+
+#groupDisponibilite {
+    display: none; /* Masqué par défaut */
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 100%;
+}
