@@ -1,611 +1,249 @@
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f6f9;
-            color: #2d3748;
-            margin: 0;
-            padding: 15px;
-        }
-        .container {
-            max-width: 1800px;
-            margin: 0 auto;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
-            max-height: 92vh;
-            overflow-y: auto;
-        }
-        h1 {
-            color: #1a365d;
-            border-bottom: 3px solid #e53e3e;
-            padding-bottom: 8px;
-            margin: 0 0 15px 0;
-            font-size: 1.5em;
-        }
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 8px;
-        }
-        .tab-btn {
-            background: #edf2f7;
-            border: none;
-            padding: 8px 16px;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 4px;
-            color: #4a5568;
-            font-size: 0.9em;
-            transition: background 0.2s;
-        }
-        .tab-btn:hover { background: #cbd5e0; }
-        .tab-btn.active {
-            background: #1a365d;
-            color: white;
-        }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .login-box {
-            max-width: 380px;
-            margin: 40px auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 6px;
-            border: 2px solid #e53e3e;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        .filter-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            background: #edf2f7;
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin-bottom: 12px;
-            align-items: flex-end;
-            border: 1px solid #cbd5e0;
-        }
-        .filter-item {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .filter-item label {
-            font-size: 0.72em;
-            font-weight: bold;
-            color: #4a5568;
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
-        .filter-item select, .filter-item input {
-            height: 26px;
-            font-size: 0.8em;
-            padding: 2px 6px;
-            border-radius: 4px;
-            border: 1px solid #cbd5e0;
-            background-color: white;
-        }
-        .filter-counter {
-            margin-left: auto;
-            font-size: 0.8em;
-            font-weight: bold;
-            color: #2b6cb0;
-            background: #ebf8ff;
-            padding: 4px 8px;
-            border-radius: 4px;
-            border: 1px solid #bee3f8;
-            align-self: center;
-        }
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1.35fr 1fr;
-            gap: 15px;
-            align-items: start;
-        }
-        #onglet-rh .grid-2 { grid-template-columns: 1.6fr 0.83fr; }
-        .grid-suivi { grid-template-columns: 1fr 310px !important; gap: 10px !important; }
-        #onglet-config .grid-2 { grid-template-columns: 2.5fr 0.83fr; }
-        .panel {
-            background: #f8fafc;
-            padding: 12px;
-            border-radius: 6px;
-            border: 1px solid #cbd5e0;
-            max-height: calc(85vh - 165px);
-            overflow-y: auto;
-        }
-        .panel-compact { padding: 8px 10px !important; }
-        .section-title {
-            font-size: 0.85em;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #2b6cb0;
-            font-weight: bold;
-            margin: 10px 0 6px 0;
-            padding-bottom: 3px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
-        .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px 10px; }
-        .form-group { display: flex; flex-direction: column; gap: 2px; }
-        label { font-weight: 600; font-size: 0.78em; color: #4a5568; white-space: nowrap; }
-        select, input, textarea {
-            padding: 4px 6px;
-            border-radius: 4px;
-            border: 1px solid #cbd5e0;
-            font-size: 12px;
-            height: 28px;
-            box-sizing: border-box;
-            width: 100%;
-        }
-        input[type="checkbox"] { width: 18px !important; height: 18px !important; cursor: pointer; }
-        textarea { height: 48px; }
-        .btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            font-weight: bold;
-            font-size: 0.85em;
-            cursor: pointer;
-            transition: opacity 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .btn:hover { opacity: 0.9; }
-        .btn-primary { background: #1a365d; color: white; }
-        .btn-secondary { background: #4a5568; color: white; }
-        .btn-danger { background: #e53e3e; color: white; }
-        .btn-warning { background: #dd6b20; color: white; }
-        .btn-success { background: #38a169; color: white; }
-        .btn-excel { background: #107c41; color: white; }
-        .btn-purple { background: #6b46c1; color: white; }
-        
-        table { width: 100%; border-collapse: collapse; font-size: 0.75em; }
-        th, td { padding: 5px 6px; text-align: left; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
-        #corpsSuivi td, #corpsSuiviSpe td { padding: 3px 6px !important; font-size: 0.92em !important; line-height: 1.2; }
-        th { background-color: #2d3748; color: white; position: sticky; top: 0; z-index: 10; font-size: 0.85em; }
-        .clickable-row { cursor: pointer; }
-        .clickable-row:hover { background-color: #edf2f7; }
-        
-        .badge { padding: 2px 6px; border-radius: 3px; font-size: 0.75em; font-weight: bold; display: inline-block; }
-        .badge-spp { background-color: #e2e8f0; color: #2d3748; }
-        .badge-spv { background-color: #feebc8; color: #c05621; }
-        .badge-pats { background-color: #e9d8fd; color: #553c9a; }
-        .badge-spe { background-color: #a0a4e7; color: #fff; border: 1px solid #062dff6b; }
-
-        .status-danger { background-color: #fed7d7; color: #9b2c2c; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-        .status-warning { background-color: #feebc8; color: #c05621; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid #fbd38d; }
-        .status-success { background-color: #c6f6d5; color: #15803d; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid #9ae6b4; }
-
-        .table-scroll-container {
-            overflow-x: auto;
-            max-width: 100%;
-            max-height: calc(85vh - 215px);
-            overflow-y: auto;
-            border: 1px solid #cbd5e0;
-            border-radius: 6px;
-            background: white;
-        }
-        .total-annuel-highlight { color: #1d4ed8; font-weight: bold; }
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); }
-        .modal-content { background-color: #fff; margin: 2% auto; padding: 20px; border-radius: 8px; width: 92%; max-width: 1400px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
-        .span-3 {grid-column: span 3 / span 3;width: 100%;box-sizing: border-box; }
-        .span-2 {grid-column: span 2 / span 2;width: 100%;box-sizing: border-box; }
-        .card-gardes-container { background: #edf2f7; border: 1px solid #cbd5e0; padding: 8px 12px; border-radius: 6px; box-sizing: border-box; }
-        .card-gardes-valeur { font-size: 0.9em; font-weight: bold; color: #2b6cb0; background: white; padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e0; display: block; margin-top: 2px; }
-
-        @media print {
-            body * { visibility: hidden; }
-            .modal, .modal * { visibility: visible; }
-            .no-print, button { display: none !important; }
-            .modal { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; height: auto !important; background: white !important; padding: 0 !important; margin: 0 !important; }
-            .modal-content { max-height: none !important; height: auto !important; overflow: visible !important; border: none !important; }
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            @page { size: auto; margin: 12mm; }
-        }
-
-
-/* Layout global */
-.app-container {
-  padding: 15px;
-  background-color: #f4f6f9;
-  font-family: Arial, sans-serif;
-}
-
-/* 1. Onglets haut */
-.tabs-nav {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-.tab-btn {
-  padding: 8px 16px;
-  border: 1px solid #dcdcdc;
-  background-color: #eef2f5;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-  color: #495057;
-}
-.tab-btn.active {
-  background-color: #1b263b;
-  color: #fff;
-  border-color: #1b263b;
-}
-
-/* 2. Barre de filtres */
-.toolbar-card {
-  background: #eef2f6;
-  border: 1px solid #d0d7de;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 15px;
-}
-.filters-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: flex-end;
-}
-.filter-group {
-  display: flex;
-  flex-direction: column;
-}
-.filter-group label {
-  font-size: 0.7em;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 3px;
-}
-.filter-group select, .filter-group input {
-  padding: 4px 6px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 0.8em;
-}
-.action-buttons {
-  display: flex;
-  gap: 6px;
-  margin-right: auto;
-}
-.btn-dark { background: #4a5568; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
-.btn-success { background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
-.btn-primary { background: #1b263b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
-
-.counter-badge {
-  text-align: right;
-  margin-top: 8px;
-  font-weight: bold;
-  color: #0056b3;
-}
-
-/* --- REMPLACER LA SECTION 3 PAR CE CODE --- */
-
-/* Conteneur principal (englobe le tableau et la fiche agent) */
-/* 1. Blocage de la page globale */
-html, body {
-  height: 100vh !important;
-  max-height: 100vh !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important; /* EMPÊCHE le scroll global de la fenêtre */
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-/* 2. Ajustement du layout pour occuper UNIQUEMENT la hauteur restante */
-.content-layout {
-  display: flex !important;
-  flex-direction: row !important;
-  gap: 15px;
-  flex: 1 !important;          /* Prend automatiquement tout l'espace vertical disponible */
-  min-height: 0 !important;    /* CRUCIAL pour que le scroll interne fonctionne sous Flexbox */
-  width: 100%;
-  padding: 10px;
-  box-sizing: border-box;
-}
-
-/* 3. Tableau à gauche */
-.table-container {
-  flex: 1 1 58% !important;
-  min-width: 0 !important;
-  height: 100% !important;
-  overflow-y: auto !important; /* Scroll interne propre au tableau */
-  background: #fff;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-}
-
-/* 4. Formulaire à droite */
-.form-card {
-  flex: 0 0 40% !important;
-  max-width: 40%;
-  height: 100% !important;
-  overflow-y: auto !important; /* Scroll interne propre au formulaire */
-  background: #fff;
-  border: 1px solid #0056b3;
-  border-radius: 6px;
-  padding: 15px;
-  box-sizing: border-box;
-}
-
-.content-layout {
-  display: flex !important;
-  flex-direction: row !important;
-  gap: 15px;
-  align-items: stretch;
-  width: 100%;
-  /* Fixe la hauteur totale sous le menu pour éviter que la page globale ne scrolle */
-  height: calc(100vh - 220px) !important; 
-  overflow: hidden !important;
-  box-sizing: border-box;
-}
-
-/* Zone de gauche : Tableau RH avec son propre scroll */
-.table-container {
-  flex: 1 1 58% !important;
-  min-width: 0 !important;
-  height: 100% !important;        /* OBLIGATOIRE : remplit la hauteur du layout */
-  overflow-y: auto !important;    /* Active le scroll vertical uniquement pour la table */
-  overflow-x: auto !important;    /* Active le scroll horizontal si besoin */
-  background: #fff;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-}
-
-/* En-têtes fixes pour le tableau lors du défilement */
-.table-rh thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background-color: #1b263b;
-  color: white;
-}
-
-/* Zone de droite : Fiche Agent avec son propre scroll */
-.form-card {
-  flex: 0 0 40% !important;
-  max-width: 40%;
-  height: 100% !important;        /* OBLIGATOIRE : remplit la hauteur du layout */
-  overflow-y: auto !important;    /* Active le scroll vertical uniquement pour la fiche */
-  box-sizing: border-box;
-  background: #fff;
-  border: 1px solid #0056b3;
-  border-radius: 6px;
-  padding: 15px;
-}
-
-
-/* Style de la barre de défilement pour le formulaire */
-.form-card::-webkit-scrollbar {
-  width: 6px;
-}
-.form-card::-webkit-scrollbar-thumb {
-  background-color: #0056b3;
-  border-radius: 4px;
-}
-.form-card::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-.form-title {
-  color: #0056b3;
-  font-size: 1em;
-  margin-top: 0;
-  margin-bottom: 15px;
-  border-bottom: 1px solid #e9ecef;
-  padding-bottom: 5px;
-}
-.form-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-.form-group {
-  display: flex;
-  flex-direction: column;
-}
-.col-4 { flex: 1; }
-.col-6 { flex: 1; }
-.form-group label {
-  font-size: 0.75em;
-  color: #495057;
-  margin-bottom: 2px;
-}
-.form-group input, .form-group select {
-  padding: 5px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  font-size: 0.85em;
-  width: 100%;              /* Assure que les inputs remplissent bien leur colonne */
-  box-sizing: border-box;
-}
-
-/* Boîte Gardes */
-.gardes-box {
-  background-color: #e8f4f8;
-  border: 1px solid #bce1ec;
-  border-radius: 6px;
-  padding: 10px;
-  margin: 12px 0;
-  font-size: 0.8em;
-  color: #0056b3;
-}
-
-/* Grilles de formulaires à 2 et 3 colonnes */
-.form-grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)); /* Bloque l'élargissement des champs */
-  gap: 8px 10px;
-  width: 100%;
-}
-
-/* 4. Verrouillage de tous les champs de saisie */
-.form-grid-3 input,
-.form-grid-3 select,
-.form-grid-3 textarea {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-
-
-/* Actions du formulaire */
-.form-actions {
-  display: flex;
-  gap: 6px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-}
-
-.form-actions .btn {
-  flex: 1;
-  padding: 8px 10px;
-  font-size: 0.85em;
-  font-weight: bold;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-/* Couleurs des boutons */
-.btn-primary { background-color: #0056b3; color: white; }
-.btn-secondary { background-color: #6c757d; color: white; }
-.btn-danger { background-color: #dc3545; color: white; }
-.btn-warning { background-color: #ffc107; color: #212529; }
-
-.btn:hover { opacity: 0.9; }
-
-
-/* Blocage de la page globale pour éviter le scroll général */
-html, body {
-  height: 100vh !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-/* Zone principale occupant l'espace restant sous les filtres */
-#sectionRH {
-  display: flex !important;
-  flex-direction: row !important;
-  gap: 15px !important;
-  flex: 1 !important;
-  height: calc(100vh - 220px) !important;
-  overflow: hidden !important;
-  align-items: stretch !important;
-}
-
-/* Tableau à gauche (60% de largeur + scroll interne) */
-.table-container {
-  flex: 1 1 60% !important;
-  min-width: 0 !important;
-  height: 100% !important;
-  overflow-y: auto !important;
-  overflow-x: auto !important;
-  background: #ffffff !important;
-  border: 1px solid #cbd5e0 !important;
-  border-radius: 6px !important;
-}
-
-/* En-tête du tableau collé en haut */
-.table-rh thead th {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 2 !important;
-  background-color: #1a365d !important;
-  color: white !important;
-}
-
-/* Formulaire à droite (38% de largeur + scroll interne) */
-.form-card {
-  flex: 0 0 38% !important;
-  max-width: 38% !important;
-  height: 100% !important;
-  overflow-y: auto !important;
-  background: #ffffff !important;
-  border: 1px solid #0056b3 !important;
-  border-radius: 6px !important;
-  padding: 15px !important;
-  box-sizing: border-box !important;
-}
-
-
-
 /* ==========================================================================
-   AJUSTEMENT HAUTEUR EXACTE + MARGE DE SÉCURITÉ EN BAS
+   1. BASE GLOBAL & TYPOGRAPHIE
    ========================================================================== */
-
-/* 1. Bloquer le défilement global et laisser une marge en bas */
 html, body {
     height: 100vh !important;
     max-height: 100vh !important;
     margin: 0 !important;
-    padding: 0 0 20px 0 !important; /* Marge de sécurité de 20px en bas */
-    overflow: hidden !important;
+    padding: 10px !important;
+    overflow: hidden !important; /* Empêche le scroll de la page complète */
     display: flex !important;
     flex-direction: column !important;
     box-sizing: border-box !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f6f9;
+    color: #2d3748;
 }
 
-/* 2. Le conteneur s'arrête avant le bas de l'écran */
-#sectionRH, 
-.app-container > div:last-child, 
-main > div:nth-last-child(1) {
-    flex: 1 !important;
-    min-height: 0 !important;
+*, *:before, *:after {
+    box-sizing: border-box;
+}
+
+/* ==========================================================================
+   2. NAVIGATION & BARRE DE FILTRES
+   ========================================================================== */
+.tabs-nav, .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 6px;
+    flex-shrink: 0;
+}
+
+.tab-btn {
+    background: #edf2f7;
+    border: none;
+    padding: 8px 16px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+    color: #4a5568;
+    font-size: 0.9em;
+    transition: background 0.2s;
+}
+
+.tab-btn:hover { background: #cbd5e0; }
+.tab-btn.active {
+    background: #1a365d;
+    color: white;
+}
+
+.toolbar-card, .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: #edf2f7;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    align-items: flex-end;
+    border: 1px solid #cbd5e0;
+    flex-shrink: 0;
+}
+
+.filter-item, .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.filter-item label, .filter-group label {
+    font-size: 0.72em;
+    font-weight: bold;
+    color: #4a5568;
+    text-transform: uppercase;
+}
+
+.filter-item select, .filter-item input,
+.filter-group select, .filter-group input {
+    height: 28px;
+    font-size: 0.8em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #cbd5e0;
+    background-color: white;
+}
+
+/* ==========================================================================
+   3. LAYOUT PRINCIPAL (TABLEAU + FICHE AGENT)
+   ========================================================================== */
+#sectionRH, .content-layout {
     display: flex !important;
     flex-direction: row !important;
-    flex-wrap: nowrap !important;
-    align-items: stretch !important;
-    justify-content: space-between !important;
     gap: 15px !important;
+    flex: 1 !important;
+    min-height: 0 !important; /* Indispensable pour activer le scroll interne */
     width: 100% !important;
-    margin-bottom: 70px !important; /* Décale le bas du tableau/fiche vers le haut */
-    padding-bottom: 10px !important;
-    box-sizing: border-box !important;
+    overflow: hidden !important;
+    align-items: stretch !important;
 }
 
-/* 3. Colonne GAUCHE : Tableau */
-.table-container, 
-.table-section {
-    flex: 0 0 78% !important;
-    width: 78% !important;
-    max-width: 78% !important;
+/* Tableau à gauche : 62% de la largeur */
+.table-container, .table-section {
+    flex: 0 0 62% !important;
+    width: 62% !important;
+    max-width: 62% !important;
     height: 100% !important;
-    max-height: 85% !important;
     overflow-x: auto !important;
     overflow-y: auto !important;
     background: #ffffff !important;
     border: 1px solid #cbd5e0 !important;
     border-radius: 6px !important;
-    box-sizing: border-box !important;
 }
 
-/* 4. Colonne DROITE : Formulaire avec espace de défilement au fond */
-.form-card, 
-.sidebar-fiche, 
-aside#panelFiche, 
-aside {
-    flex: 0 0 20% !important;
-    width: 20% !important;
-    max-width: 20% !important;
+.table-rh, table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75em;
+}
+
+.table-rh thead th, th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 2 !important;
+    background-color: #1a365d !important;
+    color: white !important;
+    padding: 6px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+td {
+    padding: 5px 6px;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+/* Formulaire à droite : 36% de la largeur */
+.form-card, .sidebar-fiche {
+    flex: 0 0 36% !important;
+    width: 36% !important;
+    max-width: 36% !important;
     height: 100% !important;
-    max-height: 85% !important;
     overflow-y: auto !important;
-    overflow-x: hidden;
+    overflow-x: hidden !important;
     background: #ffffff !important;
     border: 1px solid #0056b3 !important;
     border-radius: 6px !important;
-    padding: 15px 15px 10px 15px !important; /* Padding de 30px en bas à l'intérieur du formulaire */
-    box-sizing: border-box !important;
+    padding: 12px !important;
 }
 
+/* Scrollbar discrète pour le formulaire */
+.form-card::-webkit-scrollbar { width: 6px; }
+.form-card::-webkit-scrollbar-thumb { background-color: #0056b3; border-radius: 4px; }
+.form-card::-webkit-scrollbar-track { background: #f1f1f1; }
 
+/* ==========================================================================
+   4. FORMULAIRES & CHAMPS
+   ========================================================================== */
+.form-title {
+    color: #0056b3;
+    font-size: 1.05em;
+    font-weight: bold;
+    margin: 0 0 10px 0;
+    padding-bottom: 5px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.form-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px 6px;
+    width: 100%;
+}
+
+.form-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 6px;
+    width: 100%;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.form-group label, label {
+    font-weight: 600;
+    font-size: 0.75em;
+    color: #4a5568;
+    white-space: normal; /* Permet le retour à la ligne si le texte est long */
+    line-height: 1.1;
+}
+
+select, input, textarea {
+    padding: 4px 6px;
+    border-radius: 4px;
+    border: 1px solid #cbd5e0;
+    font-size: 11px;
+    height: 28px;
+    width: 100%;
+    max-width: 100%;
+}
+
+textarea { height: 48px; }
+
+/* Encart Gardes */
+.gardes-box, .card-gardes-container {
+    background-color: #e8f4f8;
+    border: 1px solid #bce1ec;
+    border-radius: 6px;
+    padding: 8px;
+    margin: 6px 0;
+    font-size: 0.78em;
+    color: #0056b3;
+}
+
+/* Actions et Boutons */
+.form-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.8em;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-primary { background: #1a365d; color: white; }
+.btn-secondary { background: #4a5568; color: white; }
+.btn-danger { background: #e53e3e; color: white; }
+.btn-warning { background: #dd6b20; color: white; }
+.btn-success { background: #38a169; color: white; }
+.btn:hover { opacity: 0.9; }
+
+/* Utilitaires de grille */
+.span-3 { grid-column: span 3 / span 3; }
+.span-2 { grid-column: span 2 / span 2; }
