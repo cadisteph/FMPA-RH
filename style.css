@@ -1,18 +1,17 @@
 /* ==========================================================================
-   1. BASE GLOBAL & TYPOGRAPHIE
+   1. BASE & STRUCTURE GLOBALE
    ========================================================================== */
 html, body {
     height: 100vh !important;
-    max-height: 100vh !important;
     margin: 0 !important;
     padding: 10px !important;
     overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
     box-sizing: border-box !important;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f4f6f9;
     color: #2d3748;
+    display: flex !important;
+    flex-direction: column !important;
 }
 
 *, *:before, *:after {
@@ -20,9 +19,9 @@ html, body {
 }
 
 /* ==========================================================================
-   2. NAVIGATION & BARRE DE FILTRES
+   2. BANDEAU DE NAVIGATION & FILTRES
    ========================================================================== */
-.tabs-nav, .tabs {
+.tabs-nav {
     display: flex;
     gap: 8px;
     margin-bottom: 8px;
@@ -34,7 +33,7 @@ html, body {
 .tab-btn {
     background: #edf2f7;
     border: none;
-    padding: 6px 12px;
+    padding: 6px 14px;
     font-weight: bold;
     cursor: pointer;
     border-radius: 4px;
@@ -49,14 +48,13 @@ html, body {
     color: white;
 }
 
-/* CARDE DE FILTRES EN LIGNE (FIX CORRECTION) */
 .toolbar-card {
-    background: #edf2f7;
-    padding: 8px 12px;
-    border-radius: 6px;
-    margin-bottom: 10px;
-    border: 1px solid #cbd5e0;
-    flex-shrink: 0;
+    background: #edf2f7 !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    margin-bottom: 8px !important;
+    border: 1px solid #cbd5e0 !important;
+    flex-shrink: 0 !important;
 }
 
 .filters-row {
@@ -64,14 +62,14 @@ html, body {
     flex-direction: row !important;
     flex-wrap: wrap !important;
     align-items: flex-end !important;
-    gap: 10px !important;
+    gap: 8px 12px !important;
     width: 100% !important;
 }
 
 .filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
 }
 
 .filter-group label {
@@ -92,44 +90,38 @@ html, body {
 }
 
 .action-buttons {
-    display: flex;
-    gap: 6px;
-    align-items: center;
+    display: flex !important;
+    gap: 6px !important;
+    align-items: flex-end !important;
 }
 
 .counter-badge {
-    margin-left: auto; /* Pousse le compteur à droite */
+    margin-left: auto !important;
+    align-self: center !important;
     font-weight: bold;
     font-size: 0.85em;
     color: #1a365d;
-    align-self: center;
 }
 
 /* ==========================================================================
-   LAYOUT PRINCIPAL : Hauteur fixe pour forcer le scroll interne
+   3. DISPOSITION EN 2 COLONNES (SECTION RH)
    ========================================================================== */
 #sectionRH {
     display: flex !important;
     flex-direction: row !important;
-    gap: 15px !important;
+    gap: 12px !important;
     flex: 1 !important;
-    height: calc(100vh - 170px) !important; /* Ajuste la hauteur disponible */
-    max-height: calc(100vh - 170px) !important;
     min-height: 0 !important;
+    height: calc(100vh - 165px) !important;
     width: 100% !important;
     overflow: hidden !important;
-    align-items: stretch !important;
 }
 
-/* Tableau à gauche : 62% */
+/* --- COLONNE GAUCHE : TABLEAU --- */
 .table-container {
-    flex: 0 0 62% !important;
-    width: 62% !important;
-    max-width: 62% !important;
+    flex: 1 1 60% !important;
     height: 100% !important;
-    max-height: 100% !important;
-    overflow-y: auto !important; /* Scroll vertical */
-    overflow-x: auto !important; /* Scroll horizontal */
+    overflow: auto !important;
     background: #ffffff !important;
     border: 1px solid #cbd5e0 !important;
     border-radius: 6px !important;
@@ -158,14 +150,12 @@ html, body {
     white-space: nowrap;
 }
 
-/* Fiche agent à droite : Scroll vertical autonome */
+/* --- COLONNE DROITE : FICHE AGENT --- */
 .form-card {
-    flex: 0 0 36% !important;
-    width: 36% !important;
-    max-width: 36% !important;
+    flex: 0 0 38% !important;
+    max-width: 38% !important;
     height: 100% !important;
-    max-height: 100% !important;
-    overflow-y: auto !important; /* Scroll vertical */
+    overflow-y: auto !important;
     overflow-x: hidden !important;
     background: #ffffff !important;
     border: 1px solid #0056b3 !important;
@@ -173,108 +163,101 @@ html, body {
     padding: 12px !important;
 }
 
-/* Style propre pour la barre de défilement de la fiche agent */
-.form-card::-webkit-scrollbar,
-.table-container::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-.form-card::-webkit-scrollbar-thumb,
-.table-container::-webkit-scrollbar-thumb {
-    background-color: #cbd5e0;
-    border-radius: 4px;
-}
-
-.form-card::-webkit-scrollbar-thumb:hover,
-.table-container::-webkit-scrollbar-thumb:hover {
-    background-color: #a0aec0;
-
-/* ==========================================================================
-   4. FORMULAIRES & CHAMPS
-   ========================================================================== */
-.form-title {
-    color: #0056b3;
-    font-size: 1.05em;
-    font-weight: bold;
-    margin: 0 0 10px 0;
-    padding-bottom: 5px;
-    border-bottom: 2px solid #e9ecef;
-}
-
+/* Restauration de la grille 3 colonnes à l'intérieur du formulaire */
 .form-grid-3 {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px 6px;
-    width: 100%;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px 8px !important;
+    width: 100% !important;
 }
 
 .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
 }
 
 .form-group label {
     font-weight: 600;
-    font-size: 0.75em;
+    font-size: 0.72em;
     color: #4a5568;
-    white-space: normal;
-    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .form-card select, 
 .form-card input, 
 .form-card textarea {
-    padding: 4px 6px;
-    border-radius: 4px;
-    border: 1px solid #cbd5e0;
-    font-size: 11px;
-    height: 28px;
-    width: 100%;
-    max-width: 100%;
+    padding: 3px 5px !important;
+    border-radius: 4px !important;
+    border: 1px solid #cbd5e0 !important;
+    font-size: 11px !important;
+    height: 26px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
-.form-card textarea { height: 48px; }
+.form-card textarea { 
+    height: 42px !important; 
+}
+
+/* Éléments sur toute la largeur (3 colonnes) */
+.span-3 { 
+    grid-column: span 3 / span 3 !important; 
+}
 
 .card-gardes-container {
-    background-color: #e8f4f8;
-    border: 1px solid #bce1ec;
-    border-radius: 6px;
-    padding: 8px;
-    margin: 6px 0;
-    font-size: 0.78em;
-    color: #0056b3;
+    background-color: #e8f4f8 !important;
+    border: 1px solid #bce1ec !important;
+    border-radius: 6px !important;
+    padding: 6px 8px !important;
+    margin: 4px 0 !important;
+    font-size: 0.75em !important;
+    color: #0056b3 !important;
 }
 
-.form-actions {
-    display: flex;
-    gap: 6px;
-    margin-top: 12px;
-    flex-wrap: wrap;
+#containerCompetencesForm {
+    background: #f8f9fa !important;
+    padding: 8px !important;
+    border: 1px solid #cbd5e0 !important;
+    border-radius: 4px !important;
+    margin-top: 4px !important;
 }
 
-/* Boutons */
-.btn, .btn-dark, .btn-success, .btn-primary, .btn-secondary, .btn-danger, .btn-warning {
-    padding: 5px 10px;
-    border: none;
+/* ==========================================================================
+   4. BOUTONS & STYLES DES ACTIONS
+   ========================================================================== */
+.btn, .btn-dark, .btn-success, .btn-primary, .btn-secondary, .btn-danger, .btn-warning, .btn-reseau {
+    padding: 4px 10px !important;
+    border: none !important;
+    border-radius: 4px !important;
+    font-weight: bold !important;
+    font-size: 0.78em !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 28px !important;
+}
+
+.btn-primary { background: #1a365d !important; color: white !important; }
+.btn-secondary, .btn-dark { background: #4a5568 !important; color: white !important; }
+.btn-danger { background: #e53e3e !important; color: white !important; }
+.btn-warning { background: #dd6b20 !important; color: white !important; }
+.btn-success { background: #2f855a !important; color: white !important; }
+.btn-reseau { background: #2d3748 !important; color: white !important; }
+
+button:hover { opacity: 0.9; }
+
+/* Barres de défilement discrètes */
+.form-card::-webkit-scrollbar,
+.table-container::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.form-card::-webkit-scrollbar-thumb,
+.table-container::-webkit-scrollbar-thumb {
+    background-color: #cbd5e0;
     border-radius: 4px;
-    font-weight: bold;
-    font-size: 0.78em;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 28px;
 }
-
-.btn-primary { background: #1a365d; color: white; }
-.btn-secondary { background: #4a5568; color: white; }
-.btn-dark { background: #4a5568; color: white; }
-.btn-danger { background: #e53e3e; color: white; }
-.btn-warning { background: #dd6b20; color: white; }
-.btn-success { background: #2f855a; color: white; }
-.btn:hover, button:hover { opacity: 0.9; }
-
-.span-3 { grid-column: span 3 / span 3; }
-.span-2 { grid-column: span 2 / span 2; }
