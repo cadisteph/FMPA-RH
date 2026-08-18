@@ -112,7 +112,9 @@ html, body {
     gap: 12px !important;
     flex: 1 !important;
     min-height: 0 !important;
-    height: calc(100vh - 165px) !important;
+    /* Reduit la hauteur globale pour que les bas de page soient visibles */
+    height: calc(100vh - 195px) !important;
+    max-height: calc(100vh - 195px) !important;
     width: 100% !important;
     overflow: hidden !important;
 }
@@ -160,10 +162,9 @@ html, body {
     background: #ffffff !important;
     border: 1px solid #0056b3 !important;
     border-radius: 6px !important;
-    padding: 12px !important;
+    padding: 12px 12px 30px 12px !important; /* 30px d'espace de sécurité en bas */
 }
 
-/* Restauration de la grille 3 colonnes à l'intérieur du formulaire */
 .form-grid-3 {
     display: grid !important;
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
@@ -202,7 +203,6 @@ html, body {
     height: 42px !important; 
 }
 
-/* Éléments sur toute la largeur (3 colonnes) */
 .span-3 { 
     grid-column: span 3 / span 3 !important; 
 }
@@ -249,6 +249,16 @@ html, body {
 .btn-reseau { background: #2d3748 !important; color: white !important; }
 
 button:hover { opacity: 0.9; }
+
+/* Alignement des boutons du formulaire */
+.form-actions {
+    grid-column: span 3 / span 3 !important;
+    display: flex !important;
+    gap: 8px !important;
+    margin-top: 12px !important;
+    padding-top: 8px !important;
+    border-top: 1px solid #e2e8f0 !important;
+}
 
 /* Barres de défilement discrètes */
 .form-card::-webkit-scrollbar,
