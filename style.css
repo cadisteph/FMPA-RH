@@ -271,3 +271,24 @@ button:hover { opacity: 0.9; }
     background-color: #cbd5e0;
     border-radius: 4px;
 }
+
+/* ==========================================================================
+   STYLE SPÉCIFIQUE : CASES À COCHER COMPÉTENCES (CIBLAGE AUTOMATIQUE)
+   ========================================================================== */
+#containerCompetencesForm label {
+    font-size: 0.7em !important;      /* Taille du texte */
+    font-weight: 600 !important;       /* Texte légèrement en gras */
+    color: #4a5568 !important;         /* Couleur gris foncé */
+    cursor: pointer !important;        /* Transforme le curseur en main au survol */
+    display: inline-flex !important;   /* Aligne proprement la case et le texte */
+    align-items: center !important;   /* Centre verticalement la case et le texte */
+    gap: 4px !important;               /* Espace entre la case et le texte */
+    user-select: none !important;      /* Empêche la sélection bleue du texte */
+}
+
+#containerCompetencesForm input[type="checkbox"] {
+    width: 14px !important;
+    height: 14px !important;
+    cursor: pointer !important;
+    margin: 0 !important;
+}
