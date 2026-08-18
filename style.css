@@ -113,8 +113,8 @@ html, body {
     flex: 1 !important;
     min-height: 0 !important;
     /* Reduit la hauteur globale pour que les bas de page soient visibles */
-    height: calc(100vh - 195px) !important;
-    max-height: calc(100vh - 195px) !important;
+    height: calc(100vh - 200px) !important;
+    max-height: calc(100vh - 200px) !important;
     width: 100% !important;
     overflow: hidden !important;
 }
