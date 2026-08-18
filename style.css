@@ -121,7 +121,7 @@ html, body {
 
 /* --- COLONNE GAUCHE : TABLEAU --- */
 .table-container {
-    flex: 1 1 60% !important;
+    flex: 1 1 100% !important;
     height: 85% !important;
     overflow: auto !important;
     background: #ffffff !important;
@@ -154,8 +154,8 @@ html, body {
 
 /* --- COLONNE DROITE : FICHE AGENT --- */
 .form-card {
-    flex: 0 0 38% !important;
-    max-width: 38% !important;
+    flex: 0 0 25% !important;
+    max-width: 25% !important;
     height: 85% !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
