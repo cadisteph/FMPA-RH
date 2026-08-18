@@ -6,7 +6,7 @@ html, body {
     max-height: 100vh !important;
     margin: 0 !important;
     padding: 10px !important;
-    overflow: hidden !important; /* Empêche le scroll de la page complète */
+    overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
     box-sizing: border-box !important;
@@ -25,21 +25,21 @@ html, body {
 .tabs-nav, .tabs {
     display: flex;
     gap: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     border-bottom: 2px solid #e2e8f0;
-    padding-bottom: 6px;
+    padding-bottom: 4px;
     flex-shrink: 0;
 }
 
 .tab-btn {
     background: #edf2f7;
     border: none;
-    padding: 8px 16px;
+    padding: 6px 12px;
     font-weight: bold;
     cursor: pointer;
     border-radius: 4px;
     color: #4a5568;
-    font-size: 0.9em;
+    font-size: 0.85em;
     transition: background 0.2s;
 }
 
@@ -49,34 +49,40 @@ html, body {
     color: white;
 }
 
-.toolbar-card, .filter-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+/* CARDE DE FILTRES EN LIGNE (FIX CORRECTION) */
+.toolbar-card {
     background: #edf2f7;
     padding: 8px 12px;
     border-radius: 6px;
     margin-bottom: 10px;
-    align-items: flex-end;
     border: 1px solid #cbd5e0;
     flex-shrink: 0;
 }
 
-.filter-item, .filter-group {
+.filters-row {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: flex-end !important;
+    gap: 10px !important;
+    width: 100% !important;
+}
+
+.filter-group {
     display: flex;
     flex-direction: column;
     gap: 2px;
 }
 
-.filter-item label, .filter-group label {
-    font-size: 0.72em;
+.filter-group label {
+    font-size: 0.7em;
     font-weight: bold;
     color: #4a5568;
     text-transform: uppercase;
 }
 
-.filter-item select, .filter-item input,
-.filter-group select, .filter-group input {
+.filter-group select, 
+.filter-group input {
     height: 28px;
     font-size: 0.8em;
     padding: 2px 6px;
@@ -85,22 +91,36 @@ html, body {
     background-color: white;
 }
 
+.action-buttons {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.counter-badge {
+    margin-left: auto; /* Pousse le compteur à droite */
+    font-weight: bold;
+    font-size: 0.85em;
+    color: #1a365d;
+    align-self: center;
+}
+
 /* ==========================================================================
    3. LAYOUT PRINCIPAL (TABLEAU + FICHE AGENT)
    ========================================================================== */
-#sectionRH, .content-layout {
+#sectionRH {
     display: flex !important;
     flex-direction: row !important;
     gap: 15px !important;
     flex: 1 !important;
-    min-height: 0 !important; /* Indispensable pour activer le scroll interne */
+    min-height: 0 !important;
     width: 100% !important;
     overflow: hidden !important;
     align-items: stretch !important;
 }
 
-/* Tableau à gauche : 62% de la largeur */
-.table-container, .table-section {
+/* Tableau à gauche : 62% */
+.table-container {
     flex: 0 0 62% !important;
     width: 62% !important;
     max-width: 62% !important;
@@ -112,13 +132,13 @@ html, body {
     border-radius: 6px !important;
 }
 
-.table-rh, table {
+.table-rh {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.75em;
 }
 
-.table-rh thead th, th {
+.table-rh thead th {
     position: sticky !important;
     top: 0 !important;
     z-index: 2 !important;
@@ -129,14 +149,14 @@ html, body {
     white-space: nowrap;
 }
 
-td {
+.table-rh td {
     padding: 5px 6px;
     border-bottom: 1px solid #e2e8f0;
     white-space: nowrap;
 }
 
-/* Formulaire à droite : 36% de la largeur */
-.form-card, .sidebar-fiche {
+/* Formulaire à droite : 36% */
+.form-card {
     flex: 0 0 36% !important;
     width: 36% !important;
     max-width: 36% !important;
@@ -149,7 +169,6 @@ td {
     padding: 12px !important;
 }
 
-/* Scrollbar discrète pour le formulaire */
 .form-card::-webkit-scrollbar { width: 6px; }
 .form-card::-webkit-scrollbar-thumb { background-color: #0056b3; border-radius: 4px; }
 .form-card::-webkit-scrollbar-track { background: #f1f1f1; }
@@ -173,28 +192,23 @@ td {
     width: 100%;
 }
 
-.form-grid-2 {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px 6px;
-    width: 100%;
-}
-
 .form-group {
     display: flex;
     flex-direction: column;
     gap: 2px;
 }
 
-.form-group label, label {
+.form-group label {
     font-weight: 600;
     font-size: 0.75em;
     color: #4a5568;
-    white-space: normal; /* Permet le retour à la ligne si le texte est long */
+    white-space: normal;
     line-height: 1.1;
 }
 
-select, input, textarea {
+.form-card select, 
+.form-card input, 
+.form-card textarea {
     padding: 4px 6px;
     border-radius: 4px;
     border: 1px solid #cbd5e0;
@@ -204,10 +218,9 @@ select, input, textarea {
     max-width: 100%;
 }
 
-textarea { height: 48px; }
+.form-card textarea { height: 48px; }
 
-/* Encart Gardes */
-.gardes-box, .card-gardes-container {
+.card-gardes-container {
     background-color: #e8f4f8;
     border: 1px solid #bce1ec;
     border-radius: 6px;
@@ -217,7 +230,6 @@ textarea { height: 48px; }
     color: #0056b3;
 }
 
-/* Actions et Boutons */
 .form-actions {
     display: flex;
     gap: 6px;
@@ -225,25 +237,27 @@ textarea { height: 48px; }
     flex-wrap: wrap;
 }
 
-.btn {
-    padding: 6px 10px;
+/* Boutons */
+.btn, .btn-dark, .btn-success, .btn-primary, .btn-secondary, .btn-danger, .btn-warning {
+    padding: 5px 10px;
     border: none;
     border-radius: 4px;
     font-weight: bold;
-    font-size: 0.8em;
+    font-size: 0.78em;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    height: 28px;
 }
 
 .btn-primary { background: #1a365d; color: white; }
 .btn-secondary { background: #4a5568; color: white; }
+.btn-dark { background: #4a5568; color: white; }
 .btn-danger { background: #e53e3e; color: white; }
 .btn-warning { background: #dd6b20; color: white; }
-.btn-success { background: #38a169; color: white; }
-.btn:hover { opacity: 0.9; }
+.btn-success { background: #2f855a; color: white; }
+.btn:hover, button:hover { opacity: 0.9; }
 
-/* Utilitaires de grille */
 .span-3 { grid-column: span 3 / span 3; }
 .span-2 { grid-column: span 2 / span 2; }
