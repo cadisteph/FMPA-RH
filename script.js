@@ -177,22 +177,25 @@ function mettreAJourAffichageAge() {
 }
 
 function adapterFormulaireSelonStatut() {
-  const statut = document.getElementById('agentStatut').value;
+  const selectStatut = document.getElementById('agentStatut');
+  if (!selectStatut) return;
+
+  const statut = selectStatut.value;
   
   const groupTempsPartiel = document.getElementById('groupTempsPartiel');
   const groupEngagementDiff = document.getElementById('groupEngagementDiff');
   const groupDisponibilite = document.getElementById('groupDisponibilite');
 
   if (statut === 'SPV') {
-    // Si l'agent est SPV : on masque Temps Partiel et on affiche Engagement + Dispo
-    if (groupTempsPartiel) groupTempsPartiel.style.display = 'none';
-    if (groupEngagementDiff) groupEngagementDiff.style.display = 'flex';
-    if (groupDisponibilite) groupDisponibilite.style.display = 'flex';
+    // Masque Temps Partiel / Affiche SPV
+    if (groupTempsPartiel) groupTempsPartiel.style.setProperty('display', 'none', 'important');
+    if (groupEngagementDiff) groupEngagementDiff.style.setProperty('display', 'flex', 'important');
+    if (groupDisponibilite) groupDisponibilite.style.setProperty('display', 'flex', 'important');
   } else {
-    // Si l'agent est SPP ou PATS : on affiche Temps Partiel et on masque le reste
-    if (groupTempsPartiel) groupTempsPartiel.style.display = 'flex';
-    if (groupEngagementDiff) groupEngagementDiff.style.display = 'none';
-    if (groupDisponibilite) groupDisponibilite.style.display = 'none';
+    // Affiche Temps Partiel / Masque SPV
+    if (groupTempsPartiel) groupTempsPartiel.style.setProperty('display', 'flex', 'important');
+    if (groupEngagementDiff) groupEngagementDiff.style.setProperty('display', 'none', 'important');
+    if (groupDisponibilite) groupDisponibilite.style.setProperty('display', 'none', 'important');
   }
     actualiserIndicateurGardes();
 }
@@ -1179,4 +1182,4 @@ function actualiserIndicateurGardes() {
     }
 }
 
-
+document.addEventListener('DOMContentLoaded', adapterFormulaireSelonStatut);
