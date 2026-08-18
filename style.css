@@ -225,9 +225,7 @@ html, body {
     margin-top: 4px !important;
 }
 
-/* ==========================================================================
-   4. BOUTONS & STYLES DES ACTIONS
-   ========================================================================== */
+/* =======BOUTONS & STYLES DES ACTIONS========== */
 .btn, .btn-dark, .btn-success, .btn-primary, .btn-secondary, .btn-danger, .btn-warning, .btn-reseau {
     padding: 4px 10px !important;
     border: none !important;
@@ -272,9 +270,7 @@ button:hover { opacity: 0.9; }
     border-radius: 4px;
 }
 
-/* ==========================================================================
-   STYLE SPÉCIFIQUE : CASES À COCHER COMPÉTENCES (CIBLAGE AUTOMATIQUE)
-   ========================================================================== */
+/* =====STYLE SPÉCIFIQUE : CASES À COCHER COMPÉTENCES (CIBLAGE AUTOMATIQUE)====== */
 #containerCompetencesForm label {
     font-size: 0.7em !important;      /* Taille du texte */
     font-weight: 600 !important;       /* Texte légèrement en gras */
@@ -309,10 +305,7 @@ button:hover { opacity: 0.9; }
 }
 
 
-/* ==========================================================================
-   DISPOSITION 2x2 PLEINE LARGEUR POUR COD, IBNB, RAD, RCH
-   ========================================================================== */
-
+/* ======DISPOSITION 2x2 PLEINE LARGEUR POUR COD, IBNB, RAD, RCH====== */
 /* Force le conteneur des 4 spécialités à occuper 2 colonnes égales */
 #containerCompetencesForm .form-grid-2 {
     display: grid !important;
@@ -335,3 +328,17 @@ button:hover { opacity: 0.9; }
     box-sizing: border-box !important;
 }
 
+/* Style du titre (FICHE INDIVIDUELLE) du formulaire */
+.form-title {
+    font-size: 1.1em !important;         /* Taille du texte */
+    font-weight: bold !important;        /* Gras (ou 'normal' pour retirer le gras) */
+    font-family: Arial, sans-serif !important; /* Police de caractère */
+    color: #1a365d !important;          /* Couleur du texte (bleu foncé) */
+    background-color: #fef08a !important;/* Surlignage (jaune doux) */
+    
+    /* Options de finition recommandées */
+    display: inline-block !important;    /* Ajuste le surlignage à la longueur du texte */
+    padding: 2px 6px !important;         /* Marge interne autour du texte surligné */
+    border-radius: 3px !important;       /* Arrondit légèrement les coins du surlignage */
+    text-transform: uppercase !important;/* Force tout en majuscules */
+}
