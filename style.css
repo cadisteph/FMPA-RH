@@ -333,12 +333,12 @@ button:hover { opacity: 0.9; }
     font-size: 1.1em !important;         /* Taille du texte */
     font-weight: bold !important;        /* Gras (ou 'normal' pour retirer le gras) */
     font-family: Arial, sans-serif !important; /* Police de caractère */
-    color: #1a365d !important;          /* Couleur du texte (bleu foncé) */
-    background-color: #fef08a !important;/* Surlignage (jaune doux) */
+    color: #1a365d !important ;         /* Couleur du texte (bleu foncé) */
+    background-color: #bcc3ec !important;/* Surlignage (jaune doux) */
     
     /* Options de finition recommandées */
     display: inline-block !important;    /* Ajuste le surlignage à la longueur du texte */
     padding: 2px 6px !important;         /* Marge interne autour du texte surligné */
-    border-radius: 3px !important;       /* Arrondit légèrement les coins du surlignage */
+    border-radius: 6px !important;       /* Arrondit légèrement les coins du surlignage */
     text-transform: uppercase !important;/* Force tout en majuscules */
 }
