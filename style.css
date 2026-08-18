@@ -297,5 +297,35 @@ button:hover { opacity: 0.9; }
     display: none; /* Masqué par défaut */
     flex-direction: column;
     justify-content: flex-end;
-    height: 100%;
+    width: 18px !important;   /* Ajuste la largeur (par défaut ~14px) */
+    height: 18px !important;  /* Ajuste la hauteur */
+    cursor: pointer !important;
 }
+
+
+/* ==========================================================================
+   DISPOSITION 2x2 PLEINE LARGEUR POUR COD, IBNB, RAD, RCH
+   ========================================================================== */
+
+/* Force le conteneur des 4 spécialités à occuper 2 colonnes égales */
+#containerCompetencesForm .form-grid-2 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important; /* 2 colonnes égales (50% / 50%) */
+    gap: 6px 10px !important;                 /* Espacement vertical et horizontal */
+    width: 100% !important;
+    margin-bottom: 8px !important;
+}
+
+/* S'assure que chaque champ s'étale bien sur sa moitié de ligne */
+#containerCompetencesForm .form-grid-2 .form-group {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+}
+
+#containerCompetencesForm .form-grid-2 select {
+    width: 100% !important;
+    height: 26px !important;
+    box-sizing: border-box !important;
+}
+
