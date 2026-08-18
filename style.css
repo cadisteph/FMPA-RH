@@ -122,7 +122,7 @@ html, body {
 /* --- COLONNE GAUCHE : TABLEAU --- */
 .table-container {
     flex: 1 1 60% !important;
-    height: 92% !important;
+    height: 85% !important;
     overflow: auto !important;
     background: #ffffff !important;
     border: 1px solid #cbd5e0 !important;
@@ -156,13 +156,13 @@ html, body {
 .form-card {
     flex: 0 0 38% !important;
     max-width: 38% !important;
-    height: 92% !important;
+    height: 85% !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     background: #ffffff !important;
     border: 1px solid #0056b3 !important;
     border-radius: 6px !important;
-    padding: 12px 12px 30px 12px !important; /* 30px d'espace de sécurité en bas */
+    padding: 12px 12px 5px 12px !important; /* 5px d'espace de sécurité en bas */
 }
 
 .form-grid-3 {
