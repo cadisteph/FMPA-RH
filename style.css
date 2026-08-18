@@ -293,12 +293,18 @@ button:hover { opacity: 0.9; }
     margin: 0 !important;
 }
 
+/* 1. Le conteneur (alignement et masquage initial) */
 #groupDisponibilite {
-    display: none; /* Masqué par défaut */
+    display: none; /* Masqué par défaut (géré par JS) */
     flex-direction: column;
     justify-content: flex-end;
-    width: 18px !important;   /* Ajuste la largeur (par défaut ~14px) */
-    height: 18px !important;  /* Ajuste la hauteur */
+    width: 100%;
+}
+
+/* 2. La case à cocher elle-même (sa taille) */
+#agentDisponibilite {
+    width: 18px !important;
+    height: 18px !important;
     cursor: pointer !important;
 }
 
