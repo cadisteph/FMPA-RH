@@ -463,7 +463,7 @@ async function connecterFichierReseau() {
 
         listeAgents = agentsReseau;
         actualiserTableauRH();
-        document.getElementById("statusReseau").innerText = "🌐 Connecté (" + file.name + ") : enregistrement possible";
+        document.getElementById("statusReseau").innerText = "🌐 Connecté : enregistrement possible";
         document.getElementById("statusReseau").style.color = "#08e3f5";
         alert(`Chargement réussi : ${agentsReseau.length} agents importés.`);
 
