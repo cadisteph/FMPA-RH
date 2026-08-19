@@ -58,6 +58,191 @@ function parseCSVLine(str) {
     return arr;
 }
 
+
+
+
+
+
+
+/* ==========================================================================
+   1. CALCUL DYNAMIQUE DES BASES DE GARDES
+   ========================================================================== */
+
+// Calcule le nombre de gardes de base selon l'âge, l'entrée SDIS (Liste 2), le régime et la fonction
+function calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction) {
+    let baseG24 = 0, baseG12 = 0;
+    
+    if (!dateNaissanceStr || !dateEntreeStr) {
+        if (regime === "G24") baseG24 = (fonction === "CDG") ? 74 : 92;
+        else if (regime === "Mixte") { baseG24 = (fonction === "CDG") ? 67 : 83; baseG12 = (fonction === "CDG") ? 10 : 14; }
+        else if (regime === "G12") baseG12 = 133;
+        return { g24: baseG24, g12: baseG12 };
+    }
+
+    const dateEntree = new Date(dateEntreeStr);
+    const dateNaissance = new Date(dateNaissanceStr);
+    const estListe2 = (dateEntree < new Date("2013-10-01") && dateNaissance <= new Date("1976-12-31"));
+    const age = 2026 - dateNaissance.getFullYear();
+
+    if (regime === "G12") {
+        if (age < 45) baseG12 = 133;
+        else if (age <= 49) baseG12 = 132;
+        else if (age <= 54) baseG12 = 131;
+        else if (age <= 59) baseG12 = 130;
+        else baseG12 = 129;
+    } else if (regime === "G24") {
+        if (fonction === "CDG") {
+            if (estListe2) {
+                if (age < 45) baseG24 = 74; else if (age <= 49) baseG24 = 71; else if (age <= 54) baseG24 = 70; else if (age <= 59) baseG24 = 69; else baseG24 = 68;
+            } else {
+                if (age < 45) baseG24 = 74; else if (age <= 49) baseG24 = 73; else if (age <= 54) baseG24 = 71; else if (age <= 59) baseG24 = 70; else baseG24 = 69;
+            }
+        } else {
+            if (age < 45) baseG24 = 92; else if (age <= 49) baseG24 = 91; else if (age <= 54) baseG24 = 89; else if (age <= 59) baseG24 = 88; else baseG24 = 87;
+        }
+    } else if (regime === "Mixte") {
+        if (fonction === "CDG") {
+            if (estListe2) {
+                if (age < 47) { baseG24 = 67; baseG12 = 10; } else if (age === 47) { baseG24 = 67; baseG12 = 9; } else if (age === 48) { baseG24 = 67; baseG12 = 8; } else if (age === 49) { baseG24 = 67; baseG12 = 7; } else if (age <= 54) { baseG24 = 66; baseG12 = 7; } else if (age <= 59) { baseG24 = 65; baseG12 = 7; } else { baseG24 = 64; baseG12 = 7; }
+            } else {
+                if (age < 45) { baseG24 = 67; baseG12 = 10; } else if (age <= 49) { baseG24 = 67; baseG12 = 9; } else if (age <= 54) { baseG24 = 66; baseG12 = 9; } else if (age <= 59) { baseG24 = 65; baseG12 = 9; } else { baseG24 = 64; baseG12 = 9; }
+            }
+        } else {
+            if (estListe2) {
+                if (age < 47) { baseG24 = 83; baseG12 = 14; } else if (age === 47) { baseG24 = 83; baseG12 = 13; } else if (age === 48) { baseG24 = 83; baseG12 = 12; } else if (age === 49) { baseG24 = 83; baseG12 = 11; } else if (age <= 54) { baseG24 = 82; baseG12 = 11; } else if (age <= 59) { baseG24 = 81; baseG12 = 11; } else { baseG24 = 80; baseG12 = 11; }
+            } else {
+                if (age < 45) { baseG24 = 83; baseG12 = 14; } else if (age <= 49) { baseG24 = 83; baseG12 = 13; } else if (age <= 54) { baseG24 = 82; baseG12 = 13; } else if (age <= 59) { baseG24 = 81; baseG12 = 13; } else { baseG24 = 80; baseG12 = 13; }
+            }
+        }
+    }
+    return { g24: baseG24, g12: baseG12 };
+}
+
+// Formate le texte d'affichage de la carte
+function obtenirDetailsGardes(agent) {
+    if (!agent || agent.regime === "SHR" || agent.regime === "SPV" || agent.statut === "SPV" || agent.statut === "PATS") {
+        return { total: "-", repartition: "-" };
+    }
+
+    const bases = calculerBasesGardes(agent.naissanceDate, agent.entreeSdis, agent.regime, agent.fonction);
+    
+    let ratio = 1;
+    if (agent.tempsPartiel && agent.tempsPartiel.includes("%")) {
+        let val = parseInt(agent.tempsPartiel);
+        if (!isNaN(val)) ratio = val / 100;
+    }
+
+    let g24 = Math.round(bases.g24 * ratio);
+    let g12 = Math.round(bases.g12 * ratio);
+
+    if (agent.regime === "G24") {
+        let s1 = Math.ceil(g24 / 2);
+        let s2 = Math.floor(g24 / 2);
+        return {
+            total: `${g24}`,
+            repartition: `S1: ${s1} (${s1 * 17}h) | S2: ${s2} (${s2 * 17}h) <span class="total-annuel-highlight">[${g24 * 17}h]</span>`
+        };
+    } else if (agent.regime === "G12") {
+        let s1 = Math.ceil(g12 / 2);
+        let s2 = Math.floor(g12 / 2);
+        return {
+            total: `${g12}`,
+            repartition: `S1: ${s1} (${s1 * 12}h) | S2: ${s2} (${s2 * 12}h) <span class="total-annuel-highlight">[${g12 * 12}h]</span>`
+        };
+    } else if (agent.regime === "Mixte") {
+        let totalGardes = g24 + g12;
+        let totalHeures = (g24 * 17) + (g12 * 12);
+        return {
+            total: `${g24} G24 + ${g12} G12`,
+            repartition: `${totalGardes} gardes <span class="total-annuel-highlight">[${totalHeures}h]</span>`
+        };
+    }
+
+    return { total: "-", repartition: "-" };
+}
+
+// Lit les valeurs du formulaire et met à jour l'IHM
+function actualiserIndicateurGardes() {
+    const regime = document.getElementById("agentRegime") ? document.getElementById("agentRegime").value : "";
+    const fonction = document.getElementById("agentFonction") ? document.getElementById("agentFonction").value : "";
+    const naissanceDate = document.getElementById("agentNaissanceDate") ? document.getElementById("agentNaissanceDate").value : "";
+    const entreeSdis = document.getElementById("agentEntreeSdis") ? document.getElementById("agentEntreeSdis").value : "";
+    const tempsPartiel = document.getElementById("agentTempsPartiel") ? document.getElementById("agentTempsPartiel").value : "";
+    const statut = document.getElementById("agentStatut") ? document.getElementById("agentStatut").value : "";
+
+    const elValeur = document.getElementById("valeurGardes");
+    const elRatio = document.getElementById("ratioSemestre");
+
+    if (!elValeur || !elRatio) return;
+
+    const dummyAgent = { regime, fonction, naissanceDate, entreeSdis, tempsPartiel, statut };
+    const details = obtenirDetailsGardes(dummyAgent);
+
+    elValeur.innerHTML = details.total;
+    elRatio.innerHTML = details.repartition;
+}
+
+/* ==========================================================================
+   2. GESTION DU FORMULAIRE ET DES CHAMPS CONDITIONNELS
+   ========================================================================== */
+
+function adapterFormulaireSelonStatut() {
+    const statut = document.getElementById("agentStatut") ? document.getElementById("agentStatut").value : "";
+    const groupDispo = document.getElementById("groupDisponibilite");
+
+    if (groupDispo) {
+        // Affiche la case disponibilité seulement pour les SPV
+        if (statut === "SPV") {
+            groupDispo.style.display = "flex";
+        } else {
+            groupDispo.style.display = "none";
+        }
+    }
+    
+    // Recalcule les gardes quand le statut change
+    actualiserIndicateurGardes();
+}
+
+/* ==========================================================================
+   3. INITIALISATION AU CHARGEMENT DE LA PAGE
+   ========================================================================== */
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Écouteurs pour la mise à jour dynamique de la carte de gardes
+    const idsAEcouter = [
+        "agentRegime", 
+        "agentFonction", 
+        "agentNaissanceDate", 
+        "agentEntreeSdis", 
+        "agentTempsPartiel", 
+        "agentStatut"
+    ];
+
+    idsAEcouter.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('change', actualiserIndicateurGardes);
+            el.addEventListener('input', actualiserIndicateurGardes);
+        }
+    });
+
+    // Écouteur sur le statut pour adapter le formulaire
+    const elStatut = document.getElementById("agentStatut");
+    if (elStatut) {
+        elStatut.addEventListener('change', adapterFormulaireSelonStatut);
+    }
+
+    // Exécution initiale
+    adapterFormulaireSelonStatut();
+    actualiserIndicateurGardes();
+});
+
+
+
+
+
+
+
 // --- LOGIQUE DU TABLEAU RH ---
 
 function adapterFormulaireSelonStatut() {
