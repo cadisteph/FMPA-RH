@@ -911,20 +911,6 @@ window.onload = function() {
     actualiserTableauRH();
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    const btnReseau = document.getElementById('btnConnecterReseau');
-    
-    if (btnReseau) {
-        btnReseau.addEventListener('click', () => {
-            console.log("Tentative de connexion au réseau...");
-            if (typeof connecterFichierReseau === 'function') {
-                connecterFichierReseau();
-            } else {
-                alert("La logique de connexion reste à définir dans le script.");
-            }
-        });
-    }
-});
 
 // 1. Fonction appelée par le bouton "Connecter le fichier réseau"
 async function connecterFichierReseau() {
