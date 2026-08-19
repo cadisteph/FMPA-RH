@@ -31,10 +31,10 @@
 
     <!-- 1. BARRE D'ONGLETS -->
     <nav class="tabs-nav">
-      <button class="tab-btn">📊 Suivi FMA Socle</button>
-      <button class="tab-btn">🎯 Suivi FMA Spécialités</button>
-      <button class="tab-btn active">👥 Gestion Effectifs RH</button>
-      <button class="tab-btn">📚 Catalogue & ⚙️ Config</button>
+      <button class="tab-btn"onclick="changerOnglet('suivi')">📊 Suivi FMA Socle</button>
+      <button class="tab-btn"onclick="changerOnglet('spe')">🎯 Suivi FMA Spécialités</button>
+      <button class="tab-btn active"onclick="changerOnglet('rh')">👥 Gestion Effectifs RH</button>
+      <button class="tab-btn"onclick="changerOnglet('config')">📚 Catalogue & ⚙️ Config</button>
     </nav>
 
     <!-- 2. PANNEAU DE FILTRES ET BOUTONS -->
@@ -131,7 +131,7 @@
           <input type="text" id="rh_recherche" placeholder="Matricule, nom..." oninput="actualiserTableauRH()">
         </div>
         <div class="action-buttons">
-          <button type="button" class="btn-dark" onclick="reinitialiserFiltres()">♻️ Réinitialiser</button>
+          <button type="button" class="btn-dark" onclick="reinitialiserFiltres('rh_')">♻️ Réinitialiser</button>
         </div>
       <div class="counter-badge">
         <span id="compteurAgentsRH">0 / 0 agent(s)</span>
