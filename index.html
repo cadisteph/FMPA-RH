@@ -114,9 +114,7 @@
 
         <form id="formRH" onsubmit="event.preventDefault(); enregistrerAgent();">
           <input type="hidden" id="agentId">
-
           <div style="display: flex; flex-direction: column; gap: 10px;">
-
             <div style="display: flex; gap: 8px;">
               <div style="flex:1;">
                 <label style="font-size:0.8em; font-weight:bold;">Matricule *</label>
@@ -130,7 +128,6 @@
                 </select>
               </div>
             </div>
-
             <div style="display: flex; gap: 8px;">
               <div style="flex:1;">
                 <label style="font-size:0.8em; font-weight:bold;">Nom *</label>
@@ -141,7 +138,6 @@
                 <input type="text" id="agentPrenom" required style="width:100%;">
               </div>
             </div>
-
             <div style="display: flex; gap: 8px;">
               <div style="flex:1;">
                 <label style="font-size:0.8em; font-weight:bold;">Statut *</label>
@@ -163,7 +159,6 @@
                 </select>
               </div>
             </div>
-
             <div style="display: flex; gap: 8px;">
               <div style="flex:1;">
                 <label style="font-size:0.8em; font-weight:bold;">Régime *</label>
@@ -193,7 +188,6 @@
                 </select>
               </div>
             </div>
-
             <div style="display: flex; gap: 8px;">
               <div style="flex:1;">
                 <label style="font-size:0.8em; font-weight:bold;">Fonction</label>
@@ -217,7 +211,6 @@
                 </select>
               </div>
             </div>
-
             <div>
               <label style="font-size:0.8em; font-weight:bold;">Date de Naissance <span id="labelAge" style="color:#2b6cb0;"></span></label>
               <input type="date" id="agentNaissanceDate" onchange="mettreAJourAffichageAge()" style="width:100%;">
@@ -225,23 +218,15 @@
 
 
             
-<!-- Bloc Objectif Gardes Annuelles -->
-<div class="card-gardes-container span-3">
-    <div style="font-weight: bold; margin-bottom: 4px;">OBJECTIF GARDES ANNUELLES</div>
-    <div class="form-grid-3">
-        <div class="form-group">
-            <label for="agentObjGardes">Objectif :</label>
-            <input type="number" id="agentObjGardes" placeholder="ex: 12">
-        </div>
-        <div class="form-group">
-            <label for="agentRealGardes">Réalisé :</label>
-            <input type="number" id="agentRealGardes" placeholder="ex: 8">
-        </div>
-        <div class="form-group">
-            <label for="agentSoldeGardes">Solde :</label>
-            <input type="number" id="agentSoldeGardes" readonly style="background-color: #e2e8f0;">
-        </div>
-    </div>
+<!-- CARTE OBJECTIF GARDES (PLEINE LARGEUR) -->
+<div class="card-gardes-container span-3" style="margin-top: 4px;">
+  <div style="display:flex; justify-content: flex-start; align-items:center; gap: 8px;">
+    <label style="color:#2b6cb0; font-weight:bold;">📆 OBJECTIF GARDES ANNUELLES :</label>
+    <span id="valeurGardes" class="card-gardes-valeur">92</span>
+  </div>
+  <div style="font-size:0.75em; color:#4a5568; margin-top:3px;">
+    Répartition Semestrielle : <span id="ratioSemestre" style="font-weight:bold; color:#2d3748;">S1: 46 (782h) | S2: 46 (782h) <span class="total-annuel-highlight">[1564h]</span></span>
+  </div>
 </div>
 
 
