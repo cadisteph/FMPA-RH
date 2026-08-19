@@ -34,14 +34,14 @@
       <button class="tab-btn">📊 Suivi FMA Socle</button>
       <button class="tab-btn">🎯 Suivi FMA Spécialités</button>
       <button class="tab-btn active">👥 Gestion Effectifs RH</button>
-      <button class="tab-btn">⚙️ Catalogue & Config</button>
+      <button class="tab-btn">📚 Catalogue & Config</button>
     </nav>
 
     <!-- 2. PANNEAU DE FILTRES ET BOUTONS -->
     <section class="toolbar-card">
       <div class="filters-row">
         <div class="filter-group">
-          <label>SEXE 👫</label>
+          <label>SEXE ♂️♀️</label>
           <select id="rh_sexe" onchange="actualiserTableauRH()">
             <option value="">Tous</option>
             <option value="Homme">Homme</option>
@@ -121,8 +121,8 @@
           <label>DISPO SPV 🙅🏻‍♀️</label>
           <select id="rh_dispo" onchange="actualiserTableauRH()">
             <option value="">Toutes</option>
-            <option value="Oui">🔴 Oui</option>
-            <option value="Non">🟢 Non</option>
+            <option value="Oui">👋🏻 Oui</option>
+            <option value="Non">👇 Non</option>
           </select>
         </div>
        
@@ -131,7 +131,7 @@
           <input type="text" id="rh_recherche" placeholder="Matricule, nom..." oninput="actualiserTableauRH()">
         </div>
         <div class="action-buttons">
-          <button type="button" class="btn-dark" onclick="reinitialiserFiltres()">♻ Réinitialiser</button>
+          <button type="button" class="btn-dark" onclick="reinitialiserFiltres()">♻️ Réinitialiser</button>
         </div>
       <div class="counter-badge">
         <span id="compteurAgentsRH">0 / 0 agent(s)</span>
@@ -364,10 +364,10 @@
 
       <!-- BOUTONS D'ACTION (PLEINE LARGEUR) -->
       <div class="form-actions span-3" style="display:flex; gap:8px; margin-top:8px;">
-        <button type="submit" class="btn btn-primary">Enregistrer Agent</button>
-        <button type="button" class="btn btn-secondary" onclick="viderFormulaireRH()">Nouveau</button>
-        <button type="button" id="btnSupprimerAgent" class="btn btn-danger" onclick="supprimerAgent()" style="display:none;">Supprimer</button>
-        <button type="button" id="btnRazFmaAgent" class="btn btn-warning" onclick="reinitialiserFmaAgent()" style="display:none;" title="Remettre les heures de formation à zéro">RAZ FMA</button>
+        <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+        <button type="button" class="btn btn-secondary" onclick="viderFormulaireRH()">➕ Nouveau</button>
+        <button type="button" id="btnSupprimerAgent" class="btn btn-danger" onclick="supprimerAgent()" style="display:none;">🗑️ Supprimer</button>
+        <button type="button" id="btnRazFmaAgent" class="btn btn-warning" onclick="reinitialiserFmaAgent()" style="display:none;" title="Remettre les heures de formation à zéro">❌ RAZ FMA</button>
       </div>
 
     </div>
