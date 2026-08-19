@@ -1109,77 +1109,62 @@ function obtenirDetailsGardes(agent) {
     if (!agent || agent.regime === "SHR" || agent.regime === "SPV" || agent.statut === "SPV" || agent.statut === "PATS") {
         return { total: "-", repartition: "-" };
     }
+
     const bases = calculerBasesGardes(agent.naissanceDate, agent.entreeSdis, agent.regime, agent.fonction);
-    const ratioPartiel = parseFloat(agent.tempsPartiel || "100%") / 100;
+    
+    // Prise en compte du temps partiel (ex: "80%" -> 0.8)
+    let ratio = 1;
+    if (agent.tempsPartiel && agent.tempsPartiel.includes("%")) {
+        let val = parseInt(agent.tempsPartiel);
+        if (!isNaN(val)) ratio = val / 100;
+    }
+
+    let g24 = Math.round(bases.g24 * ratio);
+    let g12 = Math.round(bases.g12 * ratio);
 
     if (agent.regime === "G24") {
-        let total = Math.ceil(bases.g24 * ratioPartiel);
-        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
-        return { total: total.toString(), repartition: `S1: ${gS1} (${gS1*17}h) | S2: ${gS2} (${gS2*17}h) <span class="total-annuel-highlight">[${total*17}h]</span>` };
-    } else if (agent.regime === "Mixte") {
-        let g24_total = Math.ceil(bases.g24 * ratioPartiel), g12_total = Math.ceil(bases.g12 * ratioPartiel);
-        let g24_S1 = Math.floor(g24_total / 2), g24_S2 = g24_total - g24_S1;
-        let g12_S1 = Math.floor(g12_total / 2), g12_S2 = g12_total - g12_S1;
-        let hS1 = (g24_S1 * 17) + (g12_S1 * 12), hS2 = (g24_S2 * 17) + (g12_S2 * 12);
-        return { 
-            total: `${g24_total}/${g12_total}`, 
-            repartition: `S1: ${g24_S1}/${g12_S1} (${hS1}h) | S2: ${g24_S2}/${g12_S2} (${hS2}h) <span class="total-annuel-highlight">[${hS1+hS2}h]</span>` 
+        let s1 = Math.ceil(g24 / 2);
+        let s2 = Math.floor(g24 / 2);
+        return {
+            total: `${g24} (G24)`,
+            repartition: `S1: ${s1} | S2: ${s2} [${g24 * 17}h]`
         };
     } else if (agent.regime === "G12") {
-        let total = Math.ceil(bases.g12 * ratioPartiel);
-        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
-        return { total: total.toString(), repartition: `S1: ${gS1} (${gS1*12}h) | S2: ${gS2} (${gS2*12}h) <span class="total-annuel-highlight">[${total*12}h]</span>` };
+        let s1 = Math.ceil(g12 / 2);
+        let s2 = Math.floor(g12 / 2);
+        return {
+            total: `${g12} (G12)`,
+            repartition: `S1: ${s1} | S2: ${s2} [${g12 * 12}h]`
+        };
+    } else if (agent.regime === "Mixte") {
+        let totalGardes = g24 + g12;
+        let totalHeures = (g24 * 17) + (g12 * 12);
+        return {
+            total: `${g24} G24 + ${g12} G12`,
+            repartition: `${totalGardes} gardes [${totalHeures}h]`
+        };
     }
 
     return { total: "-", repartition: "-" };
 }
 
 function actualiserIndicateurGardes() {
-    const valeurGardesSpan = document.getElementById("valeurGardes");
-    const ratioSemestreSpan = document.getElementById("ratioSemestre");
-    if (!valeurGardesSpan || !ratioSemestreSpan) return;
+    const regime = document.getElementById("agentRegime") ? document.getElementById("agentRegime").value : "";
+    const fonction = document.getElementById("agentFonction") ? document.getElementById("agentFonction").value : "";
+    const naissanceDate = document.getElementById("agentNaissanceDate") ? document.getElementById("agentNaissanceDate").value : "";
+    const entreeSdis = document.getElementById("agentEntreeSdis") ? document.getElementById("agentEntreeSdis").value : "";
+    const tempsPartiel = document.getElementById("agentTempsPartiel") ? document.getElementById("agentTempsPartiel").value : "";
 
-    // 1. Récupération des valeurs saisies dans le formulaire RH
-    const dateNaissanceStr = document.getElementById("agentNaissanceDate")?.value || "";
-    const dateEntreeStr = document.getElementById("agentEntreeSdis")?.value || "";
-    const regime = document.getElementById("agentRegime")?.value || "";
-    const fonction = document.getElementById("agentFonction")?.value || "";
-    const tempsPartiel = document.getElementById("agentTempsPartiel")?.value || "100%";
+    const elValeur = document.getElementById("valeurGardes");
+    const elRatio = document.getElementById("ratioSemestre");
 
-    if (!regime || regime === "SPV" || regime === "SHR") {
-        valeurGardesSpan.innerText = "Non applicable";
-        ratioSemestreSpan.innerText = "";
-        return;
-    }
+    if (!elValeur || !elRatio) return;
 
-    // Calcul du ratio temps partiel
-    let ratioPartiel = 1;
-    if (tempsPartiel && tempsPartiel.includes("%")) {
-        ratioPartiel = parseFloat(tempsPartiel) / 100 || 1;
-    }
+    const dummyAgent = { regime, fonction, naissanceDate, entreeSdis, tempsPartiel, statut: document.getElementById("agentStatut")?.value };
+    const details = obtenirDetailsGardes(dummyAgent);
 
-    // 2. Calcul des bases de gardes
-    if (typeof calculerBasesGardes !== "function") return;
-    const bases = calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction);
-
-    if (regime === "G24") {
-        let total = Math.ceil(bases.g24 * ratioPartiel);
-        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
-        valeurGardesSpan.innerText = total.toString();
-        ratioSemestreSpan.innerHTML = `S1: ${gS1} (${gS1*17}h) | S2: ${gS2} (${gS2*17}h) <span class="total-annuel-highlight">[${total*17}h]</span>`;
-    } else if (regime === "Mixte") {
-        let g24_total = Math.ceil(bases.g24 * ratioPartiel), g12_total = Math.ceil(bases.g12 * ratioPartiel);
-        let g24_S1 = Math.floor(g24_total / 2), g24_S2 = g24_total - g24_S1;
-        let g12_S1 = Math.floor(g12_total / 2), g12_S2 = g12_total - g12_S1;
-        let hS1 = (g24_S1 * 17) + (g12_S1 * 12), hS2 = (g24_S2 * 17) + (g12_S2 * 12);
-        valeurGardesSpan.innerText = `${g24_total}/${g12_total}`;
-        ratioSemestreSpan.innerHTML = `S1: ${g24_S1}/${g12_S1} (${hS1}h) | S2: ${g24_S2}/${g12_S2} (${hS2}h) <span class="total-annuel-highlight">[${hS1+hS2}h]</span>`;
-    } else if (regime === "G12") {
-        let total = Math.ceil(bases.g12 * ratioPartiel);
-        let gS1 = Math.floor(total / 2), gS2 = total - gS1;
-        valeurGardesSpan.innerText = total.toString();
-        ratioSemestreSpan.innerHTML = `S1: ${gS1} (${gS1*12}h) | S2: ${gS2} (${gS2*12}h) <span class="total-annuel-highlight">[${total*12}h]</span>`;
-    }
+    elValeur.innerText = details.total;
+    elRatio.innerText = details.repartition;
 }
 
 document.addEventListener('DOMContentLoaded', adapterFormulaireSelonStatut);
