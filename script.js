@@ -114,6 +114,7 @@ function calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction) 
 }
 
 // Formate le texte d'affichage de la carte et la répartition semestrielle
+// Formate le texte d'affichage de la carte et la répartition semestrielle
 function obtenirDetailsGardes(agent) {
     if (!agent || agent.regime === "SHR" || agent.regime === "SPV" || agent.statut === "SPV" || agent.statut === "PATS") {
         return { total: "-", repartition: "-" };
@@ -159,16 +160,16 @@ function obtenirDetailsGardes(agent) {
         let heures_s1 = (g24_s1 * 17) + (g12_s1 * 12);
         let heures_s2 = (g24_s2 * 17) + (g12_s2 * 12);
         let totalHeures = heures_s1 + heures_s2;
-        let totalGardes = g24 + g12;
 
         return {
-            total: `${totalGardes}`,
+            total: `${g24}/${g12}`,
             repartition: `S1: ${g24_s1}/${g12_s1} (${heures_s1}h) | S2: ${g24_s2}/${g12_s2} (${heures_s2}h) <span class="total-annuel-highlight">[${totalHeures}h]</span>`
         };
     }
 
     return { total: "-", repartition: "-" };
 }
+
 function actualiserIndicateurGardes() {
     const regime = document.getElementById("agentRegime") ? document.getElementById("agentRegime").value : "";
     const fonction = document.getElementById("agentFonction") ? document.getElementById("agentFonction").value : "";
