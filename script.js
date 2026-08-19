@@ -226,7 +226,7 @@ function actualiserFormulaireCompetencesRH() {
     const container = document.getElementById("containerCompetencesForm");
     if (!container) return;
 
-    let html = '<div class="section-title" style="margin-top: 10px; margin-bottom: 8px; color: #0056b3; font-size: 0.85em; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">SPÉCIALITÉS</div><div class="form-grid-2">';
+    let html = '<div class="section-title" style="margin-top: 10px; margin-bottom: 8px; color: #0056b3; font-size: 0.85em; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">🎯 SPÉCIALITÉS</div><div class="form-grid-2">';
     Object.keys(LISTE_SPECIALITES_RH).forEach(act => {
         html += `<div class="form-group"><label>${echapperHTML(act)}</label><select class="comp-select"><option value="">Aucune</option>`;
         LISTE_SPECIALITES_RH[act].forEach(item => {
