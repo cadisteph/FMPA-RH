@@ -3,53 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cis Le Havre - Caucriauville : Suivi RH & FMPA</title>
-  
-  <!-- Liaison vers votre feuille de style CSS -->
-  <link rel="stylesheet" href="style.css?v=16">
+  <title>Cis Le Havre - Caucriauville : Suivi RH</title>
+  <link rel="stylesheet" href="style.css?v=20">
 </head>
 <body>
 
   <!-- BANDEAU D'EN-TÊTE FIXE -->
-  <header style="background: #1a202c; color: white; padding: 10px 15px;">
-    <h1 style="margin: 0; font-size: 1.4em; color: white; border: none;">Cis Le Havre - Caucriauville : Suivi RH & FMA</h1>
+  <header style="background: #1a202c; color: white; padding: 12px 20px;">
+    <h1 style="margin: 0; font-size: 1.4em; color: white;">Cis Le Havre - Caucriauville : Gestion Effectifs RH</h1>
     
-    <!-- Barre d'outils réseau -->
-    <div class="network-bar" style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
+    <!-- BARRE CONNECTEUR RÉSEAU CSV -->
+    <div class="network-bar" style="margin-top: 10px; display: flex; align-items: center; gap: 12px;">
       <button type="button" class="btn-reseau" onclick="connecterFichierReseau()">
         🔗 Connecter (COMMUN/Formation/Réservé-BDD/baseAgents.csv)
       </button>
       <button type="button" class="btn-reseau" onclick="enregistrerFichierReseau()">
-        💾 Enregistrer
+        💾 Enregistrer les modifications
       </button>
-      <span id="statusReseau" style="font-size: 0.85em; color: #cbd5e0;">Aucun fichier connecté</span>
+      <span id="statusReseau" style="font-size: 0.9em; color: #cbd5e0; font-weight: bold;">Fichier non connecté (Mode local)</span>
     </div>
   </header>
 
-  <!-- APPLICATION PRINCIPALE -->
-  <main class="app-container">
+  <!-- APPLICATION PRINCIPALE RH -->
+  <main class="app-container" style="padding: 15px;">
 
-    <!-- 1. BARRE D'ONGLETS -->
-    <nav class="tabs-nav">
-      <button class="tab-btn"onclick="changerOnglet('onglet-suivi')">📊 Suivi FMA Socle</button>
-      <button class="tab-btn"onclick="changerOnglet('onglet-spe')">🎯 Suivi FMA Spécialités</button>
-      <button class="tab-btn active"onclick="changerOnglet('onglet-rh')">👥 Gestion Effectifs RH</button>
-      <button class="tab-btn"onclick="changerOnglet('onglet-config')">📚 Catalogue & ⚙️ Config</button>
-    </nav>
-   
-    <!-- 2. PANNEAU DE FILTRES ET BOUTONS -->
-    <section class="toolbar-card">
-      <div class="filters-row">
+    <!-- BARRE DE FILTRES ET DE RECHERCHE -->
+    <section class="toolbar-card" style="margin-bottom: 15px; background: #f7fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+      <div class="filters-row" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+        
         <div class="filter-group">
-          <label>SEXE ♂️♀️</label>
+          <label style="display:block; font-size:0.8em; font-weight:bold;">SEXE</label>
           <select id="rh_sexe" onchange="actualiserTableauRH()">
             <option value="">Tous</option>
             <option value="Homme">Homme</option>
             <option value="Femme">Femme</option>
           </select>
         </div>
+
         <div class="filter-group">
-          <label>EQUIPE 🏣</label>
+          <label style="display:block; font-size:0.8em; font-weight:bold;">EQUIPE</label>
           <select id="rh_equipe" onchange="actualiserTableauRH()">
             <option value="">Toutes</option>
             <option value="Equipe A">Equipe A</option>
@@ -60,8 +52,9 @@
             <option value="SPV">SPV</option>
           </select>
         </div>
+
         <div class="filter-group">
-          <label>STATUT 🤷🏼‍♀️</label>
+          <label style="display:block; font-size:0.8em; font-weight:bold;">STATUT</label>
           <select id="rh_statut" onchange="actualiserTableauRH()">
             <option value="">Tous</option>
             <option value="SPP">SPP</option>
@@ -69,318 +62,198 @@
             <option value="PATS">PATS</option>
           </select>
         </div>
-        <div class="filter-group">
-          <label>GRADE 👮</label>
-          <select id="rh_grade" onchange="actualiserTableauRH()">
-            <option value="">Tous</option>
-            <option value="SAP">SAP</option>
-            <option value="CPL">CPL</option>
-            <option value="CCH">CCH</option>
-            <option value="SGT">SGT</option>
-            <option value="SCH">SCH</option>
-            <option value="ADJ">ADJ</option>
-            <option value="ADC">ADC</option>
-            <option value="LTN">LTN</option>
-            <option value="CNE">CNE</option>
-            <option value="CDT">CDT</option>
-            <option value="PATS">PATS</option>
-          </select>
+
+        <div class="filter-group search-group" style="flex-grow: 1;">
+          <label style="display:block; font-size:0.8em; font-weight:bold;">RECHERCHE 🔍</label>
+          <input type="text" id="rh_recherche" placeholder="Rechercher nom, prénom, matricule..." oninput="actualiserTableauRH()" style="width: 100%;">
         </div>
-        <div class="filter-group">
-          <label>FONCTION 🛠️</label>
-          <select id="rh_fonction" onchange="actualiserTableauRH()">
-            <option value="">Toutes</option>
-            <option value="Equ">Equipier</option>
-            <option value="CEqu">Chef d'Equipe</option>
-            <option value="CA1E">Chef d'Agrès Une Equipe</option>
-            <option value="CATE">Chef d'Agrès Tout Engin</option>
-            <option value="ACDG2">2è Adjoint au Chef de Garde</option>
-            <option value="ACDG1">1er Adjoint au Chef de Garde</option>
-            <option value="CDG">Chef de Garde</option>
-            <option value="SOFTECH">S/Off Technique</option>
-            <option value="SOFPAO">S/Off PAO</option>
-            <option value="OFTECH">Officier Technique</option>
-            <option value="OFPAO">Officier PAO</option>
-            <option value="ACDC">Adjoint au chef de centre</option>
-            <option value="CDC">Chef de Centre</option>
-            <option value="Assistante">Assistante</option>
-          </select>
+
+        <div>
+          <button type="button" class="btn-dark" onclick="reinitialiserFiltres()">♻️ Réinitialiser</button>
         </div>
-        <div class="filter-group">
-          <label>RÉGIME 🗓️</label>
-          <select id="rh_regime" onchange="actualiserTableauRH()">
-            <option value="">Tous</option>
-            <option value="G24">G24</option>
-            <option value="Mixte">Mixte</option>
-            <option value="G12">G12</option>
-            <option value="SHR">SHR</option>
-            <option value="SPV">SPV</option>
-          </select>
+
+        <div class="counter-badge" style="margin-left: auto; font-weight: bold; background: #edf2f7; padding: 6px 12px; border-radius: 4px;">
+          <span id="compteurAgentsRH">0 / 0 agent(s)</span>
         </div>
-        <div class="filter-group">
-          <label>DISPO SPV 🙅🏻‍♀️</label>
-          <select id="rh_dispo" onchange="actualiserTableauRH()">
-            <option value="">Toutes</option>
-            <option value="Oui">👋🏻 Oui</option>
-            <option value="Non">👇 Non</option>
-          </select>
-        </div>
-       
-        <div class="filter-group search-group">
-          <label>RECHERCHE 🔍</label>
-          <input type="text" id="rh_recherche" placeholder="Matricule, nom..." oninput="actualiserTableauRH()">
-        </div>
-        <div class="action-buttons">
-          <button type="button" class="btn-dark" onclick="reinitialiserFiltres('rh_')">♻️ Réinitialiser</button>
-        </div>
-      <div class="counter-badge">
-        <span id="compteurAgentsRH">0 / 0 agent(s)</span>
-      </div>
+
       </div>  
     </section>
 
-    <!-- 3. ZONE PRINCIPALE EN 2 COLONNES : TABLEAU (GAUCHE) + FICHE INDIVIDUELLE (DROITE) -->
-    <div id="sectionRH">
+    <!-- ZONE PRINCIPALE : TABLEAU À GAUCHE + FORMULAIRE À DROITE -->
+    <div id="sectionRH" style="display: grid; grid-template-columns: 1fr 380px; gap: 15px;">
       
-      <!-- Colonne Gauche : Tableau -->
-      <div class="table-container">
-        <table class="table-rh">
+      <!-- COLONNE GAUCHE : TABLEAU DES AGENTS -->
+      <div class="table-container" style="overflow-x: auto; background: white; border: 1px solid #cbd5e0; border-radius: 6px;">
+        <table class="table-rh" style="width: 100%; border-collapse: collapse;">
           <thead>
-            <tr>
-              <th>Matricule</th>
-              <th>Sexe</th>
-              <th>Agent</th>
-              <th>Equipe</th>
-              <th>Statut</th>
-              <th>Grade</th>
-              <th>Fonction</th>
-              <th>Spécialités & Compétences</th>
-              <th>Régime</th>
-              <th>% Travail / Diff. SPV</th>
-              <th>Gardes</th>
-              <th>Détail</th>
-              <th>Entrée SDIS</th>
-              <th>Date PL</th>
-              <th>Date VMA</th>
-              <th>Téléphone</th>
-              <th>Email</th>
-              <th>Naissance</th>
-              <th>Lieu</th>
-              <th>Adresse</th>
-              <th>Dispo SPV</th>
-              <th>Commentaire</th>
+            <tr style="background: #2d3748; color: white; font-size: 0.85em; text-align: left;">
+              <th style="padding: 8px;">Matricule</th>
+              <th style="padding: 8px;">Agent</th>
+              <th style="padding: 8px;">Sexe</th>
+              <th style="padding: 8px;">Équipe</th>
+              <th style="padding: 8px;">Statut</th>
+              <th style="padding: 8px;">Grade</th>
+              <th style="padding: 8px;">Fonction</th>
+              <th style="padding: 8px;">Régime</th>
+              <th style="padding: 8px;">Gardes (Théo.)</th>
+              <th style="padding: 8px;">Téléphone</th>
+              <th style="padding: 8px;">Naissance</th>
             </tr>
           </thead>
           <tbody id="corpsRH">
-            <!-- Chargé dynamiquement par JS -->
+            <!-- Rempli dynamiquement par JS -->
           </tbody>
         </table>
       </div>
 
-      <!-- Colonne Droite : Formulaire (Fiche Individuelle) -->
-<aside class="form-card">
-  <div class="form-title">FICHE INDIVIDUELLE AGENT 👨‍🚒</div>
+      <!-- COLONNE DROITE : FICHE INDIVIDUELLE (SAISIE) -->
+      <aside class="form-card" style="background: white; padding: 15px; border: 1px solid #cbd5e0; border-radius: 6px;">
+        <h3 style="margin-top:0; border-bottom:2px solid #2b6cb0; padding-bottom:5px; color:#2b6cb0; font-size: 1.1em;">
+          FICHE AGENT 👨‍🚒
+        </h3>
 
-  <form id="formRH" onsubmit="event.preventDefault(); enregistrerAgent();">
-    <input type="hidden" id="agentId">
+        <form id="formRH" onsubmit="event.preventDefault(); enregistrerAgent();">
+          <input type="hidden" id="agentId">
 
-    <div class="form-grid-3">
+          <div style="display: flex; flex-direction: column; gap: 10px;">
 
-      <!-- LIGNE 1 -->
-      <div class="form-group">
-        <label for="agentMatricule">Matricule *</label>
-        <input type="text" id="agentMatricule" required pattern="\d+" title="Chiffres uniquement">
-      </div>
-      <div class="form-group">
-        <label for="agentSexe">Sexe</label>
-        <select id="agentSexe">
-          <option value="Homme">Homme</option>
-          <option value="Femme">Femme</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="agentNom">Nom *</label>
-        <input type="text" id="agentNom" required style="text-transform: uppercase;">
-      </div>
+            <div style="display: flex; gap: 8px;">
+              <div style="flex:1;">
+                <label style="font-size:0.8em; font-weight:bold;">Matricule *</label>
+                <input type="text" id="agentMatricule" required style="width:100%;">
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:0.8em; font-weight:bold;">Sexe</label>
+                <select id="agentSexe" style="width:100%;">
+                  <option value="Homme">Homme</option>
+                  <option value="Femme">Femme</option>
+                </select>
+              </div>
+            </div>
 
-      <!-- LIGNE 2 -->
-      <div class="form-group">
-        <label for="agentPrenom">Prénom *</label>
-        <input type="text" id="agentPrenom" required>
-      </div>
-      <div class="form-group">
-        <label for="agentRegime">Régime *</label>
-        <select id="agentRegime" onchange="gererChangementRegime(); actualiserIndicateurGardes();">
-          <option value="G24">G24</option>
-          <option value="Mixte">Mixte</option>
-          <option value="G12">G12</option>
-          <option value="SHR">SHR</option>
-          <option value="SPV">SPV</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="agentEquipe">Equipe *</label>
-        <select id="agentEquipe" onchange="gererChangementEquipe()">
-          <option value="Equipe A">Equipe A</option>
-          <option value="Equipe B">Equipe B</option>
-          <option value="Equipe C">Equipe C</option>
-          <option value="Equipe G12">Equipe G12</option>
-          <option value="Encadrement">Encadrement</option>
-          <option value="SPV">SPV</option>
-        </select>
-      </div>
+            <div style="display: flex; gap: 8px;">
+              <div style="flex:1;">
+                <label style="font-size:0.8em; font-weight:bold;">Nom *</label>
+                <input type="text" id="agentNom" required style="width:100%; text-transform:uppercase;">
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:0.8em; font-weight:bold;">Prénom *</label>
+                <input type="text" id="agentPrenom" required style="width:100%;">
+              </div>
+            </div>
 
-      <!-- LIGNE 3 -->
-      <div class="form-group">
-        <label for="agentStatut">Statut *</label>
-        <select id="agentStatut" onchange="adapterFormulaireSelonStatut()">
-          <option value="SPP">SPP</option>
-          <option value="SPV">SPV</option>
-          <option value="PATS">PATS</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="agentGrade">Grade</label>
-        <select id="agentGrade">
-          <option value="">- Aucun -</option>
-          <option value="SAP">SAP</option>
-          <option value="CPL">CPL</option>
-          <option value="CCH">CCH</option>
-          <option value="SGT">SGT</option>
-          <option value="SCH">SCH</option>
-          <option value="ADJ">ADJ</option>
-          <option value="ADC">ADC</option>
-          <option value="LTN">LTN</option>
-          <option value="CNE">CNE</option>
-          <option value="CDT">CDT</option>
-          <option value="PATS">PATS</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="agentFonction">Fonction</label>
-        <select id="agentFonction" onchange="actualiserIndicateurGardes()">
-          <option value="Equ">Equipier</option>
-          <option value="CEqu">Chef d'Equipe</option>
-          <option value="CA1E">Chef d'Agrès Une Equipe</option>
-          <option value="CATE">Chef d'Agrès Tout Engin</option>
-          <option value="ACDG2">2è Adjoint au Chef de Garde</option>
-          <option value="ACDG1">1er Adjoint au Chef de Garde</option>
-          <option value="CDG">Chef de Garde</option>
-          <option value="SOFTECH">S/Off Technique</option>
-          <option value="SOFPAO">S/Off PAO</option>
-          <option value="OFTECH">Officier Technique</option>
-          <option value="OFPAO">Officier PAO</option>
-          <option value="ACDC">Adjoint au chef de centre</option>
-          <option value="CDC">Chef de Centre</option>
-          <option value="Assistante">Assistante</option>
-        </select>
-      </div>
+            <div style="display: flex; gap: 8px;">
+              <div style="flex:1;">
+                <label style="font-size:0.8em; font-weight:bold;">Statut *</label>
+                <select id="agentStatut" onchange="adapterFormulaireSelonStatut()" style="width:100%;">
+                  <option value="SPP">SPP</option>
+                  <option value="SPV">SPV</option>
+                  <option value="PATS">PATS</option>
+                </select>
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:0.8em; font-weight:bold;">Équipe *</label>
+                <select id="agentEquipe" onchange="gererChangementEquipe()" style="width:100%;">
+                  <option value="Equipe A">Equipe A</option>
+                  <option value="Equipe B">Equipe B</option>
+                  <option value="Equipe C">Equipe C</option>
+                  <option value="Equipe G12">Equipe G12</option>
+                  <option value="Encadrement">Encadrement</option>
+                  <option value="SPV">SPV</option>
+                </select>
+              </div>
+            </div>
 
-      <!-- LIGNE 4 : TEMPS PARTIEL / ENGAGEMENT / DISPO -->
-      <div class="form-group" id="groupTempsPartiel">
-        <label for="agentTempsPartiel">Temps Partiel (SPP/PATS)</label>
-        <select id="agentTempsPartiel" onchange="actualiserIndicateurGardes()">
-          <option value="100%">100 % (Plein)</option>
-          <option value="90%">90 %</option>
-          <option value="80%">80 %</option>
-          <option value="70%">70 %</option>
-          <option value="60%">60 %</option>
-          <option value="50%">50 %</option>
-        </select>
-      </div>
+            <div style="display: flex; gap: 8px;">
+              <div style="flex:1;">
+                <label style="font-size:0.8em; font-weight:bold;">Régime *</label>
+                <select id="agentRegime" onchange="gererChangementRegime()" style="width:100%;">
+                  <option value="G24">G24</option>
+                  <option value="Mixte">Mixte</option>
+                  <option value="G12">G12</option>
+                  <option value="SHR">SHR</option>
+                  <option value="SPV">SPV</option>
+                </select>
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:0.8em; font-weight:bold;">Grade</label>
+                <select id="agentGrade" style="width:100%;">
+                  <option value="">- Aucun -</option>
+                  <option value="SAP">SAP</option>
+                  <option value="CPL">CPL</option>
+                  <option value="CCH">CCH</option>
+                  <option value="SGT">SGT</option>
+                  <option value="SCH">SCH</option>
+                  <option value="ADJ">ADJ</option>
+                  <option value="ADC">ADC</option>
+                  <option value="LTN">LTN</option>
+                  <option value="CNE">CNE</option>
+                  <option value="CDT">CDT</option>
+                  <option value="PATS">PATS</option>
+                </select>
+              </div>
+            </div>
 
-      <div class="form-group" id="groupEngagementDiff" style="display:none;">
-        <label for="agentEngagementDiff">Engagement Différencié (SPV)</label>
-        <select id="agentEngagementDiff">
-          <option value="">Toutes missions</option>
-          <option value="SUAP">SUAP uniquement</option>
-          <option value="SUAP/PPABE">SUAP / PPABE</option>
-        </select>
-      </div>
+            <div style="display: flex; gap: 8px;">
+              <div style="flex:1;">
+                <label style="font-size:0.8em; font-weight:bold;">Fonction</label>
+                <select id="agentFonction" style="width:100%;">
+                  <option value="Equ">Equipier</option>
+                  <option value="CEqu">Chef d'Equipe</option>
+                  <option value="CA1E">Chef d'Agrès 1 Equipe</option>
+                  <option value="CATE">Chef d'Agrès Tout Engin</option>
+                  <option value="CDG">Chef de Garde</option>
+                  <option value="CDC">Chef de Centre</option>
+                  <option value="Assistante">Assistante</option>
+                </select>
+              </div>
+              <div style="flex:1;" id="groupTempsPartiel">
+                <label style="font-size:0.8em; font-weight:bold;">Temps Partiel</label>
+                <select id="agentTempsPartiel" style="width:100%;">
+                  <option value="100%">100 %</option>
+                  <option value="90%">90 %</option>
+                  <option value="80%">80 %</option>
+                  <option value="50%">50 %</option>
+                </select>
+              </div>
+            </div>
 
-      <div class="form-group" id="groupDisponibilite" style="display:none;">
-        <label style="display:flex; align-items:center; gap:6px; cursor:pointer; margin-top:14px; font-weight:600; font-size:0.7em;">
-          <input type="checkbox" id="agentDisponibilite" style="width:auto;"> En Dispo SPV</label>
-      </div>
+            <div>
+              <label style="font-size:0.8em; font-weight:bold;">Date de Naissance <span id="labelAge" style="color:#2b6cb0;"></span></label>
+              <input type="date" id="agentNaissanceDate" onchange="mettreAJourAffichageAge()" style="width:100%;">
+            </div>
 
-      <!-- CARTE OBJECTIF GARDES (PLEINE LARGEUR) -->
-      <div class="card-gardes-container span-3" style="margin-top: 4px;">
-        <div style="display:flex; justify-content: flex-start; align-items:center; gap: 8px;">
-          <label style="color:#2b6cb0; font-weight:bold;">📆 OBJECTIF GARDES ANNUELLES :</label>
-          <span id="valeurGardes" class="card-gardes-valeur">92</span>
-        </div>
-        <div style="font-size:0.75em; color:#4a5568; margin-top:3px;">
-          Répartition Semestrielle : <span id="ratioSemestre" style="font-weight:bold; color:#2d3748;">S1: 46 (782h) | S2: 46 (782h) <span class="total-annuel-highlight">[1564h]</span>
-        </div>
-      </div>
+            <div style="display: flex; gap: 8px;">
+              <div style="flex:1;">
+                <label style="font-size:0.8em; font-weight:bold;">Téléphone</label>
+                <input type="text" id="agentTelephone" placeholder="06-00-00-00-00" style="width:100%;">
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:0.8em; font-weight:bold;">Email</label>
+                <input type="email" id="agentEmail" style="width:100%;">
+              </div>
+            </div>
 
-      <!-- LIGNE 5 : NAISSANCE & SDIS -->
-      <div class="form-group">
-        <label for="agentNaissanceDate">Date de Naissance <span id="labelAge" style="color:#2b6cb0;"></span></label>
-        <input type="date" id="agentNaissanceDate" onchange="mettreAJourAffichageAge(); actualiserIndicateurGardes();">
-      </div>
-      <div class="form-group">
-        <label for="agentNaissanceLieu">Lieu de Naissance</label>
-        <input type="text" id="agentNaissanceLieu">
-      </div>
-      <div class="form-group">
-        <label for="agentEntreeSdis">Date Entrée SDIS</label>
-        <input type="date" id="agentEntreeSdis" onchange="actualiserIndicateurGardes()">
-      </div>
+            <div>
+              <label style="font-size:0.8em; font-weight:bold;">Commentaires</label>
+              <textarea id="agentCommentaire" rows="2" style="width:100%;"></textarea>
+            </div>
 
-      <!-- LIGNE 6 : CONTACT -->
-      <div class="form-group">
-        <label for="agentTelephone">Téléphone</label>
-        <input type="text" id="agentTelephone" placeholder="06-XX-XX-XX-XX">
-      </div>
-      <div class="form-group">
-        <label for="agentEmail">Email</label>
-        <input type="email" id="agentEmail">
-      </div>
-      <div class="form-group">
-        <label for="agentAdresse">Adresse</label>
-        <input type="text" id="agentAdresse" style="text-transform: uppercase;">
-      </div>
+            <!-- BOUTONS D'ACTION -->
+            <div style="display:flex; gap:8px; margin-top:10px;">
+              <button type="submit" class="btn btn-primary" style="flex:1; background:#2b6cb0; color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;">💾 Enregistrer</button>
+              <button type="button" class="btn btn-secondary" onclick="viderFormulaireRH()" style="background:#718096; color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;">➕ Nouveau</button>
+              <button type="button" id="btnSupprimerAgent" class="btn btn-danger" onclick="supprimerAgent()" style="display:none; background:#e53e3e; color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;">🗑️</button>
+            </div>
 
-      <!-- LIGNE 7 : DATES PERMIS / VMA -->
-      <div class="form-group">
-        <label for="agentDatePL">Date PL</label>
-        <input type="date" id="agentDatePL">
-      </div>
-      <div class="form-group">
-        <label for="agentDateVMA">Date VMA</label>
-        <input type="date" id="agentDateVMA">
-      </div>
-      <div></div> <!-- Case vide pour fermer proprement la ligne -->
-
-      <!-- BLOC COMPÉTENCES / SPÉCIALITÉS (PLEINE LARGEUR) -->
-      <div id="containerCompetencesForm" class="span-3" style="background:#f8f9fa; padding:8px; border:1px solid #cbd5e0; border-radius:4px;"></div>
-
-      <!-- BLOC COMMENTAIRES (PLEINE LARGEUR) -->
-      <div class="form-group span-3" style="margin-top:4px;">
-        <label for="agentCommentaire">Commentaires / Remarques</label>
-        <textarea id="agentCommentaire" rows="2" style="border:1px solid #ced4da; border-radius:4px; padding:5px;"></textarea>
-      </div>
-
-      <!-- BOUTONS D'ACTION (PLEINE LARGEUR) -->
-      <div class="form-actions span-3" style="display:flex; gap:8px; margin-top:8px;">
-        <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
-        <button type="button" class="btn btn-secondary" onclick="viderFormulaireRH()">➕ Nouveau</button>
-        <button type="button" id="btnSupprimerAgent" class="btn btn-danger" onclick="supprimerAgent()" style="display:none;">🗑️ Supprimer</button>
-      </div>
+          </div>
+        </form>
+      </aside>
 
     </div>
-  </form>
-</aside>
-
-    </div><!-- FIN DE #sectionRH -->
 
   </main>
 
-  <!-- 1. Bibliothèque externe pour la gestion des fichiers Excel -->
-  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-
-  <!-- 2. Liaison vers votre fichier JavaScript personnalisé -->
   <script src="script.js"></script>
 </body>
 </html>
