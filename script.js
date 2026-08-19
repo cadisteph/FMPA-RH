@@ -6,7 +6,9 @@ let listeAgents = [
     { id: 2, matricule: "95001", sexe: "Femme", nom: "MARTIN", prenom: "Sophie", equipe: "Equipe A", statut: "SPP", grade: "ADJ", fonction: "CATE", regime: "G24", naissanceDate: "1992-09-23", telephone: "06-05-06-07-08", email: "s.martin@sdis.fr", tempsPartiel: "100%", commentaire: "" }
 ];
 
-// --- UTILITAIRES DE FORMATAGE ---
+/* ==========================================================================
+   1. UTILITAIRES DE FORMATAGE & DATES
+   ========================================================================== */
 
 function echapperHTML(str) {
     if (str === null || str === undefined) return "";
@@ -58,17 +60,10 @@ function parseCSVLine(str) {
     return arr;
 }
 
-
-
-
-
-
-
 /* ==========================================================================
-   1. CALCUL DYNAMIQUE DES BASES DE GARDES
+   2. CALCUL DYNAMIQUE DES BASES DE GARDES
    ========================================================================== */
 
-// Calcule le nombre de gardes de base selon l'âge, l'entrée SDIS (Liste 2), le régime et la fonction
 function calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction) {
     let baseG24 = 0, baseG12 = 0;
     
@@ -118,7 +113,6 @@ function calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction) 
     return { g24: baseG24, g12: baseG12 };
 }
 
-// Formate le texte d'affichage de la carte
 function obtenirDetailsGardes(agent) {
     if (!agent || agent.regime === "SHR" || agent.regime === "SPV" || agent.statut === "SPV" || agent.statut === "PATS") {
         return { total: "-", repartition: "-" };
@@ -161,7 +155,6 @@ function obtenirDetailsGardes(agent) {
     return { total: "-", repartition: "-" };
 }
 
-// Lit les valeurs du formulaire et met à jour l'IHM
 function actualiserIndicateurGardes() {
     const regime = document.getElementById("agentRegime") ? document.getElementById("agentRegime").value : "";
     const fonction = document.getElementById("agentFonction") ? document.getElementById("agentFonction").value : "";
@@ -183,74 +176,22 @@ function actualiserIndicateurGardes() {
 }
 
 /* ==========================================================================
-   2. GESTION DU FORMULAIRE ET DES CHAMPS CONDITIONNELS
+   3. LOGIQUE DU FORMULAIRE ET DES ÉQUIPES
    ========================================================================== */
 
 function adapterFormulaireSelonStatut() {
-    const statut = document.getElementById("agentStatut") ? document.getElementById("agentStatut").value : "";
+    const statut = document.getElementById('agentStatut') ? document.getElementById('agentStatut').value : "";
+    const groupTempsPartiel = document.getElementById('groupTempsPartiel');
     const groupDispo = document.getElementById("groupDisponibilite");
 
-    if (groupDispo) {
-        // Affiche la case disponibilité seulement pour les SPV
-        if (statut === "SPV") {
-            groupDispo.style.display = "flex";
-        } else {
-            groupDispo.style.display = "none";
-        }
-    }
-    
-    // Recalcule les gardes quand le statut change
-    actualiserIndicateurGardes();
-}
-
-/* ==========================================================================
-   3. INITIALISATION AU CHARGEMENT DE LA PAGE
-   ========================================================================== */
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Écouteurs pour la mise à jour dynamique de la carte de gardes
-    const idsAEcouter = [
-        "agentRegime", 
-        "agentFonction", 
-        "agentNaissanceDate", 
-        "agentEntreeSdis", 
-        "agentTempsPartiel", 
-        "agentStatut"
-    ];
-
-    idsAEcouter.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener('change', actualiserIndicateurGardes);
-            el.addEventListener('input', actualiserIndicateurGardes);
-        }
-    });
-
-    // Écouteur sur le statut pour adapter le formulaire
-    const elStatut = document.getElementById("agentStatut");
-    if (elStatut) {
-        elStatut.addEventListener('change', adapterFormulaireSelonStatut);
-    }
-
-    // Exécution initiale
-    adapterFormulaireSelonStatut();
-    actualiserIndicateurGardes();
-});
-
-
-
-
-
-
-
-// --- LOGIQUE DU TABLEAU RH ---
-
-function adapterFormulaireSelonStatut() {
-    const statut = document.getElementById('agentStatut').value;
-    const groupTempsPartiel = document.getElementById('groupTempsPartiel');
     if (groupTempsPartiel) {
         groupTempsPartiel.style.display = (statut === 'SPV') ? 'none' : 'block';
     }
+    if (groupDispo) {
+        groupDispo.style.display = (statut === 'SPV') ? 'flex' : 'none';
+    }
+
+    actualiserIndicateurGardes();
 }
 
 function gererChangementRegime() {
@@ -261,6 +202,7 @@ function gererChangementRegime() {
     if (regime === "SPV") { selectEquipe.value = "SPV"; selectStatut.value = "SPV"; }
     else if (regime === "G12") { selectEquipe.value = "Equipe G12"; if (selectStatut.value !== "PATS") selectStatut.value = "SPP"; }
     else if (regime === "SHR") { selectEquipe.value = "Encadrement"; if (selectStatut.value !== "PATS") selectStatut.value = "SPP"; }
+    
     adapterFormulaireSelonStatut();
 }
 
@@ -272,15 +214,17 @@ function gererChangementEquipe() {
     if (equipe === "SPV") { selectRegime.value = "SPV"; selectStatut.value = "SPV"; }
     else if (equipe === "Equipe G12") { selectRegime.value = "G12"; if (selectStatut.value !== "PATS") selectStatut.value = "SPP"; }
     else if (equipe === "Encadrement") { selectRegime.value = "SHR"; if (selectStatut.value !== "PATS") selectStatut.value = "SPP"; }
+    
     adapterFormulaireSelonStatut();
 }
 
+/* ==========================================================================
+   4. LOGIQUE DU TABLEAU RH ET ÉDITION
+   ========================================================================== */
+
 function obtenirGardesTheoriques(agent) {
-    if (agent.regime === "SHR" || agent.statut === "SPV" || agent.statut === "PATS") return "-";
-    if (agent.regime === "G24") return (agent.fonction === "CDG") ? "74 g" : "92 g";
-    if (agent.regime === "Mixte") return (agent.fonction === "CDG") ? "67g / 10g" : "83g / 14g";
-    if (agent.regime === "G12") return "133 g";
-    return "-";
+    const details = obtenirDetailsGardes(agent);
+    return details.total;
 }
 
 function actualiserTableauRH() {
@@ -351,12 +295,16 @@ function editerAgent(id) {
     document.getElementById("agentFonction").value = agent.fonction || "Equ";
     document.getElementById("agentTempsPartiel").value = agent.tempsPartiel || "100%";
     document.getElementById("agentNaissanceDate").value = agent.naissanceDate || "";
+    if (document.getElementById("agentEntreeSdis")) {
+        document.getElementById("agentEntreeSdis").value = agent.entreeSdis || "";
+    }
     document.getElementById("agentTelephone").value = agent.telephone || "";
     document.getElementById("agentEmail").value = agent.email || "";
     document.getElementById("agentCommentaire").value = agent.commentaire || "";
 
     adapterFormulaireSelonStatut();
     mettreAJourAffichageAge();
+    actualiserIndicateurGardes();
     document.getElementById("btnSupprimerAgent").style.display = "inline-block";
 }
 
@@ -366,6 +314,7 @@ function viderFormulaireRH() {
     document.getElementById("btnSupprimerAgent").style.display = "none";
     adapterFormulaireSelonStatut();
     mettreAJourAffichageAge();
+    actualiserIndicateurGardes();
 }
 
 function enregistrerAgent() {
@@ -392,6 +341,7 @@ function enregistrerAgent() {
         fonction: document.getElementById("agentFonction").value,
         tempsPartiel: document.getElementById("agentTempsPartiel").value,
         naissanceDate: document.getElementById("agentNaissanceDate").value,
+        entreeSdis: document.getElementById("agentEntreeSdis") ? document.getElementById("agentEntreeSdis").value : "",
         telephone: formaterTelephone(document.getElementById("agentTelephone").value),
         email: document.getElementById("agentEmail").value.trim(),
         commentaire: document.getElementById("agentCommentaire").value.trim()
@@ -418,7 +368,9 @@ function supprimerAgent() {
     }
 }
 
-// --- LIEN AVEC LE FICHIER CSV RÉSEAU ---
+/* ==========================================================================
+   5. LIEN AVEC LE FICHIER CSV RÉSEAU
+   ========================================================================== */
 
 async function connecterFichierReseau() {
     try {
@@ -454,6 +406,7 @@ async function connecterFichierReseau() {
                     regime: cols[8] ? cols[8].replace(/"/g, '').trim() : "G24",
                     tempsPartiel: cols[9] ? cols[9].replace(/"/g, '').trim() : "100%",
                     naissanceDate: cols[10] ? cols[10].replace(/"/g, '').trim() : "",
+                    entreeSdis: cols[12] ? cols[12].replace(/"/g, '').trim() : "",
                     telephone: cols[15] ? formaterTelephone(cols[15]) : "",
                     email: cols[16] ? cols[16].replace(/"/g, '').trim() : "",
                     commentaire: cols[20] ? cols[20].replace(/"/g, '').trim() : ""
@@ -494,7 +447,7 @@ async function enregistrerFichierReseau() {
         
         listeAgents.forEach(a => {
             const comm = (a.commentaire || '').replace(/"/g, '""');
-            csvContent += `"${a.matricule || ''}";"${a.sexe || 'Homme'}";"${a.nom || ''}";"${a.prenom || ''}";"${a.equipe || ''}";"${a.statut || ''}";"${a.grade || ''}";"${a.fonction || ''}";"${a.regime || ''}";"${a.tempsPartiel || '100%'}";"${a.naissanceDate || ''}";"";"";"";"";"${a.telephone || ''}";"${a.email || ''}";"";"";"";"${comm}"\n`;
+            csvContent += `"${a.matricule || ''}";"${a.sexe || 'Homme'}";"${a.nom || ''}";"${a.prenom || ''}";"${a.equipe || ''}";"${a.statut || ''}";"${a.grade || ''}";"${a.fonction || ''}";"${a.regime || ''}";"${a.tempsPartiel || '100%'}";"${a.naissanceDate || ''}";"";"${a.entreeSdis || ''}";"";"";"${a.telephone || ''}";"${a.email || ''}";"";"";"";"${comm}"\n`;
         });
 
         const writable = await window.fileHandleReseau.createWritable();
@@ -508,6 +461,48 @@ async function enregistrerFichierReseau() {
         alert("❌ Erreur de sauvegarde : " + err.message);
     }
 }
+
+/* ==========================================================================
+   6. ÉCOUTEURS D'ÉVÉNEMENTS & DOMCONTENTLOADED
+   ========================================================================== */
+
+document.addEventListener('DOMContentLoaded', () => {
+    const idsAEcouter = [
+        "agentRegime", 
+        "agentFonction", 
+        "agentNaissanceDate", 
+        "agentEntreeSdis", 
+        "agentTempsPartiel", 
+        "agentStatut"
+    ];
+
+    idsAEcouter.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('change', actualiserIndicateurGardes);
+            el.addEventListener('input', actualiserIndicateurGardes);
+        }
+    });
+
+    const elStatut = document.getElementById("agentStatut");
+    if (elStatut) {
+        elStatut.addEventListener('change', adapterFormulaireSelonStatut);
+    }
+
+    const elRegime = document.getElementById("agentRegime");
+    if (elRegime) {
+        elRegime.addEventListener('change', gererChangementRegime);
+    }
+
+    const elEquipe = document.getElementById("agentEquipe");
+    if (elEquipe) {
+        elEquipe.addEventListener('change', gererChangementEquipe);
+    }
+
+    adapterFormulaireSelonStatut();
+    actualiserIndicateurGardes();
+    actualiserTableauRH();
+});
 
 window.onload = function() {
     actualiserTableauRH();
