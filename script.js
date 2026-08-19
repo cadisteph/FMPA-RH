@@ -113,6 +113,7 @@ function calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction) 
     return { g24: baseG24, g12: baseG12 };
 }
 
+// Formate le texte d'affichage de la carte et la répartition semestrielle
 function obtenirDetailsGardes(agent) {
     if (!agent || agent.regime === "SHR" || agent.regime === "SPV" || agent.statut === "SPV" || agent.statut === "PATS") {
         return { total: "-", repartition: "-" };
@@ -130,31 +131,44 @@ function obtenirDetailsGardes(agent) {
     let g12 = Math.round(bases.g12 * ratio);
 
     if (agent.regime === "G24") {
-        let s1 = Math.ceil(g24 / 2);
-        let s2 = Math.floor(g24 / 2);
+        let s1 = Math.floor(g24 / 2);
+        let s2 = Math.ceil(g24 / 2);
+        let totalHeures = g24 * 17;
         return {
             total: `${g24}`,
-            repartition: `S1: ${s1} (${s1 * 17}h) | S2: ${s2} (${s2 * 17}h) <span class="total-annuel-highlight">[${g24 * 17}h]</span>`
+            repartition: `S1: ${s1} (${s1 * 17}h) | S2: ${s2} (${s2 * 17}h) <span class="total-annuel-highlight">[${totalHeures}h]</span>`
         };
     } else if (agent.regime === "G12") {
-        let s1 = Math.ceil(g12 / 2);
-        let s2 = Math.floor(g12 / 2);
+        let s1 = Math.floor(g12 / 2);
+        let s2 = Math.ceil(g12 / 2);
+        let totalHeures = g12 * 12;
         return {
             total: `${g12}`,
-            repartition: `S1: ${s1} (${s1 * 12}h) | S2: ${s2} (${s2 * 12}h) <span class="total-annuel-highlight">[${g12 * 12}h]</span>`
+            repartition: `S1: ${s1} (${s1 * 12}h) | S2: ${s2} (${s2 * 12}h) <span class="total-annuel-highlight">[${totalHeures}h]</span>`
         };
     } else if (agent.regime === "Mixte") {
+        // Répartition G24
+        let g24_s1 = Math.floor(g24 / 2);
+        let g24_s2 = Math.ceil(g24 / 2);
+
+        // Répartition G12
+        let g12_s1 = Math.floor(g12 / 2);
+        let g12_s2 = Math.ceil(g12 / 2);
+
+        // Calcul des heures
+        let heures_s1 = (g24_s1 * 17) + (g12_s1 * 12);
+        let heures_s2 = (g24_s2 * 17) + (g12_s2 * 12);
+        let totalHeures = heures_s1 + heures_s2;
         let totalGardes = g24 + g12;
-        let totalHeures = (g24 * 17) + (g12 * 12);
+
         return {
-            total: `${g24} G24 + ${g12} G12`,
-            repartition: `${totalGardes} gardes <span class="total-annuel-highlight">[${totalHeures}h]</span>`
+            total: `${totalGardes}`,
+            repartition: `S1: ${g24_s1}/${g12_s1} (${heures_s1}h) | S2: ${g24_s2}/${g12_s2} (${heures_s2}h) <span class="total-annuel-highlight">[${totalHeures}h]</span>`
         };
     }
 
     return { total: "-", repartition: "-" };
 }
-
 function actualiserIndicateurGardes() {
     const regime = document.getElementById("agentRegime") ? document.getElementById("agentRegime").value : "";
     const fonction = document.getElementById("agentFonction") ? document.getElementById("agentFonction").value : "";
