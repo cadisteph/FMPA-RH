@@ -288,37 +288,70 @@ function actualiserTableauRH() {
     if (!corps) return;
     corps.innerHTML = "";
 
-    const fSexe = document.getElementById("rh_sexe").value;
-    const fEquipe = document.getElementById("rh_equipe").value;
-    const fStatut = document.getElementById("rh_statut").value;
-    const fRecherche = document.getElementById("rh_recherche").value.toLowerCase().trim();
+const filtreSexe = document.getElementById("filtreSexe") ? document.getElementById("filtreSexe").value : "";
+    const filtreEquipe = document.getElementById("filtreEquipe") ? document.getElementById("filtreEquipe").value : "";
+    const filtreStatut = document.getElementById("filtreStatut") ? document.getElementById("filtreStatut").value : "";
+    const rechercheGlobale = document.getElementById("rechercheAgent") ? document.getElementById("rechercheAgent").value.toLowerCase().trim() : "";
 
+    // 2. Récupération des nouveaux filtres
+    const filtreGrade = document.getElementById("filtreGrade") ? document.getElementById("filtreGrade").value : "";
+    const filtreFonction = document.getElementById("filtreFonction") ? document.getElementById("filtreFonction").value : "";
+    const filtreRegime = document.getElementById("filtreRegime") ? document.getElementById("filtreRegime").value : "";
+    const filtreEngagement = document.getElementById("filtreEngagement") ? document.getElementById("filtreEngagement").value : "";
+    
+    const rechercheSpec = document.getElementById("rechercheSpecialite") ? document.getElementById("rechercheSpecialite").value.toLowerCase().trim() : "";
+    const rechercheComp = document.getElementById("rechercheCompetence") ? document.getElementById("rechercheCompetence").value.toLowerCase().trim() : "";
+
+    // 3. Filtrage de la liste des agents
     let agentsFiltres = listeAgents.filter(agent => {
-        if (fSexe && agent.sexe !== fSexe) return false;
-        if (fEquipe && agent.equipe !== fEquipe) return false;
-        if (fStatut && agent.statut !== fStatut) return false;
-        if (fRecherche) {
-            const terme = `${agent.matricule} ${agent.nom} ${agent.prenom}`.toLowerCase();
-            if (!terme.includes(fRecherche)) return false;
+        // Filtres par liste déroulante
+        if (filtreSexe && agent.sexe !== filtreSexe) return false;
+        if (filtreEquipe && agent.equipe !== filtreEquipe) return false;
+        if (filtreStatut && agent.statut !== filtreStatut) return false;
+        if (filtreGrade && agent.grade !== filtreGrade) return false;
+        if (filtreFonction && agent.fonction !== filtreFonction) return false;
+        if (filtreRegime && agent.regime !== filtreRegime) return false;
+        
+        if (filtreEngagement) {
+            const tpEng = (agent.tempsPartiel || agent.engagement || "");
+            if (tpEng !== filtreEngagement) return false;
         }
+
+        // Recherche globale (Nom, Prénom, Matricule, Téléphone, Adresse, Ville)
+        if (rechercheGlobale) {
+            const texteComplet = `${agent.nom || ''} ${agent.prenom || ''} ${agent.matricule || ''} ${agent.telephone || ''} ${agent.lieuNaissance || ''} ${agent.adresse || ''}`.toLowerCase();
+            if (!texteComplet.includes(rechercheGlobale)) return false;
+        }
+
+        // Recherche spécifique Spécialités (prend en compte les listes séparées par virgule)
+        if (rechercheSpec) {
+            const specs = (agent.specialites || "").toLowerCase();
+            if (!specs.includes(rechercheSpec)) return false;
+        }
+
+        // Recherche spécifique Compétences (prend en compte les listes séparées par virgule)
+        if (rechercheComp) {
+            const comps = (agent.competences || "").toLowerCase();
+            if (!comps.includes(rechercheComp)) return false;
+        }
+
         return true;
     });
 
-    // Remplace la ligne de tri existante dans actualiserTableauRH par :
-agentsFiltres.sort((a, b) => {
-    const nomA = (a.nom || "").toUpperCase();
-    const nomB = (b.nom || "").toUpperCase();
-    const compNom = nomA.localeCompare(nomB, 'fr', { sensitivity: 'base' });
-    
-    // Si les noms sont identiques, on départage par le prénom
-    if (compNom === 0) {
-        const prenomA = (a.prenom || "").toLowerCase();
-        const prenomB = (b.prenom || "").toLowerCase();
-        return prenomA.localeCompare(prenomB, 'fr', { sensitivity: 'base' });
-    }
-    
-    return compNom;
-});
+    // 4. Tri par Nom puis Prénom
+    agentsFiltres.sort((a, b) => {
+        const nomA = (a.nom || "").toUpperCase();
+        const nomB = (b.nom || "").toUpperCase();
+        const compNom = nomA.localeCompare(nomB, 'fr', { sensitivity: 'base' });
+        
+        if (compNom === 0) {
+            const prenomA = (a.prenom || "").toLowerCase();
+            const prenomB = (b.prenom || "").toLowerCase();
+            return prenomA.localeCompare(prenomB, 'fr', { sensitivity: 'base' });
+        }
+        
+        return compNom;
+    });
 
     const compteur = document.getElementById("compteurAgentsRH");
     if (compteur) compteur.innerText = `${agentsFiltres.length} / ${listeAgents.length} agent(s)`;
