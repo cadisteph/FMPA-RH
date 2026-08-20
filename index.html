@@ -20,7 +20,7 @@
       <button type="button" class="btn-reseau" onclick="enregistrerFichierReseau()">
         💾 Enregistrer les modifications
       </button>
-      <span id="statusReseau" style="font-size: 0.9em; color: #ed1c1c; font-weight: bold;">🚨 Non connecté : enregistrement inutlie</span>
+      <span id="statusReseau" style="font-size: 0.9em; color: #ed1c1c; font-weight: bold;">🚨 Non connecté : enregistrement inutile</span>
     </div>
   </header>
 
@@ -95,9 +95,14 @@
               <th style="padding: 8px;">Grade</th>
               <th style="padding: 8px;">Fonction</th>
               <th style="padding: 8px;">Régime</th>
+              <th style="padding: 8px;">T. Partiel / Engagement</th>
               <th style="padding: 8px;">Gardes (Théo.)</th>
-              <th style="padding: 8px;">Téléphone</th>
+              <th style="padding: 8px;">Date PL</th>
+              <th style="padding: 8px;">Date VMA</th>
+              <th style="padding: 8px;">Entrée SDIS</th>
               <th style="padding: 8px;">Naissance</th>
+              <th style="padding: 8px;">Lieu (Ville/Dép.)</th>
+              <th style="padding: 8px;">Coordonnées</th>
             </tr>
           </thead>
           <tbody id="corpsRH">
@@ -201,6 +206,8 @@
                   <option value="Assistante">Assistante</option>
                 </select>
               </div>
+              
+              <!-- Champs commutables : Temps Partiel (SPP) vs Engagement (SPV) -->
               <div style="flex:1;" id="groupTempsPartiel">
                 <label style="font-size:0.8em; font-weight:bold;">Temps Partiel</label>
                 <select id="agentTempsPartiel" style="width:100%;">
@@ -210,26 +217,54 @@
                   <option value="50%">50 %</option>
                 </select>
               </div>
+              <div style="flex:1; display:none;" id="groupEngagement">
+                <label style="font-size:0.8em; font-weight:bold;">Engagement</label>
+                <select id="agentEngagement" style="width:100%;">
+                  <option value="Complet">Complet</option>
+                  <option value="SUAP/PPABE">SUAP/PPABE</option>
+                  <option value="SUAP">SUAP</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label style="font-size:0.8em; font-weight:bold;">Date de Naissance <span id="labelAge" style="color:#2b6cb0;"></span></label>
-              <input type="date" id="agentNaissanceDate" onchange="mettreAJourAffichageAge()" style="width:100%;">
+
+            <!-- Bloc 3 Champs Dates : PL, VMA, Entrée SDIS -->
+            <div style="display: flex; gap: 8px;">
+              <div style="flex:1;">
+                <label style="font-size:0.8em; font-weight:bold;">Date PL</label>
+                <input type="date" id="agentDatePL" style="width:100%;">
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:0.8em; font-weight:bold;">Date VMA</label>
+                <input type="date" id="agentDateVMA" style="width:100%;">
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:0.8em; font-weight:bold;">Entrée SDIS</label>
+                <input type="date" id="agentEntreeSdis" style="width:100%;">
+              </div>
             </div>
 
+            <!-- Bloc Naissance & Lieu -->
+            <div style="display: flex; gap: 8px;">
+              <div style="flex:1;">
+                <label style="font-size:0.8em; font-weight:bold;">Date Naissance <span id="labelAge" style="color:#2b6cb0;"></span></label>
+                <input type="date" id="agentNaissanceDate" onchange="mettreAJourAffichageAge()" style="width:100%;">
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:0.8em; font-weight:bold;">Lieu (Ville/Dép.)</label>
+                <input type="text" id="agentLieuNaissance" placeholder="ex: ROUEN (76)" style="width:100%;">
+              </div>
+            </div>
 
-            
-<!-- CARTE OBJECTIF GARDES (PLEINE LARGEUR) -->
-<div class="card-gardes-container span-3" style="margin-top: 4px;">
-  <div style="display:flex; justify-content: flex-start; align-items:center; gap: 8px;">
-    <label style="color:#2b6cb0; font-weight:bold;">📆 OBJECTIF GARDES ANNUELLES :</label>
-    <span id="valeurGardes" class="card-gardes-valeur">92</span>
-  </div>
-  <div style="font-size:0.75em; color:#4a5568; margin-top:3px;">
-    Répartition Semestrielle : <span id="ratioSemestre" style="font-weight:bold; color:#2d3748;">S1: 46 (782h) | S2: 46 (782h) <span class="total-annuel-highlight">[1564h]</span></span>
-  </div>
-</div>
-
-
+            <!-- CARTE OBJECTIF GARDES (PLEINE LARGEUR) -->
+            <div class="card-gardes-container span-3" style="margin-top: 4px;">
+              <div style="display:flex; justify-content: flex-start; align-items:center; gap: 8px;">
+                <label style="color:#2b6cb0; font-weight:bold;">📆 OBJECTIF GARDES ANNUELLES :</label>
+                <span id="valeurGardes" class="card-gardes-valeur">92</span>
+              </div>
+              <div style="font-size:0.75em; color:#4a5568; margin-top:3px;">
+                Répartition Semestrielle : <span id="ratioSemestre" style="font-weight:bold; color:#2d3748;">S1: 46 (782h) | S2: 46 (782h) <span class="total-annuel-highlight">[1564h]</span></span>
+              </div>
+            </div>
 
             <div style="display: flex; gap: 8px;">
               <div style="flex:1;">
@@ -240,6 +275,12 @@
                 <label style="font-size:0.8em; font-weight:bold;">Email</label>
                 <input type="email" id="agentEmail" style="width:100%;">
               </div>
+            </div>
+
+            <!-- Champ Adresse avec majuscules automatiques -->
+            <div>
+              <label style="font-size:0.8em; font-weight:bold;">Adresse</label>
+              <input type="text" id="agentAdresse" style="width:100%; text-transform:uppercase;" oninput="this.value = this.value.toUpperCase()">
             </div>
 
             <div>
