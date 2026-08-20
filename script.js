@@ -2,8 +2,8 @@ window.fileHandleReseau = null;
 
 // Liste par défaut si le CSV n'est pas encore connecté
 let listeAgents = [
-    { id: 1, matricule: "95000", sexe: "Homme", nom: "DUPONT", prenom: "Jean", equipe: "SPV", statut: "SPV", grade: "SAP", fonction: "Equ", regime: "SPV", naissanceDate: "1985-04-12", telephone: "06-01-02-03-04", email: "j.dupont@sdis.fr", tempsPartiel: "100%", commentaire: "Fiche de test" },
-    { id: 2, matricule: "95001", sexe: "Femme", nom: "MARTIN", prenom: "Sophie", equipe: "Equipe A", statut: "SPP", grade: "ADJ", fonction: "CATE", regime: "G24", naissanceDate: "1992-09-23", telephone: "06-05-06-07-08", email: "s.martin@sdis.fr", tempsPartiel: "100%", commentaire: "" }
+    { id: 1, matricule: "95000", sexe: "Homme", nom: "DUPONT", prenom: "Jean", equipe: "SPV", statut: "SPV", grade: "SAP", fonction: "Equ", regime: "SPV", engagement: "Complet", datePL: "", dateVMA: "", entreeSdis: "2015-06-01", naissanceDate: "1985-04-12", lieuNaissance: "LE HAVRE (76)", telephone: "06-01-02-03-04", email: "j.dupont@sdis.fr", adresse: "12 RUE DE LA PAIX 76600 LE HAVRE", commentaire: "Fiche de test" },
+    { id: 2, matricule: "95001", sexe: "Femme", nom: "MARTIN", prenom: "Sophie", equipe: "Equipe A", statut: "SPP", grade: "ADJ", fonction: "CATE", regime: "G24", tempsPartiel: "100%", datePL: "2023-01-15", dateVMA: "2023-05-20", entreeSdis: "2012-09-01", naissanceDate: "1992-09-23", lieuNaissance: "ROUEN (76)", telephone: "06-05-06-07-08", email: "s.martin@sdis.fr", adresse: "5 AVENUE FOCH 76600 LE HAVRE", commentaire: "" }
 ];
 
 /* ==========================================================================
@@ -113,8 +113,6 @@ function calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction) 
     return { g24: baseG24, g12: baseG12 };
 }
 
-// Formate le texte d'affichage de la carte et la répartition semestrielle
-// Formate le texte d'affichage de la carte et la répartition semestrielle
 function obtenirDetailsGardes(agent) {
     if (!agent || agent.regime === "SHR" || agent.regime === "SPV" || agent.statut === "SPV" || agent.statut === "PATS") {
         return { total: "-", repartition: "-" };
@@ -148,15 +146,11 @@ function obtenirDetailsGardes(agent) {
             repartition: `S1: ${s1} (${s1 * 12}h) | S2: ${s2} (${s2 * 12}h) <span class="total-annuel-highlight">[${totalHeures}h]</span>`
         };
     } else if (agent.regime === "Mixte") {
-        // Répartition G24
         let g24_s1 = Math.floor(g24 / 2);
         let g24_s2 = Math.ceil(g24 / 2);
-
-        // Répartition G12
         let g12_s1 = Math.floor(g12 / 2);
         let g12_s2 = Math.ceil(g12 / 2);
 
-        // Calcul des heures
         let heures_s1 = (g24_s1 * 17) + (g12_s1 * 12);
         let heures_s2 = (g24_s2 * 17) + (g12_s2 * 12);
         let totalHeures = heures_s1 + heures_s2;
@@ -197,13 +191,16 @@ function actualiserIndicateurGardes() {
 function adapterFormulaireSelonStatut() {
     const statut = document.getElementById('agentStatut') ? document.getElementById('agentStatut').value : "";
     const groupTempsPartiel = document.getElementById('groupTempsPartiel');
-    const groupDispo = document.getElementById("groupDisponibilite");
+    const groupEngagement = document.getElementById('groupEngagement');
 
-    if (groupTempsPartiel) {
-        groupTempsPartiel.style.display = (statut === 'SPV') ? 'none' : 'block';
-    }
-    if (groupDispo) {
-        groupDispo.style.display = (statut === 'SPV') ? 'flex' : 'none';
+    if (groupTempsPartiel && groupEngagement) {
+        if (statut === 'SPV') {
+            groupTempsPartiel.style.display = 'none';
+            groupEngagement.style.display = 'block';
+        } else {
+            groupTempsPartiel.style.display = 'block';
+            groupEngagement.style.display = 'none';
+        }
     }
 
     actualiserIndicateurGardes();
@@ -269,6 +266,21 @@ function actualiserTableauRH() {
     if (compteur) compteur.innerText = `${agentsFiltres.length} / ${listeAgents.length} agent(s)`;
 
     agentsFiltres.forEach(agent => {
+        // Temps partiel vs Engagement
+        let tpEngagement = "-";
+        if (agent.statut === "SPV") {
+            tpEngagement = agent.engagement || "Complet";
+        } else if (agent.statut === "SPP") {
+            tpEngagement = agent.tempsPartiel || "100%";
+        }
+
+        // Regroupement Coordonnées (Tel, Email, Adresse)
+        let coords = [];
+        if (agent.telephone) coords.push(echapperHTML(agent.telephone));
+        if (agent.email) coords.push(echapperHTML(agent.email));
+        if (agent.adresse) coords.push(echapperHTML(agent.adresse.toUpperCase()));
+        let coordsText = coords.join("<br>") || "-";
+
         corps.innerHTML += `
             <tr style="cursor:pointer; border-bottom:1px solid #e2e8f0;" onclick="editerAgent(${agent.id})">
                 <td style="padding: 6px 8px;">${echapperHTML(agent.matricule)}</td>
@@ -279,9 +291,14 @@ function actualiserTableauRH() {
                 <td style="padding: 6px 8px;">${echapperHTML(agent.grade) || '-'}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.fonction) || '-'}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.regime)}</td>
+                <td style="padding: 6px 8px;">${tpEngagement}</td>
                 <td style="padding: 6px 8px;"><strong>${obtenirGardesTheoriques(agent)}</strong></td>
-                <td style="padding: 6px 8px;">${echapperHTML(agent.telephone) || '-'}</td>
+                <td style="padding: 6px 8px;">${echapperHTML(agent.datePL) || '-'}</td>
+                <td style="padding: 6px 8px;">${echapperHTML(agent.dateVMA) || '-'}</td>
+                <td style="padding: 6px 8px;">${echapperHTML(agent.entreeSdis) || '-'}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.naissanceDate) || '-'}${calculerAge(agent.naissanceDate)}</td>
+                <td style="padding: 6px 8px;">${echapperHTML(agent.lieuNaissance) || '-'}</td>
+                <td style="padding: 6px 8px; font-size: 0.85em;">${coordsText}</td>
             </tr>`;
     });
 }
@@ -309,12 +326,17 @@ function editerAgent(id) {
     document.getElementById("agentGrade").value = agent.grade || "";
     document.getElementById("agentFonction").value = agent.fonction || "Equ";
     document.getElementById("agentTempsPartiel").value = agent.tempsPartiel || "100%";
+    document.getElementById("agentEngagement").value = agent.engagement || "Complet";
+    
+    document.getElementById("agentDatePL").value = agent.datePL || "";
+    document.getElementById("agentDateVMA").value = agent.dateVMA || "";
+    document.getElementById("agentEntreeSdis").value = agent.entreeSdis || "";
     document.getElementById("agentNaissanceDate").value = agent.naissanceDate || "";
-    if (document.getElementById("agentEntreeSdis")) {
-        document.getElementById("agentEntreeSdis").value = agent.entreeSdis || "";
-    }
+    document.getElementById("agentLieuNaissance").value = agent.lieuNaissance || "";
+    
     document.getElementById("agentTelephone").value = agent.telephone || "";
     document.getElementById("agentEmail").value = agent.email || "";
+    document.getElementById("agentAdresse").value = agent.adresse || "";
     document.getElementById("agentCommentaire").value = agent.commentaire || "";
 
     adapterFormulaireSelonStatut();
@@ -355,10 +377,15 @@ function enregistrerAgent() {
         grade: document.getElementById("agentGrade").value,
         fonction: document.getElementById("agentFonction").value,
         tempsPartiel: document.getElementById("agentTempsPartiel").value,
+        engagement: document.getElementById("agentEngagement").value,
+        datePL: document.getElementById("agentDatePL").value,
+        dateVMA: document.getElementById("agentDateVMA").value,
+        entreeSdis: document.getElementById("agentEntreeSdis").value,
         naissanceDate: document.getElementById("agentNaissanceDate").value,
-        entreeSdis: document.getElementById("agentEntreeSdis") ? document.getElementById("agentEntreeSdis").value : "",
+        lieuNaissance: document.getElementById("agentLieuNaissance").value.toUpperCase(),
         telephone: formaterTelephone(document.getElementById("agentTelephone").value),
         email: document.getElementById("agentEmail").value.trim(),
+        adresse: document.getElementById("agentAdresse").value.trim().toUpperCase(),
         commentaire: document.getElementById("agentCommentaire").value.trim()
     };
 
@@ -420,10 +447,15 @@ async function connecterFichierReseau() {
                     fonction: cols[7] ? cols[7].replace(/"/g, '').trim() : "Equ",
                     regime: cols[8] ? cols[8].replace(/"/g, '').trim() : "G24",
                     tempsPartiel: cols[9] ? cols[9].replace(/"/g, '').trim() : "100%",
-                    naissanceDate: cols[10] ? cols[10].replace(/"/g, '').trim() : "",
-                    entreeSdis: cols[12] ? cols[12].replace(/"/g, '').trim() : "",
-                    telephone: cols[15] ? formaterTelephone(cols[15]) : "",
-                    email: cols[16] ? cols[16].replace(/"/g, '').trim() : "",
+                    engagement: cols[10] ? cols[10].replace(/"/g, '').trim() : "Complet",
+                    naissanceDate: cols[11] ? cols[11].replace(/"/g, '').trim() : "",
+                    lieuNaissance: cols[12] ? cols[12].replace(/"/g, '').trim().toUpperCase() : "",
+                    entreeSdis: cols[13] ? cols[13].replace(/"/g, '').trim() : "",
+                    datePL: cols[14] ? cols[14].replace(/"/g, '').trim() : "",
+                    dateVMA: cols[15] ? cols[15].replace(/"/g, '').trim() : "",
+                    telephone: cols[16] ? formaterTelephone(cols[16]) : "",
+                    email: cols[17] ? cols[17].replace(/"/g, '').trim() : "",
+                    adresse: cols[18] ? cols[18].replace(/"/g, '').trim().toUpperCase() : "",
                     commentaire: cols[20] ? cols[20].replace(/"/g, '').trim() : ""
                 });
             }
@@ -458,11 +490,11 @@ async function enregistrerFichierReseau() {
             }
         }
 
-        let csvContent = "\uFEFFMatricule;Sexe;Nom;Prenom;Equipe;Statut;Grade;Fonction;Regime;TempsPartiel;DateNaissance;LieuNaissance;DateEntreeSDIS;DatePL;DateVMA;Telephone;Email;Adresse;DispoSPV;Specialites;Commentaire\n";
+        let csvContent = "\uFEFFMatricule;Sexe;Nom;Prenom;Equipe;Statut;Grade;Fonction;Regime;TempsPartiel;Engagement;DateNaissance;LieuNaissance;DateEntreeSDIS;DatePL;DateVMA;Telephone;Email;Adresse;DispoSPV;Commentaire\n";
         
         listeAgents.forEach(a => {
             const comm = (a.commentaire || '').replace(/"/g, '""');
-            csvContent += `"${a.matricule || ''}";"${a.sexe || 'Homme'}";"${a.nom || ''}";"${a.prenom || ''}";"${a.equipe || ''}";"${a.statut || ''}";"${a.grade || ''}";"${a.fonction || ''}";"${a.regime || ''}";"${a.tempsPartiel || '100%'}";"${a.naissanceDate || ''}";"";"${a.entreeSdis || ''}";"";"";"${a.telephone || ''}";"${a.email || ''}";"";"";"";"${comm}"\n`;
+            csvContent += `"${a.matricule || ''}";"${a.sexe || 'Homme'}";"${a.nom || ''}";"${a.prenom || ''}";"${a.equipe || ''}";"${a.statut || ''}";"${a.grade || ''}";"${a.fonction || ''}";"${a.regime || ''}";"${a.tempsPartiel || '100%'}";"${a.engagement || 'Complet'}";"${a.naissanceDate || ''}";"${a.lieuNaissance || ''}";"${a.entreeSdis || ''}";"${a.datePL || ''}";"${a.dateVMA || ''}";"${a.telephone || ''}";"${a.email || ''}";"${a.adresse || ''}";"";"${comm}"\n`;
         });
 
         const writable = await window.fileHandleReseau.createWritable();
