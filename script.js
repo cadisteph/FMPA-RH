@@ -17,6 +17,33 @@ function formaterPrenom(str) {
     return str.trim().toLowerCase().replace(/(^|\s|-)\S/g, match => match.toUpperCase());
 }
 
+
+// Convertit JJ/MM/AAAA ou AAAA-MM-JJ vers AAAA-MM-JJ (pour les <input type="date">)
+function formaterDatePourInput(dateStr) {
+    if (!dateStr) return "";
+    dateStr = dateStr.trim();
+    if (dateStr.includes('/')) {
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+            // Si c'est au format JJ/MM/AAAA
+            return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        }
+    }
+    return dateStr; // Déjà au format AAAA-MM-JJ
+}
+
+// Convertit n'importe quelle date valide vers le format Français JJ/MM/AAAA (pour le tableau)
+function formaterDateFR(dateStr) {
+    if (!dateStr) return "";
+    const iso = formaterDatePourInput(dateStr);
+    const parts = iso.split('-');
+    if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dateStr;
+}
+
+
 function formaterTelephone(str) {
     if (!str) return "";
     let cleaned = str.toString().replace(/\D/g, '');
@@ -27,7 +54,10 @@ function formaterTelephone(str) {
 
 function calculerAge(dateNaissanceStr) {
     if (!dateNaissanceStr) return "";
-    const dateNaissance = new Date(dateNaissanceStr);
+    const isoDate = formaterDatePourInput(dateNaissanceStr);
+    const dateNaissance = new Date(isoDate);
+    if (isNaN(dateNaissance.getTime())) return "";
+
     const aujourdhui = new Date();
     let age = aujourdhui.getFullYear() - dateNaissance.getFullYear();
     const m = aujourdhui.getMonth() - dateNaissance.getMonth();
@@ -302,17 +332,15 @@ function actualiserTableauRH() {
                 <td style="padding: 6px 8px;">${echapperHTML(agent.statut)}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.grade) || '-'}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.fonction) || '-'}</td>
-                
                 <td style="padding: 6px 8px;">${genererBadgesTriés(agent.specialites, "#ebf8ff", "#2b6cb0")}</td>
                 <td style="padding: 6px 8px;">${genererBadgesTriés(agent.competences, "#edf2f7", "#4a5568")}</td>
-                
                 <td style="padding: 6px 8px;">${echapperHTML(agent.regime)}</td>
                 <td style="padding: 6px 8px;">${tpEngagement}</td>
                 <td style="padding: 6px 8px;"><strong>${obtenirGardesTheoriques(agent)}</strong></td>
-                <td style="padding: 6px 8px;">${echapperHTML(agent.datePL) || '-'}</td>
-                <td style="padding: 6px 8px;">${echapperHTML(agent.dateVMA) || '-'}</td>
-                <td style="padding: 6px 8px;">${echapperHTML(agent.entreeSdis) || '-'}</td>
-                <td style="padding: 6px 8px;">${echapperHTML(agent.naissanceDate) || '-'}${calculerAge(agent.naissanceDate)}</td>
+                <td style="padding: 6px 8px;">${formaterDateFR(agent.datePL) || '-'}</td>
+                <td style="padding: 6px 8px;">${formaterDateFR(agent.dateVMA) || '-'}</td>
+                <td style="padding: 6px 8px;">${formaterDateFR(agent.entreeSdis) || '-'}</td>
+                <td style="padding: 6px 8px;">${formaterDateFR(agent.naissanceDate) || '-'}${calculerAge(agent.naissanceDate)}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.lieuNaissance) || '-'}</td>
                 <td style="padding: 6px 8px; font-size: 0.85em;">${coordsText}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.commentaire) || '-'}</td>
@@ -345,10 +373,10 @@ function editerAgent(id) {
     document.getElementById("agentTempsPartiel").value = agent.tempsPartiel || "100%";
     document.getElementById("agentEngagement").value = agent.engagement || "Complet";
     
-    document.getElementById("agentDatePL").value = agent.datePL || "";
-    document.getElementById("agentDateVMA").value = agent.dateVMA || "";
-    document.getElementById("agentEntreeSdis").value = agent.entreeSdis || "";
-    document.getElementById("agentNaissanceDate").value = agent.naissanceDate || "";
+    document.getElementById("agentDatePL").value = formaterDatePourInput(agent.datePL);
+    document.getElementById("agentDateVMA").value = formaterDatePourInput(agent.dateVMA);
+    document.getElementById("agentEntreeSdis").value = formaterDatePourInput(agent.entreeSdis);
+    document.getElementById("agentNaissanceDate").value = formaterDatePourInput(agent.naissanceDate);
     document.getElementById("agentLieuNaissance").value = agent.lieuNaissance || "";
     
     document.getElementById("agentTelephone").value = agent.telephone || "";
