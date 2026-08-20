@@ -262,7 +262,7 @@ html, body {
 .btn-danger { background: #e53e3e !important; color: white !important; }
 .btn-warning { background: #dd6b20 !important; color: white !important; }
 .btn-success { background: #2f855a !important; color: white !important; }
-.btn-reseau { background: #2d3748 !important; color: white !important; }
+.btn-reseau { background: #383f8e !important; color: white !important; }   
 
 button:hover { opacity: 0.9; }
 
