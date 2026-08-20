@@ -458,7 +458,7 @@ async function connecterFichierReseau() {
                     telephone: cols[16] ? formaterTelephone(cols[16]) : "",
                     email: cols[17] ? cols[17].replace(/"/g, '').trim() : "",
                     adresse: cols[18] ? cols[18].replace(/"/g, '').trim().toUpperCase() : "",
-                    commentaire: cols[20] ? cols[20].replace(/"/g, '').trim() : ""
+                    commentaire: cols[21] ? cols[21].replace(/"/g, '').trim() : ""
                 });
             }
         }
