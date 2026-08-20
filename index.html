@@ -129,6 +129,7 @@
         <option value="Complet">Complet</option>
         <option value="SUAP/PPABE">SUAP/PPABE</option>
         <option value="SUAP">SUAP</option>
+        <option value="En Dispo">En Dispo</option>
     </select>
 </div>
 
@@ -230,6 +231,7 @@
               <div style="flex:1;">
                 <label style="font-size:0.8em; font-weight:bold;">Statut *</label>
                 <select id="agentStatut" onchange="adapterFormulaireSelonStatut()" style="width:100%;">
+                  <option value="">- A définir -</option>
                   <option value="SPP">SPP</option>
                   <option value="SPV">SPV</option>
                   <option value="PATS">PATS</option>
@@ -238,6 +240,7 @@
               <div style="flex:1;">
                 <label style="font-size:0.8em; font-weight:bold;">Équipe *</label>
                 <select id="agentEquipe" onchange="gererChangementEquipe()" style="width:100%;">
+                  <option value="">- Aucune -</option>
                   <option value="Equipe A">Equipe A</option>
                   <option value="Equipe B">Equipe B</option>
                   <option value="Equipe C">Equipe C</option>
@@ -251,6 +254,7 @@
               <div style="flex:1;">
                 <label style="font-size:0.8em; font-weight:bold;">Régime *</label>
                 <select id="agentRegime" onchange="gererChangementRegime()" style="width:100%;">
+                  <option value="">- Aucun -</option>
                   <option value="G24">G24</option>
                   <option value="Mixte">Mixte</option>
                   <option value="G12">G12</option>
@@ -280,6 +284,7 @@
               <div style="flex:1;">
                 <label style="font-size:0.8em; font-weight:bold;">Fonction</label>
                 <select id="agentFonction" style="width:100%;">
+                            <option value="">- Aucun -</option>
                             <option value="Equ">Equipier</option>
                             <option value="CEqu">Chef d'Equipe</option>
                             <option value="CA1E">Chef d'Agrès Une Equipe</option>
@@ -315,6 +320,7 @@
                   <option value="Complet">Complet</option>
                   <option value="SUAP/PPABE">SUAP/PPABE</option>
                   <option value="SUAP">SUAP</option>
+                  <option value="En Dispo">En Dispo</option>
                 </select>
               </div>
             </div>
