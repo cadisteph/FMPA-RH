@@ -343,23 +343,21 @@ function editerAgent(id) {
     document.getElementById("agentStatut").value = agent.statut || "SPP";
     document.getElementById("agentGrade").value = agent.grade || "";
     document.getElementById("agentFonction").value = agent.fonction || "Equ";
+       // Champs Spécialités, Compétences et Commentaire
+    if (document.getElementById("formSpecialites")) document.getElementById("formSpecialites").value = agent.specialites || "";
+    if (document.getElementById("formCompetences")) document.getElementById("formCompetences").value = agent.competences || "";
+    document.getElementById("agentCommentaire").value = agent.commentaire || "";
     document.getElementById("agentTempsPartiel").value = agent.tempsPartiel || "100%";
     document.getElementById("agentEngagement").value = agent.engagement || "Complet";
-    
     document.getElementById("agentDatePL").value = agent.datePL || "";
     document.getElementById("agentDateVMA").value = agent.dateVMA || "";
     document.getElementById("agentEntreeSdis").value = agent.entreeSdis || "";
     document.getElementById("agentNaissanceDate").value = agent.naissanceDate || "";
     document.getElementById("agentLieuNaissance").value = agent.lieuNaissance || "";
-    
     document.getElementById("agentTelephone").value = agent.telephone || "";
     document.getElementById("agentEmail").value = agent.email || "";
     document.getElementById("agentAdresse").value = agent.adresse || "";
 
-    // Champs Spécialités, Compétences et Commentaire
-    if (document.getElementById("formSpecialites")) document.getElementById("formSpecialites").value = agent.specialites || "";
-    if (document.getElementById("formCompetences")) document.getElementById("formCompetences").value = agent.competences || "";
-    document.getElementById("agentCommentaire").value = agent.commentaire || "";
 
     adapterFormulaireSelonStatut();
     mettreAJourAffichageAge();
@@ -398,6 +396,8 @@ function enregistrerAgent() {
         statut: document.getElementById("agentStatut").value,
         grade: document.getElementById("agentGrade").value,
         fonction: document.getElementById("agentFonction").value,
+        specialites: document.getElementById("formSpecialites") ? document.getElementById("formSpecialites").value.trim() : "",
+        competences: document.getElementById("formCompetences") ? document.getElementById("formCompetences").value.trim() : "",
         tempsPartiel: document.getElementById("agentTempsPartiel").value,
         engagement: document.getElementById("agentEngagement").value,
         datePL: document.getElementById("agentDatePL").value,
@@ -408,8 +408,6 @@ function enregistrerAgent() {
         telephone: formaterTelephone(document.getElementById("agentTelephone").value),
         email: document.getElementById("agentEmail").value.trim(),
         adresse: document.getElementById("agentAdresse").value.trim().toUpperCase(),
-        specialites: document.getElementById("formSpecialites") ? document.getElementById("formSpecialites").value.trim() : "",
-        competences: document.getElementById("formCompetences") ? document.getElementById("formCompetences").value.trim() : "",
         commentaire: document.getElementById("agentCommentaire").value.trim()
     };
 
@@ -469,19 +467,19 @@ async function connecterFichierReseau() {
                     statut: cols[5] ? cols[5].replace(/"/g, '').trim() : "SPP",
                     grade: cols[6] ? cols[6].replace(/"/g, '').trim() : "",
                     fonction: cols[7] ? cols[7].replace(/"/g, '').trim() : "Equ",
-                    regime: cols[8] ? cols[8].replace(/"/g, '').trim() : "G24",
-                    tempsPartiel: cols[9] ? cols[9].replace(/"/g, '').trim() : "100%",
-                    engagement: cols[10] ? cols[10].replace(/"/g, '').trim() : "Complet",
-                    naissanceDate: cols[11] ? cols[11].replace(/"/g, '').trim() : "",
-                    lieuNaissance: cols[12] ? cols[12].replace(/"/g, '').trim().toUpperCase() : "",
-                    entreeSdis: cols[13] ? cols[13].replace(/"/g, '').trim() : "",
-                    datePL: cols[14] ? cols[14].replace(/"/g, '').trim() : "",
-                    dateVMA: cols[15] ? cols[15].replace(/"/g, '').trim() : "",
-                    telephone: cols[16] ? formaterTelephone(cols[16]) : "",
-                    email: cols[17] ? cols[17].replace(/"/g, '').trim() : "",
-                    adresse: cols[18] ? cols[18].replace(/"/g, '').trim().toUpperCase() : "",
-                    specialites: cols[19] ? cols[19].replace(/"/g, '').trim() : "",
-                    competences: cols[20] ? cols[20].replace(/"/g, '').trim() : "",
+                    specialites: cols[8] ? cols[8].replace(/"/g, '').trim() : "",
+                    competences: cols[9] ? cols[9].replace(/"/g, '').trim() : "",
+                    regime: cols[10] ? cols[10].replace(/"/g, '').trim() : "G24",
+                    tempsPartiel: cols[11] ? cols[11].replace(/"/g, '').trim() : "100%",
+                    engagement: cols[12] ? cols[12].replace(/"/g, '').trim() : "Complet",
+                    naissanceDate: cols[13] ? cols[13].replace(/"/g, '').trim() : "",
+                    lieuNaissance: cols[14] ? cols[14].replace(/"/g, '').trim().toUpperCase() : "",
+                    entreeSdis: cols[15] ? cols[15].replace(/"/g, '').trim() : "",
+                    datePL: cols[16] ? cols[16].replace(/"/g, '').trim() : "",
+                    dateVMA: cols[17] ? cols[17].replace(/"/g, '').trim() : "",
+                    telephone: cols[18] ? formaterTelephone(cols[18]) : "",
+                    email: cols[19] ? cols[19].replace(/"/g, '').trim() : "",
+                    adresse: cols[20] ? cols[20].replace(/"/g, '').trim().toUpperCase() : "",
                     commentaire: cols[21] ? cols[21].replace(/"/g, '').trim() : ""
                 });
             }
@@ -516,7 +514,7 @@ async function enregistrerFichierReseau() {
             }
         }
 
-        let csvContent = "\uFEFFMatricule;Sexe;Nom;Prenom;Equipe;Statut;Grade;Fonction;Regime;TempsPartiel;Engagement;DateNaissance;LieuNaissance;DateEntreeSDIS;DatePL;DateVMA;Telephone;Email;Adresse;Specialites;Competences;Commentaire\n";
+        let csvContent = "\uFEFFMatricule;Sexe;Nom;Prenom;Equipe;Statut;Grade;Fonction;Specialites;Competences;Regime;TempsPartiel;Engagement;DateNaissance;LieuNaissance;DateEntreeSDIS;DatePL;DateVMA;Telephone;Email;Adresse;Commentaire\n";
         
         listeAgents.forEach(a => {
             const comm = (a.commentaire || '').replace(/"/g, '""');
