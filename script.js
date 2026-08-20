@@ -48,7 +48,7 @@ function parseCSVLine(str) {
         if (cc === '"') {
             if (quote && str[c+1] === '"') { col += '"'; c++; }
             else { quote = !quote; }
-        } else if ((cc === ';' || cc === ',') && !quote) {
+        } else if (cc === ';' && !quote) { // On garde SEULEMENT le point-virgule comme séparateur de colonnes !
             arr.push(col); col = '';
         } else { col += cc; }
         c++;
@@ -454,34 +454,37 @@ async function connecterFichierReseau() {
             
             const cols = parseCSVLine(ligne);
             if (cols.length >= 4) {
-                const mat = cols[0].replace(/"/g, '').trim();
+                // Fonction de nettoyage pour enlever les guillemets automatiques d'Excel
+                const clean = (val) => val ? val.replace(/^"|"$/g, '').replace(/""/g, '"').trim() : "";
+
+                const mat = clean(cols[0]);
                 if (!mat) continue;
 
                 agentsReseau.push({
                     id: Date.now() + i,
                     matricule: mat,
-                    sexe: cols[1] ? cols[1].replace(/"/g, '').trim() : "Homme",
-                    nom: cols[2] ? cols[2].replace(/"/g, '').trim().toUpperCase() : "",
-                    prenom: cols[3] ? formaterPrenom(cols[3].replace(/"/g, '')) : "",
-                    equipe: cols[4] ? cols[4].replace(/"/g, '').trim() : "Equipe A",
-                    statut: cols[5] ? cols[5].replace(/"/g, '').trim() : "SPP",
-                    grade: cols[6] ? cols[6].replace(/"/g, '').trim() : "",
-                    fonction: cols[7] ? cols[7].replace(/"/g, '').trim() : "Equ",
-                    specialites: cols[8] ? cols[8].replace(/"/g, '').trim() : "",
-                    competences: cols[9] ? cols[9].replace(/"/g, '').trim() : "",
-                    regime: cols[10] ? cols[10].replace(/"/g, '').trim() : "G24",
-                    tempsPartiel: cols[11] ? cols[11].replace(/"/g, '').trim() : "100%",
-                    engagement: cols[12] ? cols[12].replace(/"/g, '').trim() : "Complet",
-                    naissanceDate: cols[13] ? cols[13].replace(/"/g, '').trim() : "",
-                    lieuNaissance: cols[14] ? cols[14].replace(/"/g, '').trim().toUpperCase() : "",
-                    entreeSdis: cols[15] ? cols[15].replace(/"/g, '').trim() : "",
-                    datePL: cols[16] ? cols[16].replace(/"/g, '').trim() : "",
-                    dateVMA: cols[17] ? cols[17].replace(/"/g, '').trim() : "",
-                    telephone: cols[18] ? formaterTelephone(cols[18]) : "",
-                    email: cols[19] ? cols[19].replace(/"/g, '').trim() : "",
-                    adresse: cols[20] ? cols[20].replace(/"/g, '').trim().toUpperCase() : "",
-                    dispoSPV: cols[21] ? cols[21].replace(/"/g, '').trim() : "",
-                    commentaire: cols[22] ? cols[22].replace(/"/g, '').trim() : ""
+                    sexe: clean(cols[1]) || "Homme",
+                    nom: clean(cols[2]).toUpperCase(),
+                    prenom: formaterPrenom(clean(cols[3])),
+                    equipe: clean(cols[4]) || "Equipe A",
+                    statut: clean(cols[5]) || "SPP",
+                    grade: clean(cols[6]),
+                    fonction: clean(cols[7]) || "Equ",
+                    specialites: clean(cols[8]),
+                    competences: clean(cols[9]),
+                    regime: clean(cols[10]) || "G24",
+                    tempsPartiel: clean(cols[11]) || "100%",
+                    engagement: clean(cols[12]) || "Complet",
+                    naissanceDate: clean(cols[13]),
+                    lieuNaissance: clean(cols[14]).toUpperCase(),
+                    entreeSdis: clean(cols[15]),
+                    datePL: clean(cols[16]),
+                    dateVMA: clean(cols[17]),
+                    telephone: formaterTelephone(clean(cols[18])),
+                    email: clean(cols[19]),
+                    adresse: clean(cols[20]).toUpperCase(),
+                    dispoSPV: clean(cols[21]),
+                    commentaire: clean(cols[22])
                 });
             }
         }
