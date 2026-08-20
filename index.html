@@ -63,6 +63,92 @@
           </select>
         </div>
 
+
+
+<!-- Nouveaux filtres de sélection -->
+<div class="filter-group">
+    <label for="filtreGrade">Grade :</label>
+    <select id="filtreGrade" onchange="actualiserTableauRH()">
+                  <option value="">Tous</option>
+                  <option value="SAP">SAP</option>
+                  <option value="CPL">CPL</option>
+                  <option value="CCH">CCH</option>
+                  <option value="SGT">SGT</option>
+                  <option value="SCH">SCH</option>
+                  <option value="ADJ">ADJ</option>
+                  <option value="ADC">ADC</option>
+                  <option value="LTN">LTN</option>
+                  <option value="CNE">CNE</option>
+                  <option value="CDT">CDT</option>
+                  <option value="PATS">PATS</option>
+    </select>
+</div>
+
+<div class="filter-group">
+    <label for="filtreFonction">Fonction :</label>
+    <select id="filtreFonction" onchange="actualiserTableauRH()">
+                  <option value="">Toutes</option>
+                  <option value="Equ">Equ</option>
+                  <option value="CEqu">CEqu</option>
+                  <option value="CA1E">CA1E</option>
+                  <option value="CATE">CATE</option>
+                  <option value="ACDG2">ACDG2</option>
+                  <option value="ACDG1">ACDG1</option>
+                  <option value="CDG">CDG</option>
+                  <option value="SOFTECH">S/Off Tech</option>
+                  <option value="SOFPAO">S/Off PAO</option>
+                  <option value="OFTECH">Off Tech</option>
+                  <option value="OFPAO">Off PAO</option>
+                  <option value="ACDC">ACDC</option>
+                  <option value="CDC">CDC</option>
+                  <option value="Assistante">Assistante</option>
+    </select>
+</div>
+
+<div class="filter-group">
+    <label for="filtreRegime">Régime :</label>
+    <select id="filtreRegime" onchange="actualiserTableauRH()">
+        <option value="">Tous</option>
+        <option value="SPV">SPV</option>
+        <option value="G12">G12</option>
+        <option value="G24">G24</option>
+    </select>
+</div>
+
+<div class="filter-group">
+    <label for="filtreEngagement">T. Partiel / Engagement :</label>
+    <select id="filtreEngagement" onchange="actualiserTableauRH()">
+        <option value="">Tous</option>
+        <option value="SHR">SHR</option>
+        <option value="100%">100%</option>
+        <option value="90%">90%</option>
+        <option value="80%">80%</option>
+        <option value="70%">70%</option>
+        <option value="60%">60%</option>
+        <option value="50%">50%</option>
+        <option value="Complet">Complet</option>
+        <option value="SUAP/PPABE">SUAP/PPABE</option>
+        <option value="SUAP">SUAP</option>
+    </select>
+</div>
+
+<!-- Nouveaux champs de recherche texte pour Spécialités et Compétences -->
+<div class="filter-group">
+    <label for="rechercheSpecialite">Spécialité :</label>
+    <input type="text" id="rechercheSpecialite" placeholder="ex: COD6, RAD2..." oninput="actualiserTableauRH()">
+</div>
+
+<div class="filter-group">
+    <label for="rechercheCompetence">Compétence :</label>
+    <input type="text" id="rechercheCompetence" placeholder="ex: ASU, EAP..." oninput="actualiserTableauRH()">
+</div>
+
+
+
+
+
+
+        
         <div class="filter-group search-group" style="flex-grow: 1;">
           <label style="display:block; font-size:0.8em; font-weight:bold;">RECHERCHE 🔍</label>
           <input type="text" id="rh_recherche" placeholder="Rechercher nom, prénom, matricule..." oninput="actualiserTableauRH()" style="width: 100%;">
