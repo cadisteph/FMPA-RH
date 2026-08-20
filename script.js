@@ -480,10 +480,25 @@ async function connecterFichierReseau() {
                     telephone: cols[18] ? formaterTelephone(cols[18]) : "",
                     email: cols[19] ? cols[19].replace(/"/g, '').trim() : "",
                     adresse: cols[20] ? cols[20].replace(/"/g, '').trim().toUpperCase() : "",
-                    commentaire: cols[21] ? cols[21].replace(/"/g, '').trim() : ""
+                    dispoSPV: cols[21] ? cols[21].replace(/"/g, '').trim() : "",
+                    commentaire: cols[22] ? cols[22].replace(/"/g, '').trim() : ""
                 });
             }
         }
+
+        listeAgents = agentsReseau;
+        actualiserTableauRH();
+        document.getElementById("statusReseau").innerText = "🌐 Connecté : enregistrement possible";
+        document.getElementById("statusReseau").style.color = "#08e3f5";
+        alert(`Chargement réussi : ${agentsReseau.length} agents importés.`);
+
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            console.error("Erreur d'accès :", err);
+            alert("Erreur lors de la connexion au fichier réseau.");
+        }
+    }
+}
 
         listeAgents = agentsReseau;
         actualiserTableauRH();
@@ -513,6 +528,27 @@ async function enregistrerFichierReseau() {
                 return;
             }
         }
+
+        let csvContent = "\uFEFFMatricule;Sexe;Nom;Prenom;Equipe;Statut;Grade;Fonction;Specialites;Competences;Regime;TempsPartiel;Engagement;DateNaissance;LieuNaissance;DateEntreeSDIS;DatePL;DateVMA;Telephone;Email;Adresse;DispoSPV;Commentaire\n";
+        
+        listeAgents.forEach(a => {
+            const comm = (a.commentaire || '').replace(/"/g, '""');
+            const spec = (a.specialites || '').replace(/"/g, '""');
+            const comp = (a.competences || '').replace(/"/g, '""');
+            csvContent += `"${a.matricule || ''}";"${a.sexe || 'Homme'}";"${a.nom || ''}";"${a.prenom || ''}";"${a.equipe || ''}";"${a.statut || ''}";"${a.grade || ''}";"${a.fonction || ''}";"${spec}";"${comp}";"${a.regime || ''}";"${a.tempsPartiel || '100%'}";"${a.engagement || 'Complet'}";"${a.naissanceDate || ''}";"${a.lieuNaissance || ''}";"${a.entreeSdis || ''}";"${a.datePL || ''}";"${a.dateVMA || ''}";"${a.telephone || ''}";"${a.email || ''}";"${a.adresse || ''}";"${a.dispoSPV || ''}";"${comm}"\n`;
+        });
+
+        const writable = await window.fileHandleReseau.createWritable();
+        await writable.write(csvContent);
+        await writable.close();
+
+        alert(`💾 Fichier sauvegardé avec succès (${listeAgents.length} agents).`);
+
+    } catch (err) {
+        console.error("Erreur lors de la sauvegarde :", err);
+        alert("❌ Erreur de sauvegarde : " + err.message);
+    }
+}
 
         let csvContent = "\uFEFFMatricule;Sexe;Nom;Prenom;Equipe;Statut;Grade;Fonction;Specialites;Competences;Regime;TempsPartiel;Engagement;DateNaissance;LieuNaissance;DateEntreeSDIS;DatePL;DateVMA;Telephone;Email;Adresse;Commentaire\n";
         
