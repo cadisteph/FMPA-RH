@@ -320,11 +320,11 @@ function editerAgent(id) {
     document.getElementById("agentSexe").value = agent.sexe || "Homme";
     document.getElementById("agentNom").value = agent.nom || "";
     document.getElementById("agentPrenom").value = agent.prenom || "";
-    document.getElementById("agentRegime").value = agent.regime || "G24";
-    document.getElementById("agentEquipe").value = agent.equipe || "Equipe A";
-    document.getElementById("agentStatut").value = agent.statut || "SPP";
+    document.getElementById("agentRegime").value = agent.regime || "";
+    document.getElementById("agentEquipe").value = agent.equipe || "";
+    document.getElementById("agentStatut").value = agent.statut || "";
     document.getElementById("agentGrade").value = agent.grade || "";
-    document.getElementById("agentFonction").value = agent.fonction || "Equ";
+    document.getElementById("agentFonction").value = agent.fonction || "";
     document.getElementById("agentTempsPartiel").value = agent.tempsPartiel || "100%";
     document.getElementById("agentEngagement").value = agent.engagement || "Complet";
     
@@ -441,11 +441,11 @@ async function connecterFichierReseau() {
                     sexe: cols[1] ? cols[1].replace(/"/g, '').trim() : "Homme",
                     nom: cols[2] ? cols[2].replace(/"/g, '').trim().toUpperCase() : "",
                     prenom: cols[3] ? formaterPrenom(cols[3].replace(/"/g, '')) : "",
-                    equipe: cols[4] ? cols[4].replace(/"/g, '').trim() : "Equipe A",
-                    statut: cols[5] ? cols[5].replace(/"/g, '').trim() : "SPP",
+                    equipe: cols[4] ? cols[4].replace(/"/g, '').trim() : "",
+                    statut: cols[5] ? cols[5].replace(/"/g, '').trim() : "",
                     grade: cols[6] ? cols[6].replace(/"/g, '').trim() : "",
-                    fonction: cols[7] ? cols[7].replace(/"/g, '').trim() : "Equ",
-                    regime: cols[8] ? cols[8].replace(/"/g, '').trim() : "G24",
+                    fonction: cols[7] ? cols[7].replace(/"/g, '').trim() : "",
+                    regime: cols[8] ? cols[8].replace(/"/g, '').trim() : "",
                     tempsPartiel: cols[9] ? cols[9].replace(/"/g, '').trim() : "100%",
                     engagement: cols[10] ? cols[10].replace(/"/g, '').trim() : "Complet",
                     naissanceDate: cols[11] ? cols[11].replace(/"/g, '').trim() : "",
@@ -477,7 +477,7 @@ async function connecterFichierReseau() {
 
 async function enregistrerFichierReseau() {
     if (!window.fileHandleReseau) {
-        alert("⚠️ Aucun fichier connecté. Cliquez d'abord sur 'Connecter'.");
+        alert("⚠️ Aucun fichier connecté. Cliquez d'abord sur '🔗 Connecter'.");
         return;
     }
 
