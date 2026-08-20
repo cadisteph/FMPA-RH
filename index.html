@@ -67,7 +67,7 @@
 
 <!-- Nouveaux filtres de sélection -->
 <div class="filter-group">
-    <label for="filtreGrade">Grade :</label>
+    <label for="filtreGrade" style="display:block; font-size:0.8em; font-weight:bold;">GRADE</label>
     <select id="filtreGrade" onchange="actualiserTableauRH()">
                   <option value="">Tous</option>
                   <option value="SAP">SAP</option>
@@ -85,7 +85,7 @@
 </div>
 
 <div class="filter-group">
-    <label for="filtreFonction">Fonction :</label>
+    <label for="filtreFonction" style="display:block; font-size:0.8em; font-weight:bold;">FONCTION</label>
     <select id="filtreFonction" onchange="actualiserTableauRH()">
                   <option value="">Toutes</option>
                   <option value="Equ">Equ</option>
@@ -106,7 +106,7 @@
 </div>
 
 <div class="filter-group">
-    <label for="filtreRegime">Régime :</label>
+    <label for="filtreRegime" style="display:block; font-size:0.8em; font-weight:bold;">REGIME</label>
     <select id="filtreRegime" onchange="actualiserTableauRH()">
         <option value="">Tous</option>
         <option value="Mixte">Mixte</option>
@@ -117,7 +117,7 @@
 </div>
 
 <div class="filter-group">
-    <label for="filtreEngagement">T. Partiel / Engagement :</label>
+    <label for="filtreEngagement" style="display:block; font-size:0.8em; font-weight:bold;">Tps % / Eng. SPV</label>
     <select id="filtreEngagement" onchange="actualiserTableauRH()">
         <option value="">Tous</option>
         <option value="100%">100%</option>
@@ -134,18 +134,18 @@
 
 <!-- Nouveaux champs de recherche texte pour Spécialités et Compétences -->
 <div class="filter-group">
-    <label for="rechercheSpecialite">Spécialité :</label>
+    <label for="rechercheSpecialite" style="display:block; font-size:0.8em; font-weight:bold;">SPECIALITES 🔍</label>
     <input type="text" id="rechercheSpecialite" placeholder="ex: COD6, RAD2..." oninput="actualiserTableauRH()">
 </div>
 
 <div class="filter-group">
-    <label for="rechercheCompetence">Compétence :</label>
+    <label for="rechercheCompetence" style="display:block; font-size:0.8em; font-weight:bold;">COMPETENCES 🔍</label>
     <input type="text" id="rechercheCompetence" placeholder="ex: ASU, EAP..." oninput="actualiserTableauRH()">
 </div>
 
         <div class="filter-group search-group" style="flex-grow: 1;">
           <label style="display:block; font-size:0.8em; font-weight:bold;">RECHERCHE 🔍</label>
-          <input type="text" id="rh_recherche" placeholder="Rechercher nom, prénom, matricule..." oninput="actualiserTableauRH()" style="width: 100%;">
+          <input type="text" id="rh_recherche" placeholder="ex: Nom, Prénom, Matricule..." oninput="actualiserTableauRH()" style="width: 100%;">
         </div>
 
         <div>
