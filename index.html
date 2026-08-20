@@ -54,7 +54,7 @@
         </div>
 
         <div class="filter-group">
-          <label style="display:block; font-size:0.7em; font-weight:bold;">STATUT 📋</label>
+          <label style="display:block; font-size:0.7em; font-weight:bold;">STATUT 🏷️</label>
           <select id="rh_statut" onchange="actualiserTableauRH()">
             <option value="">Tous</option>
             <option value="SPP">SPP</option>
@@ -166,7 +166,7 @@
       <div class="table-container" style="overflow-x: auto; background: white; border: 1px solid #cbd5e0; border-radius: 6px;">
         <table class="table-rh" style="width: 100%; border-collapse: collapse;">
           <thead>
-            <tr style="background: #2d3748; color: white; font-size: 0.85em; text-align: left;">
+            <tr style="background: #ececec; color: white; font-size: 0.85em; text-align: left;">
               <th style="padding: 8px;">Matricule</th>
               <th style="padding: 8px;">Agent</th>
               <th style="padding: 8px;">Sexe</th>
@@ -377,7 +377,7 @@
 
             
             <!-- Champ Spécialités (Recyclables) -->
-<div style="margin-bottom: 12px;">
+<div style="margin-bottom: 2px;">
   <label style="font-size: 0.85em; font-weight: bold; color: #2d3748;">Spécialités recyclables</label>
   <input type="text" id="formSpecialites" placeholder="ex: COD1, RAD2, IBNB1" 
          style="width: 100%; padding: 6px; font-size: 0.9em; border: 1px solid #cbd5e0; border-radius: 4px;">
@@ -385,7 +385,7 @@
 </div>
 
 <!-- Champ Compétences complémentaires -->
-<div style="margin-bottom: 12px;">
+<div style="margin-bottom: 2px;">
   <label style="font-size: 0.85em; font-weight: bold; color: #2d3748;">Compétences complémentaires</label>
   <input type="text" id="formCompetences" placeholder="ex: ASU, Cond.OPS, FORSUAP" 
          style="width: 100%; padding: 6px; font-size: 0.9em; border: 1px solid #cbd5e0; border-radius: 4px;">
@@ -400,8 +400,8 @@
 
             <!-- BOUTONS D'ACTION -->
             <div style="display:flex; gap:8px; margin-top:10px;">
-              <button type="submit" class="btn btn-primary" style="flex:1; background:#2b6cb0; color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;">💾 Enregistrer</button>
-              <button type="button" class="btn btn-secondary" onclick="viderFormulaireRH()" style="background:#718096; color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;">➕ Nouveau</button>
+              <button type="submit" class="btn btn-primary" style="flex:1; background:#2e5ea3; color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;">💾 Enregistrer</button>
+              <button type="button" class="btn btn-secondary" onclick="viderFormulaireRH()" style="background:#3cac74; color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;">📩 Nouveau</button>
               <button type="button" id="btnSupprimerAgent" class="btn btn-danger" onclick="supprimerAgent()" style="display:none; background:#e53e3e; color:white; padding:8px; border:none; border-radius:4px; cursor:pointer;">🗑️</button>
             </div>
 
