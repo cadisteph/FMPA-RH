@@ -94,6 +94,8 @@
               <th style="padding: 8px;">Statut</th>
               <th style="padding: 8px;">Grade</th>
               <th style="padding: 8px;">Fonction</th>
+              <th style="padding: 8px;">Spécialités</th>
+              <th style="padding: 8px;">Compétences</th>
               <th style="padding: 8px;">Régime</th>
               <th style="padding: 8px;">T. Partiel / Engagement</th>
               <th style="padding: 8px;">Gardes (Théo.)</th>
@@ -284,6 +286,24 @@
               <input type="text" id="agentAdresse" style="width:100%; text-transform:uppercase;" oninput="this.value = this.value.toUpperCase()">
             </div>
 
+            
+            <!-- Champ Spécialités (Recyclables) -->
+<div style="margin-bottom: 12px;">
+  <label style="font-size: 0.85em; font-weight: bold; color: #2d3748;">Spécialités recyclables</label>
+  <input type="text" id="formSpecialites" placeholder="ex: COD1, RAD2, IBNB1" 
+         style="width: 100%; padding: 6px; font-size: 0.9em; border: 1px solid #cbd5e0; border-radius: 4px;">
+  <small style="font-size: 0.75em; color: #718096;">Séparer par des virgules</small>
+</div>
+
+<!-- Champ Compétences complémentaires -->
+<div style="margin-bottom: 12px;">
+  <label style="font-size: 0.85em; font-weight: bold; color: #2d3748;">Compétences complémentaires</label>
+  <input type="text" id="formCompetences" placeholder="ex: ASU, Cond.OPS, FORSUAP" 
+         style="width: 100%; padding: 6px; font-size: 0.9em; border: 1px solid #cbd5e0; border-radius: 4px;">
+  <small style="font-size: 0.75em; color: #718096;">Séparer par des virgules</small>
+</div> 
+
+            <!-- Champ commentaires -->
             <div>
               <label style="font-size:0.8em; font-weight:bold;">Commentaires</label>
               <textarea id="agentCommentaire" rows="2" style="width:100%;"></textarea>
