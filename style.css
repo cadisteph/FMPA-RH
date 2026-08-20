@@ -258,7 +258,8 @@ html, body {
 }
 
 .btn-primary { background: #2e5ea3 !important; color: white !important; }
-.btn-secondary, .btn-dark { background: #3cac74 !important; color: white !important; }
+.btn-secondary { background: #3cac74 !important; color: white !important; }
+.btn-dark { background: #d556f3 !important; color: white !important; }
 .btn-danger { background: #e53e3e !important; color: white !important; }
 .btn-warning { background: #dd6b20 !important; color: white !important; }
 .btn-success { background: #2f855a !important; color: white !important; }
