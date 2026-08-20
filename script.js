@@ -304,7 +304,21 @@ function actualiserTableauRH() {
         return true;
     });
 
-    agentsFiltres.sort((a, b) => (a.nom || "").localeCompare(b.nom || "", 'fr', { sensitivity: 'base' }));
+    // Remplace la ligne de tri existante dans actualiserTableauRH par :
+agentsFiltres.sort((a, b) => {
+    const nomA = (a.nom || "").toUpperCase();
+    const nomB = (b.nom || "").toUpperCase();
+    const compNom = nomA.localeCompare(nomB, 'fr', { sensitivity: 'base' });
+    
+    // Si les noms sont identiques, on départage par le prénom
+    if (compNom === 0) {
+        const prenomA = (a.prenom || "").toLowerCase();
+        const prenomB = (b.prenom || "").toLowerCase();
+        return prenomA.localeCompare(prenomB, 'fr', { sensitivity: 'base' });
+    }
+    
+    return compNom;
+});
 
     const compteur = document.getElementById("compteurAgentsRH");
     if (compteur) compteur.innerText = `${agentsFiltres.length} / ${listeAgents.length} agent(s)`;
@@ -404,17 +418,42 @@ function viderFormulaireRH() {
 
 function enregistrerAgent() {
     const idVal = document.getElementById("agentId").value;
+    const currentId = idVal ? parseInt(idVal) : null;
+
     const matricule = document.getElementById("agentMatricule").value.trim();
     const nom = document.getElementById("agentNom").value.trim().toUpperCase();
     const prenom = formaterPrenom(document.getElementById("agentPrenom").value);
 
+    // 1. Validation des champs obligatoires
     if (!matricule || !nom || !prenom) {
         alert("⚠️ Champs obligatoires manquants (Matricule, Nom, Prénom).");
         return;
     }
 
+    // 2. Vérification des doublons de Matricule
+    const doublonMatricule = listeAgents.find(a => 
+        a.id !== currentId && 
+        a.matricule.toLowerCase() === matricule.toLowerCase()
+    );
+    if (doublonMatricule) {
+        alert(`❌ Erreur : Le matricule "${matricule}" est déjà attribué à l'agent ${doublonMatricule.nom} ${doublonMatricule.prenom}.`);
+        return;
+    }
+
+    // 3. Vérification des doublons Nom + Prénom
+    const doublonNomPrenom = listeAgents.find(a => 
+        a.id !== currentId && 
+        a.nom.toUpperCase() === nom.toUpperCase() && 
+        a.prenom.toLowerCase() === prenom.toLowerCase()
+    );
+    if (doublonNomPrenom) {
+        alert(`❌ Erreur : Un agent nommé "${nom} ${prenom}" existe déjà dans la base (Matricule : ${doublonNomPrenom.matricule}).`);
+        return;
+    }
+
+    // 4. Création / Mise à jour de l'objet Agent
     let agentObj = {
-        id: idVal ? parseInt(idVal) : Date.now(),
+        id: currentId || Date.now(),
         matricule: matricule,
         sexe: document.getElementById("agentSexe").value,
         nom: nom,
@@ -439,8 +478,8 @@ function enregistrerAgent() {
         commentaire: document.getElementById("agentCommentaire").value.trim()
     };
 
-    if (idVal) {
-        const idx = listeAgents.findIndex(a => a.id === parseInt(idVal));
+    if (currentId) {
+        const idx = listeAgents.findIndex(a => a.id === currentId);
         if (idx !== -1) listeAgents[idx] = agentObj;
     } else {
         listeAgents.push(agentObj);
