@@ -303,7 +303,6 @@ function actualiserTableauRH() {
                 <td style="padding: 6px 8px;">${echapperHTML(agent.grade) || '-'}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.fonction) || '-'}</td>
                 
-                <!-- SPECIALITES ET COMPETENCES (BADGES DYNAMIQUES TRIS) -->
                 <td style="padding: 6px 8px;">${genererBadgesTriés(agent.specialites, "#ebf8ff", "#2b6cb0")}</td>
                 <td style="padding: 6px 8px;">${genererBadgesTriés(agent.competences, "#edf2f7", "#4a5568")}</td>
                 
@@ -343,21 +342,22 @@ function editerAgent(id) {
     document.getElementById("agentStatut").value = agent.statut || "SPP";
     document.getElementById("agentGrade").value = agent.grade || "";
     document.getElementById("agentFonction").value = agent.fonction || "Equ";
-       // Champs Spécialités, Compétences et Commentaire
-    if (document.getElementById("formSpecialites")) document.getElementById("formSpecialites").value = agent.specialites || "";
-    if (document.getElementById("formCompetences")) document.getElementById("formCompetences").value = agent.competences || "";
-    document.getElementById("agentCommentaire").value = agent.commentaire || "";
     document.getElementById("agentTempsPartiel").value = agent.tempsPartiel || "100%";
     document.getElementById("agentEngagement").value = agent.engagement || "Complet";
+    
     document.getElementById("agentDatePL").value = agent.datePL || "";
     document.getElementById("agentDateVMA").value = agent.dateVMA || "";
     document.getElementById("agentEntreeSdis").value = agent.entreeSdis || "";
     document.getElementById("agentNaissanceDate").value = agent.naissanceDate || "";
     document.getElementById("agentLieuNaissance").value = agent.lieuNaissance || "";
+    
     document.getElementById("agentTelephone").value = agent.telephone || "";
     document.getElementById("agentEmail").value = agent.email || "";
     document.getElementById("agentAdresse").value = agent.adresse || "";
 
+    if (document.getElementById("formSpecialites")) document.getElementById("formSpecialites").value = agent.specialites || "";
+    if (document.getElementById("formCompetences")) document.getElementById("formCompetences").value = agent.competences || "";
+    document.getElementById("agentCommentaire").value = agent.commentaire || "";
 
     adapterFormulaireSelonStatut();
     mettreAJourAffichageAge();
@@ -396,8 +396,6 @@ function enregistrerAgent() {
         statut: document.getElementById("agentStatut").value,
         grade: document.getElementById("agentGrade").value,
         fonction: document.getElementById("agentFonction").value,
-        specialites: document.getElementById("formSpecialites") ? document.getElementById("formSpecialites").value.trim() : "",
-        competences: document.getElementById("formCompetences") ? document.getElementById("formCompetences").value.trim() : "",
         tempsPartiel: document.getElementById("agentTempsPartiel").value,
         engagement: document.getElementById("agentEngagement").value,
         datePL: document.getElementById("agentDatePL").value,
@@ -408,6 +406,8 @@ function enregistrerAgent() {
         telephone: formaterTelephone(document.getElementById("agentTelephone").value),
         email: document.getElementById("agentEmail").value.trim(),
         adresse: document.getElementById("agentAdresse").value.trim().toUpperCase(),
+        specialites: document.getElementById("formSpecialites") ? document.getElementById("formSpecialites").value.trim() : "",
+        competences: document.getElementById("formCompetences") ? document.getElementById("formCompetences").value.trim() : "",
         commentaire: document.getElementById("agentCommentaire").value.trim()
     };
 
@@ -500,20 +500,6 @@ async function connecterFichierReseau() {
     }
 }
 
-        listeAgents = agentsReseau;
-        actualiserTableauRH();
-        document.getElementById("statusReseau").innerText = "🌐 Connecté : enregistrement possible";
-        document.getElementById("statusReseau").style.color = "#08e3f5";
-        alert(`Chargement réussi : ${agentsReseau.length} agents importés.`);
-
-    } catch (err) {
-        if (err.name !== 'AbortError') {
-            console.error("Erreur d'accès :", err);
-            alert("Erreur lors de la connexion au fichier réseau.");
-        }
-    }
-}
-
 async function enregistrerFichierReseau() {
     if (!window.fileHandleReseau) {
         alert("⚠️ Aucun fichier connecté. Cliquez d'abord sur 'Connecter'.");
@@ -550,30 +536,9 @@ async function enregistrerFichierReseau() {
     }
 }
 
-        let csvContent = "\uFEFFMatricule;Sexe;Nom;Prenom;Equipe;Statut;Grade;Fonction;Specialites;Competences;Regime;TempsPartiel;Engagement;DateNaissance;LieuNaissance;DateEntreeSDIS;DatePL;DateVMA;Telephone;Email;Adresse;Commentaire\n";
-        
-        listeAgents.forEach(a => {
-            const comm = (a.commentaire || '').replace(/"/g, '""');
-            const spec = (a.specialites || '').replace(/"/g, '""');
-            const comp = (a.competences || '').replace(/"/g, '""');
-            csvContent += `"${a.matricule || ''}";"${a.sexe || 'Homme'}";"${a.nom || ''}";"${a.prenom || ''}";"${a.equipe || ''}";"${a.statut || ''}";"${a.grade || ''}";"${a.fonction || ''}";"${a.regime || ''}";"${a.tempsPartiel || '100%'}";"${a.engagement || 'Complet'}";"${a.naissanceDate || ''}";"${a.lieuNaissance || ''}";"${a.entreeSdis || ''}";"${a.datePL || ''}";"${a.dateVMA || ''}";"${a.telephone || ''}";"${a.email || ''}";"${a.adresse || ''}";"${spec}";"${comp}";"${comm}"\n`;
-        });
-
-        const writable = await window.fileHandleReseau.createWritable();
-        await writable.write(csvContent);
-        await writable.close();
-
-        alert(`💾 Fichier sauvegardé avec succès (${listeAgents.length} agents).`);
-
-    } catch (err) {
-        console.error("Erreur lors de la sauvegarde :", err);
-        alert("❌ Erreur de sauvegarde : " + err.message);
-    }
-}
-
 /* ==========================================================================
    6. ÉCOUTEURS D'ÉVÉNEMENTS & DOMCONTENTLOADED
-   ========================================================================= */
+   ========================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
     const idsAEcouter = [
