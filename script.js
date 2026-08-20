@@ -6,6 +6,34 @@ let listeAgents = [
     { id: 2, matricule: "95001", sexe: "Femme", nom: "MARTIN", prenom: "Sophie", equipe: "Equipe A", statut: "SPP", grade: "ADJ", fonction: "CATE", regime: "G24", tempsPartiel: "100%", datePL: "2023-01-15", dateVMA: "2023-05-20", entreeSdis: "2012-09-01", naissanceDate: "1992-09-23", lieuNaissance: "ROUEN (76)", telephone: "06-05-06-07-08", email: "s.martin@sdis.fr", adresse: "5 AVENUE FOCH 76600 LE HAVRE", commentaire: "" }
 ];
 
+
+
+// Fonction pour générer des badges triés par ordre alphabétique
+function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#2d3748") {
+    if (!chaineTxt || chaineTxt.trim() === "") return "-";
+
+    // 1. Découper par virgule, nettoyer les espaces et filtrer les éléments vides
+    let liste = chaineTxt.split(",")
+        .map(item => item.trim())
+        .filter(item => item.length > 0);
+
+    // 2. Trier par ordre alphabétique (insensible à la casse)
+    liste.sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+
+    // 3. Générer le HTML des badges
+    return liste.map(badge => 
+        `<span style="background:${couleurBg}; color:${couleurTexte}; padding:2px 6px; border-radius:4px; font-size:0.75em; font-weight:bold; margin-right:3px; display:inline-block; margin-bottom:2px;">
+            ${echapperHTML(badge)}
+        </span>`
+    ).join("");
+}
+
+
+
+
+
+
+
 /* ==========================================================================
    1. UTILITAIRES DE FORMATAGE & DATES
    ========================================================================== */
@@ -290,6 +318,14 @@ function actualiserTableauRH() {
                 <td style="padding: 6px 8px;">${echapperHTML(agent.statut)}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.grade) || '-'}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.fonction) || '-'}</td>
+
+
+<!-- BADGES SPECIALITES (Fond bleu clair) -->
+<td style="padding: 6px 8px;">${genererBadgesTriés(agent.specialites, "#ebf8ff", "#2b6cb0")}</td>
+<!-- BADGES COMPÉTENCES (Fond gris clair) -->
+<td style="padding: 6px 8px;">${genererBadgesTriés(agent.competences, "#edf2f7", "#4a5568")}</td>
+
+                
                 <td style="padding: 6px 8px;">${echapperHTML(agent.regime)}</td>
                 <td style="padding: 6px 8px;">${tpEngagement}</td>
                 <td style="padding: 6px 8px;"><strong>${obtenirGardesTheoriques(agent)}</strong></td>
@@ -329,16 +365,18 @@ function editerAgent(id) {
     document.getElementById("agentFonction").value = agent.fonction || "";
     document.getElementById("agentTempsPartiel").value = agent.tempsPartiel || "100%";
     document.getElementById("agentEngagement").value = agent.engagement || "Complet";
-    
     document.getElementById("agentDatePL").value = agent.datePL || "";
     document.getElementById("agentDateVMA").value = agent.dateVMA || "";
     document.getElementById("agentEntreeSdis").value = agent.entreeSdis || "";
     document.getElementById("agentNaissanceDate").value = agent.naissanceDate || "";
     document.getElementById("agentLieuNaissance").value = agent.lieuNaissance || "";
-    
     document.getElementById("agentTelephone").value = agent.telephone || "";
     document.getElementById("agentEmail").value = agent.email || "";
     document.getElementById("agentAdresse").value = agent.adresse || "";
+    
+    document.getElementById('formSpecialites').value = agent.specialites || "";
+    document.getElementById('formCompetences').value = agent.competences || "";
+    
     document.getElementById("agentCommentaire").value = agent.commentaire || "";
 
     adapterFormulaireSelonStatut();
@@ -389,6 +427,10 @@ function enregistrerAgent() {
         email: document.getElementById("agentEmail").value.trim(),
         adresse: document.getElementById("agentAdresse").value.trim().toUpperCase(),
         commentaire: document.getElementById("agentCommentaire").value.trim()
+
+agent.specialites = document.getElementById('formSpecialites').value.trim();
+agent.competences = document.getElementById('formCompetences').value.trim();
+        
     };
 
     if (idVal) {
@@ -458,7 +500,9 @@ async function connecterFichierReseau() {
                     telephone: cols[16] ? formaterTelephone(cols[16]) : "",
                     email: cols[17] ? cols[17].replace(/"/g, '').trim() : "",
                     adresse: cols[18] ? cols[18].replace(/"/g, '').trim().toUpperCase() : "",
-                    commentaire: cols[21] ? cols[21].replace(/"/g, '').trim() : ""
+                    specialites: cols[21] ? cols[21].replace(/"/g, '').trim() : "",
+                    competences: cols[22] ? cols[22].replace(/"/g, '').trim() : "",
+                    commentaire: cols[23] ? cols[23].replace(/"/g, '').trim() : ""
                 });
             }
         }
