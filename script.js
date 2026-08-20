@@ -299,7 +299,7 @@ function actualiserTableauRH() {
                 <td style="padding: 6px 8px;">${echapperHTML(agent.naissanceDate) || '-'}${calculerAge(agent.naissanceDate)}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.lieuNaissance) || '-'}</td>
                 <td style="padding: 6px 8px; font-size: 0.85em;">${coordsText}</td>
-                <td style="padding: 6px 8px;">${echapperHTML(agent.commentaires) || '-'}</td>
+                <td style="padding: 6px 8px;">${echapperHTML(agent.commentaire) || '-'}</td>
 
             </tr>`;
     });
