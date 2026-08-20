@@ -1,41 +1,10 @@
 window.fileHandleReseau = null;
 
-// Liste par défaut si le CSV n'est pas encore connecté
-let listeAgents = [
-    { id: 1, matricule: "95000", sexe: "Homme", nom: "DUPONT", prenom: "Jean", equipe: "SPV", statut: "SPV", grade: "SAP", fonction: "Equ", regime: "SPV", engagement: "Complet", datePL: "", dateVMA: "", entreeSdis: "2015-06-01", naissanceDate: "1985-04-12", lieuNaissance: "LE HAVRE (76)", telephone: "06-01-02-03-04", email: "j.dupont@sdis.fr", adresse: "12 RUE DE LA PAIX 76600 LE HAVRE", commentaire: "Fiche de test" },
-    { id: 2, matricule: "95001", sexe: "Femme", nom: "MARTIN", prenom: "Sophie", equipe: "Equipe A", statut: "SPP", grade: "ADJ", fonction: "CATE", regime: "G24", tempsPartiel: "100%", datePL: "2023-01-15", dateVMA: "2023-05-20", entreeSdis: "2012-09-01", naissanceDate: "1992-09-23", lieuNaissance: "ROUEN (76)", telephone: "06-05-06-07-08", email: "s.martin@sdis.fr", adresse: "5 AVENUE FOCH 76600 LE HAVRE", commentaire: "" }
-];
-
-
-
-// Fonction pour générer des badges triés par ordre alphabétique
-function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#2d3748") {
-    if (!chaineTxt || chaineTxt.trim() === "") return "-";
-
-    // 1. Découper par virgule, nettoyer les espaces et filtrer les éléments vides
-    let liste = chaineTxt.split(",")
-        .map(item => item.trim())
-        .filter(item => item.length > 0);
-
-    // 2. Trier par ordre alphabétique (insensible à la casse)
-    liste.sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
-
-    // 3. Générer le HTML des badges
-    return liste.map(badge => 
-        `<span style="background:${couleurBg}; color:${couleurTexte}; padding:2px 6px; border-radius:4px; font-size:0.75em; font-weight:bold; margin-right:3px; display:inline-block; margin-bottom:2px;">
-            ${echapperHTML(badge)}
-        </span>`
-    ).join("");
-}
-
-
-
-
-
-
+// Liste par défaut
+let listeAgents = [];
 
 /* ==========================================================================
-   1. UTILITAIRES DE FORMATAGE & DATES
+   1. UTILITAIRES DE FORMATAGE, DATES & BADGES
    ========================================================================== */
 
 function echapperHTML(str) {
@@ -86,6 +55,23 @@ function parseCSVLine(str) {
     }
     arr.push(col);
     return arr;
+}
+
+// Générateur de badges triés par ordre alphabétique
+function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#2d3748") {
+    if (!chaineTxt || chaineTxt.trim() === "") return "-";
+
+    let liste = chaineTxt.split(",")
+        .map(item => item.trim())
+        .filter(item => item.length > 0);
+
+    liste.sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+
+    return liste.map(badge => 
+        `<span style="background:${couleurBg}; color:${couleurTexte}; padding:2px 6px; border-radius:4px; font-size:0.75em; font-weight:bold; margin-right:3px; display:inline-block; margin-bottom:2px;">
+            ${echapperHTML(badge)}
+        </span>`
+    ).join("");
 }
 
 /* ==========================================================================
@@ -294,7 +280,6 @@ function actualiserTableauRH() {
     if (compteur) compteur.innerText = `${agentsFiltres.length} / ${listeAgents.length} agent(s)`;
 
     agentsFiltres.forEach(agent => {
-        // Temps partiel vs Engagement
         let tpEngagement = "-";
         if (agent.statut === "SPV") {
             tpEngagement = agent.engagement || "Complet";
@@ -302,7 +287,6 @@ function actualiserTableauRH() {
             tpEngagement = agent.tempsPartiel || "100%";
         }
 
-        // Regroupement Coordonnées (Tel, Email, Adresse)
         let coords = [];
         if (agent.telephone) coords.push(echapperHTML(agent.telephone));
         if (agent.email) coords.push(echapperHTML(agent.email));
@@ -318,13 +302,10 @@ function actualiserTableauRH() {
                 <td style="padding: 6px 8px;">${echapperHTML(agent.statut)}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.grade) || '-'}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.fonction) || '-'}</td>
-
-
-<!-- BADGES SPECIALITES (Fond bleu clair) -->
-<td style="padding: 6px 8px;">${genererBadgesTriés(agent.specialites, "#ebf8ff", "#2b6cb0")}</td>
-<!-- BADGES COMPÉTENCES (Fond gris clair) -->
-<td style="padding: 6px 8px;">${genererBadgesTriés(agent.competences, "#edf2f7", "#4a5568")}</td>
-
+                
+                <!-- SPECIALITES ET COMPETENCES (BADGES DYNAMIQUES TRIS) -->
+                <td style="padding: 6px 8px;">${genererBadgesTriés(agent.specialites, "#ebf8ff", "#2b6cb0")}</td>
+                <td style="padding: 6px 8px;">${genererBadgesTriés(agent.competences, "#edf2f7", "#4a5568")}</td>
                 
                 <td style="padding: 6px 8px;">${echapperHTML(agent.regime)}</td>
                 <td style="padding: 6px 8px;">${tpEngagement}</td>
@@ -336,7 +317,6 @@ function actualiserTableauRH() {
                 <td style="padding: 6px 8px;">${echapperHTML(agent.lieuNaissance) || '-'}</td>
                 <td style="padding: 6px 8px; font-size: 0.85em;">${coordsText}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.commentaire) || '-'}</td>
-
             </tr>`;
     });
 }
@@ -358,25 +338,27 @@ function editerAgent(id) {
     document.getElementById("agentSexe").value = agent.sexe || "Homme";
     document.getElementById("agentNom").value = agent.nom || "";
     document.getElementById("agentPrenom").value = agent.prenom || "";
-    document.getElementById("agentRegime").value = agent.regime || "";
-    document.getElementById("agentEquipe").value = agent.equipe || "";
-    document.getElementById("agentStatut").value = agent.statut || "";
+    document.getElementById("agentRegime").value = agent.regime || "G24";
+    document.getElementById("agentEquipe").value = agent.equipe || "Equipe A";
+    document.getElementById("agentStatut").value = agent.statut || "SPP";
     document.getElementById("agentGrade").value = agent.grade || "";
-    document.getElementById("agentFonction").value = agent.fonction || "";
+    document.getElementById("agentFonction").value = agent.fonction || "Equ";
     document.getElementById("agentTempsPartiel").value = agent.tempsPartiel || "100%";
     document.getElementById("agentEngagement").value = agent.engagement || "Complet";
+    
     document.getElementById("agentDatePL").value = agent.datePL || "";
     document.getElementById("agentDateVMA").value = agent.dateVMA || "";
     document.getElementById("agentEntreeSdis").value = agent.entreeSdis || "";
     document.getElementById("agentNaissanceDate").value = agent.naissanceDate || "";
     document.getElementById("agentLieuNaissance").value = agent.lieuNaissance || "";
+    
     document.getElementById("agentTelephone").value = agent.telephone || "";
     document.getElementById("agentEmail").value = agent.email || "";
     document.getElementById("agentAdresse").value = agent.adresse || "";
-    
-    document.getElementById('formSpecialites').value = agent.specialites || "";
-    document.getElementById('formCompetences').value = agent.competences || "";
-    
+
+    // Champs Spécialités, Compétences et Commentaire
+    if (document.getElementById("formSpecialites")) document.getElementById("formSpecialites").value = agent.specialites || "";
+    if (document.getElementById("formCompetences")) document.getElementById("formCompetences").value = agent.competences || "";
     document.getElementById("agentCommentaire").value = agent.commentaire || "";
 
     adapterFormulaireSelonStatut();
@@ -426,11 +408,9 @@ function enregistrerAgent() {
         telephone: formaterTelephone(document.getElementById("agentTelephone").value),
         email: document.getElementById("agentEmail").value.trim(),
         adresse: document.getElementById("agentAdresse").value.trim().toUpperCase(),
+        specialites: document.getElementById("formSpecialites") ? document.getElementById("formSpecialites").value.trim() : "",
+        competences: document.getElementById("formCompetences") ? document.getElementById("formCompetences").value.trim() : "",
         commentaire: document.getElementById("agentCommentaire").value.trim()
-
-agent.specialites = document.getElementById('formSpecialites').value.trim();
-agent.competences = document.getElementById('formCompetences').value.trim();
-        
     };
 
     if (idVal) {
@@ -485,11 +465,11 @@ async function connecterFichierReseau() {
                     sexe: cols[1] ? cols[1].replace(/"/g, '').trim() : "Homme",
                     nom: cols[2] ? cols[2].replace(/"/g, '').trim().toUpperCase() : "",
                     prenom: cols[3] ? formaterPrenom(cols[3].replace(/"/g, '')) : "",
-                    equipe: cols[4] ? cols[4].replace(/"/g, '').trim() : "",
-                    statut: cols[5] ? cols[5].replace(/"/g, '').trim() : "",
+                    equipe: cols[4] ? cols[4].replace(/"/g, '').trim() : "Equipe A",
+                    statut: cols[5] ? cols[5].replace(/"/g, '').trim() : "SPP",
                     grade: cols[6] ? cols[6].replace(/"/g, '').trim() : "",
-                    fonction: cols[7] ? cols[7].replace(/"/g, '').trim() : "",
-                    regime: cols[8] ? cols[8].replace(/"/g, '').trim() : "",
+                    fonction: cols[7] ? cols[7].replace(/"/g, '').trim() : "Equ",
+                    regime: cols[8] ? cols[8].replace(/"/g, '').trim() : "G24",
                     tempsPartiel: cols[9] ? cols[9].replace(/"/g, '').trim() : "100%",
                     engagement: cols[10] ? cols[10].replace(/"/g, '').trim() : "Complet",
                     naissanceDate: cols[11] ? cols[11].replace(/"/g, '').trim() : "",
@@ -500,9 +480,9 @@ async function connecterFichierReseau() {
                     telephone: cols[16] ? formaterTelephone(cols[16]) : "",
                     email: cols[17] ? cols[17].replace(/"/g, '').trim() : "",
                     adresse: cols[18] ? cols[18].replace(/"/g, '').trim().toUpperCase() : "",
-                    specialites: cols[21] ? cols[21].replace(/"/g, '').trim() : "",
-                    competences: cols[22] ? cols[22].replace(/"/g, '').trim() : "",
-                    commentaire: cols[23] ? cols[23].replace(/"/g, '').trim() : ""
+                    specialites: cols[19] ? cols[19].replace(/"/g, '').trim() : "",
+                    competences: cols[20] ? cols[20].replace(/"/g, '').trim() : "",
+                    commentaire: cols[21] ? cols[21].replace(/"/g, '').trim() : ""
                 });
             }
         }
@@ -523,7 +503,7 @@ async function connecterFichierReseau() {
 
 async function enregistrerFichierReseau() {
     if (!window.fileHandleReseau) {
-        alert("⚠️ Aucun fichier connecté. Cliquez d'abord sur '🔗 Connecter'.");
+        alert("⚠️ Aucun fichier connecté. Cliquez d'abord sur 'Connecter'.");
         return;
     }
 
@@ -536,11 +516,13 @@ async function enregistrerFichierReseau() {
             }
         }
 
-        let csvContent = "\uFEFFMatricule;Sexe;Nom;Prenom;Equipe;Statut;Grade;Fonction;Regime;TempsPartiel;Engagement;DateNaissance;LieuNaissance;DateEntreeSDIS;DatePL;DateVMA;Telephone;Email;Adresse;DispoSPV;Commentaire\n";
+        let csvContent = "\uFEFFMatricule;Sexe;Nom;Prenom;Equipe;Statut;Grade;Fonction;Regime;TempsPartiel;Engagement;DateNaissance;LieuNaissance;DateEntreeSDIS;DatePL;DateVMA;Telephone;Email;Adresse;Specialites;Competences;Commentaire\n";
         
         listeAgents.forEach(a => {
             const comm = (a.commentaire || '').replace(/"/g, '""');
-            csvContent += `"${a.matricule || ''}";"${a.sexe || 'Homme'}";"${a.nom || ''}";"${a.prenom || ''}";"${a.equipe || ''}";"${a.statut || ''}";"${a.grade || ''}";"${a.fonction || ''}";"${a.regime || ''}";"${a.tempsPartiel || '100%'}";"${a.engagement || 'Complet'}";"${a.naissanceDate || ''}";"${a.lieuNaissance || ''}";"${a.entreeSdis || ''}";"${a.datePL || ''}";"${a.dateVMA || ''}";"${a.telephone || ''}";"${a.email || ''}";"${a.adresse || ''}";"";"${comm}"\n`;
+            const spec = (a.specialites || '').replace(/"/g, '""');
+            const comp = (a.competences || '').replace(/"/g, '""');
+            csvContent += `"${a.matricule || ''}";"${a.sexe || 'Homme'}";"${a.nom || ''}";"${a.prenom || ''}";"${a.equipe || ''}";"${a.statut || ''}";"${a.grade || ''}";"${a.fonction || ''}";"${a.regime || ''}";"${a.tempsPartiel || '100%'}";"${a.engagement || 'Complet'}";"${a.naissanceDate || ''}";"${a.lieuNaissance || ''}";"${a.entreeSdis || ''}";"${a.datePL || ''}";"${a.dateVMA || ''}";"${a.telephone || ''}";"${a.email || ''}";"${a.adresse || ''}";"${spec}";"${comp}";"${comm}"\n`;
         });
 
         const writable = await window.fileHandleReseau.createWritable();
@@ -557,7 +539,7 @@ async function enregistrerFichierReseau() {
 
 /* ==========================================================================
    6. ÉCOUTEURS D'ÉVÉNEMENTS & DOMCONTENTLOADED
-   ========================================================================== */
+   ========================================================================= */
 
 document.addEventListener('DOMContentLoaded', () => {
     const idsAEcouter = [
