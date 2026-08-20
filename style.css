@@ -62,7 +62,7 @@ html, body {
     flex-direction: row !important;
     flex-wrap: wrap !important;
     align-items: flex-end !important;
-    gap: 8px 12px !important;
+    gap: 8px 6px !important;
     width: 100% !important;
 }
 
