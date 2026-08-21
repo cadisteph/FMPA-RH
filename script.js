@@ -140,10 +140,19 @@ function calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction) 
         return { g24: baseG24, g12: baseG12 };
     }
 
-    const dateEntree = new Date(dateEntreeStr);
-    const dateNaissance = new Date(dateNaissanceStr);
+    const dateEntree = new Date(formaterDatePourInput(dateEntreeStr));
+    const dateNaissance = new Date(formaterDatePourInput(dateNaissanceStr));
+    
+    if (isNaN(dateNaissance.getTime()) || isNaN(dateEntree.getTime())) {
+        return { g24: 0, g12: 0 };
+    }
+
+    // --- CALCUL DE L'ÂGE AU 31/12 DE L'ANNÉE EN COURS ---
+    const anneeEnCours = new Date().getFullYear();
+    const age = anneeEnCours - dateNaissance.getFullYear();
+
+    // Condition Liste 2
     const estListe2 = (dateEntree < new Date("2013-10-01") && dateNaissance <= new Date("1976-12-31"));
-    const age = 2026 - dateNaissance.getFullYear();
 
     if (regime === "G12") {
         if (age < 45) baseG12 = 133;
