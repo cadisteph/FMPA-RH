@@ -104,6 +104,37 @@ function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#
     ).join("");
 }
 
+
+// Vérifie si la date VMA date de 10 mois ou plus
+function doitRenouvelerVMA(dateVMAStr) {
+    if (!dateVMAStr) return false;
+    const isoDate = formaterDatePourInput(dateVMAStr);
+    const dateVMA = new Date(isoDate);
+    if (isNaN(dateVMA.getTime())) return false;
+
+    const aujourdhui = new Date();
+    // Calcul de la différence en mois
+    const moisEcoules = (aujourdhui.getFullYear() - dateVMA.getFullYear()) * 12 + (aujourdhui.getMonth() - dateVMA.getMonth());
+
+    return moisEcoules >= 10;
+}
+
+// Vérifie si la date PL date de 4,5 ans (54 mois) ou plus
+function doitRenouvelerPL(datePLStr) {
+    if (!datePLStr) return false;
+    const isoDate = formaterDatePourInput(datePLStr);
+    const datePL = new Date(isoDate);
+    if (isNaN(datePL.getTime())) return false;
+
+    const aujourdhui = new Date();
+    // 4,5 ans = 54 mois
+    const moisEcoules = (aujourdhui.getFullYear() - datePL.getFullYear()) * 12 + (aujourdhui.getMonth() - datePL.getMonth());
+
+    return moisEcoules >= 54;
+}
+
+
+
 /* ==========================================================================
    2. CALCUL DYNAMIQUE DES BASES DE GARDES
    ========================================================================== */
@@ -380,10 +411,26 @@ function actualiserTableauRH() {
             ? "cursor:pointer; background-color: #dce7f3; border-bottom:2px solid #2b6cb0; font-weight: 500;" 
             : "cursor:pointer; border-bottom:1px solid #e2e8f0;";
 
+        // --- CALCUL DES BADGES DE RENOUVELLEMENT ---
+        const badgeVMA = doitRenouvelerVMA(agent.dateVMA) 
+            ? `<span style="background-color: #ff1493; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🩺 VMA</span>` 
+            : '';
+
+        const badgePL = doitRenouvelerPL(agent.datePL) 
+            ? `<span style="background-color: #8a2be2; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🚒 Permis</span>` 
+            : '';
+
+        const ligneAlertes = (badgeVMA || badgePL) 
+            ? `<br><div style="margin-top: 3px; display: flex; align-items: center; gap: 4px;">${badgeVMA}${badgePL}</div>` 
+            : '';
+
         corps.innerHTML += `
             <tr style="${styleLigne}" onclick="editerAgent(${agent.id})">
                 <td style="padding: 6px 8px;">${echapperHTML(agent.matricule)}</td>
-                <td style="padding: 6px 8px;"><strong>${echapperHTML(agent.nom)}</strong> ${echapperHTML(agent.prenom)}</td>
+                <td style="padding: 6px 8px;">
+                    <strong>${echapperHTML(agent.nom)}</strong> ${echapperHTML(agent.prenom)}
+                    ${ligneAlertes}
+                </td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.sexe || 'Homme')}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.equipe)}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.statut)}</td>
