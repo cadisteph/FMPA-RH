@@ -111,29 +111,20 @@ function doitRenouvelerVMA(dateVMAStr) {
     const isoDate = formaterDatePourInput(dateVMAStr);
     const dateVMA = new Date(isoDate);
     if (isNaN(dateVMA.getTime())) return false;
-
     const aujourdhui = new Date();
-    // Calcul de la différence en mois
     const moisEcoules = (aujourdhui.getFullYear() - dateVMA.getFullYear()) * 12 + (aujourdhui.getMonth() - dateVMA.getMonth());
-
-    return moisEcoules >= 10;
+    return moisEcoules >= 10; // Délai d'alerte 10 mois
 }
 
-// Vérifie si la date PL date de 4,5 ans (54 mois) ou plus
 function doitRenouvelerPL(datePLStr) {
     if (!datePLStr) return false;
     const isoDate = formaterDatePourInput(datePLStr);
     const datePL = new Date(isoDate);
     if (isNaN(datePL.getTime())) return false;
-
     const aujourdhui = new Date();
-    // 4,5 ans = 54 mois
     const moisEcoules = (aujourdhui.getFullYear() - datePL.getFullYear()) * 12 + (aujourdhui.getMonth() - datePL.getMonth());
-
-    return moisEcoules >= 54;
+    return moisEcoules >= 54; // Délai d'alerte 54 mois
 }
-
-
 
 /* ==========================================================================
    2. CALCUL DYNAMIQUE DES BASES DE GARDES
@@ -413,11 +404,11 @@ function actualiserTableauRH() {
 
         // --- CALCUL DES BADGES DE RENOUVELLEMENT ---
         const badgeVMA = doitRenouvelerVMA(agent.dateVMA) 
-            ? `<span style="background-color: #ff1493; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🩺 VMA</span>` 
+            ? `<span style="background-color: none; border: 1px solid #ff1493; color: #ff1493; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🩺 VMA</span>` 
             : '';
 
         const badgePL = doitRenouvelerPL(agent.datePL) 
-            ? `<span style="background-color: #8a2be2; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🚒 Permis</span>` 
+            ? `<span style="background-color: none; border: 1px solid #8a2be2; color: #8a2be2; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🚒 Permis</span>` 
             : '';
 
         const ligneAlertes = (badgeVMA || badgePL) 
