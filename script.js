@@ -744,3 +744,54 @@ document.addEventListener('DOMContentLoaded', () => {
 window.onload = function() {
     actualiserTableauRH();
 };
+
+
+// Génère et affiche la liste des alertes Permis PL
+function afficherListeAlertesPL() {
+    const aRenouveler = listeAgents.filter(agent => doitRenouvelerPL(agent.datePL));
+
+    if (aRenouveler.length === 0) {
+        alert("🚒 Aucun permis PL à renouveler (tous les permis ont moins de 4,5 ans).");
+        return;
+    }
+
+    // Tri par date la plus ancienne en premier
+    aRenouveler.sort((a, b) => {
+        const dateA = new Date(formaterDatePourInput(a.datePL) || '9999-12-31');
+        const dateB = new Date(formaterDatePourInput(b.datePL) || '9999-12-31');
+        return dateA - dateB;
+    });
+
+    let message = `🚒 LISTE DES PERMIS PL À RENOUVELER (${aRenouveler.length} agent(s)) :\n\n`;
+    aRenouveler.forEach((agent, index) => {
+        const dateFormatee = formaterDateFR(agent.datePL) || 'Inconnue';
+        message += `${index + 1}. ${agent.nom.toUpperCase()} ${agent.prenom} - Date PL : ${dateFormatee}\n`;
+    });
+
+    alert(message);
+}
+
+// Génère et affiche la liste des alertes VMA
+function afficherListeAlertesVMA() {
+    const aRenouveler = listeAgents.filter(agent => doitRenouvelerVMA(agent.dateVMA));
+
+    if (aRenouveler.length === 0) {
+        alert("🩺 Aucune VMA à renouveler (toutes les VMA ont moins de 10 mois).");
+        return;
+    }
+
+    // Tri par date la plus ancienne en premier
+    aRenouveler.sort((a, b) => {
+        const dateA = new Date(formaterDatePourInput(a.dateVMA) || '9999-12-31');
+        const dateB = new Date(formaterDatePourInput(b.dateVMA) || '9999-12-31');
+        return dateA - dateB;
+    });
+
+    let message = `🩺 LISTE DES VMA À RENOUVELER (${aRenouveler.length} agent(s)) :\n\n`;
+    aRenouveler.forEach((agent, index) => {
+        const dateFormatee = formaterDateFR(agent.dateVMA) || 'Inconnue';
+        message += `${index + 1}. ${agent.nom.toUpperCase()} ${agent.prenom} - Date VMA : ${dateFormatee}\n`;
+    });
+
+    alert(message);
+}
