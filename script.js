@@ -372,8 +372,16 @@ function actualiserTableauRH() {
         if (agent.adresse) coords.push(echapperHTML(agent.adresse.toUpperCase()));
         let coordsText = coords.join("<br>") || "-";
 
+        // VERIFICATION SI L'AGENT EST SELECTIONNE DANS LE FORMULAIRE
+        const estSelectionne = (typeof agentSelectionneId !== 'undefined' && agent.id === agentSelectionneId);
+        
+        // Style conditionnel selon la sélection
+        const styleLigne = estSelectionne 
+            ? "cursor:pointer; background-color: #dce7f3; border-bottom:2px solid #2b6cb0; font-weight: 500;" 
+            : "cursor:pointer; border-bottom:1px solid #e2e8f0;";
+
         corps.innerHTML += `
-            <tr style="cursor:pointer; border-bottom:1px solid #e2e8f0;" onclick="editerAgent(${agent.id})">
+            <tr style="${styleLigne}" onclick="editerAgent(${agent.id})">
                 <td style="padding: 6px 8px;">${echapperHTML(agent.matricule)}</td>
                 <td style="padding: 6px 8px;"><strong>${echapperHTML(agent.nom)}</strong> ${echapperHTML(agent.prenom)}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.sexe || 'Homme')}</td>
@@ -412,9 +420,11 @@ function reinitialiserFiltres() {
     actualiserTableauRH();
 }
 
+let agentSelectionneId = null;
 function editerAgent(id) {
     const agent = listeAgents.find(a => a.id === id);
     if (!agent) return;
+    agentSelectionneId = id;
 
     document.getElementById("agentId").value = agent.id;
     document.getElementById("agentMatricule").value = agent.matricule || "";
@@ -446,16 +456,19 @@ function editerAgent(id) {
     adapterFormulaireSelonStatut();
     mettreAJourAffichageAge();
     actualiserIndicateurGardes();
+    actualiserTableauRH();
     document.getElementById("btnSupprimerAgent").style.display = "inline-block";
 }
 
 function viderFormulaireRH() {
-    document.getElementById("formRH").reset();
+agentSelectionneId = null;
+   document.getElementById("formRH").reset();
     document.getElementById("agentId").value = "";
     document.getElementById("btnSupprimerAgent").style.display = "none";
     adapterFormulaireSelonStatut();
     mettreAJourAffichageAge();
     actualiserIndicateurGardes();
+    actualiserTableauRH();
 }
 
 function enregistrerAgent() {
