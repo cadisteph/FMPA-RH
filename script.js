@@ -97,11 +97,42 @@ function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#
 
     liste.sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
 
-    return liste.map(badge => 
-        `<span style="background:${couleurBg}; color:${couleurTexte}; padding:2px 6px; border-radius:4px; font-size:0.75em; font-weight:bold; margin-right:3px; display:inline-block; margin-bottom:2px;">
+    return liste.map(badge => {
+        const txtUpper = badge.toUpperCase();
+        let bg = couleurBg;
+        let txt = couleurTexte;
+
+        // --- PERSONNALISATION DES COULEURS SELON LE VALEUR ---
+        
+        // 1. Temps plein / Complet
+        if (txtUpper === "100%" || txtUpper === "COMPLET") {
+            bg = "#c6f6d5"; // Vert pastel
+            txt = "#22543d";
+        } 
+        // 2. Temps partiels (80%, 70%, 50%, etc.)
+        else if (/^\d{2,3}\s*%$/.test(badge)) { 
+            bg = "#feebc8"; // Orange / Ambre
+            txt = "#744210";
+        } 
+        // 3. Spécialités / Statuts SUAP
+        else if (txtUpper === "SUAP") {
+            bg = "#c6f6d5"; // Vert pastel
+            txt = "#22543d";
+        } 
+        else if (txtUpper === "SUAP/PPABE") {
+            bg = "#b2f5ea"; // Cyan / Teal
+            txt = "#234e52";
+        } 
+        // 4. Indisponibilité / Dispo
+        else if (txtUpper === "EN DISPO" || txtUpper === "DISPO") {
+            bg = "#fed7d7"; // Rouge / Rose pastel
+            txt = "#742a2a";
+        }
+
+        return `<span style="background:${bg}; color:${txt}; padding:2px 6px; border-radius:4px; font-size:0.75em; font-weight:bold; margin-right:3px; display:inline-block; margin-bottom:2px;">
             ${echapperHTML(badge)}
-        </span>`
-    ).join("");
+        </span>`;
+    }).join("");
 }
 
 
@@ -439,7 +470,7 @@ function actualiserTableauRH() {
                 <td style="padding: 6px 8px;">${genererBadgesTriés(agent.specialites, "#ebf8ff", "#2b6cb0")}</td>
                 <td style="padding: 6px 8px;">${genererBadgesTriés(agent.competences, "#edf2f7", "#4a5568")}</td>
                 <td style="padding: 6px 8px;">${echapperHTML(agent.regime)}</td>
-                <td style="padding: 6px 8px;">${tpEngagement}</td>
+                <td style="padding: 6px 8px;">${genererBadgesTriés(tpEngagement)}</td>
                 <td style="padding: 6px 8px;"><strong>${obtenirGardesTheoriques(agent)}</strong></td>
                 <td style="padding: 6px 8px;">${formaterDateFR(agent.datePL) || '-'}</td>
                 <td style="padding: 6px 8px;">${formaterDateFR(agent.dateVMA) || '-'}</td>
