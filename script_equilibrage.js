@@ -1,6 +1,10 @@
 let agentsLocaux = [];
 let propositionsEnAttente = [];
 
+// ORDRE HIÉRARCHIQUE DES FONCTIONS EXACT : CDG -> ACDG1 -> ACDG2 -> CATE -> CA1E -> CEQU -> EQU
+const ORDRE_FONCTIONS = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
+const ORDRE_GRADES = ['CDT', 'CNE', 'LTN', 'ADC', 'ADJ', 'SCH', 'SGT', 'CCH', 'CPL', 'SAP'];
+
 document.addEventListener("DOMContentLoaded", () => {
     const data = localStorage.getItem("baseAgents");
     if (!data) return;
@@ -54,24 +58,29 @@ function extraireItems(chaine) {
     return chaine.split(/[,;\/-]+/).map(s => normaliserTexte(s)).filter(s => s.length > 1);
 }
 
-// TRI HIÉRARCHIQUE DE L'ORGANIGRAMME (Fonction / Grade / Nom)
+/**
+ * Tri strict des agents :
+ * 1. Hiérarchie exacte (CDG -> ACDG1 -> ACDG2 -> CATE -> CA1E -> CEQU -> EQU)
+ * 2. Si même fonction -> Tri alphabétique sur Nom puis Prénom
+ */
 function trierAgentsHierarchie(a, b) {
-    const ordreFonction = {
-        'CDC': 1, 'ACDC': 2, 'ACDG1': 3, 'ACDG2': 4, 'CDG': 5,
-        'CATE': 6, 'CA1E': 7, 'CEQU': 8, 'EQU': 9
-    };
+    const fA = normaliserTexte(a.fonction);
+    const fB = normaliserTexte(b.fonction);
+    let idxFA = ORDRE_FONCTIONS.indexOf(fA);
+    let idxFB = ORDRE_FONCTIONS.indexOf(fB);
     
-    const fnA = normaliserTexte(a.fonction);
-    const fnB = normaliserTexte(b.fonction);
-    const rangA = ordreFonction[fnA] || 99;
-    const rangB = ordreFonction[fnB] || 99;
+    if (idxFA === -1) idxFA = 999;
+    if (idxFB === -1) idxFB = 999;
+    
+    // Si fonctions différentes : ordre hiérarchique strict
+    if (idxFA !== idxFB) return idxFA - idxFB;
 
-    if (rangA !== rangB) return rangA - rangB;
-
+    // Si même fonction : ordre alphabétique par NOM puis PRÉNOM
     const nomA = normaliserTexte(a.nom);
     const nomB = normaliserTexte(b.nom);
-    if (nomA !== nomB) return nomA.localeCompare(nomB);
-    return normaliserTexte(a.prenom).localeCompare(normaliserTexte(b.prenom));
+    if (nomA !== nomB) return nomA.localeCompare(nomB, 'fr', { sensitivity: 'base' });
+    
+    return normaliserTexte(a.prenom).localeCompare(normaliserTexte(b.prenom), 'fr', { sensitivity: 'base' });
 }
 
 function calculerStatsEquipe(membres) {
@@ -101,9 +110,8 @@ function calculerStatsEquipe(membres) {
     };
 }
 
-// GÉNÉRATION DES BADGES TRIS PAR ORDRE ALPHABÉTIQUE
 function genererBadgesHTML(dictionnaire, couleurHex) {
-    const cles = Object.keys(dictionnaire).sort((a, b) => a.localeCompare(b));
+    const cles = Object.keys(dictionnaire);
     if (cles.length === 0) return '<span style="color:#64748b; font-size:0.65rem;">Aucune</span>';
     return cles.map(k => `<span class="tag-detail" style="border-color:${couleurHex}; color:${couleurHex};">${k}:<b>${dictionnaire[k]}</b></span>`).join(" ");
 }
@@ -113,41 +121,32 @@ function rendreEquipes() {
 
     lettresEquipes.forEach(lettre => {
         const membres = agentsLocaux.filter(a => extraireLettreEquipe(a.equipe) === lettre);
-        
-        // TRI HIÉRARCHIQUE DES AGENTS
         membres.sort(trierAgentsHierarchie);
 
         const s = calculerStatsEquipe(membres);
         
-        const countEl = document.getElementById(`count-${lettre}`);
-        if (countEl) countEl.innerText = s.nb;
+        document.getElementById(`count-${lettre}`).innerText = s.nb;
+        document.getElementById(`stats-${lettre}`).innerHTML = `
+            <div class="stat-badge full-width"><span class="stat-label">Agents:</span> <span class="stat-value">${s.nb}</span></div>
+            <div class="stat-badge"><span class="stat-label">Femmes:</span> <span class="stat-value">${s.nbF} (${s.pctF}%)</span></div>
+            <div class="stat-badge"><span class="stat-label">Âge moy:</span> <span class="stat-value">${s.ageMoy} ans</span></div>
+            <div class="stat-badge"><span class="stat-label">CDG/ACDG:</span> <span class="stat-value">${s.cdg}</span></div>
+            <div class="stat-badge"><span class="stat-label">CATE:</span> <span class="stat-value">${s.cate}</span></div>
+            <div class="stat-badge"><span class="stat-label">CA1E:</span> <span class="stat-value">${s.ca1e}</span></div>
+            <div class="stat-badge"><span class="stat-label">CEQU:</span> <span class="stat-value">${s.cequ}</span></div>
+            <div class="stat-badge full-width"><span class="stat-label">EQU:</span> <span class="stat-value">${s.equ}</span></div>
+            
+            <div class="stat-section-title">Spécialités :</div>
+            <div class="stat-badge-container">${genererBadgesHTML(s.dicSpecs, '#60a5fa')}</div>
 
-        const statsEl = document.getElementById(`stats-${lettre}`);
-        if (statsEl) {
-            statsEl.innerHTML = `
-                <div class="stat-badge full-width"><span class="stat-label">Agents:</span> <span class="stat-value">${s.nb}</span></div>
-                <div class="stat-badge"><span class="stat-label">Femmes:</span> <span class="stat-value">${s.nbF} (${s.pctF}%)</span></div>
-                <div class="stat-badge"><span class="stat-label">Âge moy:</span> <span class="stat-value">${s.ageMoy} ans</span></div>
-                <div class="stat-badge"><span class="stat-label">CDG/ACDG:</span> <span class="stat-value">${s.cdg}</span></div>
-                <div class="stat-badge"><span class="stat-label">CATE:</span> <span class="stat-value">${s.cate}</span></div>
-                <div class="stat-badge"><span class="stat-label">CA1E:</span> <span class="stat-value">${s.ca1e}</span></div>
-                <div class="stat-badge"><span class="stat-label">CEQU:</span> <span class="stat-value">${s.cequ}</span></div>
-                <div class="stat-badge full-width"><span class="stat-label">EQU:</span> <span class="stat-value">${s.equ}</span></div>
-                
-                <div class="stat-section-title">Spécialités (A-Z) :</div>
-                <div class="stat-badge-container">${genererBadgesHTML(s.dicSpecs, '#60a5fa')}</div>
+            <div class="stat-section-title">Compétences :</div>
+            <div class="stat-badge-container">${genererBadgesHTML(s.dicComps, '#34d399')}</div>
 
-                <div class="stat-section-title">Compétences (A-Z) :</div>
-                <div class="stat-badge-container">${genererBadgesHTML(s.dicComps, '#34d399')}</div>
-
-                <div class="stat-section-title">Départements Domicile :</div>
-                <div class="stat-badge-container">${genererBadgesHTML(s.dicDept, '#f59e0b')}</div>
-            `;
-        }
+            <div class="stat-section-title">Départements Domicile :</div>
+            <div class="stat-badge-container">${genererBadgesHTML(s.dicDept, '#f59e0b')}</div>
+        `;
 
         const container = document.getElementById(`container-${lettre}`);
-        if (!container) return;
-
         container.innerHTML = "";
         membres.forEach(agent => {
             const specs = agent.specialites ? `<span class="agent-spec">[${agent.specialites}]</span>` : '';
@@ -157,7 +156,7 @@ function rendreEquipes() {
                     <div class="agent-info-compact">
                         <span class="agent-nom">${(agent.nom || '').toUpperCase()} ${agent.prenom || ''}</span>
                         <div class="agent-details">
-                            <span style="font-weight:bold; color:#f8fafc;">${agent.fonction || 'Agent'}</span>
+                            <span>${agent.fonction || 'Agent'}</span>
                             <span>${agent.grade || '-'}</span>
                             <span style="color:#f59e0b;">Dép:${dep}</span>
                             ${specs}
@@ -176,17 +175,18 @@ function rendreEquipes() {
     });
 }
 
+// ALGORITHME MULTI-CRITÈRES D'ÉQUILIBRAGE
 function suggererReequilibrage() {
     propositionsEnAttente = [];
     let tempAgents = JSON.parse(JSON.stringify(agentsLocaux));
     const lettresEquipes = ['A', 'B', 'C'];
 
-    const pCmd = parseInt(document.getElementById("poids-cmd")?.value || 10);
-    const pSpec = parseInt(document.getElementById("poids-spec")?.value || 8);
-    const pComp = parseInt(document.getElementById("poids-comp")?.value || 6);
-    const pDept = parseInt(document.getElementById("poids-dept")?.value || 5);
-    const pAge = parseInt(document.getElementById("poids-age")?.value || 5);
-    const pGenre = parseInt(document.getElementById("poids-genre")?.value || 4);
+    const pCmd = parseInt(document.getElementById("poids-cmd")?.value || 5);
+    const pSpec = parseInt(document.getElementById("poids-spec")?.value || 4);
+    const pComp = parseInt(document.getElementById("poids-comp")?.value || 4);
+    const pDept = parseInt(document.getElementById("poids-dept")?.value || 3);
+    const pAge = parseInt(document.getElementById("poids-age")?.value || 3);
+    const pGenre = parseInt(document.getElementById("poids-genre")?.value || 2);
 
     let stats = {};
 
@@ -207,7 +207,7 @@ function suggererReequilibrage() {
     }
 
     // 2. Commandement (CATE / CA1E)
-    if (pCmd >= 4) {
+    if (pCmd >= 3) {
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
         let eqTropCATE = lettresEquipes.reduce((a,b) => stats[a].cate > stats[b].cate ? a : b);
         let eqPasAssezCATE = lettresEquipes.reduce((a,b) => stats[a].cate < stats[b].cate ? a : b);
@@ -226,8 +226,8 @@ function suggererReequilibrage() {
         }
     }
 
-    // 3. Spécialités
-    if (pSpec >= 3) {
+    // 3. Équilibrage sur TOUTES les spécialités
+    if (pSpec >= 2) {
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
         let toutesSpecs = new Set();
         lettresEquipes.forEach(l => Object.keys(stats[l].dicSpecs).forEach(s => toutesSpecs.add(s)));
@@ -251,8 +251,8 @@ function suggererReequilibrage() {
         });
     }
 
-    // 4. Compétences
-    if (pComp >= 3) {
+    // 4. Équilibrage sur TOUTES les compétences
+    if (pComp >= 2) {
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
         let toutesComps = new Set();
         lettresEquipes.forEach(l => Object.keys(stats[l].dicComps).forEach(c => toutesComps.add(c)));
@@ -276,8 +276,8 @@ function suggererReequilibrage() {
         });
     }
 
-    // 5. Départements
-    if (pDept >= 3) {
+    // 5. Départements de domiciliation
+    if (pDept >= 2) {
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
         let tousDepts = new Set();
         lettresEquipes.forEach(l => Object.keys(stats[l].dicDept).forEach(d => { if(d !== "ND") tousDepts.add(d); }));
@@ -301,8 +301,8 @@ function suggererReequilibrage() {
         });
     }
 
-    // 6. Genre
-    if (pGenre >= 4) {
+    // 6. Parité Homme/Femme
+    if (pGenre >= 3) {
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
         let eqMaxF = lettresEquipes.reduce((a,b) => stats[a].nbF > stats[b].nbF ? a : b);
         let eqMinF = lettresEquipes.reduce((a,b) => stats[a].nbF < stats[b].nbF ? a : b);
@@ -329,8 +329,6 @@ function afficherPropositions() {
         return;
     }
     const listeUI = document.getElementById("liste-propositions");
-    if (!listeUI) return;
-
     listeUI.innerHTML = propositionsEnAttente.map(p => {
         if (p.type === 'TRANSFERT') {
             return `<li style="margin-bottom:10px;">➡️ Transférer <b>${p.a1.nom}</b> vers l'<b>Équipe ${p.eqCible}</b><br><span style="font-size:0.75rem; color:#94a3b8;">Motif: ${p.motif}</span></li>`;
@@ -341,33 +339,23 @@ function afficherPropositions() {
     document.getElementById("modal-transferts").style.display = "flex";
 }
 
-function fermerModal() { 
-    document.getElementById("modal-transferts").style.display = "none"; 
-}
+function fermerModal() { document.getElementById("modal-transferts").style.display = "none"; }
 
 function appliquerPropositions() {
     propositionsEnAttente.forEach(p => {
         if (p.type === 'TRANSFERT') {
-            const a = agentsLocaux.find(item => item.idUnique === p.a1.idUnique);
-            if (a) a.equipe = `Équipe ${p.eqCible}`;
+            agentsLocaux.find(a => a.idUnique === p.a1.idUnique).equipe = `Équipe ${p.eqCible}`;
         } else if (p.type === 'ECHANGE') {
             const eq1 = p.a1.equipe;
-            const a1 = agentsLocaux.find(item => item.idUnique === p.a1.idUnique);
-            const a2 = agentsLocaux.find(item => item.idUnique === p.a2.idUnique);
-            if (a1 && a2) {
-                a1.equipe = p.a2.equipe;
-                a2.equipe = eq1;
-            }
+            agentsLocaux.find(a => a.idUnique === p.a1.idUnique).equipe = p.a2.equipe;
+            agentsLocaux.find(a => a.idUnique === p.a2.idUnique).equipe = eq1;
         }
     });
     
     const baseComplete = JSON.parse(localStorage.getItem("baseAgents") || "[]");
-    agentsLocaux.forEach(modifié => {
-        const idxBase = baseComplete.findIndex(a => a.matricule === modifié.matricule || (a.nom === modifié.nom && a.prenom === modifié.prenom));
-        if (idxBase !== -1) {
-            baseComplete[idxBase].equipe = modifié.equipe;
-            baseComplete[idxBase].verrouille = modifié.verrouille;
-        }
+    agentsLocaux.forEach(modifie => {
+        const idxBase = baseComplete.findIndex(a => a.matricule === modifie.matricule || (a.nom === modifie.nom && a.prenom === modifie.prenom));
+        if (idxBase !== -1) baseComplete[idxBase].equipe = modifie.equipe;
     });
     localStorage.setItem("baseAgents", JSON.stringify(baseComplete));
 
@@ -376,18 +364,12 @@ function appliquerPropositions() {
 }
 
 function basculerVerrou(idUnique) {
-    const a = agentsLocaux.find(item => item.idUnique === idUnique);
-    if (a) {
-        a.verrouille = !a.verrouille;
-        rendreEquipes();
-    }
+    agentsLocaux.find(a => a.idUnique === idUnique).verrouille ^= true;
+    rendreEquipes();
 }
 
 function deplacerAgent(idUnique, nouvelleEquipe) {
     if (!nouvelleEquipe) return;
-    const a = agentsLocaux.find(item => item.idUnique === idUnique);
-    if (a) {
-        a.equipe = nouvelleEquipe;
-        rendreEquipes();
-    }
+    agentsLocaux.find(a => a.idUnique === idUnique).equipe = nouvelleEquipe;
+    rendreEquipes();
 }
