@@ -1,30 +1,19 @@
-document.addEventListener("DOMContentLoaded", async () => {
-    // Chemin exact vers ton fichier réseau
-    const cheminCSV = 'COMMUN/Formation/Réservé-BDD/baseAgents.csv'; 
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Récupération des agents sauvegardés par la page principale
+    const donneesAgents = localStorage.getItem("baseAgents");
 
-    try {
-        const reponse = await fetch(cheminCSV); 
-        if (!reponse.ok) {
-            throw new Error(`Erreur HTTP: ${reponse.status}`);
-        }
-        const texteCSV = await reponse.text();
-
-        // Analyse du CSV
-        const listeAgents = analyserCSV(texteCSV);
-
-        if (listeAgents.length === 0) {
-            alert("⚠️ Aucun agent trouvé dans le fichier baseAgents.csv.");
-            return;
-        }
-
-        // Génération de la Mind Map
-        construireMindMap(listeAgents);
-
-    } catch (erreur) {
-        console.error("Erreur lors du chargement de baseAgents.csv :", erreur);
-        alert("Impossible de charger le fichier 'baseAgents.csv'. Vérifiez le chemin réseau ou les permissions d'accès.");
+    if (!donneesAgents) {
+        alert("⚠️ Aucune donnée d'agent trouvée. Veuillez d'abord ouvrir la page RH (index.html) pour charger le tableau.");
+        return;
     }
+
+    const listeAgents = JSON.parse(donneesAgents);
+
+    // 2. Génération de la Mind Map
+    construireMindMap(listeAgents);
 });
+
+// Garder la fonction construireMindMap() inchangée ci-dessous...
 
 // Fonction pour découper le CSV (séparateur point-virgule)
 function analyserCSV(texte) {
