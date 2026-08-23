@@ -33,7 +33,7 @@ function filtrerEffectifs(filtre, bouton) {
     afficherColonnes();
 }
 
-// Nettoyage complet pour la comparaison (sans accents, sans espaces en trop)
+// Nettoyage complet pour la comparaison
 function normaliserTexte(txt) {
     if (!txt) return "";
     return txt.toString()
@@ -42,11 +42,16 @@ function normaliserTexte(txt) {
               .trim();
 }
 
-// Vérifie si un agent appartient à l'encadrement
+// Vérifie si un agent appartient à l'encadrement (par sa fonction ou le champ équipe)
 function estAgentEncadrement(agent) {
     const fn = normaliserTexte(agent.fonction);
+    const eq = normaliserTexte(agent.equipe);
     const fonctionsEncadrement = ['CDC', 'ACDC', 'OFPAO', 'OFTECH', 'SOFPAO', 'SOFTECH', 'ASSISTANTE', 'SECRETARIAT', 'ADMINISTRATIF'];
-    return fonctionsEncadrement.includes(fn) || fn.includes('CHEF') || fn.includes('RESPONSABLE');
+    
+    return fonctionsEncadrement.includes(fn) || 
+           fn.includes('CHEF') || 
+           fn.includes('RESPONSABLE') || 
+           eq.includes('ENCADREMENT');
 }
 
 // Algorithme de tri hiérarchique : Fonction -> Grade -> Nom -> Prénom
@@ -86,7 +91,7 @@ function afficherColonnes() {
 
     const filtreNorm = normaliserTexte(filtreActuel);
 
-    // 1. Filtrage des agents selon le filtre sélectionné
+    // 1. Filtrage des agents selon le bouton actif
     let agentsFiltres = tousLesAgents.filter(agent => {
         const statut = normaliserTexte(agent.statut);
         const equipe = normaliserTexte(agent.equipe);
@@ -96,37 +101,37 @@ function afficherColonnes() {
         if (filtreNorm === 'SPP') return statut.includes('SPP');
         if (filtreNorm === 'SPV') return statut.includes('SPV');
 
-        // Comparaison souple pour les équipes (ex: "EQUIPE A", "ÉQUIPE A", "A")
+        // Filtre d'une équipe spécifique
         const termeFiltre = filtreNorm.replace("EQUIPE", "").trim();
         const termeEquipe = equipe.replace("EQUIPE", "").trim();
 
         return equipe === filtreNorm || termeEquipe === termeFiltre;
     });
 
-    // 2. Organisation des colonnes d'affichage
+    // 2. Organisation unique des colonnes
     let listeColonnes = [];
 
     if (filtreNorm === 'ENCADREMENT') {
-        listeColonnes = [{ titre: "Encadrement & Direction", identifiant: "ENCADREMENT" }];
+        listeColonnes = [{ titre: "Encadrement", identifiant: "ENCADREMENT" }];
     } else if (filtreNorm !== 'TOUT' && filtreNorm !== 'SPP' && filtreNorm !== 'SPV') {
-        // Filtre sur une équipe spécifique
+        // Un filtre d'équipe précis est sélectionné (ex: Équipe A)
         listeColonnes = [{ titre: filtreActuel, identifiant: filtreNorm }];
     } else {
-        // Mode "TOUT", "SPP" ou "SPV" -> On regroupe les agents
-        // A. Colonne Encadrement en premier (si des agents d'encadrement existent dans la sélection)
+        // Mode "TOUT", "SPP" ou "SPV"
+        // A. Première colonne : Encadrement (si présent)
         const aDesCadres = agentsFiltres.some(a => estAgentEncadrement(a));
         if (aDesCadres) {
             listeColonnes.push({ titre: "Encadrement", identifiant: "ENCADREMENT" });
         }
 
-        // B. Extraction des autres équipes uniques (hors encadrement)
+        // B. Autres équipes (exclut l'encadrement pour éviter tout doublon)
         let equipesUniques = [...new Set(
             agentsFiltres
                 .filter(a => !estAgentEncadrement(a))
                 .map(a => a.equipe ? a.equipe.trim() : "NON AFFECTÉ")
-        )];
+        )].filter(eq => normaliserTexte(eq) !== 'ENCADREMENT'); // SÉCURITÉ ANTI-DOUBLON
 
-        // Tri alphabétique des colonnes d'équipes (A, B, C, G12...)
+        // Tri alphabétique des colonnes (A, B, C, G12...)
         equipesUniques.sort((a, b) => a.localeCompare(b));
 
         equipesUniques.forEach(eq => {
@@ -134,7 +139,7 @@ function afficherColonnes() {
         });
     }
 
-    // 3. Rendu HTML des colonnes
+    // 3. Rendu HTML des colonnes uniques
     listeColonnes.forEach(colInfo => {
         let membres = [];
 
@@ -143,7 +148,7 @@ function afficherColonnes() {
         } else {
             const idNorm = colInfo.identifiant;
             membres = agentsFiltres.filter(a => {
-                if (filtreNorm === 'TOUT' && estAgentEncadrement(a)) return false; // Évite les doublons dans TOUT
+                if (estAgentEncadrement(a)) return false; // Ne remet pas les cadres dans les autres colonnes
                 
                 const eq = normaliserTexte(a.equipe);
                 const termeCol = idNorm.replace("EQUIPE", "").trim();
@@ -155,7 +160,7 @@ function afficherColonnes() {
 
         if (membres.length === 0) return;
 
-        // Tri des agents dans la colonne
+        // Tri strict des agents dans la colonne
         membres.sort(trierAgentsHierarchie);
 
         const col = document.createElement("div");
