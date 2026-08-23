@@ -1,12 +1,22 @@
 let tousLesAgents = [];
 let filtreActuel = 'TOUT';
 
+// 1. DÉFINITION STRICTE DES HIÉRARCHIES
+const ORDRE_FONCTIONS = [
+    'CDC', 'ACDC', 'OFPAO', 'OFTECH', 'SOFPAO', 'SOFTECH', 
+    'ASSISTANTE', 'SECRETARIAT', 'ADMINISTRATIF',
+    'CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'
+];
+
+const ORDRE_GRADES = [
+    'CDT', 'CNE', 'LTN', 'ADC', 'ADJ', 'SCH', 'SGT', 'CCH', 'CPL', 'SAP'
+];
+
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Récupération des données sauvegardées
     const donneesAgents = localStorage.getItem("baseAgents");
 
     if (!donneesAgents) {
-        alert("⚠️ Aucune donnée d'agent trouvée dans le navigateur. Ouvrez d'abord la page RH principale.");
+        alert("⚠️ Aucune donnée d'agent trouvée. Ouvrez d'abord la page RH principale (index.html).");
         return;
     }
 
@@ -17,65 +27,132 @@ document.addEventListener("DOMContentLoaded", () => {
 function filtrerEffectifs(filtre, bouton) {
     filtreActuel = filtre;
     
-    // Gestion des classes actives sur les boutons
     document.querySelectorAll('.filtre-btn').forEach(btn => btn.classList.remove('active'));
     if (bouton) bouton.classList.add('active');
 
     afficherColonnes();
 }
 
+// Fonction utilitaire de nettoyage de texte
+function normaliserTexte(txt) {
+    if (!txt) return "";
+    return txt.toString().trim().toUpperCase()
+              .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Supprime les accents
+}
+
+// Fonction de tri hiérarchique : Fonction -> Grade -> Nom -> Prénom
+function trierAgentsHierarchie(a, b) {
+    const fA = normaliserTexte(a.fonction);
+    const fB = normaliserTexte(b.fonction);
+
+    let idxFA = ORDRE_FONCTIONS.indexOf(fA);
+    let idxFB = ORDRE_FONCTIONS.indexOf(fB);
+    if (idxFA === -1) idxFA = 999;
+    if (idxFB === -1) idxFB = 999;
+
+    if (idxFA !== idxFB) return idxFA - idxFB;
+
+    // Égalité de fonction -> Tri par Grade
+    const gA = normaliserTexte(a.grade);
+    const gB = normaliserTexte(b.grade);
+
+    let idxGA = ORDRE_GRADES.indexOf(gA);
+    let idxGB = ORDRE_GRADES.indexOf(gB);
+    if (idxGA === -1) idxGA = 999;
+    if (idxGB === -1) idxGB = 999;
+
+    if (idxGA !== idxGB) return idxGA - idxGB;
+
+    // Égalité de grade -> Ordre alphabétique Nom puis Prénom
+    const nomA = normaliserTexte(a.nom);
+    const nomB = normaliserTexte(b.nom);
+    if (nomA !== nomB) return nomA.localeCompare(nomB);
+
+    return normaliserTexte(a.prenom).localeCompare(normaliserTexte(b.prenom));
+}
+
 function afficherColonnes() {
     const conteneur = document.getElementById("grille-equipes");
     conteneur.innerHTML = "";
 
-    // Application du filtre sur les agents
-    let agentsFiltres = tousLesAgents.filter(agent => {
-        const statut = (agent.statut || '').toUpperCase();
-        const equipe = (agent.equipe || '').trim();
-        const fonction = (agent.fonction || '').toLowerCase();
+    const filtreNorm = normaliserTexte(filtreActuel);
 
-        if (filtreActuel === 'TOUT') return true;
-        if (filtreActuel === 'ENCADREMENT') {
-            return fonction.includes('chef') || fonction.includes('adjoint') || fonction.includes('bureau') || fonction.includes('responsable');
-        }
-        if (filtreActuel === 'SPP') return statut.includes('SPP');
-        if (filtreActuel === 'SPV') return statut.includes('SPV');
+    // 1. Filtrage des agents
+    let agentsFiltres = tousLesAgents.filter(agent => {
+        const statut = normaliserTexte(agent.statut);
+        const equipe = normaliserTexte(agent.equipe);
+        const fonction = normaliserTexte(agent.fonction);
+
+        if (filtreNorm === 'TOUT') return true;
         
-        // Filtre par équipe précise (ex: Équipe A, Équipe B, Équipe C, G12)
-        return equipe.toLowerCase() === filtreActuel.toLowerCase();
+        if (filtreNorm === 'ENCADREMENT') {
+            const fonctionsEncadrement = ['CDC', 'ACDC', 'OFPAO', 'OFTECH', 'SOFPAO', 'SOFTECH', 'ASSISTANTE', 'SECRETARIAT'];
+            return fonctionsEncadrement.includes(fonction) || fonction.includes('CHEF') || fonction.includes('RESPONSABLE');
+        }
+
+        if (filtreNorm === 'SPP') return statut.includes('SPP');
+        if (filtreNorm === 'SPV') return statut.includes('SPV');
+
+        // Recherche souple pour les équipes (ex: "EQUIPE A" ou "A")
+        return equipe === filtreNorm || equipe.endsWith(" " + filtreNorm);
     });
 
-    // Récupération de la liste des équipes uniques présentes dans le résultat filtré
-    let equipes = [...new Set(agentsFiltres.map(a => a.equipe ? a.equipe.trim() : "Non Affecté"))];
-    equipes.sort();
+    // 2. Détermination des colonnes à afficher
+    let equipes = [];
 
-    // Si le filtre Encadrement est sélectionné, regrouper dans une colonne dédiée
-    if (filtreActuel === 'ENCADREMENT') {
-        equipes = ["Encadrement & Direction"];
+    if (filtreNorm === 'ENCADREMENT') {
+        equipes = ["Encadrement & Commandement"];
+    } else if (filtreNorm !== 'TOUT' && filtreNorm !== 'SPP' && filtreNorm !== 'SPV') {
+        // Si on filtre sur une équipe spécifique (ex: Équipe A)
+        equipes = [filtreActuel];
+    } else {
+        // Si "Tous", "SPP" ou "SPV" -> On extrait toutes les équipes uniques
+        equipes = [...new Set(agentsFiltres.map(a => normaliserTexte(a.equipe) || "NON AFFECTÉ"))];
+        
+        // Tri personnalisé des colonnes d'équipes
+        equipes.sort((a, b) => {
+            if (a.includes("A")) return -1;
+            if (b.includes("A")) return 1;
+            if (a.includes("B")) return -1;
+            if (b.includes("B")) return 1;
+            if (a.includes("C")) return -1;
+            if (b.includes("C")) return 1;
+            return a.localeCompare(b);
+        });
     }
 
-    equipes.forEach(nomEquipe => {
+    // 3. Construction des colonnes et tri des membres
+    equipes.forEach(nomEquipeNorm => {
         let membres = [];
-        if (filtreActuel === 'ENCADREMENT') {
+
+        if (filtreNorm === 'ENCADREMENT') {
             membres = agentsFiltres;
         } else {
-            membres = agentsFiltres.filter(a => (a.equipe ? a.equipe.trim() : "Non Affecté") === nomEquipe);
+            membres = agentsFiltres.filter(a => {
+                const eq = normaliserTexte(a.equipe) || "NON AFFECTÉ";
+                return eq === nomEquipeNorm || eq.endsWith(" " + nomEquipeNorm);
+            });
         }
 
-        // Création du HTML de la colonne
+        // Tri strict des membres selon la hiérarchie
+        membres.sort(trierAgentsHierarchie);
+
+        // Affichage du nom propre de l'équipe
+        const nomEquipeLisible = membres.length > 0 && membres[0].equipe ? membres[0].equipe : nomEquipeNorm;
+
         const col = document.createElement("div");
         col.className = "colonne-equipe";
 
         let html = `
             <div class="colonne-titre">
-                <span>${nomEquipe}</span>
+                <span>${nomEquipeLisible}</span>
                 <span class="badge-compteur">${membres.length}</span>
             </div>
             <div class="cartes-container">
         `;
 
         membres.forEach(agent => {
-            const estSPP = (agent.statut || '').toUpperCase().includes('SPP');
+            const estSPP = normaliserTexte(agent.statut).includes('SPP');
             const classeStatut = estSPP ? 'spp' : 'spv';
             const grade = agent.grade || '-';
             const fonction = agent.fonction || 'Agent';
@@ -87,14 +164,17 @@ function afficherColonnes() {
                         <span>${grade}</span>
                         <span class="badge badge-statut">${agent.statut || 'SPP'}</span>
                     </div>
-                    <div class="carte-nom">${agent.nom.toUpperCase()} ${agent.prenom}</div>
+                    <div class="carte-nom">${(agent.nom || '').toUpperCase()} ${agent.prenom || ''}</div>
                     <div class="carte-details">
-                        <span>${fonction}</span>
+                        <span class="fonction-tag">${fonction}</span>
                         <span style="color:#60a5fa; font-weight:bold;">${tpEng}</span>
                     </div>
-                    <div class="carte-badges">
-                        ${genererBadgesHTML(agent.specialites)}
-                    </div>
+                    
+                    <!-- Spécialités -->
+                    ${genererBadgesHTML(agent.specialites, 'specialite')}
+
+                    <!-- Compétences -->
+                    ${genererBadgesHTML(agent.competences, 'competence')}
                 </div>
             `;
         });
@@ -105,16 +185,18 @@ function afficherColonnes() {
     });
 }
 
-// Fonction pour afficher les badges des spécialités (ex: SUAP)
-function genererBadgesHTML(chaineTxt) {
+// Génération neutre des badges pour Spécialités et Compétences
+function genererBadgesHTML(chaineTxt, type) {
     if (!chaineTxt || chaineTxt.trim() === "") return "";
 
-    return chaineTxt.split(",")
-        .map(i => i.trim())
-        .filter(i => i.length > 0)
-        .map(b => {
-            const estSUAP = (b.toUpperCase() === "SUAP");
-            const classeBadge = estSUAP ? "badge-suap" : "badge-autre";
-            return `<span class="badge ${classeBadge}">${b}</span>`;
-        }).join("");
+    const elements = chaineTxt.split(",").map(i => i.trim()).filter(i => i.length > 0);
+    if (elements.length === 0) return "";
+
+    const couleurClass = (type === 'specialite') ? 'badge-spec' : 'badge-comp';
+
+    return `
+        <div class="carte-badges">
+            ${elements.map(e => `<span class="badge ${couleurClass}">${e}</span>`).join("")}
+        </div>
+    `;
 }
