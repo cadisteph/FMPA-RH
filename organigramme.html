@@ -26,8 +26,9 @@
 
         /* Cartes Agent */
         .carte-agent { background: #0f172a; border-left: 4px solid #94a3b8; border-radius: 6px; padding: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-        .carte-agent.spp { border-left-color: #ef4444; } /* SPP en Rouge */
-        .carte-agent.spv { border-left-color: #3b82f6; } /* SPV en Bleu */
+        .carte-agent.spp { border-left-color: #0100ff; } /* SPP en Bleu */
+        .carte-agent.spv { border-left-color: #1cb656; } /* SPV en Vert */
+        .carte-agent.pats { border-left-color: #910076; } /* PATS en Rose */
         .carte-agent.encadrement { border-left-color: #eab308; background: #1e1b4b; } /* Encadrement spécial */
 
         .carte-header { display: flex; justify-content: space-between; font-size: 0.8rem; color: #94a3b8; font-weight: bold; margin-bottom: 4px; }
@@ -59,12 +60,12 @@
         <span style="font-weight:bold; color:#94a3b8; margin-right:10px;">Filtrer par :</span>
         <button class="filtre-btn active" onclick="filtrerEffectifs('TOUT', this)">Tous</button>
         <button class="filtre-btn" onclick="filtrerEffectifs('ENCADREMENT', this)">💼 Encadrement</button>
-        <button class="filtre-btn" onclick="filtrerEffectifs('SPP', this)">🔴 SPP (Tous)</button>
+        <button class="filtre-btn" onclick="filtrerEffectifs('SPP', this)">🔵 SPP (Tous)</button>
         <button class="filtre-btn" onclick="filtrerEffectifs('Équipe A', this)">Équipe A</button>
         <button class="filtre-btn" onclick="filtrerEffectifs('Équipe B', this)">Équipe B</button>
         <button class="filtre-btn" onclick="filtrerEffectifs('Équipe C', this)">Équipe C</button>
         <button class="filtre-btn" onclick="filtrerEffectifs('G12', this)">G12</button>
-        <button class="filtre-btn" onclick="filtrerEffectifs('SPV', this)">🔵 SPV</button>
+        <button class="filtre-btn" onclick="filtrerEffectifs('SPV', this)">🟢 SPV</button>
     </div>
 
     <!-- Conteneur des colonnes -->
