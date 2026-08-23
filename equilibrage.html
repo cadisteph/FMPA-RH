@@ -29,7 +29,7 @@
 
         .layout-grid {
             display: grid;
-            grid-template-columns: 260px 1fr;
+            grid-template-columns: 280px 1fr;
             gap: 12px;
             align-items: start;
         }
@@ -46,6 +46,16 @@
         .reglage-group { margin-bottom: 10px; }
         .reglage-group label { display: block; font-size: 0.75rem; color: #cbd5e1; margin-bottom: 3px; }
         .reglage-group input[type="range"] { width: 100%; accent-color: #8b5cf6; cursor: pointer; }
+        .reglage-select {
+            width: 100%;
+            background: #0f172a;
+            color: white;
+            border: 1px solid #475569;
+            padding: 4px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            margin-bottom: 4px;
+        }
 
         .btn-algo {
             width: 100%;
@@ -151,7 +161,6 @@
         .liste-agents::-webkit-scrollbar-track { background: #0f172a; border-radius: 2px; }
         .liste-agents::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
 
-        /* Cartes d'agents ultra-condensées */
         .carte-agent-simu {
             background: #0f172a;
             padding: 5px 7px;
@@ -165,7 +174,7 @@
         .carte-agent-simu.locked { border-left: 3px solid #f59e0b; background: #1c2536; }
         .agent-info-compact { display: flex; flex-direction: column; gap: 1px; }
         .agent-nom { font-weight: bold; font-size: 0.75rem; color: #f8fafc; }
-        .agent-details { color: #94a3b8; display: flex; gap: 4px; font-size: 0.68rem; }
+        .agent-details { color: #94a3b8; display: flex; gap: 4px; font-size: 0.68rem; flex-wrap: wrap; }
         .agent-spec { color: #60a5fa; font-size: 0.65rem; font-weight: 500; }
 
         .select-equipe-deplacement {
@@ -214,14 +223,28 @@
                 <label for="poids-cmd">Effectif & Commandement :</label>
                 <input type="range" id="poids-cmd" min="1" max="5" value="5">
             </div>
+
+            <!-- NOUVEAU : Sélecteur de Spécialité + Pondération -->
             <div class="reglage-group">
-                <label for="poids-spec">Spécialités & Compétences :</label>
+                <label for="spec-cible">Spécialité / Compétence Cible :</label>
+                <select id="spec-cible" class="reglage-select">
+                    <option value="TOUTES">-- Toutes les spécialités --</option>
+                </select>
+                <label for="poids-spec">Pondération Spécialité :</label>
                 <input type="range" id="poids-spec" min="1" max="5" value="4">
             </div>
+
+            <!-- NOUVEAU : Domiciliation (Département) -->
+            <div class="reglage-group">
+                <label for="poids-dept">Domiciliation (Département) :</label>
+                <input type="range" id="poids-dept" min="1" max="5" value="3">
+            </div>
+
             <div class="reglage-group">
                 <label for="poids-age">Pyramide des Âges :</label>
                 <input type="range" id="poids-age" min="1" max="5" value="3">
             </div>
+
             <div class="reglage-group">
                 <label for="poids-genre">Parité Homme / Femme :</label>
                 <input type="range" id="poids-genre" min="1" max="5" value="2">
