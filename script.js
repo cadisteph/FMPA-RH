@@ -695,6 +695,10 @@ async function connecterFichierReseau() {
         }
 
         listeAgents = agentsReseau;
+        
+        // 💾 SAUVEGARDE DANS LE LOCALSTORAGE POUR LA MIND MAP
+        localStorage.setItem("baseAgents", JSON.stringify(agentsReseau));
+
         actualiserTableauRH();
         document.getElementById("statusReseau").innerText = "🌐 Connecté : enregistrement possible";
         document.getElementById("statusReseau").style.color = "#08e3f5";
