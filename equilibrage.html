@@ -6,7 +6,6 @@
     <title>Module d'Équilibrage des Équipes</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Défilement global et fond */
         html, body {
             height: auto;
             min-height: 100vh;
@@ -15,7 +14,7 @@
             color: #f8fafc;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 15px;
+            padding: 12px;
             box-sizing: border-box;
         }
 
@@ -23,134 +22,159 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
             border-bottom: 1px solid #334155;
         }
 
         .layout-grid {
             display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 15px;
+            grid-template-columns: 260px 1fr;
+            gap: 12px;
             align-items: start;
         }
 
-        /* Panneau de configuration compact */
+        /* Panneau de configuration */
         .panneau-reglages {
             background: #1e293b;
-            padding: 15px;
+            padding: 12px;
             border-radius: 8px;
             border: 1px solid #334155;
             position: sticky;
-            top: 15px;
+            top: 12px;
         }
-        .reglage-group { margin-bottom: 12px; }
-        .reglage-group label { display: block; font-size: 0.8rem; color: #cbd5e1; margin-bottom: 4px; }
+        .reglage-group { margin-bottom: 10px; }
+        .reglage-group label { display: block; font-size: 0.75rem; color: #cbd5e1; margin-bottom: 3px; }
         .reglage-group input[type="range"] { width: 100%; accent-color: #8b5cf6; cursor: pointer; }
 
         .btn-algo {
             width: 100%;
-            padding: 10px;
+            padding: 9px;
             background: #8b5cf6;
             color: white;
             border: none;
             border-radius: 6px;
             font-weight: bold;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             cursor: pointer;
             transition: 0.2s;
         }
         .btn-algo:hover { background: #7c3aed; }
 
-        /* Grille des Équipes */
+        /* Grille des 3 Équipes */
         .grille-equipes {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+            gap: 10px;
         }
         .colonne-equipe {
             background: #1e293b;
             border-radius: 8px;
-            padding: 10px;
+            padding: 8px;
             border: 1px solid #334155;
             display: flex;
             flex-direction: column;
-            max-height: 88vh;
+            max-height: 90vh;
         }
         .titre-equipe {
-            font-size: 1.05rem;
+            font-size: 1rem;
             font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #334155;
-            padding-bottom: 6px;
+            padding-bottom: 4px;
         }
 
-        /* Tableau de bord statistique ultra-compact (Badge Grid) */
+        /* Tableau de bord statistique d'équipe ultra-compact */
         .dashboard-stats {
             background: #0f172a;
             padding: 6px;
             border-radius: 6px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 4px;
-            font-size: 0.72rem;
+            gap: 3px;
+            font-size: 0.7rem;
             border: 1px solid #1e293b;
         }
         .stat-badge {
             display: flex;
             justify-content: space-between;
             background: #1e293b;
-            padding: 3px 6px;
-            border-radius: 4px;
+            padding: 2px 5px;
+            border-radius: 3px;
             border: 1px solid #334155;
         }
         .stat-badge.full-width { grid-column: span 2; }
         .stat-label { color: #94a3b8; }
         .stat-value { font-weight: bold; color: #f8fafc; }
 
+        .stat-section-title {
+            grid-column: span 2;
+            font-size: 0.65rem;
+            color: #94a3b8;
+            margin-top: 4px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .stat-badge-container {
+            grid-column: span 2;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            max-height: 50px;
+            overflow-y: auto;
+        }
+        .tag-detail {
+            font-size: 0.62rem;
+            padding: 1px 4px;
+            border-radius: 3px;
+            border: 1px solid;
+            background: #0f172a;
+            white-space: nowrap;
+        }
+
         /* Zone d'affichage des cartes d'agents */
         .liste-agents {
             flex: 1;
             overflow-y: auto;
-            padding-right: 4px;
+            padding-right: 3px;
             display: flex;
             flex-direction: column;
-            gap: 5px;
-            min-height: 200px;
+            gap: 4px;
+            min-height: 180px;
         }
 
-        .liste-agents::-webkit-scrollbar { width: 5px; }
-        .liste-agents::-webkit-scrollbar-track { background: #0f172a; border-radius: 3px; }
-        .liste-agents::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        .liste-agents::-webkit-scrollbar { width: 4px; }
+        .liste-agents::-webkit-scrollbar-track { background: #0f172a; border-radius: 2px; }
+        .liste-agents::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
 
-        /* Cartes d'agents condensées */
+        /* Cartes d'agents ultra-condensées */
         .carte-agent-simu {
             background: #0f172a;
-            padding: 6px 8px;
+            padding: 5px 7px;
             border-radius: 4px;
             border: 1px solid #334155;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
         }
         .carte-agent-simu.locked { border-left: 3px solid #f59e0b; background: #1c2536; }
         .agent-info-compact { display: flex; flex-direction: column; gap: 1px; }
-        .agent-nom { font-weight: bold; font-size: 0.78rem; color: #f8fafc; }
-        .agent-details { color: #94a3b8; display: flex; gap: 5px; font-size: 0.7rem; }
-        .agent-spec { color: #60a5fa; font-size: 0.68rem; font-weight: 500; }
+        .agent-nom { font-weight: bold; font-size: 0.75rem; color: #f8fafc; }
+        .agent-details { color: #94a3b8; display: flex; gap: 4px; font-size: 0.68rem; }
+        .agent-spec { color: #60a5fa; font-size: 0.65rem; font-weight: 500; }
 
         .select-equipe-deplacement {
             background: #1e293b;
             color: white;
             border: 1px solid #475569;
             border-radius: 3px;
-            padding: 1px 3px;
-            font-size: 0.68rem;
+            padding: 1px 2px;
+            font-size: 0.65rem;
             cursor: pointer;
         }
 
@@ -166,9 +190,9 @@
         }
         .modal-content {
             background: #1e293b;
-            padding: 20px;
+            padding: 18px;
             border-radius: 8px;
-            max-width: 520px;
+            max-width: 500px;
             width: 90%;
             border: 1px solid #334155;
         }
@@ -177,21 +201,21 @@
 <body>
 
     <div class="header-bar">
-        <h2 style="margin: 0; font-size: 1.3rem;">⚖️ Optimisation & Équilibrage des Équipes</h2>
+        <h2 style="margin: 0; font-size: 1.2rem;">⚖️ Optimisation & Équilibrage des Équipes</h2>
     </div>
 
     <div class="layout-grid">
         <!-- Panneau des Réglages -->
         <aside class="panneau-reglages">
-            <h3 style="margin-top: 0; font-size: 1rem;">⚙️ Pondération des Critères</h3>
-            <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 12px;">Ajuste la priorité relative avant de lancer le calcul.</p>
+            <h3 style="margin-top: 0; font-size: 0.95rem;">⚙️ Pondération des Critères</h3>
+            <p style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 10px;">Ajuste les priorités relatives avant le calcul.</p>
             
             <div class="reglage-group">
                 <label for="poids-cmd">Effectif & Commandement :</label>
                 <input type="range" id="poids-cmd" min="1" max="5" value="5">
             </div>
             <div class="reglage-group">
-                <label for="poids-spec">Spécialités (COD, RAD...) :</label>
+                <label for="poids-spec">Spécialités & Compétences :</label>
                 <input type="range" id="poids-spec" min="1" max="5" value="4">
             </div>
             <div class="reglage-group">
@@ -210,21 +234,21 @@
         <main class="grille-equipes">
             <!-- Équipe A -->
             <div class="colonne-equipe">
-                <div class="titre-equipe">🔴 Équipe A <span id="count-A" style="font-size: 0.9rem; background: #334155; padding: 2px 8px; border-radius: 10px;">0</span></div>
+                <div class="titre-equipe">🔴 Équipe A <span id="count-A" style="font-size: 0.85rem; background: #334155; padding: 1px 7px; border-radius: 8px;">0</span></div>
                 <div class="dashboard-stats" id="stats-A"></div>
                 <div class="liste-agents" id="container-A"></div>
             </div>
 
             <!-- Équipe B -->
             <div class="colonne-equipe">
-                <div class="titre-equipe">🟢 Équipe B <span id="count-B" style="font-size: 0.9rem; background: #334155; padding: 2px 8px; border-radius: 10px;">0</span></div>
+                <div class="titre-equipe">🟢 Équipe B <span id="count-B" style="font-size: 0.85rem; background: #334155; padding: 1px 7px; border-radius: 8px;">0</span></div>
                 <div class="dashboard-stats" id="stats-B"></div>
                 <div class="liste-agents" id="container-B"></div>
             </div>
 
             <!-- Équipe C -->
             <div class="colonne-equipe">
-                <div class="titre-equipe">🔵 Équipe C <span id="count-C" style="font-size: 0.9rem; background: #334155; padding: 2px 8px; border-radius: 10px;">0</span></div>
+                <div class="titre-equipe">🔵 Équipe C <span id="count-C" style="font-size: 0.85rem; background: #334155; padding: 1px 7px; border-radius: 8px;">0</span></div>
                 <div class="dashboard-stats" id="stats-C"></div>
                 <div class="liste-agents" id="container-C"></div>
             </div>
@@ -234,12 +258,12 @@
     <!-- Modal des Propositions -->
     <div id="modal-transferts" class="modal-suggestions">
         <div class="modal-content">
-            <h3 style="margin-top:0;">⚡ Recommandations d'Ajustements Multi-Mouvements</h3>
-            <p style="font-size: 0.8rem; color: #cbd5e1;">L'algorithme suggère les permutations/transferts suivants :</p>
-            <ul id="liste-propositions" style="font-size: 0.85rem; line-height: 1.5; color: #60a5fa; max-height: 220px; overflow-y: auto; padding-left: 18px; margin-bottom: 15px;"></ul>
-            <div style="display: flex; gap: 10px;">
-                <button onclick="appliquerPropositions()" style="flex: 1; padding: 9px; background: #22c55e; border: none; color: white; border-radius: 6px; font-weight: bold; cursor: pointer;">Valider les changements</button>
-                <button onclick="fermerModal()" style="padding: 9px 15px; background: #64748b; border: none; color: white; border-radius: 6px; cursor: pointer;">Annuler</button>
+            <h3 style="margin-top:0; font-size:1.1rem;">⚡ Recommandations d'Ajustements Multi-Mouvements</h3>
+            <p style="font-size: 0.78rem; color: #cbd5e1;">L'algorithme suggère les ajustements suivants :</p>
+            <ul id="liste-propositions" style="font-size: 0.82rem; line-height: 1.4; color: #60a5fa; max-height: 200px; overflow-y: auto; padding-left: 18px; margin-bottom: 12px;"></ul>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="appliquerPropositions()" style="flex: 1; padding: 8px; background: #22c55e; border: none; color: white; border-radius: 5px; font-weight: bold; cursor: pointer;">Valider les changements</button>
+                <button onclick="fermerModal()" style="padding: 8px 12px; background: #64748b; border: none; color: white; border-radius: 5px; cursor: pointer;">Annuler</button>
             </div>
         </div>
     </div>
