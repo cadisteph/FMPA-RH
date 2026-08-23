@@ -105,18 +105,18 @@ function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#
         // --- PERSONNALISATION DES COULEURS SELON LE VALEUR ---
         
         // 1. Temps plein / Complet
-        if (txtUpper === "100%" || txtUpper === "COMPLET") {
-            bg = "#05fb5287"; // Vert pastel
+        if (txtUpper === "COMPLET") {
+            bg = "#05fb5287";
             txt = "#058148";
         } 
 
         else if (txtUpper === "100%") {
-            bg = "#c6f6d5"; // Vert pastel
-            txt = "#22543d";
+            bg = "#05fb5233";
+            txt = "#058148";
         }
         // 2. Temps partiels (80%, 70%, 50%, etc.)
         else if (/^\d{2,3}\s*%$/.test(badge)) { 
-            bg = "#feebc8"; // Orange / Ambre
+            bg = "#feebc8"; 
             txt = "#744210";
         } 
         // 3. Spécialités / Statuts SUAP
@@ -125,8 +125,8 @@ function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#
             txt = "#f218c9";
         } 
         else if (txtUpper === "SUAP/PPABE") {
-            bg = "#feebc8"; 
-            txt = "#744210";
+            bg = "#f39927"; 
+            txt = "#542b01";
         } 
         // 4. Indisponibilité / Dispo
         else if (txtUpper === "EN DISPO" || txtUpper === "DISPO") {
