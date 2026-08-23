@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (a.verrouille === undefined) a.verrouille = false;
     });
 
+    remplirSelecteurSpecialites();
     rendreEquipes();
 });
 
@@ -44,7 +45,37 @@ function calculerAge(dateNaissance) {
     return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
 }
 
-// TRI CONFORME À L'ORGANIGRAMME
+// Extraire le département depuis la domiciliation / code postal
+function extraireDepartement(agent) {
+    const texte = `${agent.codePostal || ''} ${agent.commune || ''} ${agent.domiciliation || ''} ${agent.adresse || ''}`;
+    const match = texte.match(/\b(2[AB]|\d{2})\d{3}\b/);
+    if (match) return match[1];
+    if (agent.departement) return agent.departement.toString().trim();
+    return "ND"; // Non Déterminé
+}
+
+function extraireItems(chaine) {
+    if (!chaine) return [];
+    return chaine.split(/[,;\/-]+/).map(s => normaliserTexte(s)).filter(s => s.length > 1);
+}
+
+// Remplissage dynamique de la liste déroulante des spécialités/compétences disponibles
+function remplirSelecteurSpecialites() {
+    const select = document.getElementById("spec-cible");
+    if (!select) return;
+
+    const ensembleSpecs = new Set();
+    agentsLocaux.forEach(a => {
+        extraireItems(a.specialites).forEach(s => ensembleSpecs.add(s));
+        extraireItems(a.competences).forEach(c => ensembleSpecs.add(c));
+    });
+
+    select.innerHTML = '<option value="TOUTES">-- Toutes les spécialités --</option>';
+    Array.from(ensembleSpecs).sort().forEach(s => {
+        select.innerHTML += `<option value="${s}">${s}</option>`;
+    });
+}
+
 function trierAgentsHierarchie(a, b) {
     const fA = normaliserTexte(a.fonction);
     const fB = normaliserTexte(b.fonction);
@@ -62,12 +93,6 @@ function trierAgentsHierarchie(a, b) {
     return normaliserTexte(a.prenom).localeCompare(normaliserTexte(b.prenom));
 }
 
-// EXTRACTEUR DE LISTES UNIFIÉES (Spécialités / Compétences)
-function extraireItems(chaine) {
-    if (!chaine) return [];
-    return chaine.split(/[,;\/-]+/).map(s => normaliserTexte(s)).filter(s => s.length > 1);
-}
-
 function calculerStatsEquipe(membres) {
     const nb = membres.length;
     const nbF = membres.filter(a => normaliserTexte(a.sexe).startsWith('F') || normaliserTexte(a.genre).startsWith('F')).length;
@@ -75,13 +100,15 @@ function calculerStatsEquipe(membres) {
     
     const compteFn = (fn) => membres.filter(a => normaliserTexte(a.fonction) === fn).length;
 
-    // Dictionnaire détaillé des Spécialités et Compétences
     const dicSpecs = {};
     const dicComps = {};
+    const dicDept = {};
 
     membres.forEach(a => {
         extraireItems(a.specialites).forEach(s => { dicSpecs[s] = (dicSpecs[s] || 0) + 1; });
         extraireItems(a.competences).forEach(c => { dicComps[c] = (dicComps[c] || 0) + 1; });
+        const dep = extraireDepartement(a);
+        dicDept[dep] = (dicDept[dep] || 0) + 1;
     });
 
     return { 
@@ -89,7 +116,7 @@ function calculerStatsEquipe(membres) {
         cate: compteFn('CATE'), ca1e: compteFn('CA1E'),
         cequ: compteFn('CEQU'), equ: compteFn('EQU'),
         cdg: compteFn('CDG') + compteFn('ACDG1') + compteFn('ACDG2'),
-        dicSpecs, dicComps
+        dicSpecs, dicComps, dicDept
     };
 }
 
@@ -108,7 +135,6 @@ function rendreEquipes() {
 
         const s = calculerStatsEquipe(membres);
         
-        // TABLEAU DE BORD DÉTAILLÉ ET CONDENSÉ
         document.getElementById(`count-${lettre}`).innerText = s.nb;
         document.getElementById(`stats-${lettre}`).innerHTML = `
             <div class="stat-badge full-width"><span class="stat-label">Agents:</span> <span class="stat-value">${s.nb}</span></div>
@@ -125,13 +151,16 @@ function rendreEquipes() {
 
             <div class="stat-section-title">Compétences :</div>
             <div class="stat-badge-container">${genererBadgesHTML(s.dicComps, '#34d399')}</div>
+
+            <div class="stat-section-title">Départements Domicile :</div>
+            <div class="stat-badge-container">${genererBadgesHTML(s.dicDept, '#f59e0b')}</div>
         `;
 
-        // LISTE DE CARTES AGENTS
         const container = document.getElementById(`container-${lettre}`);
         container.innerHTML = "";
         membres.forEach(agent => {
             const specs = agent.specialites ? `<span class="agent-spec">[${agent.specialites}]</span>` : '';
+            const dep = extraireDepartement(agent);
             container.innerHTML += `
                 <div class="carte-agent-simu ${agent.verrouille ? 'locked' : ''}">
                     <div class="agent-info-compact">
@@ -139,6 +168,7 @@ function rendreEquipes() {
                         <div class="agent-details">
                             <span>${agent.fonction || 'Agent'}</span>
                             <span>${agent.grade || '-'}</span>
+                            <span style="color:#f59e0b;">Dép:${dep}</span>
                             ${specs}
                         </div>
                     </div>
@@ -155,7 +185,7 @@ function rendreEquipes() {
     });
 }
 
-// === ALGORITHME MULTI-CRITÈRES MULTI-MOUVEMENTS ===
+// ALGORITHME MULTI-CRITÈRES D'ÉQUILIBRAGE
 function suggererReequilibrage() {
     propositionsEnAttente = [];
     let tempAgents = JSON.parse(JSON.stringify(agentsLocaux));
@@ -163,12 +193,14 @@ function suggererReequilibrage() {
 
     const pCmd = parseInt(document.getElementById("poids-cmd")?.value || 5);
     const pSpec = parseInt(document.getElementById("poids-spec")?.value || 4);
+    const specCible = document.getElementById("spec-cible")?.value || "TOUTES";
+    const pDept = parseInt(document.getElementById("poids-dept")?.value || 3);
     const pAge = parseInt(document.getElementById("poids-age")?.value || 3);
     const pGenre = parseInt(document.getElementById("poids-genre")?.value || 2);
 
     let stats = {};
 
-    // 1. Équilibrage de l'effectif brut
+    // 1. Effectif brut
     lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
     let eqTriees = [...lettresEquipes].sort((a,b) => stats[b].nb - stats[a].nb);
     let eqMax = eqTriees[0], eqMin = eqTriees[2];
@@ -184,7 +216,7 @@ function suggererReequilibrage() {
         }
     }
 
-    // 2. Équilibrage Commandement (CATE / CA1E)
+    // 2. Commandement (CATE / CA1E)
     if (pCmd >= 3) {
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
         let eqTropCATE = lettresEquipes.reduce((a,b) => stats[a].cate > stats[b].cate ? a : b);
@@ -204,26 +236,36 @@ function suggererReequilibrage() {
         }
     }
 
-    // 3. Équilibrage des Spécialités spécifiques
-    if (pSpec >= 3) {
+    // 3. Spécialités & Compétences ciblées ou globales
+    if (pSpec >= 2) {
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
         
-        // Trouver la spécialité la plus déséquilibrée
-        let toutesSpecs = new Set();
-        lettresEquipes.forEach(l => Object.keys(stats[l].dicSpecs).forEach(s => toutesSpecs.add(s)));
+        let listeSpecsATraiter = [];
+        if (specCible !== "TOUTES") {
+            listeSpecsATraiter = [specCible];
+        } else {
+            let toutes = new Set();
+            lettresEquipes.forEach(l => {
+                Object.keys(stats[l].dicSpecs).forEach(s => toutes.add(s));
+                Object.keys(stats[l].dicComps).forEach(c => toutes.add(c));
+            });
+            listeSpecsATraiter = Array.from(toutes);
+        }
 
-        toutesSpecs.forEach(specName => {
-            let eqRich = lettresEquipes.reduce((a,b) => (stats[a].dicSpecs[specName]||0) > (stats[b].dicSpecs[specName]||0) ? a : b);
-            let eqPauvre = lettresEquipes.reduce((a,b) => (stats[a].dicSpecs[specName]||0) < (stats[b].dicSpecs[specName]||0) ? a : b);
+        listeSpecsATraiter.forEach(specName => {
+            const getCount = (st) => (st.dicSpecs[specName] || 0) + (st.dicComps[specName] || 0);
 
-            if ((stats[eqRich].dicSpecs[specName]||0) - (stats[eqPauvre].dicSpecs[specName]||0) >= 2) {
-                let specAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqRich && !a.verrouille && extraireItems(a.specialites).includes(specName));
+            let eqRich = lettresEquipes.reduce((a,b) => getCount(stats[a]) > getCount(stats[b]) ? a : b);
+            let eqPauvre = lettresEquipes.reduce((a,b) => getCount(stats[a]) < getCount(stats[b]) ? a : b);
+
+            if (getCount(stats[eqRich]) - getCount(stats[eqPauvre]) >= 2) {
+                let specAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqRich && !a.verrouille && (extraireItems(a.specialites).includes(specName) || extraireItems(a.competences).includes(specName)));
                 let nonSpecAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqPauvre && !a.verrouille && normaliserTexte(a.fonction) === normaliserTexte(specAgent?.fonction));
 
                 if (specAgent && nonSpecAgent) {
                     propositionsEnAttente.push({
                         type: 'ECHANGE', a1: specAgent, a2: nonSpecAgent,
-                        motif: `Rééquilibrage de la spécialité [${specName}]`
+                        motif: `Rééquilibrage de la spécialité/compétence [${specName}]`
                     });
                     specAgent.equipe = `Équipe ${eqPauvre}`; nonSpecAgent.equipe = `Équipe ${eqRich}`;
                 }
@@ -231,7 +273,33 @@ function suggererReequilibrage() {
         });
     }
 
-    // 4. Équilibrage Parité Homme/Femme
+    // 4. Départements de domiciliation
+    if (pDept >= 2) {
+        lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
+        
+        let tousDepts = new Set();
+        lettresEquipes.forEach(l => Object.keys(stats[l].dicDept).forEach(d => { if(d !== "ND") tousDepts.add(d); }));
+
+        tousDepts.forEach(depName => {
+            let eqRichDep = lettresEquipes.reduce((a,b) => (stats[a].dicDept[depName]||0) > (stats[b].dicDept[depName]||0) ? a : b);
+            let eqPauvreDep = lettresEquipes.reduce((a,b) => (stats[a].dicDept[depName]||0) < (stats[b].dicDept[depName]||0) ? a : b);
+
+            if ((stats[eqRichDep].dicDept[depName]||0) - (stats[eqPauvreDep].dicDept[depName]||0) >= 2) {
+                let depAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqRichDep && !a.verrouille && extraireDepartement(a) === depName);
+                let autAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqPauvreDep && !a.verrouille && extraireDepartement(a) !== depName && normaliserTexte(a.fonction) === normaliserTexte(depAgent?.fonction));
+
+                if (depAgent && autAgent) {
+                    propositionsEnAttente.push({
+                        type: 'ECHANGE', a1: depAgent, a2: autAgent,
+                        motif: `Rééquilibrage de la domiciliation (Département ${depName})`
+                    });
+                    depAgent.equipe = `Équipe ${eqPauvreDep}`; autAgent.equipe = `Équipe ${eqRichDep}`;
+                }
+            }
+        });
+    }
+
+    // 5. Parité Homme/Femme
     if (pGenre >= 3) {
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
         let eqMaxF = lettresEquipes.reduce((a,b) => stats[a].nbF > stats[b].nbF ? a : b);
@@ -255,7 +323,7 @@ function suggererReequilibrage() {
 
 function afficherPropositions() {
     if (propositionsEnAttente.length === 0) {
-        alert("✅ Aucun mouvement nécessaire selon les critères actuels.");
+        alert("✅ Aucun mouvement nécessaire selon les critères et pondérations actuels.");
         return;
     }
     const listeUI = document.getElementById("liste-propositions");
