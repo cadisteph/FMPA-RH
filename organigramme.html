@@ -31,12 +31,12 @@
         .carte-agent.encadrement { border-left-color: #eab308; background: #1e1b4b; } /* Encadrement spécial */
 
         .carte-header { display: flex; justify-content: space-between; font-size: 0.8rem; color: #94a3b8; font-weight: bold; margin-bottom: 4px; }
-        .carte-nom { font-size: 1rem; font-weight: bold; color: #f8fafc; margin-bottom: 4px; }
-        .carte-details { font-size: 0.85rem; color: #cbd5e1; display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .carte-nom { font-size: 0.85rem; font-weight: normal; color: #f8fafc; margin-bottom: 4px; }
+        .carte-details { font-size: 0.8rem; color: #cbd5e1; display: flex; justify-content: space-between; margin-bottom: 6px; }
         .carte-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
         
         /* Style général des badges */
-        .badge {font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
+        .badge {font-size: 0.65rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
         /* Badge Statut (SPP/SPV) */
         .badge-statut {background: #334155; color: #f8fafc; }
         /* Fonction (Orange / Doré) */
@@ -52,14 +52,13 @@
 
     <header>
         <h1>🚒 Organigramme des Effectifs</h1>
-        <a href="index.html" class="btn-retour">⬅️ Retour au Tableau RH</a>
     </header>
 
     <!-- Filtres rapides -->
     <div class="filtres-container">
         <span style="font-weight:bold; color:#94a3b8; margin-right:10px;">Filtrer par :</span>
         <button class="filtre-btn active" onclick="filtrerEffectifs('TOUT', this)">Tous</button>
-        <button class="filtre-btn" onclick="filtrerEffectifs('ENCADREMENT', this)">👑 Encadrement</button>
+        <button class="filtre-btn" onclick="filtrerEffectifs('ENCADREMENT', this)">💼 Encadrement</button>
         <button class="filtre-btn" onclick="filtrerEffectifs('SPP', this)">🔴 SPP (Tous)</button>
         <button class="filtre-btn" onclick="filtrerEffectifs('Équipe A', this)">Équipe A</button>
         <button class="filtre-btn" onclick="filtrerEffectifs('Équipe B', this)">Équipe B</button>
