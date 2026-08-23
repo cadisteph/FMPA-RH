@@ -3,7 +3,6 @@ let propositionsEnAttente = [];
 
 // ORDRE HIÉRARCHIQUE DES FONCTIONS EXACT : CDG -> ACDG1 -> ACDG2 -> CATE -> CA1E -> CEQU -> EQU
 const ORDRE_FONCTIONS = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
-const ORDRE_GRADES = ['CDT', 'CNE', 'LTN', 'ADC', 'ADJ', 'SCH', 'SGT', 'CCH', 'CPL', 'SAP'];
 
 document.addEventListener("DOMContentLoaded", () => {
     const data = localStorage.getItem("baseAgents");
@@ -22,6 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (a.verrouille === undefined) a.verrouille = false;
     });
 
+    genererControlesDynamiques();
     rendreEquipes();
 });
 
@@ -59,10 +59,44 @@ function extraireItems(chaine) {
 }
 
 /**
- * Tri strict des agents :
- * 1. Hiérarchie exacte (CDG -> ACDG1 -> ACDG2 -> CATE -> CA1E -> CEQU -> EQU)
- * 2. Si même fonction -> Tri alphabétique sur Nom puis Prénom
+ * Génère automatiquement une barre de pondération pour CHAQUE spécialité 
+ * et CHAQUE compétence présente dans les données des agents.
  */
+function genererControlesDynamiques() {
+    const ensembleSpecs = new Set();
+    const ensembleComps = new Set();
+
+    agentsLocaux.forEach(a => {
+        extraireItems(a.specialites).forEach(s => ensembleSpecs.add(s));
+        extraireItems(a.competences).forEach(c => ensembleComps.add(c));
+    });
+
+    const containerSpecs = document.getElementById("container-reglages-specs");
+    const containerComps = document.getElementById("container-reglages-comps");
+
+    containerSpecs.innerHTML = "";
+    Array.from(ensembleSpecs).sort().forEach(spec => {
+        const id = `poids-spec-${spec}`;
+        containerSpecs.innerHTML += `
+            <div class="reglage-group">
+                <label><span>${spec}</span> : <span id="val-${id}">3</span></label>
+                <input type="range" id="${id}" data-item="${spec}" class="input-poids-spec" min="0" max="5" value="3" oninput="document.getElementById('val-${id}').innerText=this.value">
+            </div>
+        `;
+    });
+
+    containerComps.innerHTML = "";
+    Array.from(ensembleComps).sort().forEach(comp => {
+        const id = `poids-comp-${comp}`;
+        containerComps.innerHTML += `
+            <div class="reglage-group">
+                <label><span>${comp}</span> : <span id="val-${id}">3</span></label>
+                <input type="range" id="${id}" data-item="${comp}" class="input-poids-comp" min="0" max="5" value="3" oninput="document.getElementById('val-${id}').innerText=this.value">
+            </div>
+        `;
+    });
+}
+
 function trierAgentsHierarchie(a, b) {
     const fA = normaliserTexte(a.fonction);
     const fB = normaliserTexte(b.fonction);
@@ -72,10 +106,8 @@ function trierAgentsHierarchie(a, b) {
     if (idxFA === -1) idxFA = 999;
     if (idxFB === -1) idxFB = 999;
     
-    // Si fonctions différentes : ordre hiérarchique strict
     if (idxFA !== idxFB) return idxFA - idxFB;
 
-    // Si même fonction : ordre alphabétique par NOM puis PRÉNOM
     const nomA = normaliserTexte(a.nom);
     const nomB = normaliserTexte(b.nom);
     if (nomA !== nomB) return nomA.localeCompare(nomB, 'fr', { sensitivity: 'base' });
@@ -175,17 +207,14 @@ function rendreEquipes() {
     });
 }
 
-// ALGORITHME MULTI-CRITÈRES D'ÉQUILIBRAGE
+// ALGORITHME FONDÉ SUR CHAQUE BARRE DE PONDÉRATION INDIVIDUELLE
 function suggererReequilibrage() {
     propositionsEnAttente = [];
     let tempAgents = JSON.parse(JSON.stringify(agentsLocaux));
     const lettresEquipes = ['A', 'B', 'C'];
 
     const pCmd = parseInt(document.getElementById("poids-cmd")?.value || 5);
-    const pSpec = parseInt(document.getElementById("poids-spec")?.value || 4);
-    const pComp = parseInt(document.getElementById("poids-comp")?.value || 4);
     const pDept = parseInt(document.getElementById("poids-dept")?.value || 3);
-    const pAge = parseInt(document.getElementById("poids-age")?.value || 3);
     const pGenre = parseInt(document.getElementById("poids-genre")?.value || 2);
 
     let stats = {};
@@ -206,8 +235,8 @@ function suggererReequilibrage() {
         }
     }
 
-    // 2. Commandement (CATE / CA1E)
-    if (pCmd >= 3) {
+    // 2. Commandement
+    if (pCmd >= 1) {
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
         let eqTropCATE = lettresEquipes.reduce((a,b) => stats[a].cate > stats[b].cate ? a : b);
         let eqPasAssezCATE = lettresEquipes.reduce((a,b) => stats[a].cate < stats[b].cate ? a : b);
@@ -226,58 +255,58 @@ function suggererReequilibrage() {
         }
     }
 
-    // 3. Équilibrage sur TOUTES les spécialités
-    if (pSpec >= 2) {
+    // 3. Traitement dynamique pour CHAQUE SPÉCIALITÉ selon sa barre propre
+    document.querySelectorAll(".input-poids-spec").forEach(input => {
+        const poids = parseInt(input.value);
+        if (poids === 0) return; // Si la barre est à 0, on ignore cette spécialité
+
+        const specName = input.dataset.item;
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
-        let toutesSpecs = new Set();
-        lettresEquipes.forEach(l => Object.keys(stats[l].dicSpecs).forEach(s => toutesSpecs.add(s)));
 
-        toutesSpecs.forEach(specName => {
-            let eqRich = lettresEquipes.reduce((a,b) => (stats[a].dicSpecs[specName]||0) > (stats[b].dicSpecs[specName]||0) ? a : b);
-            let eqPauvre = lettresEquipes.reduce((a,b) => (stats[a].dicSpecs[specName]||0) < (stats[b].dicSpecs[specName]||0) ? a : b);
+        let eqRich = lettresEquipes.reduce((a,b) => (stats[a].dicSpecs[specName]||0) > (stats[b].dicSpecs[specName]||0) ? a : b);
+        let eqPauvre = lettresEquipes.reduce((a,b) => (stats[a].dicSpecs[specName]||0) < (stats[b].dicSpecs[specName]||0) ? a : b);
 
-            if ((stats[eqRich].dicSpecs[specName]||0) - (stats[eqPauvre].dicSpecs[specName]||0) >= 2) {
-                let specAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqRich && !a.verrouille && extraireItems(a.specialites).includes(specName));
-                let nonSpecAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqPauvre && !a.verrouille && normaliserTexte(a.fonction) === normaliserTexte(specAgent?.fonction));
+        if ((stats[eqRich].dicSpecs[specName]||0) - (stats[eqPauvre].dicSpecs[specName]||0) >= 2) {
+            let specAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqRich && !a.verrouille && extraireItems(a.specialites).includes(specName));
+            let nonSpecAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqPauvre && !a.verrouille && normaliserTexte(a.fonction) === normaliserTexte(specAgent?.fonction));
 
-                if (specAgent && nonSpecAgent) {
-                    propositionsEnAttente.push({
-                        type: 'ECHANGE', a1: specAgent, a2: nonSpecAgent,
-                        motif: `Rééquilibrage de la spécialité [${specName}]`
-                    });
-                    specAgent.equipe = `Équipe ${eqPauvre}`; nonSpecAgent.equipe = `Équipe ${eqRich}`;
-                }
+            if (specAgent && nonSpecAgent) {
+                propositionsEnAttente.push({
+                    type: 'ECHANGE', a1: specAgent, a2: nonSpecAgent,
+                    motif: `Rééquilibrage de la spécialité [${specName}] (Pondération: ${poids}/5)`
+                });
+                specAgent.equipe = `Équipe ${eqPauvre}`; nonSpecAgent.equipe = `Équipe ${eqRich}`;
             }
-        });
-    }
+        }
+    });
 
-    // 4. Équilibrage sur TOUTES les compétences
-    if (pComp >= 2) {
+    // 4. Traitement dynamique pour CHAQUE COMPÉTENCE selon sa barre propre
+    document.querySelectorAll(".input-poids-comp").forEach(input => {
+        const poids = parseInt(input.value);
+        if (poids === 0) return; // Si la barre est à 0, on ignore cette compétence
+
+        const compName = input.dataset.item;
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
-        let toutesComps = new Set();
-        lettresEquipes.forEach(l => Object.keys(stats[l].dicComps).forEach(c => toutesComps.add(c)));
 
-        toutesComps.forEach(compName => {
-            let eqRich = lettresEquipes.reduce((a,b) => (stats[a].dicComps[compName]||0) > (stats[b].dicComps[compName]||0) ? a : b);
-            let eqPauvre = lettresEquipes.reduce((a,b) => (stats[a].dicComps[compName]||0) < (stats[b].dicComps[compName]||0) ? a : b);
+        let eqRich = lettresEquipes.reduce((a,b) => (stats[a].dicComps[compName]||0) > (stats[b].dicComps[compName]||0) ? a : b);
+        let eqPauvre = lettresEquipes.reduce((a,b) => (stats[a].dicComps[compName]||0) < (stats[b].dicComps[compName]||0) ? a : b);
 
-            if ((stats[eqRich].dicComps[compName]||0) - (stats[eqPauvre].dicComps[compName]||0) >= 2) {
-                let compAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqRich && !a.verrouille && extraireItems(a.competences).includes(compName));
-                let nonCompAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqPauvre && !a.verrouille && normaliserTexte(a.fonction) === normaliserTexte(compAgent?.fonction));
+        if ((stats[eqRich].dicComps[compName]||0) - (stats[eqPauvre].dicComps[compName]||0) >= 2) {
+            let compAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqRich && !a.verrouille && extraireItems(a.competences).includes(compName));
+            let nonCompAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqPauvre && !a.verrouille && normaliserTexte(a.fonction) === normaliserTexte(compAgent?.fonction));
 
-                if (compAgent && nonCompAgent) {
-                    propositionsEnAttente.push({
-                        type: 'ECHANGE', a1: compAgent, a2: nonCompAgent,
-                        motif: `Rééquilibrage de la compétence [${compName}]`
-                    });
-                    compAgent.equipe = `Équipe ${eqPauvre}`; nonCompAgent.equipe = `Équipe ${eqRich}`;
-                }
+            if (compAgent && nonCompAgent) {
+                propositionsEnAttente.push({
+                    type: 'ECHANGE', a1: compAgent, a2: nonCompAgent,
+                    motif: `Rééquilibrage de la compétence [${compName}] (Pondération: ${poids}/5)`
+                });
+                compAgent.equipe = `Équipe ${eqPauvre}`; nonCompAgent.equipe = `Équipe ${eqRich}`;
             }
-        });
-    }
+        }
+    });
 
-    // 5. Départements de domiciliation
-    if (pDept >= 2) {
+    // 5. Départements
+    if (pDept >= 1) {
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
         let tousDepts = new Set();
         lettresEquipes.forEach(l => Object.keys(stats[l].dicDept).forEach(d => { if(d !== "ND") tousDepts.add(d); }));
@@ -293,7 +322,7 @@ function suggererReequilibrage() {
                 if (depAgent && autAgent) {
                     propositionsEnAttente.push({
                         type: 'ECHANGE', a1: depAgent, a2: autAgent,
-                        motif: `Rééquilibrage de la domiciliation (Département ${depName})`
+                        motif: `Rééquilibrage de la domiciliation (Dép. ${depName})`
                     });
                     depAgent.equipe = `Équipe ${eqPauvreDep}`; autAgent.equipe = `Équipe ${eqRichDep}`;
                 }
@@ -301,8 +330,8 @@ function suggererReequilibrage() {
         });
     }
 
-    // 6. Parité Homme/Femme
-    if (pGenre >= 3) {
+    // 6. Parité H/F
+    if (pGenre >= 1) {
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
         let eqMaxF = lettresEquipes.reduce((a,b) => stats[a].nbF > stats[b].nbF ? a : b);
         let eqMinF = lettresEquipes.reduce((a,b) => stats[a].nbF < stats[b].nbF ? a : b);
@@ -314,7 +343,7 @@ function suggererReequilibrage() {
             if (femme && homme && normaliserTexte(femme.fonction) === normaliserTexte(homme.fonction)) {
                 propositionsEnAttente.push({
                     type: 'ECHANGE', a1: femme, a2: homme,
-                    motif: `Permutation H/F pour rééquilibrer la parité`
+                    motif: `Permutation H/F pour la parité`
                 });
             }
         }
