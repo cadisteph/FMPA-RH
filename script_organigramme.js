@@ -106,14 +106,14 @@ function afficherColonnes() {
 
         if (filtreNorm === 'TOUT') return true;
         
-        // Si clic sur le bouton "Encadrement", on affiche tous les cadres (y compris les SPV ayant une fonction d'encadrement)
+        // Clic sur le bouton "Encadrement"
         if (filtreNorm === 'ENCADREMENT') {
             const fonctionsEncadrement = ['CDC', 'ACDC', 'OFPAO', 'OFTECH', 'SOFPAO', 'SOFTECH', 'ASSISTANTE', 'SECRETARIAT', 'ADMINISTRATIF'];
             return estAgentEncadrement(agent) || fonctionsEncadrement.includes(fn);
         }
         
-        // Filtre SPP (Garde) : Uniquement SPP qui ne sont PAS dans l'encadrement
-        if (filtreNorm === 'SPP_GARDE' || filtreNorm === 'SPP GARDE' || filtreNorm === 'SPP') {
+        // Clic sur le bouton "SPP" : On garde uniquement les SPP qui NE sont PAS dans l'encadrement
+        if (filtreNorm === 'SPP') {
             return statut.includes('SPP') && !estAgentEncadrement(agent);
         }
 
@@ -131,27 +131,25 @@ function afficherColonnes() {
 
     if (filtreNorm === 'ENCADREMENT') {
         listeColonnes = [{ titre: "Encadrement", identifiant: "ENCADREMENT" }];
-    } else if (filtreNorm !== 'TOUT' && filtreNorm !== 'SPP' && filtreNorm !== 'SPP_GARDE' && filtreNorm !== 'SPP GARDE' && filtreNorm !== 'SPV') {
-        // Filtre d'équipe précis sélectionné
+    } else if (filtreNorm !== 'TOUT' && filtreNorm !== 'SPP' && filtreNorm !== 'SPV') {
+        // Filtre d'équipe précis sélectionné (ex: Équipe A)
         listeColonnes = [{ titre: filtreActuel, identifiant: filtreNorm }];
     } else {
-        // Mode "TOUT", "SPP (Garde)" ou "SPV"
-        // A. Première colonne : Encadrement (masquée pour le filtre SPP Garde)
-        const estFiltreSPPGarde = (filtreNorm === 'SPP_GARDE' || filtreNorm === 'SPP GARDE' || filtreNorm === 'SPP');
+        // Mode "TOUT", "SPP" ou "SPV"
+        // A. Première colonne : Encadrement (masquée automatiquement si on a cliqué sur le filtre SPP)
         const aDesCadres = agentsFiltres.some(a => estAgentEncadrement(a));
-
-        if (aDesCadres && !estFiltreSPPGarde) {
+        if (aDesCadres && filtreNorm !== 'SPP') {
             listeColonnes.push({ titre: "Encadrement", identifiant: "ENCADREMENT" });
         }
 
-        // B. Autres équipes (les SPV iront dans leur équipe respective)
+        // B. Autres équipes (Équipe A, Équipe B, etc.)
         let equipesUniques = [...new Set(
             agentsFiltres
                 .filter(a => !estAgentEncadrement(a))
                 .map(a => a.equipe ? a.equipe.trim() : "NON AFFECTÉ")
         )].filter(eq => normaliserTexte(eq) !== 'ENCADREMENT');
 
-        // Tri alphabétique des colonnes (A, B, C, G12, SPV...)
+        // Tri alphabétique des colonnes (A, B, C, G12...)
         equipesUniques.sort((a, b) => a.localeCompare(b));
 
         equipesUniques.forEach(eq => {
@@ -165,8 +163,8 @@ function afficherColonnes() {
 
         if (colInfo.identifiant === "ENCADREMENT") {
             membres = agentsFiltres.filter(a => {
-                if (filtreNorm === 'ENCADREMENT') return true; // Si on filtre par "Encadrement", on prend tout le monde
-                return estAgentEncadrement(a); // Sinon, exclut le SPV
+                if (filtreNorm === 'ENCADREMENT') return true;
+                return estAgentEncadrement(a);
             });
         } else {
             const idNorm = colInfo.identifiant;
