@@ -44,16 +44,9 @@
             top: 12px;
         }
         .reglage-group { margin-bottom: 10px; }
-        .reglage-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 3px;
-        }
-        .reglage-group label { font-size: 0.75rem; color: #cbd5e1; }
-        .valeur-poids { font-size: 0.75rem; font-weight: bold; color: #8b5cf6; }
+        .reglage-group label { display: block; font-size: 0.75rem; color: #cbd5e1; margin-bottom: 3px; }
         .reglage-group input[type="range"] { width: 100%; accent-color: #8b5cf6; cursor: pointer; }
-
+        
         .btn-algo {
             width: 100%;
             padding: 9px;
@@ -94,7 +87,7 @@
             padding-bottom: 4px;
         }
 
-        /* Tableau de bord statistique d'équipe compact */
+        /* Dashboard statistique d'équipe */
         .dashboard-stats {
             background: #0f172a;
             padding: 6px;
@@ -143,7 +136,7 @@
             white-space: nowrap;
         }
 
-        /* Zone d'affichage des cartes d'agents */
+        /* Liste des cartes d'agents */
         .liste-agents {
             flex: 1;
             overflow-y: auto;
@@ -213,55 +206,39 @@
     <div class="layout-grid">
         <!-- Panneau des Réglages -->
         <aside class="panneau-reglages">
-            <h3 style="margin-top: 0; font-size: 0.95rem;">⚙️ Pondération des Critères (1 à 10)</h3>
-            <p style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 10px;">Ajuste l'importance de chaque critère avant le calcul.</p>
+            <h3 style="margin-top: 0; font-size: 0.95rem;">⚙️ Pondération des Critères</h3>
+            <p style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 10px;">Ajuste les priorités relatives avant le calcul.</p>
             
             <div class="reglage-group">
-                <div class="reglage-header">
-                    <label for="poids-cmd">Effectif & Commandement :</label>
-                    <span id="val-cmd" class="valeur-poids">10</span>
-                </div>
-                <input type="range" id="poids-cmd" min="1" max="10" value="10" oninput="document.getElementById('val-cmd').innerText = this.value">
+                <label for="poids-cmd">Effectif & Commandement :</label>
+                <input type="range" id="poids-cmd" min="1" max="5" value="5">
+            </div>
+
+            <!-- Prise en compte globale de TOUTES les spécialités -->
+            <div class="reglage-group">
+                <label for="poids-spec">Équilibre Spécialités (Toutes) :</label>
+                <input type="range" id="poids-spec" min="1" max="5" value="4">
+            </div>
+
+            <!-- Prise en compte globale de TOUTES les compétences -->
+            <div class="reglage-group">
+                <label for="poids-comp">Équilibre Compétences (Toutes) :</label>
+                <input type="range" id="poids-comp" min="1" max="5" value="4">
             </div>
 
             <div class="reglage-group">
-                <div class="reglage-header">
-                    <label for="poids-spec">Répartition des Spécialités :</label>
-                    <span id="val-spec" class="valeur-poids">8</span>
-                </div>
-                <input type="range" id="poids-spec" min="1" max="10" value="8" oninput="document.getElementById('val-spec').innerText = this.value">
+                <label for="poids-dept">Domiciliation (Département) :</label>
+                <input type="range" id="poids-dept" min="1" max="5" value="3">
             </div>
 
             <div class="reglage-group">
-                <div class="reglage-header">
-                    <label for="poids-comp">Répartition des Compétences :</label>
-                    <span id="val-comp" class="valeur-poids">6</span>
-                </div>
-                <input type="range" id="poids-comp" min="1" max="10" value="6" oninput="document.getElementById('val-comp').innerText = this.value">
+                <label for="poids-age">Pyramide des Âges :</label>
+                <input type="range" id="poids-age" min="1" max="5" value="3">
             </div>
 
             <div class="reglage-group">
-                <div class="reglage-header">
-                    <label for="poids-dept">Domiciliation (Département) :</label>
-                    <span id="val-dept" class="valeur-poids">5</span>
-                </div>
-                <input type="range" id="poids-dept" min="1" max="10" value="5" oninput="document.getElementById('val-dept').innerText = this.value">
-            </div>
-
-            <div class="reglage-group">
-                <div class="reglage-header">
-                    <label for="poids-age">Pyramide des Âges :</label>
-                    <span id="val-age" class="valeur-poids">5</span>
-                </div>
-                <input type="range" id="poids-age" min="1" max="10" value="5" oninput="document.getElementById('val-age').innerText = this.value">
-            </div>
-
-            <div class="reglage-group">
-                <div class="reglage-header">
-                    <label for="poids-genre">Parité Homme / Femme :</label>
-                    <span id="val-genre" class="valeur-poids">4</span>
-                </div>
-                <input type="range" id="poids-genre" min="1" max="10" value="4" oninput="document.getElementById('val-genre').innerText = this.value">
+                <label for="poids-genre">Parité Homme / Femme :</label>
+                <input type="range" id="poids-genre" min="1" max="5" value="2">
             </div>
 
             <button class="btn-algo" onclick="suggererReequilibrage()">⚡ Suggérer un Rééquilibrage</button>
