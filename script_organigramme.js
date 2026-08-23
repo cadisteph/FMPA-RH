@@ -191,30 +191,38 @@ function afficherColonnes() {
             <div class="cartes-container">
         `;
 
-        membres.forEach(agent => {
-            const estSPP = normaliserTexte(agent.statut).includes('SPP');
-            const classeStatut = estSPP ? 'spp' : 'spv';
-            const grade = agent.grade || '-';
-            const fonction = agent.fonction || 'Agent';
-            const tpEng = agent.engagement || agent.tempsPartiel || '';
+membres.forEach(agent => {
+    const statutNorm = normaliserTexte(agent.statut);
+    
+    // Détermination de la couleur de bordure (SPP = Bleu, SPV = Vert, PATS = Rose)
+    let classeStatut = 'spp';
+    if (statutNorm.includes('SPV')) {
+        classeStatut = 'spv';
+    } else if (statutNorm.includes('PATS')) {
+        classeStatut = 'pats';
+    }
 
-            html += `
-                <div class="carte-agent ${classeStatut}">
-                    <div class="carte-header">
-                        <span>${grade}</span>
-                        <span class="badge badge-statut">${agent.statut || 'SPP'}</span>
-                    </div>
-                    <div class="carte-nom">${(agent.nom || '').toUpperCase()} ${agent.prenom || ''}</div>
-                    <div class="carte-details">
-                        <span class="fonction-tag">${fonction}</span>
-                        <span style="color:#60a5fa; font-weight:bold;">${tpEng}</span>
-                    </div>
-                    
-                    ${genererBadgesHTML(agent.specialites, 'specialite')}
-                    ${genererBadgesHTML(agent.competences, 'competence')}
-                </div>
-            `;
-        });
+    const grade = agent.grade || '-';
+    const fonction = agent.fonction || 'Agent';
+    const tpEng = agent.engagement || agent.tempsPartiel || '';
+
+    html += `
+        <div class="carte-agent ${classeStatut}">
+            <div class="carte-header">
+                <span>${grade}</span>
+                <span class="badge badge-statut">${agent.statut || 'SPP'}</span>
+            </div>
+            <div class="carte-nom">${(agent.nom || '').toUpperCase()} ${agent.prenom || ''}</div>
+            <div class="carte-details">
+                <span class="fonction-tag">${fonction}</span>
+                <span style="color:#60a5fa; font-weight:bold;">${tpEng}</span>
+            </div>
+            
+            ${genererBadgesHTML(agent.specialites, 'specialite')}
+            ${genererBadgesHTML(agent.competences, 'competence')}
+        </div>
+    `;
+});
 
         html += `</div>`;
         col.innerHTML = html;
