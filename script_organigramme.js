@@ -42,10 +42,17 @@ function normaliserTexte(txt) {
               .trim();
 }
 
-// Vérifie si un agent appartient à l'encadrement (par sa fonction ou le champ équipe)
+// Vérifie si un agent appartient à l'encadrement
 function estAgentEncadrement(agent) {
     const fn = normaliserTexte(agent.fonction);
     const eq = normaliserTexte(agent.equipe);
+    const statut = normaliserTexte(agent.statut);
+
+    // EXCEPTION : Les SPV restent rattachés à leur équipe/statut, pas à la colonne Encadrement générale
+    if (statut.includes('SPV')) {
+        return false;
+    }
+
     const fonctionsEncadrement = ['CDC', 'ACDC', 'OFPAO', 'OFTECH', 'SOFPAO', 'SOFTECH', 'ASSISTANTE', 'SECRETARIAT', 'ADMINISTRATIF'];
     
     return fonctionsEncadrement.includes(fn) || 
@@ -95,13 +102,20 @@ function afficherColonnes() {
     let agentsFiltres = tousLesAgents.filter(agent => {
         const statut = normaliserTexte(agent.statut);
         const equipe = normaliserTexte(agent.equipe);
+        const fn = normaliserTexte(agent.fonction);
 
         if (filtreNorm === 'TOUT') return true;
-        if (filtreNorm === 'ENCADREMENT') return estAgentEncadrement(agent);
+        
+        // Si clic sur le bouton "Encadrement", on affiche tous les cadres (y compris les SPV ayant une fonction d'encadrement)
+        if (filtreNorm === 'ENCADREMENT') {
+            const fonctionsEncadrement = ['CDC', 'ACDC', 'OFPAO', 'OFTECH', 'SOFPAO', 'SOFTECH', 'ASSISTANTE', 'SECRETARIAT', 'ADMINISTRATIF'];
+            return estAgentEncadrement(agent) || fonctionsEncadrement.includes(fn);
+        }
+        
         if (filtreNorm === 'SPP') return statut.includes('SPP');
         if (filtreNorm === 'SPV') return statut.includes('SPV');
 
-        // Filtre d'une équipe spécifique
+        // Filtre d'une équipe spécifique (ex: Équipe A)
         const termeFiltre = filtreNorm.replace("EQUIPE", "").trim();
         const termeEquipe = equipe.replace("EQUIPE", "").trim();
 
@@ -114,24 +128,24 @@ function afficherColonnes() {
     if (filtreNorm === 'ENCADREMENT') {
         listeColonnes = [{ titre: "Encadrement", identifiant: "ENCADREMENT" }];
     } else if (filtreNorm !== 'TOUT' && filtreNorm !== 'SPP' && filtreNorm !== 'SPV') {
-        // Un filtre d'équipe précis est sélectionné (ex: Équipe A)
+        // Filtre d'équipe précis sélectionné
         listeColonnes = [{ titre: filtreActuel, identifiant: filtreNorm }];
     } else {
         // Mode "TOUT", "SPP" ou "SPV"
-        // A. Première colonne : Encadrement (si présent)
+        // A. Première colonne : Encadrement (seulement les SPP)
         const aDesCadres = agentsFiltres.some(a => estAgentEncadrement(a));
         if (aDesCadres) {
             listeColonnes.push({ titre: "Encadrement", identifiant: "ENCADREMENT" });
         }
 
-        // B. Autres équipes (exclut l'encadrement pour éviter tout doublon)
+        // B. Autres équipes (les SPV iront dans leur équipe respective)
         let equipesUniques = [...new Set(
             agentsFiltres
                 .filter(a => !estAgentEncadrement(a))
                 .map(a => a.equipe ? a.equipe.trim() : "NON AFFECTÉ")
-        )].filter(eq => normaliserTexte(eq) !== 'ENCADREMENT'); // SÉCURITÉ ANTI-DOUBLON
+        )].filter(eq => normaliserTexte(eq) !== 'ENCADREMENT');
 
-        // Tri alphabétique des colonnes (A, B, C, G12...)
+        // Tri alphabétique des colonnes (A, B, C, G12, SPV...)
         equipesUniques.sort((a, b) => a.localeCompare(b));
 
         equipesUniques.forEach(eq => {
@@ -144,11 +158,14 @@ function afficherColonnes() {
         let membres = [];
 
         if (colInfo.identifiant === "ENCADREMENT") {
-            membres = agentsFiltres.filter(a => estAgentEncadrement(a));
+            membres = agentsFiltres.filter(a => {
+                if (filtreNorm === 'ENCADREMENT') return true; // Si on filtre par "Encadrement", on prend tout le monde
+                return estAgentEncadrement(a); // Sinon, exclut le SPV
+            });
         } else {
             const idNorm = colInfo.identifiant;
             membres = agentsFiltres.filter(a => {
-                if (estAgentEncadrement(a)) return false; // Ne remet pas les cadres dans les autres colonnes
+                if (estAgentEncadrement(a)) return false; // Ne remet pas les cadres SPP dans les autres colonnes
                 
                 const eq = normaliserTexte(a.equipe);
                 const termeCol = idNorm.replace("EQUIPE", "").trim();
