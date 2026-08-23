@@ -52,12 +52,57 @@ function calculerAge(dateNaissance) {
     return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
 }
 
+// DÉFINITION STRICTE DES HIÉRARCHIES (Identique à l'organigramme)
+const ORDRE_FONCTIONS = [
+    'CDC', 'ACDC', 'OFPAO', 'OFTECH', 'SOFPAO', 'SOFTECH', 
+    'ASSISTANTE', 'SECRETARIAT', 'ADMINISTRATIF',
+    'CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'
+];
+
+const ORDRE_GRADES = [
+    'CDT', 'CNE', 'LTN', 'ADC', 'ADJ', 'SCH', 'SGT', 'CCH', 'CPL', 'SAP'
+];
+
+// Algorithme de tri hiérarchique
+function trierAgentsHierarchie(a, b) {
+    const fA = normaliserTexte(a.fonction);
+    const fB = normaliserTexte(b.fonction);
+
+    let idxFA = ORDRE_FONCTIONS.indexOf(fA);
+    let idxFB = ORDRE_FONCTIONS.indexOf(fB);
+    if (idxFA === -1) idxFA = 999;
+    if (idxFB === -1) idxFB = 999;
+
+    if (idxFA !== idxFB) return idxFA - idxFB;
+
+    // Égalité de fonction -> Tri par Grade
+    const gA = normaliserTexte(a.grade);
+    const gB = normaliserTexte(b.grade);
+
+    let idxGA = ORDRE_GRADES.indexOf(gA);
+    let idxGB = ORDRE_GRADES.indexOf(gB);
+    if (idxGA === -1) idxGA = 999;
+    if (idxGB === -1) idxGB = 999;
+
+    if (idxGA !== idxGB) return idxGA - idxGB;
+
+    // Égalité de grade -> Ordre alphabétique Nom puis Prénom
+    const nomA = normaliserTexte(a.nom);
+    const nomB = normaliserTexte(b.nom);
+    if (nomA !== nomB) return nomA.localeCompare(nomB);
+
+    return normaliserTexte(a.prenom).localeCompare(normaliserTexte(b.prenom));
+}
+
 function rendreEquipes() {
     const lettresEquipes = ['A', 'B', 'C'];
 
     lettresEquipes.forEach(lettre => {
-        const membres = agentsLocaux.filter(a => extraireLettreEquipe(a.equipe) === lettre);
+        let membres = agentsLocaux.filter(a => extraireLettreEquipe(a.equipe) === lettre);
         
+        // TRI HIÉRARCHIQUE DES AGENTS
+        membres.sort(trierAgentsHierarchie);
+
         // Statistiques
         const total = membres.length;
         const nbFemmes = membres.filter(a => normaliserTexte(a.sexe).startsWith('F') || normaliserTexte(a.genre).startsWith('F')).length;
