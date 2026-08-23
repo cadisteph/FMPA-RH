@@ -1,9 +1,6 @@
 let agentsLocaux = [];
 let propositionsEnAttente = [];
 
-const ORDRE_FONCTIONS = ['CDC', 'ACDC', 'OFPAO', 'OFTECH', 'SOFPAO', 'SOFTECH', 'ASSISTANTE', 'SECRETARIAT', 'ADMINISTRATIF', 'CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
-const ORDRE_GRADES = ['CDT', 'CNE', 'LTN', 'ADC', 'ADJ', 'SCH', 'SGT', 'CCH', 'CPL', 'SAP'];
-
 document.addEventListener("DOMContentLoaded", () => {
     const data = localStorage.getItem("baseAgents");
     if (!data) return;
@@ -21,7 +18,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (a.verrouille === undefined) a.verrouille = false;
     });
 
-    remplirSelecteurSpecialites();
     rendreEquipes();
 });
 
@@ -45,13 +41,12 @@ function calculerAge(dateNaissance) {
     return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
 }
 
-// Extraire le département depuis la domiciliation / code postal
 function extraireDepartement(agent) {
     const texte = `${agent.codePostal || ''} ${agent.commune || ''} ${agent.domiciliation || ''} ${agent.adresse || ''}`;
     const match = texte.match(/\b(2[AB]|\d{2})\d{3}\b/);
     if (match) return match[1];
     if (agent.departement) return agent.departement.toString().trim();
-    return "ND"; // Non Déterminé
+    return "ND";
 }
 
 function extraireItems(chaine) {
@@ -59,36 +54,22 @@ function extraireItems(chaine) {
     return chaine.split(/[,;\/-]+/).map(s => normaliserTexte(s)).filter(s => s.length > 1);
 }
 
-// Remplissage dynamique de la liste déroulante des spécialités/compétences disponibles
-function remplirSelecteurSpecialites() {
-    const select = document.getElementById("spec-cible");
-    if (!select) return;
-
-    const ensembleSpecs = new Set();
-    agentsLocaux.forEach(a => {
-        extraireItems(a.specialites).forEach(s => ensembleSpecs.add(s));
-        extraireItems(a.competences).forEach(c => ensembleSpecs.add(c));
-    });
-
-    select.innerHTML = '<option value="TOUTES">-- Toutes les spécialités --</option>';
-    Array.from(ensembleSpecs).sort().forEach(s => {
-        select.innerHTML += `<option value="${s}">${s}</option>`;
-    });
-}
-
+// TRI HIÉRARCHIQUE DE L'ORGANIGRAMME (Fonction / Grade / Nom)
 function trierAgentsHierarchie(a, b) {
-    const fA = normaliserTexte(a.fonction);
-    const fB = normaliserTexte(b.fonction);
-    let idxFA = ORDRE_FONCTIONS.indexOf(fA); let idxFB = ORDRE_FONCTIONS.indexOf(fB);
-    if (idxFA === -1) idxFA = 999; if (idxFB === -1) idxFB = 999;
-    if (idxFA !== idxFB) return idxFA - idxFB;
+    const ordreFonction = {
+        'CDC': 1, 'ACDC': 2, 'ACDG1': 3, 'ACDG2': 4, 'CDG': 5,
+        'CATE': 6, 'CA1E': 7, 'CEQU': 8, 'EQU': 9
+    };
+    
+    const fnA = normaliserTexte(a.fonction);
+    const fnB = normaliserTexte(b.fonction);
+    const rangA = ordreFonction[fnA] || 99;
+    const rangB = ordreFonction[fnB] || 99;
 
-    const gA = normaliserTexte(a.grade); const gB = normaliserTexte(b.grade);
-    let idxGA = ORDRE_GRADES.indexOf(gA); let idxGB = ORDRE_GRADES.indexOf(gB);
-    if (idxGA === -1) idxGA = 999; if (idxGB === -1) idxGB = 999;
-    if (idxGA !== idxGB) return idxGA - idxGB;
+    if (rangA !== rangB) return rangA - rangB;
 
-    const nomA = normaliserTexte(a.nom); const nomB = normaliserTexte(b.nom);
+    const nomA = normaliserTexte(a.nom);
+    const nomB = normaliserTexte(b.nom);
     if (nomA !== nomB) return nomA.localeCompare(nomB);
     return normaliserTexte(a.prenom).localeCompare(normaliserTexte(b.prenom));
 }
@@ -120,8 +101,9 @@ function calculerStatsEquipe(membres) {
     };
 }
 
+// GÉNÉRATION DES BADGES TRIS PAR ORDRE ALPHABÉTIQUE
 function genererBadgesHTML(dictionnaire, couleurHex) {
-    const cles = Object.keys(dictionnaire);
+    const cles = Object.keys(dictionnaire).sort((a, b) => a.localeCompare(b));
     if (cles.length === 0) return '<span style="color:#64748b; font-size:0.65rem;">Aucune</span>';
     return cles.map(k => `<span class="tag-detail" style="border-color:${couleurHex}; color:${couleurHex};">${k}:<b>${dictionnaire[k]}</b></span>`).join(" ");
 }
@@ -131,32 +113,41 @@ function rendreEquipes() {
 
     lettresEquipes.forEach(lettre => {
         const membres = agentsLocaux.filter(a => extraireLettreEquipe(a.equipe) === lettre);
+        
+        // TRI HIÉRARCHIQUE DES AGENTS
         membres.sort(trierAgentsHierarchie);
 
         const s = calculerStatsEquipe(membres);
         
-        document.getElementById(`count-${lettre}`).innerText = s.nb;
-        document.getElementById(`stats-${lettre}`).innerHTML = `
-            <div class="stat-badge full-width"><span class="stat-label">Agents:</span> <span class="stat-value">${s.nb}</span></div>
-            <div class="stat-badge"><span class="stat-label">Femmes:</span> <span class="stat-value">${s.nbF} (${s.pctF}%)</span></div>
-            <div class="stat-badge"><span class="stat-label">Âge moy:</span> <span class="stat-value">${s.ageMoy} ans</span></div>
-            <div class="stat-badge"><span class="stat-label">CDG/ACDG:</span> <span class="stat-value">${s.cdg}</span></div>
-            <div class="stat-badge"><span class="stat-label">CATE:</span> <span class="stat-value">${s.cate}</span></div>
-            <div class="stat-badge"><span class="stat-label">CA1E:</span> <span class="stat-value">${s.ca1e}</span></div>
-            <div class="stat-badge"><span class="stat-label">CEQU:</span> <span class="stat-value">${s.cequ}</span></div>
-            <div class="stat-badge full-width"><span class="stat-label">EQU:</span> <span class="stat-value">${s.equ}</span></div>
-            
-            <div class="stat-section-title">Spécialités :</div>
-            <div class="stat-badge-container">${genererBadgesHTML(s.dicSpecs, '#60a5fa')}</div>
+        const countEl = document.getElementById(`count-${lettre}`);
+        if (countEl) countEl.innerText = s.nb;
 
-            <div class="stat-section-title">Compétences :</div>
-            <div class="stat-badge-container">${genererBadgesHTML(s.dicComps, '#34d399')}</div>
+        const statsEl = document.getElementById(`stats-${lettre}`);
+        if (statsEl) {
+            statsEl.innerHTML = `
+                <div class="stat-badge full-width"><span class="stat-label">Agents:</span> <span class="stat-value">${s.nb}</span></div>
+                <div class="stat-badge"><span class="stat-label">Femmes:</span> <span class="stat-value">${s.nbF} (${s.pctF}%)</span></div>
+                <div class="stat-badge"><span class="stat-label">Âge moy:</span> <span class="stat-value">${s.ageMoy} ans</span></div>
+                <div class="stat-badge"><span class="stat-label">CDG/ACDG:</span> <span class="stat-value">${s.cdg}</span></div>
+                <div class="stat-badge"><span class="stat-label">CATE:</span> <span class="stat-value">${s.cate}</span></div>
+                <div class="stat-badge"><span class="stat-label">CA1E:</span> <span class="stat-value">${s.ca1e}</span></div>
+                <div class="stat-badge"><span class="stat-label">CEQU:</span> <span class="stat-value">${s.cequ}</span></div>
+                <div class="stat-badge full-width"><span class="stat-label">EQU:</span> <span class="stat-value">${s.equ}</span></div>
+                
+                <div class="stat-section-title">Spécialités (A-Z) :</div>
+                <div class="stat-badge-container">${genererBadgesHTML(s.dicSpecs, '#60a5fa')}</div>
 
-            <div class="stat-section-title">Départements Domicile :</div>
-            <div class="stat-badge-container">${genererBadgesHTML(s.dicDept, '#f59e0b')}</div>
-        `;
+                <div class="stat-section-title">Compétences (A-Z) :</div>
+                <div class="stat-badge-container">${genererBadgesHTML(s.dicComps, '#34d399')}</div>
+
+                <div class="stat-section-title">Départements Domicile :</div>
+                <div class="stat-badge-container">${genererBadgesHTML(s.dicDept, '#f59e0b')}</div>
+            `;
+        }
 
         const container = document.getElementById(`container-${lettre}`);
+        if (!container) return;
+
         container.innerHTML = "";
         membres.forEach(agent => {
             const specs = agent.specialites ? `<span class="agent-spec">[${agent.specialites}]</span>` : '';
@@ -166,7 +157,7 @@ function rendreEquipes() {
                     <div class="agent-info-compact">
                         <span class="agent-nom">${(agent.nom || '').toUpperCase()} ${agent.prenom || ''}</span>
                         <div class="agent-details">
-                            <span>${agent.fonction || 'Agent'}</span>
+                            <span style="font-weight:bold; color:#f8fafc;">${agent.fonction || 'Agent'}</span>
                             <span>${agent.grade || '-'}</span>
                             <span style="color:#f59e0b;">Dép:${dep}</span>
                             ${specs}
@@ -185,18 +176,17 @@ function rendreEquipes() {
     });
 }
 
-// ALGORITHME MULTI-CRITÈRES D'ÉQUILIBRAGE
 function suggererReequilibrage() {
     propositionsEnAttente = [];
     let tempAgents = JSON.parse(JSON.stringify(agentsLocaux));
     const lettresEquipes = ['A', 'B', 'C'];
 
-    const pCmd = parseInt(document.getElementById("poids-cmd")?.value || 5);
-    const pSpec = parseInt(document.getElementById("poids-spec")?.value || 4);
-    const specCible = document.getElementById("spec-cible")?.value || "TOUTES";
-    const pDept = parseInt(document.getElementById("poids-dept")?.value || 3);
-    const pAge = parseInt(document.getElementById("poids-age")?.value || 3);
-    const pGenre = parseInt(document.getElementById("poids-genre")?.value || 2);
+    const pCmd = parseInt(document.getElementById("poids-cmd")?.value || 10);
+    const pSpec = parseInt(document.getElementById("poids-spec")?.value || 8);
+    const pComp = parseInt(document.getElementById("poids-comp")?.value || 6);
+    const pDept = parseInt(document.getElementById("poids-dept")?.value || 5);
+    const pAge = parseInt(document.getElementById("poids-age")?.value || 5);
+    const pGenre = parseInt(document.getElementById("poids-genre")?.value || 4);
 
     let stats = {};
 
@@ -217,7 +207,7 @@ function suggererReequilibrage() {
     }
 
     // 2. Commandement (CATE / CA1E)
-    if (pCmd >= 3) {
+    if (pCmd >= 4) {
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
         let eqTropCATE = lettresEquipes.reduce((a,b) => stats[a].cate > stats[b].cate ? a : b);
         let eqPasAssezCATE = lettresEquipes.reduce((a,b) => stats[a].cate < stats[b].cate ? a : b);
@@ -236,36 +226,24 @@ function suggererReequilibrage() {
         }
     }
 
-    // 3. Spécialités & Compétences ciblées ou globales
-    if (pSpec >= 2) {
+    // 3. Spécialités
+    if (pSpec >= 3) {
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
-        
-        let listeSpecsATraiter = [];
-        if (specCible !== "TOUTES") {
-            listeSpecsATraiter = [specCible];
-        } else {
-            let toutes = new Set();
-            lettresEquipes.forEach(l => {
-                Object.keys(stats[l].dicSpecs).forEach(s => toutes.add(s));
-                Object.keys(stats[l].dicComps).forEach(c => toutes.add(c));
-            });
-            listeSpecsATraiter = Array.from(toutes);
-        }
+        let toutesSpecs = new Set();
+        lettresEquipes.forEach(l => Object.keys(stats[l].dicSpecs).forEach(s => toutesSpecs.add(s)));
 
-        listeSpecsATraiter.forEach(specName => {
-            const getCount = (st) => (st.dicSpecs[specName] || 0) + (st.dicComps[specName] || 0);
+        toutesSpecs.forEach(specName => {
+            let eqRich = lettresEquipes.reduce((a,b) => (stats[a].dicSpecs[specName]||0) > (stats[b].dicSpecs[specName]||0) ? a : b);
+            let eqPauvre = lettresEquipes.reduce((a,b) => (stats[a].dicSpecs[specName]||0) < (stats[b].dicSpecs[specName]||0) ? a : b);
 
-            let eqRich = lettresEquipes.reduce((a,b) => getCount(stats[a]) > getCount(stats[b]) ? a : b);
-            let eqPauvre = lettresEquipes.reduce((a,b) => getCount(stats[a]) < getCount(stats[b]) ? a : b);
-
-            if (getCount(stats[eqRich]) - getCount(stats[eqPauvre]) >= 2) {
-                let specAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqRich && !a.verrouille && (extraireItems(a.specialites).includes(specName) || extraireItems(a.competences).includes(specName)));
+            if ((stats[eqRich].dicSpecs[specName]||0) - (stats[eqPauvre].dicSpecs[specName]||0) >= 2) {
+                let specAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqRich && !a.verrouille && extraireItems(a.specialites).includes(specName));
                 let nonSpecAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqPauvre && !a.verrouille && normaliserTexte(a.fonction) === normaliserTexte(specAgent?.fonction));
 
                 if (specAgent && nonSpecAgent) {
                     propositionsEnAttente.push({
                         type: 'ECHANGE', a1: specAgent, a2: nonSpecAgent,
-                        motif: `Rééquilibrage de la spécialité/compétence [${specName}]`
+                        motif: `Rééquilibrage de la spécialité [${specName}]`
                     });
                     specAgent.equipe = `Équipe ${eqPauvre}`; nonSpecAgent.equipe = `Équipe ${eqRich}`;
                 }
@@ -273,10 +251,34 @@ function suggererReequilibrage() {
         });
     }
 
-    // 4. Départements de domiciliation
-    if (pDept >= 2) {
+    // 4. Compétences
+    if (pComp >= 3) {
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
-        
+        let toutesComps = new Set();
+        lettresEquipes.forEach(l => Object.keys(stats[l].dicComps).forEach(c => toutesComps.add(c)));
+
+        toutesComps.forEach(compName => {
+            let eqRich = lettresEquipes.reduce((a,b) => (stats[a].dicComps[compName]||0) > (stats[b].dicComps[compName]||0) ? a : b);
+            let eqPauvre = lettresEquipes.reduce((a,b) => (stats[a].dicComps[compName]||0) < (stats[b].dicComps[compName]||0) ? a : b);
+
+            if ((stats[eqRich].dicComps[compName]||0) - (stats[eqPauvre].dicComps[compName]||0) >= 2) {
+                let compAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqRich && !a.verrouille && extraireItems(a.competences).includes(compName));
+                let nonCompAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqPauvre && !a.verrouille && normaliserTexte(a.fonction) === normaliserTexte(compAgent?.fonction));
+
+                if (compAgent && nonCompAgent) {
+                    propositionsEnAttente.push({
+                        type: 'ECHANGE', a1: compAgent, a2: nonCompAgent,
+                        motif: `Rééquilibrage de la compétence [${compName}]`
+                    });
+                    compAgent.equipe = `Équipe ${eqPauvre}`; nonCompAgent.equipe = `Équipe ${eqRich}`;
+                }
+            }
+        });
+    }
+
+    // 5. Départements
+    if (pDept >= 3) {
+        lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
         let tousDepts = new Set();
         lettresEquipes.forEach(l => Object.keys(stats[l].dicDept).forEach(d => { if(d !== "ND") tousDepts.add(d); }));
 
@@ -299,8 +301,8 @@ function suggererReequilibrage() {
         });
     }
 
-    // 5. Parité Homme/Femme
-    if (pGenre >= 3) {
+    // 6. Genre
+    if (pGenre >= 4) {
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
         let eqMaxF = lettresEquipes.reduce((a,b) => stats[a].nbF > stats[b].nbF ? a : b);
         let eqMinF = lettresEquipes.reduce((a,b) => stats[a].nbF < stats[b].nbF ? a : b);
@@ -327,6 +329,8 @@ function afficherPropositions() {
         return;
     }
     const listeUI = document.getElementById("liste-propositions");
+    if (!listeUI) return;
+
     listeUI.innerHTML = propositionsEnAttente.map(p => {
         if (p.type === 'TRANSFERT') {
             return `<li style="margin-bottom:10px;">➡️ Transférer <b>${p.a1.nom}</b> vers l'<b>Équipe ${p.eqCible}</b><br><span style="font-size:0.75rem; color:#94a3b8;">Motif: ${p.motif}</span></li>`;
@@ -337,23 +341,33 @@ function afficherPropositions() {
     document.getElementById("modal-transferts").style.display = "flex";
 }
 
-function fermerModal() { document.getElementById("modal-transferts").style.display = "none"; }
+function fermerModal() { 
+    document.getElementById("modal-transferts").style.display = "none"; 
+}
 
 function appliquerPropositions() {
     propositionsEnAttente.forEach(p => {
         if (p.type === 'TRANSFERT') {
-            agentsLocaux.find(a => a.idUnique === p.a1.idUnique).equipe = `Équipe ${p.eqCible}`;
+            const a = agentsLocaux.find(item => item.idUnique === p.a1.idUnique);
+            if (a) a.equipe = `Équipe ${p.eqCible}`;
         } else if (p.type === 'ECHANGE') {
             const eq1 = p.a1.equipe;
-            agentsLocaux.find(a => a.idUnique === p.a1.idUnique).equipe = p.a2.equipe;
-            agentsLocaux.find(a => a.idUnique === p.a2.idUnique).equipe = eq1;
+            const a1 = agentsLocaux.find(item => item.idUnique === p.a1.idUnique);
+            const a2 = agentsLocaux.find(item => item.idUnique === p.a2.idUnique);
+            if (a1 && a2) {
+                a1.equipe = p.a2.equipe;
+                a2.equipe = eq1;
+            }
         }
     });
     
     const baseComplete = JSON.parse(localStorage.getItem("baseAgents") || "[]");
     agentsLocaux.forEach(modifié => {
         const idxBase = baseComplete.findIndex(a => a.matricule === modifié.matricule || (a.nom === modifié.nom && a.prenom === modifié.prenom));
-        if (idxBase !== -1) baseComplete[idxBase].equipe = modifié.equipe;
+        if (idxBase !== -1) {
+            baseComplete[idxBase].equipe = modifié.equipe;
+            baseComplete[idxBase].verrouille = modifié.verrouille;
+        }
     });
     localStorage.setItem("baseAgents", JSON.stringify(baseComplete));
 
@@ -362,12 +376,18 @@ function appliquerPropositions() {
 }
 
 function basculerVerrou(idUnique) {
-    agentsLocaux.find(a => a.idUnique === idUnique).verrouille ^= true;
-    rendreEquipes();
+    const a = agentsLocaux.find(item => item.idUnique === idUnique);
+    if (a) {
+        a.verrouille = !a.verrouille;
+        rendreEquipes();
+    }
 }
 
 function deplacerAgent(idUnique, nouvelleEquipe) {
     if (!nouvelleEquipe) return;
-    agentsLocaux.find(a => a.idUnique === idUnique).equipe = nouvelleEquipe;
-    rendreEquipes();
+    const a = agentsLocaux.find(item => item.idUnique === idUnique);
+    if (a) {
+        a.equipe = nouvelleEquipe;
+        rendreEquipes();
+    }
 }
