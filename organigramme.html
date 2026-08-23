@@ -2,50 +2,67 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Organigramme du CIS</title>
-    <!-- CSS de Vis.js pour le réseau/mindmap -->
-    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <title>Organigramme des Effectifs - CIS</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: #0f172a;
-            color: white;
-            overflow: hidden;
-        }
-        #header {
-            padding: 15px 20px;
-            background: #1e293b;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #334155;
-        }
-        .btn-retour {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        #mindmap {
-            width: 100vw;
-            height: calc(100vh - 65px);
-        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { margin: 0; background-color: #0f172a; color: #f8fafc; padding: 20px; }
+
+        /* En-tête */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #334155; }
+        h1 { margin: 0; font-size: 1.5rem; color: #f8fafc; }
+        .btn-retour { background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; text-decoration: none; font-weight: bold; }
+
+        /* Zone de filtres */
+        .filtres-container { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; background: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; }
+        .filtre-btn { background: #334155; color: #cbd5e1; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
+        .filtre-btn:hover { background: #475569; color: white; }
+        .filtre-btn.active { background: #ef4444; color: white; }
+
+        /* Structure en colonnes (Grille Équipes) */
+        .grille-equipes { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 15px; align-items: flex-start; }
+        .colonne-equipe { flex: 1; min-width: 260px; max-width: 320px; background: #1e293b; border-radius: 8px; border: 1px solid #334155; padding: 12px; }
+        .colonne-titre { text-align: center; font-size: 1.1rem; font-weight: bold; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 2px solid #ef4444; color: #f8fafc; display: flex; justify-content: space-between; align-items: center; }
+        .badge-compteur { background: #334155; font-size: 0.8rem; padding: 2px 8px; border-radius: 12px; }
+
+        /* Cartes Agent */
+        .carte-agent { background: #0f172a; border-left: 4px solid #94a3b8; border-radius: 6px; padding: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .carte-agent.spp { border-left-color: #ef4444; } /* SPP en Rouge */
+        .carte-agent.spv { border-left-color: #3b82f6; } /* SPV en Bleu */
+        .carte-agent.encadrement { border-left-color: #eab308; background: #1e1b4b; } /* Encadrement spécial */
+
+        .carte-header { display: flex; justify-content: space-between; font-size: 0.8rem; color: #94a3b8; font-weight: bold; margin-bottom: 4px; }
+        .carte-nom { font-size: 1rem; font-weight: bold; color: #f8fafc; margin-bottom: 4px; }
+        .carte-details { font-size: 0.85rem; color: #cbd5e1; display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .carte-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+        
+        .badge { font-size: 0.7rem; font-weight: bold; padding: 2px 5px; border-radius: 4px; }
+        .badge-statut { background: #334155; color: #f8fafc; }
+        .badge-suap { background: #c6f6d5; color: #22543d; }
+        .badge-autre { background: #e2e8f0; color: #2d3748; }
     </style>
 </head>
 <body>
 
-    <div id="header">
-        <h2>🧠 Organigramme du Centre de Secours</h2>
+    <header>
+        <h1>🚒 Organigramme des Effectifs</h1>
         <a href="index.html" class="btn-retour">⬅️ Retour au Tableau RH</a>
+    </header>
+
+    <!-- Filtres rapides -->
+    <div class="filtres-container">
+        <span style="font-weight:bold; color:#94a3b8; margin-right:10px;">Filtrer par :</span>
+        <button class="filtre-btn active" onclick="filtrerEffectifs('TOUT', this)">Tous</button>
+        <button class="filtre-btn" onclick="filtrerEffectifs('ENCADREMENT', this)">👑 Encadrement</button>
+        <button class="filtre-btn" onclick="filtrerEffectifs('SPP', this)">🔴 SPP (Tous)</button>
+        <button class="filtre-btn" onclick="filtrerEffectifs('Équipe A', this)">Équipe A</button>
+        <button class="filtre-btn" onclick="filtrerEffectifs('Équipe B', this)">Équipe B</button>
+        <button class="filtre-btn" onclick="filtrerEffectifs('Équipe C', this)">Équipe C</button>
+        <button class="filtre-btn" onclick="filtrerEffectifs('G12', this)">G12</button>
+        <button class="filtre-btn" onclick="filtrerEffectifs('SPV', this)">🔵 SPV</button>
     </div>
 
-    <div id="mindmap"></div>
+    <!-- Conteneur des colonnes -->
+    <div id="grille-equipes" class="grille-equipes"></div>
 
     <script src="script_organigramme.js"></script>
 </body>
