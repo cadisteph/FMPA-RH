@@ -100,8 +100,8 @@ function genererControlesDynamiques() {
 function trierAgentsHierarchie(a, b) {
     const fA = normaliserTexte(a.fonction);
     const fB = normaliserTexte(b.fonction);
-    let idxFA = ORDRE_FONCTIONS.indexOf(fA);
-    let idxFB = ORDRE_FONCTIONS.indexOf(fB);
+     idxFA = ORDRE_FONCTIONS.indexOf(fA);
+     idxFB = ORDRE_FONCTIONS.indexOf(fB);
     
     if (idxFA === -1) idxFA = 999;
     if (idxFB === -1) idxFB = 999;
@@ -149,10 +149,10 @@ function genererBadgesHTML(dictionnaire, couleurHex) {
 }
 
 function rendreEquipes() {
-    const lettresEquipes = ['A', 'B', 'C'];
+    const tresEquipes = ['A', 'B', 'C'];
 
-    lettresEquipes.forEach(lettre => {
-        const membres = agentsLocaux.filter(a => extraireLettreEquipe(a.equipe) === lettre);
+    tresEquipes.forEach(tre => {
+        const membres = agentsLocaux.filter(a => extrairetreEquipe(a.equipe) === tre);
         membres.sort(trierAgentsHierarchie);
 
         const s = calculerStatsEquipe(membres);
@@ -219,21 +219,59 @@ function suggererReequilibrage() {
 
     let stats = {};
 
-    // 1. Effectif brut
-    lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
-    let eqTriees = [...lettresEquipes].sort((a,b) => stats[b].nb - stats[a].nb);
-    let eqMax = eqTriees[0], eqMin = eqTriees[2];
+    // 1. Effectif brut (Correction pour forcer l'équilibre cible)
+let totalAgents = tempAgents.filter(a => !a.verrouille).length; // Ne compte que les agents mobiles
+let effectifCible = Math.floor(totalAgents / 3);
+let reste = totalAgents % 3; // Sera 0, 1, ou 2
 
-    if (stats[eqMax].nb - stats[eqMin].nb >= 2) {
-        let candidat = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqMax && !a.verrouille && normaliserTexte(a.fonction) === 'EQU');
-        if (candidat) {
-            propositionsEnAttente.push({ 
-                type: 'TRANSFERT', a1: candidat, eqCible: eqMin, 
-                motif: `Rééquilibrage de l'effectif global (+1 agent)` 
-            });
-            candidat.equipe = `Équipe ${eqMin}`;
-        }
+lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
+
+// On boucle pour proposer des transferts tant que l'équilibre n'est pas atteint
+let desequilibre = true;
+let iterations = 0; // Sécurité pour éviter une boucle infinie
+
+while (desequilibre && iterations < 10) {
+    iterations++;
+    desequilibre = false;
+    
+    // Recalculer les stats à chaque itération (virtuellement)
+    lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
+    
+    let eqTriees = [...lettresEquipes].sort((a,b) => stats[b].nb - stats[a].nb);
+    let eqMax = eqTriees[0];
+    let eqMin = eqTriees[2];
+
+    // Vérifier si eqMax a plus d'agents que l'effectif cible (plus le reste éventuel)
+    // Et si eqMin a moins d'agents que l'effectif cible
+    let seuilMax = effectifCible + (reste > 0 ? 1 : 0); // Les plus grosses équipes peuvent avoir effectifCible + 1
+    
+    if (stats[eqMax].nb > seuilMax || stats[eqMin].nb < effectifCible) {
+         // Il y a un déséquilibre
+         if (stats[eqMax].nb - stats[eqMin].nb >= 2 || stats[eqMin].nb < effectifCible) {
+             desequilibre = true;
+             
+             // Trouver un candidat 'EQU' non verrouillé dans l'équipe max
+             let candidat = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqMax && !a.verrouille && normaliserTexte(a.fonction) === 'EQU');
+             
+             // Si on ne trouve pas d'EQU, on cherche n'importe qui (optionnel, selon ta logique métier)
+             if (!candidat) {
+                 candidat = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqMax && !a.verrouille);
+             }
+
+             if (candidat) {
+                 propositionsEnAttente.push({ 
+                     type: 'TRANSFERT', a1: candidat, eqCible: eqMin, 
+                     motif: `Rééquilibrage de l'effectif global pour atteindre la cible (${effectifCible} à ${seuilMax})` 
+                 });
+                 // On applique virtuellement le transfert pour la prochaine itération de la boucle
+                 candidat.equipe = `Équipe ${eqMin}`;
+             } else {
+                 // Impossible de trouver un candidat non verrouillé, on arrête d'essayer
+                 desequilibre = false; 
+             }
+         }
     }
+}
 
     // 2. Commandement
     if (pCmd >= 1) {
