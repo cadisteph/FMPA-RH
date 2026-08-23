@@ -1,106 +1,120 @@
+let tousLesAgents = [];
+let filtreActuel = 'TOUT';
+
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Récupération des agents sauvegardés par la page principale
+    // 1. Récupération des données sauvegardées
     const donneesAgents = localStorage.getItem("baseAgents");
 
     if (!donneesAgents) {
-        alert("⚠️ Aucune donnée d'agent trouvée. Veuillez d'abord ouvrir la page RH (index.html) pour charger le tableau.");
+        alert("⚠️ Aucune donnée d'agent trouvée dans le navigateur. Ouvrez d'abord la page RH principale.");
         return;
     }
 
-    const listeAgents = JSON.parse(donneesAgents);
-
-    // 2. Génération de la Mind Map
-    construireMindMap(listeAgents);
+    tousLesAgents = JSON.parse(donneesAgents);
+    afficherColonnes();
 });
 
-// Garder la fonction construireMindMap() inchangée ci-dessous...
+function filtrerEffectifs(filtre, bouton) {
+    filtreActuel = filtre;
+    
+    // Gestion des classes actives sur les boutons
+    document.querySelectorAll('.filtre-btn').forEach(btn => btn.classList.remove('active'));
+    if (bouton) bouton.classList.add('active');
 
-// Fonction pour découper le CSV (séparateur point-virgule)
-function analyserCSV(texte) {
-    const lignes = texte.trim().split("\n");
-    if (lignes.length < 2) return [];
-
-    // Détection des en-têtes
-    const entetes = lignes[0].split(";").map(e => e.trim().toLowerCase());
-    const agents = [];
-
-    for (let i = 1; i < lignes.length; i++) {
-        if (!lignes[i].trim()) continue;
-        
-        const valeurs = lignes[i].split(";").map(v => v.trim());
-        const agent = {};
-
-        entetes.forEach((entete, index) => {
-            agent[entete] = valeurs[index] || "";
-        });
-
-        agents.push(agent);
-    }
-    return agents;
+    afficherColonnes();
 }
 
-// Fonction pour afficher la Mind Map
-function construireMindMap(listeAgents) {
-    const nodes = [];
-    const edges = [];
+function afficherColonnes() {
+    const conteneur = document.getElementById("grille-equipes");
+    conteneur.innerHTML = "";
 
-    // 1. Nœud Central
-    nodes.push({ 
-        id: "CIS", 
-        label: "🚒 Centre de Secours", 
-        shape: "ellipse", 
-        color: "#ef4444", 
-        font: { color: "white", size: 22, face: "arial" } 
-    });
+    // Application du filtre sur les agents
+    let agentsFiltres = tousLesAgents.filter(agent => {
+        const statut = (agent.statut || '').toUpperCase();
+        const equipe = (agent.equipe || '').trim();
+        const fonction = (agent.fonction || '').toLowerCase();
 
-    // 2. Nœuds de Branches Principales
-    nodes.push({ id: "BRANCH_ENC", label: "🏢 Encadrement", shape: "box", color: "#3b82f6", font: { color: "white" } });
-    edges.push({ from: "CIS", to: "BRANCH_ENC", length: 160 });
-
-    nodes.push({ id: "BRANCH_EQ", label: "🚒 Équipes & Gardes", shape: "box", color: "#10b981", font: { color: "white" } });
-    edges.push({ from: "CIS", to: "BRANCH_EQ", length: 160 });
-
-    // 3. Extraction des équipes à partir du CSV
-    const equipesUniques = [...new Set(listeAgents.map(a => a.equipe).filter(e => e && e.trim() !== ""))];
-
-    equipesUniques.forEach(eq => {
-        const eqId = `EQ_${eq}`;
-        nodes.push({ id: eqId, label: `Équipe ${eq}`, shape: "box", color: "#059669", font: { color: "white" } });
-        edges.push({ from: "BRANCH_EQ", to: eqId });
-    });
-
-    // 4. Positionnement des agents
-    listeAgents.forEach((agent, idx) => {
-        const agentId = `AGENT_${idx}`;
-        const grade = agent.grade ? `${agent.grade} ` : '';
-        const nomComplet = `${grade}${ (agent.nom || '').toUpperCase() } ${agent.prenom || ''}\n(${agent.fonction || 'Agent'})`;
-
-        const fonctionTxt = (agent.fonction || '').toLowerCase();
-        const estEncadrement = fonctionTxt.includes('chef') || fonctionTxt.includes('adjoint') || fonctionTxt.includes('bureau') || fonctionTxt.includes('responsable');
-
-        if (estEncadrement) {
-            nodes.push({ id: agentId, label: nomComplet, shape: "ellipse", color: "#60a5fa" });
-            edges.push({ from: "BRANCH_ENC", to: agentId });
-        } else if (agent.equipe) {
-            nodes.push({ id: agentId, label: nomComplet, shape: "ellipse", color: "#34d399" });
-            edges.push({ from: `EQ_${agent.equipe}`, to: agentId });
+        if (filtreActuel === 'TOUT') return true;
+        if (filtreActuel === 'ENCADREMENT') {
+            return fonction.includes('chef') || fonction.includes('adjoint') || fonction.includes('bureau') || fonction.includes('responsable');
         }
+        if (filtreActuel === 'SPP') return statut.includes('SPP');
+        if (filtreActuel === 'SPV') return statut.includes('SPV');
+        
+        // Filtre par équipe précise (ex: Équipe A, Équipe B, Équipe C, G12)
+        return equipe.toLowerCase() === filtreActuel.toLowerCase();
     });
 
-    // 5. Initialisation du réseau Vis.js
-    const container = document.getElementById("mindmap");
-    const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
-    
-    const options = {
-        physics: {
-            barnesHut: {
-                gravitationalConstant: -4000,
-                centralGravity: 0.3,
-                springLength: 100
-            }
-        },
-        interaction: { hover: true, zoomView: true, dragNodes: true }
-    };
+    // Récupération de la liste des équipes uniques présentes dans le résultat filtré
+    let equipes = [...new Set(agentsFiltres.map(a => a.equipe ? a.equipe.trim() : "Non Affecté"))];
+    equipes.sort();
 
-    new vis.Network(container, data, options);
+    // Si le filtre Encadrement est sélectionné, regrouper dans une colonne dédiée
+    if (filtreActuel === 'ENCADREMENT') {
+        equipes = ["Encadrement & Direction"];
+    }
+
+    equipes.forEach(nomEquipe => {
+        let membres = [];
+        if (filtreActuel === 'ENCADREMENT') {
+            membres = agentsFiltres;
+        } else {
+            membres = agentsFiltres.filter(a => (a.equipe ? a.equipe.trim() : "Non Affecté") === nomEquipe);
+        }
+
+        // Création du HTML de la colonne
+        const col = document.createElement("div");
+        col.className = "colonne-equipe";
+
+        let html = `
+            <div class="colonne-titre">
+                <span>${nomEquipe}</span>
+                <span class="badge-compteur">${membres.length}</span>
+            </div>
+            <div class="cartes-container">
+        `;
+
+        membres.forEach(agent => {
+            const estSPP = (agent.statut || '').toUpperCase().includes('SPP');
+            const classeStatut = estSPP ? 'spp' : 'spv';
+            const grade = agent.grade || '-';
+            const fonction = agent.fonction || 'Agent';
+            const tpEng = agent.engagement || agent.tempsPartiel || '';
+
+            html += `
+                <div class="carte-agent ${classeStatut}">
+                    <div class="carte-header">
+                        <span>${grade}</span>
+                        <span class="badge badge-statut">${agent.statut || 'SPP'}</span>
+                    </div>
+                    <div class="carte-nom">${agent.nom.toUpperCase()} ${agent.prenom}</div>
+                    <div class="carte-details">
+                        <span>${fonction}</span>
+                        <span style="color:#60a5fa; font-weight:bold;">${tpEng}</span>
+                    </div>
+                    <div class="carte-badges">
+                        ${genererBadgesHTML(agent.specialites)}
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+        col.innerHTML = html;
+        conteneur.appendChild(col);
+    });
+}
+
+// Fonction pour afficher les badges des spécialités (ex: SUAP)
+function genererBadgesHTML(chaineTxt) {
+    if (!chaineTxt || chaineTxt.trim() === "") return "";
+
+    return chaineTxt.split(",")
+        .map(i => i.trim())
+        .filter(i => i.length > 0)
+        .map(b => {
+            const estSUAP = (b.toUpperCase() === "SUAP");
+            const classeBadge = estSUAP ? "badge-suap" : "badge-autre";
+            return `<span class="badge ${classeBadge}">${b}</span>`;
+        }).join("");
 }
