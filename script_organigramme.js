@@ -112,7 +112,11 @@ function afficherColonnes() {
             return estAgentEncadrement(agent) || fonctionsEncadrement.includes(fn);
         }
         
-        if (filtreNorm === 'SPP') return statut.includes('SPP');
+        // Filtre SPP (Garde) : Uniquement SPP qui ne sont PAS dans l'encadrement
+        if (filtreNorm === 'SPP_GARDE' || filtreNorm === 'SPP GARDE' || filtreNorm === 'SPP') {
+            return statut.includes('SPP') && !estAgentEncadrement(agent);
+        }
+
         if (filtreNorm === 'SPV') return statut.includes('SPV');
 
         // Filtre d'une équipe spécifique (ex: Équipe A)
@@ -127,14 +131,16 @@ function afficherColonnes() {
 
     if (filtreNorm === 'ENCADREMENT') {
         listeColonnes = [{ titre: "Encadrement", identifiant: "ENCADREMENT" }];
-    } else if (filtreNorm !== 'TOUT' && filtreNorm !== 'SPP' && filtreNorm !== 'SPV') {
+    } else if (filtreNorm !== 'TOUT' && filtreNorm !== 'SPP' && filtreNorm !== 'SPP_GARDE' && filtreNorm !== 'SPP GARDE' && filtreNorm !== 'SPV') {
         // Filtre d'équipe précis sélectionné
         listeColonnes = [{ titre: filtreActuel, identifiant: filtreNorm }];
     } else {
-        // Mode "TOUT", "SPP" ou "SPV"
-        // A. Première colonne : Encadrement (seulement les SPP)
+        // Mode "TOUT", "SPP (Garde)" ou "SPV"
+        // A. Première colonne : Encadrement (masquée pour le filtre SPP Garde)
+        const estFiltreSPPGarde = (filtreNorm === 'SPP_GARDE' || filtreNorm === 'SPP GARDE' || filtreNorm === 'SPP');
         const aDesCadres = agentsFiltres.some(a => estAgentEncadrement(a));
-        if (aDesCadres) {
+
+        if (aDesCadres && !estFiltreSPPGarde) {
             listeColonnes.push({ titre: "Encadrement", identifiant: "ENCADREMENT" });
         }
 
@@ -165,7 +171,7 @@ function afficherColonnes() {
         } else {
             const idNorm = colInfo.identifiant;
             membres = agentsFiltres.filter(a => {
-                if (estAgentEncadrement(a)) return false; // Ne remet pas les cadres SPP dans les autres colonnes
+                if (estAgentEncadrement(a)) return false; // Ne remet pas les cadres dans les autres colonnes
                 
                 const eq = normaliserTexte(a.equipe);
                 const termeCol = idNorm.replace("EQUIPE", "").trim();
@@ -191,38 +197,38 @@ function afficherColonnes() {
             <div class="cartes-container">
         `;
 
-membres.forEach(agent => {
-    const statutNorm = normaliserTexte(agent.statut);
-    
-    // Détermination de la couleur de bordure (SPP = Bleu, SPV = Vert, PATS = Rose)
-    let classeStatut = 'spp';
-    if (statutNorm.includes('SPV')) {
-        classeStatut = 'spv';
-    } else if (statutNorm.includes('PATS')) {
-        classeStatut = 'pats';
-    }
-
-    const grade = agent.grade || '-';
-    const fonction = agent.fonction || 'Agent';
-    const tpEng = agent.engagement || agent.tempsPartiel || '';
-
-    html += `
-        <div class="carte-agent ${classeStatut}">
-            <div class="carte-header">
-                <span>${grade}</span>
-                <span class="badge badge-statut">${agent.statut || 'SPP'}</span>
-            </div>
-            <div class="carte-nom">${(agent.nom || '').toUpperCase()} ${agent.prenom || ''}</div>
-            <div class="carte-details">
-                <span class="fonction-tag">${fonction}</span>
-                <span style="color:#60a5fa; font-weight:bold;">${tpEng}</span>
-            </div>
+        membres.forEach(agent => {
+            const statutNorm = normaliserTexte(agent.statut);
             
-            ${genererBadgesHTML(agent.specialites, 'specialite')}
-            ${genererBadgesHTML(agent.competences, 'competence')}
-        </div>
-    `;
-});
+            // Détermination de la couleur de bordure (SPP = Bleu, SPV = Vert, PATS = Rose)
+            let classeStatut = 'spp';
+            if (statutNorm.includes('SPV')) {
+                classeStatut = 'spv';
+            } else if (statutNorm.includes('PATS')) {
+                classeStatut = 'pats';
+            }
+
+            const grade = agent.grade || '-';
+            const fonction = agent.fonction || 'Agent';
+            const tpEng = agent.engagement || agent.tempsPartiel || '';
+
+            html += `
+                <div class="carte-agent ${classeStatut}">
+                    <div class="carte-header">
+                        <span>${grade}</span>
+                        <span class="badge badge-statut">${agent.statut || 'SPP'}</span>
+                    </div>
+                    <div class="carte-nom">${(agent.nom || '').toUpperCase()} ${agent.prenom || ''}</div>
+                    <div class="carte-details">
+                        <span class="fonction-tag">${fonction}</span>
+                        <span style="color:#60a5fa; font-weight:bold;">${tpEng}</span>
+                    </div>
+                    
+                    ${genererBadgesHTML(agent.specialites, 'specialite')}
+                    ${genererBadgesHTML(agent.competences, 'competence')}
+                </div>
+            `;
+        });
 
         html += `</div>`;
         col.innerHTML = html;
