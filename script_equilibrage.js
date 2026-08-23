@@ -44,7 +44,7 @@ function calculerAge(dateNaissance) {
     return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
 }
 
-// TRI EXACTEMENT COMME L'ORGANIGRAMME
+// TRI CONFORME À L'ORGANIGRAMME
 function trierAgentsHierarchie(a, b) {
     const fA = normaliserTexte(a.fonction);
     const fB = normaliserTexte(b.fonction);
@@ -62,19 +62,26 @@ function trierAgentsHierarchie(a, b) {
     return normaliserTexte(a.prenom).localeCompare(normaliserTexte(b.prenom));
 }
 
+// EXTRACTEUR DE LISTES UNIFIÉES (Spécialités / Compétences)
+function extraireItems(chaine) {
+    if (!chaine) return [];
+    return chaine.split(/[,;\/-]+/).map(s => normaliserTexte(s)).filter(s => s.length > 1);
+}
+
 function calculerStatsEquipe(membres) {
     const nb = membres.length;
     const nbF = membres.filter(a => normaliserTexte(a.sexe).startsWith('F') || normaliserTexte(a.genre).startsWith('F')).length;
     const ageMoy = nb > 0 ? Math.round(membres.reduce((s, a) => s + calculerAge(a.dateNaissance), 0) / nb) : 0;
     
-    // Fonctions
     const compteFn = (fn) => membres.filter(a => normaliserTexte(a.fonction) === fn).length;
-    
-    // Spécialités & Compétences (Cumul simple pour l'affichage condensé)
-    let totalSpec = 0, totalComp = 0;
+
+    // Dictionnaire détaillé des Spécialités et Compétences
+    const dicSpecs = {};
+    const dicComps = {};
+
     membres.forEach(a => {
-        if (a.specialites && a.specialites.trim() !== "") totalSpec += a.specialites.split(',').length;
-        if (a.competences && a.competences.trim() !== "") totalComp += a.competences.split(',').length;
+        extraireItems(a.specialites).forEach(s => { dicSpecs[s] = (dicSpecs[s] || 0) + 1; });
+        extraireItems(a.competences).forEach(c => { dicComps[c] = (dicComps[c] || 0) + 1; });
     });
 
     return { 
@@ -82,8 +89,14 @@ function calculerStatsEquipe(membres) {
         cate: compteFn('CATE'), ca1e: compteFn('CA1E'),
         cequ: compteFn('CEQU'), equ: compteFn('EQU'),
         cdg: compteFn('CDG') + compteFn('ACDG1') + compteFn('ACDG2'),
-        totalSpec, totalComp
+        dicSpecs, dicComps
     };
+}
+
+function genererBadgesHTML(dictionnaire, couleurHex) {
+    const cles = Object.keys(dictionnaire);
+    if (cles.length === 0) return '<span style="color:#64748b; font-size:0.65rem;">Aucune</span>';
+    return cles.map(k => `<span class="tag-detail" style="border-color:${couleurHex}; color:${couleurHex};">${k}:<b>${dictionnaire[k]}</b></span>`).join(" ");
 }
 
 function rendreEquipes() {
@@ -95,7 +108,7 @@ function rendreEquipes() {
 
         const s = calculerStatsEquipe(membres);
         
-        // AFFICHAGE CONDENSÉ DES STATS
+        // TABLEAU DE BORD DÉTAILLÉ ET CONDENSÉ
         document.getElementById(`count-${lettre}`).innerText = s.nb;
         document.getElementById(`stats-${lettre}`).innerHTML = `
             <div class="stat-badge full-width"><span class="stat-label">Agents:</span> <span class="stat-value">${s.nb}</span></div>
@@ -105,12 +118,16 @@ function rendreEquipes() {
             <div class="stat-badge"><span class="stat-label">CATE:</span> <span class="stat-value">${s.cate}</span></div>
             <div class="stat-badge"><span class="stat-label">CA1E:</span> <span class="stat-value">${s.ca1e}</span></div>
             <div class="stat-badge"><span class="stat-label">CEQU:</span> <span class="stat-value">${s.cequ}</span></div>
-            <div class="stat-badge"><span class="stat-label">EQU:</span> <span class="stat-value">${s.equ}</span></div>
-            <div class="stat-badge"><span class="stat-label">Total Spéc:</span> <span class="stat-value" style="color:#60a5fa">${s.totalSpec}</span></div>
-            <div class="stat-badge"><span class="stat-label">Total Comp:</span> <span class="stat-value" style="color:#34d399">${s.totalComp}</span></div>
+            <div class="stat-badge full-width"><span class="stat-label">EQU:</span> <span class="stat-value">${s.equ}</span></div>
+            
+            <div class="stat-section-title">Spécialités :</div>
+            <div class="stat-badge-container">${genererBadgesHTML(s.dicSpecs, '#60a5fa')}</div>
+
+            <div class="stat-section-title">Compétences :</div>
+            <div class="stat-badge-container">${genererBadgesHTML(s.dicComps, '#34d399')}</div>
         `;
 
-        // AFFICHAGE DES AGENTS
+        // LISTE DE CARTES AGENTS
         const container = document.getElementById(`container-${lettre}`);
         container.innerHTML = "";
         membres.forEach(agent => {
@@ -138,24 +155,23 @@ function rendreEquipes() {
     });
 }
 
-// === ALGORITHME FIN : PERMUTATIONS CROISÉES MULTIPLES ===
+// === ALGORITHME MULTI-CRITÈRES MULTI-MOUVEMENTS ===
 function suggererReequilibrage() {
     propositionsEnAttente = [];
-    let tempAgents = JSON.parse(JSON.stringify(agentsLocaux)); // Copie de travail
+    let tempAgents = JSON.parse(JSON.stringify(agentsLocaux));
     const lettresEquipes = ['A', 'B', 'C'];
 
-    // 1. Lire les poids
     const pCmd = parseInt(document.getElementById("poids-cmd")?.value || 5);
+    const pSpec = parseInt(document.getElementById("poids-spec")?.value || 4);
+    const pAge = parseInt(document.getElementById("poids-age")?.value || 3);
     const pGenre = parseInt(document.getElementById("poids-genre")?.value || 2);
-    // (Tu pourras ajouter pSpec et pAge dans les conditions suivantes)
 
-    // 2. Équilibrer l'effectif global (Transfert simple)
     let stats = {};
+
+    // 1. Équilibrage de l'effectif brut
     lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
-    
-    let equipesTriees = [...lettresEquipes].sort((a,b) => stats[b].nb - stats[a].nb);
-    let eqMax = equipesTriees[0];
-    let eqMin = equipesTriees[2];
+    let eqTriees = [...lettresEquipes].sort((a,b) => stats[b].nb - stats[a].nb);
+    let eqMax = eqTriees[0], eqMin = eqTriees[2];
 
     if (stats[eqMax].nb - stats[eqMin].nb >= 2) {
         let candidat = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqMax && !a.verrouille && normaliserTexte(a.fonction) === 'EQU');
@@ -164,33 +180,58 @@ function suggererReequilibrage() {
                 type: 'TRANSFERT', a1: candidat, eqCible: eqMin, 
                 motif: `Rééquilibrage de l'effectif global (+1 agent)` 
             });
-            candidat.equipe = `Équipe ${eqMin}`; // Simuler le déplacement
+            candidat.equipe = `Équipe ${eqMin}`;
         }
     }
 
-    // 3. Équilibrer les CATE / CA1E sans casser l'effectif global (Permutation)
+    // 2. Équilibrage Commandement (CATE / CA1E)
     if (pCmd >= 3) {
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
         let eqTropCATE = lettresEquipes.reduce((a,b) => stats[a].cate > stats[b].cate ? a : b);
         let eqPasAssezCATE = lettresEquipes.reduce((a,b) => stats[a].cate < stats[b].cate ? a : b);
 
         if (stats[eqTropCATE].cate - stats[eqPasAssezCATE].cate >= 2) {
-            // Trouver un CATE dans l'équipe riche
             let cate = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqTropCATE && !a.verrouille && normaliserTexte(a.fonction) === 'CATE');
-            // Trouver un EQU ou CEQU dans l'équipe pauvre pour faire l'échange
             let equ = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqPasAssezCATE && !a.verrouille && (normaliserTexte(a.fonction) === 'EQU' || normaliserTexte(a.fonction) === 'CEQU'));
 
             if (cate && equ) {
                 propositionsEnAttente.push({
                     type: 'ECHANGE', a1: cate, a2: equ,
-                    motif: `Échange pour équilibrer le nombre de CATE (${stats[eqTropCATE].cate} vs ${stats[eqPasAssezCATE].cate})`
+                    motif: `Échange pour équilibrer les CATE (${stats[eqTropCATE].cate} vs ${stats[eqPasAssezCATE].cate})`
                 });
                 cate.equipe = `Équipe ${eqPasAssezCATE}`; equ.equipe = `Équipe ${eqTropCATE}`;
             }
         }
     }
 
-    // 4. Équilibrer les Femmes sans casser l'effectif global (Permutation)
+    // 3. Équilibrage des Spécialités spécifiques
+    if (pSpec >= 3) {
+        lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
+        
+        // Trouver la spécialité la plus déséquilibrée
+        let toutesSpecs = new Set();
+        lettresEquipes.forEach(l => Object.keys(stats[l].dicSpecs).forEach(s => toutesSpecs.add(s)));
+
+        toutesSpecs.forEach(specName => {
+            let eqRich = lettresEquipes.reduce((a,b) => (stats[a].dicSpecs[specName]||0) > (stats[b].dicSpecs[specName]||0) ? a : b);
+            let eqPauvre = lettresEquipes.reduce((a,b) => (stats[a].dicSpecs[specName]||0) < (stats[b].dicSpecs[specName]||0) ? a : b);
+
+            if ((stats[eqRich].dicSpecs[specName]||0) - (stats[eqPauvre].dicSpecs[specName]||0) >= 2) {
+                let specAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqRich && !a.verrouille && extraireItems(a.specialites).includes(specName));
+                let nonSpecAgent = tempAgents.find(a => extraireLettreEquipe(a.equipe) === eqPauvre && !a.verrouille && normaliserTexte(a.fonction) === normaliserTexte(specAgent?.fonction));
+
+                if (specAgent && nonSpecAgent) {
+                    propositionsEnAttente.push({
+                        type: 'ECHANGE', a1: specAgent, a2: nonSpecAgent,
+                        motif: `Rééquilibrage de la spécialité [${specName}]`
+                    });
+                    specAgent.equipe = `Équipe ${eqPauvre}`; nonSpecAgent.equipe = `Équipe ${eqRich}`;
+                }
+            }
+        });
+    }
+
+    // 4. Équilibrage Parité Homme/Femme
     if (pGenre >= 3) {
         lettresEquipes.forEach(l => stats[l] = calculerStatsEquipe(tempAgents.filter(a => extraireLettreEquipe(a.equipe) === l)));
         let eqMaxF = lettresEquipes.reduce((a,b) => stats[a].nbF > stats[b].nbF ? a : b);
@@ -203,7 +244,7 @@ function suggererReequilibrage() {
             if (femme && homme && normaliserTexte(femme.fonction) === normaliserTexte(homme.fonction)) {
                 propositionsEnAttente.push({
                     type: 'ECHANGE', a1: femme, a2: homme,
-                    motif: `Permutation H/F à fonction égale pour l'équilibre de parité.`
+                    motif: `Permutation H/F pour rééquilibrer la parité`
                 });
             }
         }
@@ -256,6 +297,7 @@ function basculerVerrou(idUnique) {
     agentsLocaux.find(a => a.idUnique === idUnique).verrouille ^= true;
     rendreEquipes();
 }
+
 function deplacerAgent(idUnique, nouvelleEquipe) {
     if (!nouvelleEquipe) return;
     agentsLocaux.find(a => a.idUnique === idUnique).equipe = nouvelleEquipe;
