@@ -1,1 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module d'Équilibrage des Équipes</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #334155; }
+        
+        .layout-grid { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+        
+        /* Panneau de configuration (Option 3.B) */
+        .panneau-reglages { background: #1e293b; padding: 20px; border-radius: 8px; border: 1px solid #334155; }
+        .reglage-group { margin-bottom: 15px; }
+        .reglage-group label { display: block; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 5px; }
+        .reglage-group input[type="range"] { width: 100%; accent-color: #8b5cf6; }
+        
+        .btn-algo { width: 100%; padding: 12px; background: #8b5cf6; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-algo:hover { background: #7c3aed; }
 
+        /* Zones d'équipes & Jauges (Option 3.A) */
+        .grille-equipes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .colonne-equipe { background: #1e293b; border-radius: 8px; padding: 15px; border: 1px solid #334155; }
+        .titre-equipe { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 8px; }
+        
+        /* Dashboard Stats/Jauges */
+        .dashboard-stats { background: #0f172a; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 0.8rem; }
+        .jauge-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .jauge-barre { width: 60%; height: 6px; background: #334155; border-radius: 3px; overflow: hidden; }
+        .jauge-fill { height: 100%; background: #3b82f6; transition: width 0.3s ease; }
+
+        /* Cartes Agents */
+        .liste-agents { min-height: 200px; display: flex; flex-direction: column; gap: 8px; }
+        .carte-agent-simu { background: #334155; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+        .carte-agent-simu.locked { border-left: 4px solid #f59e0b; background: #2a3749; }
+        
+        .select-equipe-deplacement { background: #0f172a; color: white; border: 1px solid #475569; border-radius: 4px; padding: 2px 5px; font-size: 0.75rem; }
+        
+        /* Modal des suggestions */
+        .modal-suggestions { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; }
+        .modal-content { background: #1e293b; padding: 25px; border-radius: 10px; max-width: 500px; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <h2>⚖️ Optimisation & Équilibrage des Équipes</h2>
+        <a href="index.html" style="color: #94a3b8; text-decoration: none; background: #334155; padding: 8px 14px; border-radius: 6px;">⬅️ Retour aux Effectifs</a>
+    </div>
+
+    <div class="layout-grid">
+        <!-- Option 3.B : Réglage des Priorités & Algorithme -->
+        <aside class="panneau-reglages">
+            <h3 style="margin-top: 0;">⚙️ Pondération des Critères</h3>
+            <p style="font-size: 0.8rem; color: #94a3b8;">Règle l'importance des critères pour le calcul automatique.</p>
+            
+            <div class="reglage-group">
+                <label>Fonctions clés (CDG, CA) :</label>
+                <input type="range" id="poids-cmd" min="1" max="5" value="5">
+            </div>
+            <div class="reglage-group">
+                <label>Spécialités (COD, RAD...) :</label>
+                <input type="range" id="poids-spec" min="1" max="5" value="4">
+            </div>
+            <div class="reglage-group">
+                <label>Pyramide des Âges :</label>
+                <input type="range" id="poids-age" min="1" max="5" value="3">
+            </div>
+            <div class="reglage-group">
+                <label>Parité Homme / Femme :</label>
+                <input type="range" id="poids-genre" min="1" max="5" value="2">
+            </div>
+            <div class="reglage-group">
+                <label>Département de domicile :</label>
+                <input type="range" id="poids-dept" min="1" max="5" value="1">
+            </div>
+
+            <button class="btn-algo" onclick="suggererReequilibrage()">⚡ Suggérer un Rééquilibrage</button>
+        </aside>
+
+        <!-- Option 3.A : Simulateur Visuel & Jauges en direct -->
+        <main class="grille-equipes">
+            <!-- Équipe A -->
+            <div class="colonne-equipe">
+                <div class="titre-equipe">🔴 Équipe A <span id="count-A">0</span></div>
+                <div class="dashboard-stats" id="stats-A"></div>
+                <div class="liste-agents" id="container-A"></div>
+            </div>
+
+            <!-- Équipe B -->
+            <div class="colonne-equipe">
+                <div class="titre-equipe">🟢 Équipe B <span id="count-B">0</span></div>
+                <div class="dashboard-stats" id="stats-B"></div>
+                <div class="liste-agents" id="container-B"></div>
+            </div>
+
+            <!-- Équipe C -->
+            <div class="colonne-equipe">
+                <div class="titre-equipe">🔵 Équipe C <span id="count-C">0</span></div>
+                <div class="dashboard-stats" id="stats-C"></div>
+                <div class="liste-agents" id="container-C"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de propositions de transferts (Option 3.B) -->
+    <div id="modal-transferts" class="modal-suggestions">
+        <div class="modal-content">
+            <h3>⚡ Recommandations de Transferts</h3>
+            <p style="font-size: 0.85rem; color: #cbd5e1;">L'algorithme suggère les changements suivants pour équilibrer les équipes :</p>
+            <ul id="liste-propositions" style="font-size: 0.9rem; line-height: 1.6; color: #60a5fa;"></ul>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="appliquerPropositions()" style="flex: 1; padding: 10px; background: #22c55e; border: none; color: white; border-radius: 6px; font-weight: bold; cursor: pointer;">Valider les changements</button>
+                <button onclick="fermerModal()" style="padding: 10px; background: #64748b; border: none; color: white; border-radius: 6px; cursor: pointer;">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script_equilibrage.js"></script>
+</body>
+</html>
