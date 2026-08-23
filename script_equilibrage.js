@@ -179,6 +179,7 @@ function deplacerAgent(idUnique, nouvelleEquipe) {
 }
 
 // Algorithme de suggestion de rééquilibrage
+// Algorithme de rééquilibrage multi-critères prenant en compte les curseurs
 function suggererReequilibrage() {
     propositionsEnAttente = [];
     const mobileAgents = agentsLocaux.filter(a => !a.verrouille);
@@ -188,40 +189,170 @@ function suggererReequilibrage() {
         return;
     }
 
-    // Calcul de la répartition actuelle
-    const counts = { 'A': 0, 'B': 0, 'C': 0 };
-    agentsLocaux.forEach(a => {
-        const l = extraireLettreEquipe(a.equipe);
-        if (l) counts[l]++;
+    // 1. DÉCORTIQUER LES POIDS DES CURSEURS (de 1 à 5)
+    const pCmd = parseInt(document.getElementById("poids-cmd")?.value || 5);
+    const pSpec = parseInt(document.getElementById("poids-spec")?.value || 4);
+    const pAge = parseInt(document.getElementById("poids-age")?.value || 3);
+    const pGenre = parseInt(document.getElementById("poids-genre")?.value || 2);
+
+    const lettresEquipes = ['A', 'B', 'C'];
+
+    // Fonction interne pour évaluer le "Score de besoin" d'une équipe
+    // Plus le score est BAS, plus l'équipe a BESOIN de renfort sur les critères prioritaires
+    function calculerMetriquesEquipes() {
+        const stats = {};
+        
+        lettresEquipes.forEach(lettre => {
+            const membres = agentsLocaux.filter(a => extraireLettreEquipe(a.equipe) === lettre);
+            const total = membres.length;
+            const nbFemmes = membres.filter(a => normaliserTexte(a.sexe).startsWith('F') || normaliserTexte(a.genre).startsWith('F')).length;
+            const sommeAges = membres.reduce((sum, a) => sum + calculerAge(a.dateNaissance), 0);
+            const moyAge = total > 0 ? (sommeAges / total) : 35;
+            const nbCmd = membres.filter(a => ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E'].includes(normaliserTexte(a.fonction))).length;
+            
+            // Compte arbitraire des spécialistes (ex: COD, RAD, RCH, SAV)
+            const nbSpec = membres.filter(a => {
+                const spec = normaliserTexte(a.specialites || "") + normaliserTexte(a.competences || "");
+                return spec.includes('COD') || spec.includes('RAD') || spec.includes('RCH') || spec.includes('SAV');
+            }).length;
+
+            stats[lettre] = { total, nbFemmes, moyAge, nbCmd, nbSpec };
+        });
+
+        return stats;
+    }
+
+    let stats = calculerMetriquesEquipes();
+
+    // 2. ÉVALUATION DU PUS FORT DÉSÉQUILIBRE
+
+    // A. Analyse par Effectif brut / Commandement (Poids pCmd)
+    let minCmd = 'A', maxCmd = 'A';
+    let minEff = 'A', maxEff = 'A';
+    
+    lettresEquipes.forEach(l => {
+        if (stats[l].total < stats[minEff].total) minEff = l;
+        if (stats[l].total > stats[maxEff].total) maxEff = l;
+        if (stats[l].nbCmd < stats[minCmd].nbCmd) minCmd = l;
+        if (stats[l].nbCmd > stats[maxCmd].nbCmd) maxCmd = l;
     });
 
-    let minL = 'A', maxL = 'A';
-    Object.keys(counts).forEach(l => {
-        if (counts[l] < counts[minL]) minL = l;
-        if (counts[l] > counts[maxL]) maxL = l;
+    // B. Analyse par Parité Homme/Femme (Poids pGenre)
+    let minFemmes = 'A', maxFemmes = 'A';
+    lettresEquipes.forEach(l => {
+        if (stats[l].nbFemmes < stats[minFemmes].nbFemmes) minFemmes = l;
+        if (stats[l].nbFemmes > stats[maxFemmes].nbFemmes) maxFemmes = l;
     });
 
-    // Étape 1 : Équilibrage des effectifs bruts
-    if (counts[maxL] - counts[minL] > 1) {
-        const candidat = mobileAgents.find(a => extraireLettreEquipe(a.equipe) === maxL);
+    // C. Analyse par Spécialités (Poids pSpec)
+    let minSpec = 'A', maxSpec = 'A';
+    lettresEquipes.forEach(l => {
+        if (stats[l].nbSpec < stats[minSpec].nbSpec) minSpec = l;
+        if (stats[l].nbSpec > stats[maxSpec].nbSpec) maxSpec = l;
+    });
+
+    // D. Analyse par Pyramide des Âges (Poids pAge)
+    let minAge = 'A', maxAge = 'A';
+    lettresEquipes.forEach(l => {
+        if (stats[l].moyAge < stats[minAge].moyAge) minAge = l;
+        if (stats[l].moyAge > stats[maxAge].moyAge) maxAge = l;
+    });
+
+    // 3. SELECTION DE LA PROPOSITION SELON LA PRIORITÉ LA PLUS HAUTE
+
+    // Priorité 1 : Effectif brut (Si écart > 1 agent)
+    if (stats[maxEff].total - stats[minEff].total > 1) {
+        const candidat = mobileAgents.find(a => extraireLettreEquipe(a.equipe) === maxEff);
         if (candidat) {
             propositionsEnAttente.push({
                 idUnique: candidat.idUnique,
                 nom: `${candidat.nom.toUpperCase()} ${candidat.prenom}`,
-                de: `Équipe ${maxL}`,
-                vers: `Équipe ${minL}`
+                de: `Équipe ${maxEff}`,
+                vers: `Équipe ${minEff}`,
+                raison: `Équilibrage de l'effectif global (Poids : ${pCmd}/5)`
+            });
+        }
+    } 
+    // Priorité 2 : Commandement (Si le curseur Commandement est haut >= 3 et écart de chefs)
+    else if (pCmd >= 3 && (stats[maxCmd].nbCmd - stats[minCmd].nbCmd > 1)) {
+        const candidat = mobileAgents.find(a => 
+            extraireLettreEquipe(a.equipe) === maxCmd && 
+            ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E'].includes(normaliserTexte(a.fonction))
+        );
+        if (candidat) {
+            propositionsEnAttente.push({
+                idUnique: candidat.idUnique,
+                nom: `${candidat.nom.toUpperCase()} ${candidat.prenom}`,
+                de: `Équipe ${maxCmd}`,
+                vers: `Équipe ${minCmd}`,
+                raison: `Répartition du commandement/chefs d'agrès (${stats[maxCmd].nbCmd} vs ${stats[minCmd].nbCmd})`
+            });
+        }
+    }
+    // Priorité 3 : Spécialités (Si le curseur Spécialités est haut >= 3)
+    else if (pSpec >= 3 && (stats[maxSpec].nbSpec - stats[minSpec].nbSpec > 1)) {
+        const candidat = mobileAgents.find(a => {
+            const spec = normaliserTexte(a.specialites || "") + normaliserTexte(a.competences || "");
+            return extraireLettreEquipe(a.equipe) === maxSpec && (spec.includes('COD') || spec.includes('RAD') || spec.includes('RCH'));
+        });
+        if (candidat) {
+            propositionsEnAttente.push({
+                idUnique: candidat.idUnique,
+                nom: `${candidat.nom.toUpperCase()} ${candidat.prenom}`,
+                de: `Équipe ${maxSpec}`,
+                vers: `Équipe ${minSpec}`,
+                raison: `Rééquilibrage des spécialités opérationnelles (Poids : ${pSpec}/5)`
+            });
+        }
+    }
+    // Priorité 4 : Parité (Si le curseur Genre est haut >= 3)
+    else if (pGenre >= 3 && (stats[maxFemmes].nbFemmes - stats[minFemmes].nbFemmes > 1)) {
+        const candidat = mobileAgents.find(a => 
+            extraireLettreEquipe(a.equipe) === maxFemmes && 
+            (normaliserTexte(a.sexe).startsWith('F') || normaliserTexte(a.genre).startsWith('F'))
+        );
+        if (candidat) {
+            propositionsEnAttente.push({
+                idUnique: candidat.idUnique,
+                nom: `${candidat.nom.toUpperCase()} ${candidat.prenom}`,
+                de: `Équipe ${maxFemmes}`,
+                vers: `Équipe ${minFemmes}`,
+                raison: `Amélioration de la parité hommes/femmes (Poids : ${pGenre}/5)`
+            });
+        }
+    }
+    // Priorité 5 : Pyramide des âges (Si écart moyen > 3 ans et curseur Âge haut)
+    else if (pAge >= 3 && (stats[maxAge].moyAge - stats[minAge].moyAge > 3)) {
+        // Déplacer un agent jeune de l'équipe jeune vers l'équipe âgée
+        const candidat = mobileAgents.find(a => 
+            extraireLettreEquipe(a.equipe) === minAge && 
+            calculerAge(a.dateNaissance) < 30
+        );
+        if (candidat) {
+            propositionsEnAttente.push({
+                idUnique: candidat.idUnique,
+                nom: `${candidat.nom.toUpperCase()} ${candidat.prenom}`,
+                de: `Équipe ${minAge}`,
+                vers: `Équipe ${maxAge}`,
+                raison: `Harmonisation des moyennes d'âge (Écart : ${Math.round(stats[maxAge].moyAge - stats[minAge].moyAge)} ans)`
             });
         }
     }
 
+    // 4. AFFICHAGE DES RÉSULTATS DANS LA MODALE
     if (propositionsEnAttente.length === 0) {
-        alert("✅ Vos équipes sont déjà équilibrées en effectifs !");
+        alert("✅ Au vu des priorités sélectionnées, aucun rééquilibrage n'est nécessaire !");
         return;
     }
 
-    // Affichage des propositions dans la modal
     const listeUI = document.getElementById("liste-propositions");
-    listeUI.innerHTML = propositionsEnAttente.map(p => `<li>Transfert de <b>${p.nom}</b> de l'<b>${p.de}</b> vers l'<b>${p.vers}</b></li>`).join("");
+    listeUI.innerHTML = propositionsEnAttente.map(p => `
+        <li style="margin-bottom:8px;">
+            Transfert de <b>${p.nom}</b> de l'<b>${p.de}</b> vers l'<b>${p.vers}</b><br>
+            <span style="font-size:0.75rem; color:#94a3b8;">Motif : ${p.raison}</span>
+        </li>
+    `).join("");
+    
     document.getElementById("modal-transferts").style.display = "flex";
 }
 
