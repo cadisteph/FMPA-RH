@@ -29,12 +29,12 @@
 
         .layout-grid {
             display: grid;
-            grid-template-columns: 280px 1fr;
+            grid-template-columns: 310px 1fr;
             gap: 12px;
             align-items: start;
         }
 
-        /* Panneau de configuration */
+        /* Panneau de configuration à gauche */
         .panneau-reglages {
             background: #1e293b;
             padding: 12px;
@@ -42,14 +42,35 @@
             border: 1px solid #334155;
             position: sticky;
             top: 12px;
+            max-height: 92vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
-        .reglage-group { margin-bottom: 10px; }
-        .reglage-group label { display: block; font-size: 0.75rem; color: #cbd5e1; margin-bottom: 3px; }
-        .reglage-group input[type="range"] { width: 100%; accent-color: #8b5cf6; cursor: pointer; }
-        
+
+        .panneau-reglages::-webkit-scrollbar { width: 4px; }
+        .panneau-reglages::-webkit-scrollbar-track { background: #0f172a; }
+        .panneau-reglages::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
+
+        .section-titre-reglage {
+            font-size: 0.72rem;
+            font-weight: bold;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 6px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 2px;
+        }
+
+        .reglage-group { margin-bottom: 6px; }
+        .reglage-group label { display: flex; justify-content: space-between; font-size: 0.73rem; color: #cbd5e1; margin-bottom: 2px; }
+        .reglage-group input[type="range"] { width: 100%; accent-color: #8b5cf6; cursor: pointer; height: 4px; }
+
         .btn-algo {
             width: 100%;
-            padding: 9px;
+            padding: 10px;
             background: #8b5cf6;
             color: white;
             border: none;
@@ -58,6 +79,9 @@
             font-size: 0.8rem;
             cursor: pointer;
             transition: 0.2s;
+            position: sticky;
+            bottom: 0;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.5);
         }
         .btn-algo:hover { background: #7c3aed; }
 
@@ -74,7 +98,7 @@
             border: 1px solid #334155;
             display: flex;
             flex-direction: column;
-            max-height: 90vh;
+            max-height: 92vh;
         }
         .titre-equipe {
             font-size: 1rem;
@@ -204,42 +228,31 @@
     </div>
 
     <div class="layout-grid">
-        <!-- Panneau des Réglages -->
+        <!-- Panneau des Réglages Généré Dynamiquement -->
         <aside class="panneau-reglages">
-            <h3 style="margin-top: 0; font-size: 0.95rem;">⚙️ Pondération des Critères</h3>
-            <p style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 10px;">Ajuste les priorités relatives avant le calcul.</p>
+            <h3 style="margin: 0; font-size: 0.95rem;">⚙️ Pondération Fines</h3>
+            <p style="font-size: 0.7rem; color: #94a3b8; margin: 0 0 4px 0;">Ajuste l'importance de chaque critère individuel.</p>
             
+            <div class="section-titre-reglage">Général</div>
             <div class="reglage-group">
-                <label for="poids-cmd">Effectif & Commandement :</label>
-                <input type="range" id="poids-cmd" min="1" max="5" value="5">
+                <label>Effectif & Cmd : <span id="val-poids-cmd">5</span></label>
+                <input type="range" id="poids-cmd" min="0" max="5" value="5" oninput="document.getElementById('val-poids-cmd').innerText=this.value">
+            </div>
+            <div class="reglage-group">
+                <label>Domiciliation : <span id="val-poids-dept">3</span></label>
+                <input type="range" id="poids-dept" min="0" max="5" value="3" oninput="document.getElementById('val-poids-dept').innerText=this.value">
+            </div>
+            <div class="reglage-group">
+                <label>Parité H/F : <span id="val-poids-genre">2</span></label>
+                <input type="range" id="poids-genre" min="0" max="5" value="2" oninput="document.getElementById('val-poids-genre').innerText=this.value">
             </div>
 
-            <!-- Prise en compte globale de TOUTES les spécialités -->
-            <div class="reglage-group">
-                <label for="poids-spec">Équilibre Spécialités (Toutes) :</label>
-                <input type="range" id="poids-spec" min="1" max="5" value="4">
-            </div>
+            <!-- Conteneurs dynamiques pour Spécialités et Compétences -->
+            <div class="section-titre-reglage" style="color:#60a5fa;">Spécialités</div>
+            <div id="container-reglages-specs"></div>
 
-            <!-- Prise en compte globale de TOUTES les compétences -->
-            <div class="reglage-group">
-                <label for="poids-comp">Équilibre Compétences (Toutes) :</label>
-                <input type="range" id="poids-comp" min="1" max="5" value="4">
-            </div>
-
-            <div class="reglage-group">
-                <label for="poids-dept">Domiciliation (Département) :</label>
-                <input type="range" id="poids-dept" min="1" max="5" value="3">
-            </div>
-
-            <div class="reglage-group">
-                <label for="poids-age">Pyramide des Âges :</label>
-                <input type="range" id="poids-age" min="1" max="5" value="3">
-            </div>
-
-            <div class="reglage-group">
-                <label for="poids-genre">Parité Homme / Femme :</label>
-                <input type="range" id="poids-genre" min="1" max="5" value="2">
-            </div>
+            <div class="section-titre-reglage" style="color:#34d399;">Compétences</div>
+            <div id="container-reglages-comps"></div>
 
             <button class="btn-algo" onclick="suggererReequilibrage()">⚡ Suggérer un Rééquilibrage</button>
         </aside>
