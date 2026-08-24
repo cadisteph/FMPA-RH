@@ -206,6 +206,74 @@ function calculerStatsEquipe(membres, conserverNiveaux = true) {
     };
 }
 
+// Calcule la pénalité d'écart entre les 3 équipes selon tes priorités de 1 à 10
+function calculerScorePenalite(equipes, conserverNiveaux = true) {
+    const stats = equipes.map(e => calculerStatsEquipe(e, conserverNiveaux));
+    
+    // Calcule la variance (l'écart par rapport à la moyenne des 3 équipes)
+    const evaluerEcart = (getValeur) => {
+        const vals = stats.map(getValeur);
+        const moy = vals.reduce((a, b) => a + b, 0) / 3;
+        return vals.reduce((sum, v) => sum + Math.pow(v - moy, 2), 0);
+    };
+
+    // Récupération des poids depuis les curseurs de l'IHM (échelle 1-10)
+    const p1 = parseInt(document.getElementById("poids-effectif")?.value || 10, 10);
+    const p2 = parseInt(document.getElementById("poids-genre")?.value || 9, 10);
+    const p3 = parseInt(document.getElementById("poids-cmd")?.value || 8, 10);
+    const p4 = parseInt(document.getElementById("poids-cate")?.value || 7, 10);
+    const p5 = parseInt(document.getElementById("poids-equ")?.value || 6, 10);
+    const p6 = parseInt(document.getElementById("poids-specs")?.value || 5, 10);
+    const p7 = parseInt(document.getElementById("poids-comps")?.value || 4, 10);
+    const p8 = parseInt(document.getElementById("poids-regimes")?.value || 3, 10);
+    const p9 = parseInt(document.getElementById("poids-age")?.value || 2, 10);
+    const p10 = parseInt(document.getElementById("poids-dept")?.value || 1, 10);
+
+    let scorePena = 0;
+
+    // P1: Effectif brut
+    scorePena += evaluerEcart(s => s.nb) * (p1 * 10);
+    
+    // P2: Femmes
+    scorePena += evaluerEcart(s => s.nbF) * (p2 * 10);
+    
+    // P3: Chefs de Garde & Adjoints (CDG + ACDG1 + ACDG2)
+    scorePena += evaluerEcart(s => s.cdg + s.acdg1 + s.acdg2) * (p3 * 10);
+    
+    // P4: CATE / CA1E
+    scorePena += evaluerEcart(s => s.cate + s.ca1e) * (p4 * 10);
+    
+    // P5: CEQU / EQU
+    scorePena += evaluerEcart(s => s.cequ + s.equ) * (p5 * 10);
+    
+    // P6: Spécialités
+    const toutesSpecs = new Set(stats.flatMap(s => Object.keys(s.dicSpecs)));
+    toutesSpecs.forEach(spec => {
+        scorePena += evaluerEcart(s => s.dicSpecs[spec] || 0) * (p6 * 10);
+    });
+
+    // P7: Compétences
+    const toutesComps = new Set(stats.flatMap(s => Object.keys(s.dicComps)));
+    toutesComps.forEach(comp => {
+        scorePena += evaluerEcart(s => s.dicComps[comp] || 0) * (p7 * 10);
+    });
+
+    // P8: Régimes de travail (G24)
+    scorePena += evaluerEcart(s => s.nbG24) * (p8 * 10);
+    
+    // P9: Âge moyen
+    scorePena += evaluerEcart(s => parseFloat(s.ageMoy)) * (p9 * 10);
+
+    // P10: Domiciles (Départements)
+    const tousDepts = new Set(stats.flatMap(s => Object.keys(s.dicDept)));
+    tousDepts.forEach(dep => {
+        scorePena += evaluerEcart(s => s.dicDept[dep] || 0) * (p10 * 10);
+    });
+
+    return scorePena;
+}
+
+
 // Si conserverNiveau est false : "RAD2" devient "RAD"
 // Si conserverNiveau est true  : "RAD2" reste "RAD2"
 function traiterNomItem(itemStr, conserverNiveau = true) {
@@ -360,54 +428,69 @@ function calculerScorePenalite(equipes) {
     return scorePena;
 }
 
-// Remplacement complet de ta fonction
 function suggererReequilibrage() {
     propositionsEnAttente = [];
-    
+
+    // Vérifie la case à cocher pour conserver ou non les niveaux de spécialité/compétence
+    const chkNiveaux = document.getElementById("chk-conserver-niveaux");
+    const conserverNiveaux = chkNiveaux ? chkNiveaux.checked : true;
+
+    // Équipes actuelles
     let eqA = agentsLocaux.filter(a => extraireLettreEquipe(a.equipe) === 'A');
     let eqB = agentsLocaux.filter(a => extraireLettreEquipe(a.equipe) === 'B');
     let eqC = agentsLocaux.filter(a => extraireLettreEquipe(a.equipe) === 'C');
 
-    const scoreInitial = calculerScorePenalite([eqA, eqB, eqC]);
+    const scoreInitial = calculerScorePenalite([eqA, eqB, eqC], conserverNiveaux);
     let meilleurScore = scoreInitial;
     let meilleureProp = null;
 
+    // Extraction des agents non verrouillés
     const mobA = eqA.filter(a => !a.verrouille);
     const mobB = eqB.filter(a => !a.verrouille);
     const mobC = eqC.filter(a => !a.verrouille);
 
-    const testerPermutation = (l1, l2, nom1, nom2) => {
-        l1.forEach(a1 => {
-            l2.forEach(a2 => {
+    // Fonction de simulation d'un échange d'agents 1 contre 1
+    const testerEchange = (list1, list2, nomEq1, nomEq2) => {
+        list1.forEach(a1 => {
+            list2.forEach(a2 => {
                 const simA = eqA.map(a => a.idUnique === a1.idUnique ? a2 : (a.idUnique === a2.idUnique ? a1 : a));
                 const simB = eqB.map(a => a.idUnique === a1.idUnique ? a2 : (a.idUnique === a2.idUnique ? a1 : a));
                 const simC = eqC.map(a => a.idUnique === a1.idUnique ? a2 : (a.idUnique === a2.idUnique ? a1 : a));
 
-                const scoreTest = calculerScorePenalite([simA, simB, simC]);
+                const testScore = calculerScorePenalite([simA, simB, simC], conserverNiveaux);
 
-                if (scoreTest < meilleurScore) {
-                    meilleurScore = scoreTest;
-                    meilleureProp = { a1, nom1, a2, nom2 };
+                if (testScore < meilleurScore) {
+                    meilleurScore = testScore;
+                    meilleureProp = {
+                        a1: a1,
+                        eq1: nomEq1,
+                        a2: a2,
+                        eq2: nomEq2,
+                        gainPct: Math.round(((scoreInitial - testScore) / scoreInitial) * 100)
+                    };
                 }
             });
         });
     };
 
-    testerPermutation(mobA, mobB, 'A', 'B');
-    testerPermutation(mobB, mobC, 'B', 'C');
-    testerPermutation(mobA, mobC, 'A', 'C');
+    // Test de toutes les combinaisons d'échanges possibles
+    testerEchange(mobA, mobB, 'A', 'B');
+    testerEchange(mobB, mobC, 'B', 'C');
+    testerEchange(mobA, mobC, 'A', 'C');
 
-    if (meilleureProp) {
+    if (meilleureProp && meilleureProp.gainPct > 0) {
         propositionsEnAttente.push({
             type: 'ECHANGE',
             a1: meilleureProp.a1,
             a2: meilleureProp.a2,
-            motif: `Optimisation de l'équilibre général (Équipes ${meilleureProp.nom1} ↔ ${meilleureProp.nom2})`
+            motif: `Amélioration de l'équilibre général de +${meilleureProp.gainPct}% (Échange entre Équipe ${meilleureProp.eq1} et Équipe ${meilleureProp.eq2})`
         });
     }
 
     afficherPropositions();
 }
+
+
 function afficherPropositions() {
     if (propositionsEnAttente.length === 0) {
         alert("✅ Aucun mouvement nécessaire selon les critères et pondérations actuels.");
