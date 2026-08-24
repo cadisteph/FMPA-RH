@@ -38,6 +38,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+function estFemme(agent) {
+    if (!agent || !agent.sexe) return false;
+    // Vérifie si le champ contient "Femme" ou "F" (sans se soucier des majuscules/minuscules)
+    const val = String(agent.sexe).trim().toLowerCase();
+    return val === 'femme' || val === 'f';
+}
+
+// Permet de nettoyer ou regrouper les spécialités/compétences
+function traiterNomItem(itemStr, conserverNiveau = true) {
+    if (!itemStr) return '';
+    const nettoye = itemStr.trim().toUpperCase();
+    if (conserverNiveau) return nettoye; 
+    // Si conserverNiveau est false, enlève les chiffres à la fin (ex: RAD2 -> RAD, RCH1 -> RCH)
+    return nettoye.replace(/\d+$/, ''); 
+}
+
+
 function normaliserTexte(txt) {
     if (!txt) return "";
     return txt.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
@@ -132,10 +149,11 @@ function calculerStatsEquipe(membres) {
     const nb = membres.length;
     
     // Priorité 1 : Effectif & Femmes
-    const nbF = membres.filter(a => normaliserTexte(a.sexe).startsWith('f') || normaliserTexte(a.genre).startsWith('f')).length;
+    const nbF = membres.filter(a => {
+    const textSexe = String(a?.sexe || a?.genre || '').trim().toLowerCase();
+    return textSexe.startsWith('f');}).length;
     const pctF = nb > 0 ? Math.round((nbF / nb) * 100) : 0;
     const ageMoy = nb > 0 ? Math.round(membres.reduce((s, a) => s + (a.dateNaissance ? calculerAge(a.dateNaissance) : (a.naissanceDate ? calculerAge(a.naissanceDate) : 0)), 0) / nb) : 0;
-    
     const compteFn = (fn) => membres.filter(a => normaliserTexte(a.fonction) === fn).length;
 
     // Priorité 4 : Régimes
@@ -147,9 +165,23 @@ function calculerStatsEquipe(membres) {
     const dicComps = {};
     const dicDept = {};
 
+    // Option : passe à false si tu veux regrouper par famille (ex: RAD1 et RAD2 comptés ensemble sous RAD)
+    const garderNiveaux = true; 
+
     membres.forEach(a => {
-        extraireItems(a.specialites).forEach(s => { dicSpecs[s] = (dicSpecs[s] || 0) + 1; });
-        extraireItems(a.competences).forEach(c => { dicComps[c] = (dicComps[c] || 0) + 1; });
+        // Spécialités
+        extraireItems(a.specialites).forEach(s => {
+            const cle = traiterNomItem(s, garderNiveaux);
+            if (cle) dicSpecs[cle] = (dicSpecs[cle] || 0) + 1;
+        });
+        
+        // Compétences
+        extraireItems(a.competences).forEach(c => {
+            const cle = traiterNomItem(c, garderNiveaux);
+            if (cle) dicComps[cle] = (dicComps[cle] || 0) + 1;
+        });
+        
+        // Département
         const dep = extraireDepartement(a);
         if (dep) dicDept[dep] = (dicDept[dep] || 0) + 1;
     });
