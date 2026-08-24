@@ -57,18 +57,45 @@
 }
 
 @media print {
-    /* Masque les boutons d'action au moment d'imprimer */
-    .btn-imprimer, button, .no-print {
+    /* Force le format A4 Paysage */
+    @page {
+        size: A4 landscape;
+        margin: 6mm;
+    }
+
+    /* Masque les filtres et boutons */
+    .header-bar, 
+    .btn-imprimer, 
+    button, 
+    .no-print,
+    div[style*="Filtrer par"] {
         display: none !important;
     }
 
-    body {
+    body, html {
         background: white !important;
         color: black !important;
+        height: auto !important;
+        overflow: visible !important;
     }
-}
 
-        
+    /* Adapte la grille pour qu'elle ne deborde pas horizontalement */
+    .conteneur-organigramme, main, .grille-equipes {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 6px !important;
+        width: 100% !important;
+    }
+
+    .colonne-equipe, .carte-agent {
+        background: white !important;
+        border: 1px solid #94a3b8 !important;
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+        page-break-inside: avoid;
+    }
+}        
     </style>
 </head>
 <body>
