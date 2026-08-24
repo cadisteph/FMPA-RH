@@ -145,39 +145,45 @@ function trierAgentsHierarchie(a, b) {
     return normaliserTexte(a.prenom).localeCompare(normaliserTexte(b.prenom), 'fr', { sensitivity: 'base' });
 }
 
-function calculerStatsEquipe(membres) {
+function calculerStatsEquipe(membres, conserverNiveaux = true) {
     const nb = membres.length;
     
-    // Priorité 1 : Effectif & Femmes
+    // 1. Détection robuste des Femmes (prise en compte de 'Homme' / 'Femme')
     const nbF = membres.filter(a => {
-    const textSexe = String(a?.sexe || a?.genre || '').trim().toLowerCase();
-    return textSexe.startsWith('f');}).length;
-    const pctF = nb > 0 ? Math.round((nbF / nb) * 100) : 0;
-    const ageMoy = nb > 0 ? Math.round(membres.reduce((s, a) => s + (a.dateNaissance ? calculerAge(a.dateNaissance) : (a.naissanceDate ? calculerAge(a.naissanceDate) : 0)), 0) / nb) : 0;
-    const compteFn = (fn) => membres.filter(a => normaliserTexte(a.fonction) === fn).length;
+        const val = String(a?.sexe || a?.genre || '').trim().toLowerCase();
+        return val.startsWith('f');
+    }).length;
 
-    // Priorité 4 : Régimes
+    const pctF = nb > 0 ? Math.round((nbF / nb) * 100) : 0;
+    
+    // 2. Calcul de l'âge moyen
+    const ageMoy = nb > 0 ? Math.round(membres.reduce((s, a) => {
+        const dateN = a.dateNaissance || a.naissanceDate;
+        return s + (dateN ? calculerAge(dateN) : 0);
+    }, 0) / nb) : 0;
+    
+    // 3. Comptage des fonctions
+    const compteFn = (fn) => membres.filter(a => normaliserTexte(a.fonction) === fn.toLowerCase()).length;
+
+    // 4. Régimes de travail
     const nbG24 = membres.filter(a => normaliserTexte(a.regime).includes('g24')).length;
     const nbMixte = membres.filter(a => normaliserTexte(a.regime).includes('mixte')).length;
 
-    // Dictionnaires pour Spécialités (P3), Compétences (P3) et Départements (P5)
+    // 5. Dictionnaires (Spécialités, Compétences, Départements)
     const dicSpecs = {};
     const dicComps = {};
     const dicDept = {};
 
-    // Option : passe à false si tu veux regrouper par famille (ex: RAD1 et RAD2 comptés ensemble sous RAD)
-    const garderNiveaux = true; 
-
     membres.forEach(a => {
-        // Spécialités
+        // Spécialités (option de regroupement des niveaux)
         extraireItems(a.specialites).forEach(s => {
-            const cle = traiterNomItem(s, garderNiveaux);
+            const cle = traiterNomItem(s, conserverNiveaux);
             if (cle) dicSpecs[cle] = (dicSpecs[cle] || 0) + 1;
         });
         
-        // Compétences
+        // Compétences (option de regroupement des niveaux)
         extraireItems(a.competences).forEach(c => {
-            const cle = traiterNomItem(c, garderNiveaux);
+            const cle = traiterNomItem(c, conserverNiveaux);
             if (cle) dicComps[cle] = (dicComps[cle] || 0) + 1;
         });
         
@@ -198,6 +204,15 @@ function calculerStatsEquipe(membres) {
         equ: compteFn('EQU'),
         dicSpecs, dicComps, dicDept
     };
+}
+
+// Si conserverNiveau est false : "RAD2" devient "RAD"
+// Si conserverNiveau est true  : "RAD2" reste "RAD2"
+function traiterNomItem(itemStr, conserverNiveau = true) {
+    if (!itemStr) return '';
+    const nettoye = itemStr.trim().toUpperCase();
+    if (conserverNiveau) return nettoye;
+    return nettoye.replace(/\d+$/, ''); // Retire les chiffres en fin de chaîne
 }
 
 function genererBadgesHTML(dictionnaire, couleurHex) {
