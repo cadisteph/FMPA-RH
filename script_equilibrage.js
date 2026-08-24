@@ -124,24 +124,46 @@ function genererControlesDynamiques() {
 }
 
 function trierAgentsHierarchie(a, b) {
+    // 1. Ordre d'importance des Fonctions
     const ordreFonctions = {
         'CDG': 1, 'ACDG1': 2, 'ACDG2': 3, 
         'CATE': 4, 'CA1E': 5, 'CEQU': 6, 'EQU': 7
+    };
+
+    // 2. Ordre d'importance des Grades (mis à jour selon tes sigles)
+    const ordreGrades = {
+        'CDT': 1, 'CNE': 2, 'LTN': 3, 'ADC': 4, 'ADJ': 5, 'SCH': 6, 'SGT': 7,
+        'CCH': 8, 'CPL': 9, 'SAP': 10
     };
     
     const fA = String(a?.fonction || '').trim().toUpperCase();
     const fB = String(b?.fonction || '').trim().toUpperCase();
 
-    const rankA = ordreFonctions[fA] || 99;
-    const rankB = ordreFonctions[fB] || 99;
+    const rankFnA = ordreFonctions[fA] || 99;
+    const rankFnB = ordreFonctions[fB] || 99;
 
-    if (rankA !== rankB) {
-        return rankA - rankB; 
+    // A. Tri par Fonction
+    if (rankFnA !== rankFnB) {
+        return rankFnA - rankFnB; 
     }
 
-    return String(a?.nom || '').localeCompare(String(b?.nom || ''));
-}
+    // B. Tri par Grade (si la fonction est identique)
+    const gA = String(a?.grade || '').trim().toUpperCase();
+    const gB = String(b?.grade || '').trim().toUpperCase();
 
+    const rankGdaA = ordreGrades[gA] || 99;
+    const rankGdaB = ordreGrades[gB] || 99;
+
+    if (rankGdaA !== rankGdaB) {
+        return rankGdaA - rankGdaB;
+    }
+
+    // C. Tri alphabétique par Nom puis Prénom (si fonction et grade sont identiques)
+    const nomA = String(a?.nom || '').localeCompare(String(b?.nom || ''));
+    if (nomA !== 0) return nomA;
+
+    return String(a?.prenom || '').localeCompare(String(b?.prenom || ''));
+}
 function calculerStatsEquipe(membres, conserverNiveaux = true) {
     const nb = membres.length;
     
