@@ -160,24 +160,25 @@ function genererBadgesHTML(dictionnaire, couleurHex) {
         return '<span style="color:#6b7280; font-size:0.8em;">Aucun</span>';
     }
 
-    // 1. Déterminer la classe CSS d'origine selon la couleur demandée
-    let classeBadge = 'badge-spec'; // Bleue par défaut (#60a5fa)
-    if (couleurHex === '#34d399') {
-        classeBadge = 'badge-comp';  // Verte
-    } else if (couleurHex === '#f59e0b') {
-        classeBadge = 'badge-dept';  // Orange
-    }
-
-    // 2. Trier les clés par ordre alphabétique / numérique
+    // 1. Trier les clés par ordre alphabétique et numérique (ex: RAD1 avant RAD2)
     const clefsTriees = Object.keys(dictionnaire).sort((a, b) => 
         a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
     );
 
-    // 3. Générer le HTML avec la vraie classe badge d'origine
+    // 2. Générer les badges avec le style visuel complet
     return clefsTriees.map(cle => {
         const val = dictionnaire[cle];
-        return `<span class="${classeBadge}">${cle}:<strong>${val}</strong></span>`;
-    }).join(' ');
+        return `<span style="
+            display: inline-block;
+            padding: 2px 6px;
+            margin: 2px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            border: 1px solid ${couleurHex};
+            background-color: ${couleurHex}20;
+            color: #ffffff;
+        ">${cle}:<strong style="color:${couleurHex}; margin-left:2px;">${val}</strong></span>`;
+    }).join('');
 }
 
 function rendreEquipes() {
