@@ -267,7 +267,6 @@ function rendreEquipes() {
         const statsEl = document.getElementById(`stats-${lettre}`);
         if (statsEl) {
             statsEl.innerHTML = `
-                <div class="stat-badge full-width"><span class="stat-label">Agents:</span> <span class="stat-value">${s.nb}</span></div>
                 <div class="stat-badge"><span class="stat-label">Femmes:</span> <span class="stat-value">${s.nbF} (${s.pctF}%)</span></div>
                 <div class="stat-badge"><span class="stat-label">Âge moy:</span> <span class="stat-value">${s.ageMoy} ans</span></div>
                 <div class="stat-badge"><span class="stat-label">CDG:</span> <span class="stat-value">${s.cdg}</span></div>
