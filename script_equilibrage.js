@@ -152,7 +152,7 @@ function rendreEquipes() {
     const tresEquipes = ['A', 'B', 'C'];
 
     tresEquipes.forEach(tre => {
-        const membres = agentsLocaux.filter(a => extrairetreEquipe(a.equipe) === tre);
+        const membres = agentsLocaux.filter(a => extraireLettreEquipe(a.equipe) === tre);
         membres.sort(trierAgentsHierarchie);
 
         const s = calculerStatsEquipe(membres);
