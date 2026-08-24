@@ -6,23 +6,36 @@ const ORDRE_FONCTIONS = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU']
 
 document.addEventListener("DOMContentLoaded", () => {
     const data = localStorage.getItem("baseAgents");
-    if (!data) return;
+    
+    if (!data) {
+        console.warn("⚠️ Aucune donnée 'baseAgents' trouvée dans le localStorage.");
+        alert("Attention : Aucune donnée d'agent n'a été trouvée. Veuille réimporter ton fichier CSV depuis la page principale.");
+        return;
+    }
 
-    agentsLocaux = JSON.parse(data).filter(a => {
-        const eq = normaliserTexte(a.equipe);
-        const fn = normaliserTexte(a.fonction);
-        const st = normaliserTexte(a.statut);
-        const estCadre = ['CDC', 'ACDC', 'OFPAO', 'OFTECH', 'ADMINISTRATIF'].includes(fn) || eq.includes('ENCADREMENT');
-        return st.includes('SPP') && !estCadre;
-    });
+    try {
+        const tousLesAgents = JSON.parse(data);
+        
+        agentsLocaux = tousLesAgents.filter(a => {
+            if (!a) return false;
+            const eq = normaliserTexte(a.equipe);
+            const fn = normaliserTexte(a.fonction);
+            const st = normaliserTexte(a.statut);
+            const estCadre = ['CDC', 'ACDC', 'OFPAO', 'OFTECH', 'ADMINISTRATIF'].includes(fn) || eq.includes('ENCADREMENT');
+            return st.includes('SPP') && !estCadre;
+        });
 
-    agentsLocaux.forEach((a, index) => {
-        if (!a.idUnique) a.idUnique = a.matricule || `agent_${index}`;
-        if (a.verrouille === undefined) a.verrouille = false;
-    });
+        agentsLocaux.forEach((a, index) => {
+            if (!a.idUnique) a.idUnique = a.matricule || `agent_${index}`;
+            if (a.verrouille === undefined) a.verrouille = false;
+        });
 
-    genererControlesDynamiques();
-    rendreEquipes();
+        genererControlesDynamiques();
+        rendreEquipes();
+    } catch (e) {
+        console.error("Erreur de lecture des données :", e);
+        alert("Erreur lors de la lecture des données d'agents. Réimportation du CSV requise.");
+    }
 });
 
 function normaliserTexte(txt) {
