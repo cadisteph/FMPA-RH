@@ -468,3 +468,24 @@ function deplacerAgent(idUnique, nouvelleEquipe) {
     agentsLocaux.find(a => a.idUnique === idUnique).equipe = nouvelleEquipe;
     rendreEquipes();
 }
+
+// Synchronisation automatique en temps réel entre onglets/pages
+window.addEventListener("storage", (event) => {
+    if (event.key === "baseAgents") {
+        const data = event.newValue;
+        if (data) {
+            // Recharger la variable locale et rafraîchir l'affichage
+            agentsLocaux = JSON.parse(data).filter(a => {
+                if (!a) return false;
+                const eq = normaliserTexte(a.equipe);
+                const fn = normaliserTexte(a.fonction);
+                const st = normaliserTexte(a.statut);
+                const estCadre = ['CDC', 'ACDC', 'OFPAO', 'OFTECH', 'ADMINISTRATIF'].includes(fn) || eq.includes('ENCADREMENT');
+                return st.includes('SPP') && !estCadre;
+            });
+
+            genererControlesDynamiques();
+            rendreEquipes();
+        }
+    }
+});
