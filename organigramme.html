@@ -8,94 +8,145 @@
         body { margin: 0; background-color: #475569; color: #f8fafc; padding: 5px; }
 
         /* En-tête */
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 15px; border-bottom: 1px solid #334155; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #334155; }
         h1 { margin: 0; font-size: 1.3rem; color: #f8fafc; }
         
         /* Zone de filtres */
-        .filtres-container { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; background: #1e293b; padding: 12px; border-radius: 8px; border: 1.1px solid #8b7b25; }
-        .filtre-btn { background: #334155; color: #cbd5e1; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: normal; transition: all 0.2s; }
+        .filtres-container { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; background: #1e293b; padding: 8px 12px; border-radius: 8px; border: 1.1px solid #8b7b25; }
+        .filtre-btn { background: #334155; color: #cbd5e1; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; transition: all 0.2s; font-size: 0.85rem; }
         .filtre-btn:hover { background: #475569; color: white; }
         .filtre-btn.active { background: #0f172a; color: #8b7b25; }
 
         /* Structure en colonnes (Grille Équipes) */
-        .grille-equipes { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 15px; align-items: flex-start; }
-        .colonne-equipe { flex: 1; min-width: 260px; max-width: 320px; background: #1e293b; border-radius: 8px; border: 1px solid #334155; padding: 12px; }
-        .colonne-titre { text-align: center; font-size: 1rem; font-weight: bold; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 2px solid #ef4444; color: #f8fafc; display: flex; justify-content: space-between; align-items: center; }
+        .grille-equipes { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; align-items: flex-start; }
+        .colonne-equipe { flex: 1; min-width: 250px; max-width: 320px; background: #1e293b; border-radius: 8px; border: 1px solid #334155; padding: 8px; }
+        .colonne-titre { text-align: center; font-size: 0.95rem; font-weight: bold; padding-bottom: 6px; margin-bottom: 8px; border-bottom: 2px solid #ef4444; color: #f8fafc; display: flex; justify-content: space-between; align-items: center; }
         .badge-compteur { background: #334155; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; }
 
-        /* Cartes Agent */
-        .carte-agent { background: #0f172a; border-left: 4px solid #94a3b8; border-radius: 6px; padding: 10px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-        .carte-agent.spp { border-left-color: #0100ff; } /* SPP en Bleu */
-        .carte-agent.spv { border-left-color: #1cb656; } /* SPV en Vert */
-        .carte-agent.pats { border-left-color: #910076; } /* PATS en Rose */
+        /* Cartes Agent Compactes */
+        .carte-agent {
+            background: #0f172a;
+            border-left: 3px solid #94a3b8;
+            border-radius: 4px;
+            padding: 4px 8px;
+            margin-bottom: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .carte-agent.spp { border-left-color: #38bdf8; } /* SPP en Bleu clair */
+        .carte-agent.spv { border-left-color: #22c55e; } /* SPV en Vert */
+        .carte-agent.pats { border-left-color: #e11d48; } /* PATS en Rose/Rouge */
 
-        .carte-header { display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; font-weight: normal; margin-bottom: 4px; }
-        .carte-nom { font-size: 0.85rem; font-weight: normal; color: #f8fafc; margin-bottom: 4px; }
-        .carte-details { font-size: 0.7rem; color: #cbd5e1; display: flex; justify-content: space-between; margin-bottom: 6px; }
-        .carte-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-        
-        /* Style général des badges */
-        .badge {font-size: 0.65rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
-        /* Badge Statut (SPP/SPV) */
-        .badge-statut {background: #334155; color: #f8fafc; }
-        /* Fonction (Orange / Doré) */
-        .fonction-tag {font-weight: bold; color: #f59e0b; }
-        /* Badges Spécialités (Bleu) */
-        .badge-spec {background: #1e293b; color: #38bdf8; border: 1px solid #0284c7; }
-        /* Badges Compétences (Gris clair) */
-        .badge-comp {background: #0f172a; color: #cbd5e1; border: 1px solid #475569; }
+        /* Ligne 1 : Nom et Prénom */
+        .carte-nom { 
+            font-size: 0.85rem; 
+            font-weight: bold; 
+            color: #f8fafc; 
+            line-height: 1.1; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
 
-.btn-imprimer {
-    background: #334155;
-    color: #f8fafc;
-    border: 1px solid #475569;
-    padding: 6px 12px;
-    border-radius: 5px;
-    font-size: 0.8rem;
-    font-weight: bold;
-    cursor: pointer;
-}
+        /* Ligne 2 : Détails (Fonction, Grade, Dép, Spés) sur une ligne compacte */
+        .carte-details { 
+            font-size: 0.72rem; 
+            color: #cbd5e1; 
+            display: flex; 
+            flex-wrap: wrap; 
+            align-items: center; 
+            gap: 4px; 
+            line-height: 1.1;
+        }
 
-@media print {
-    /* Force le format A4 Paysage */
-    @page {
-        size: A4 landscape;
-        margin: 6mm;
-    }
+        /* Tags texte dans la deuxième ligne */
+        .fonction-tag { font-weight: bold; color: #f59e0b; } /* Orange/Doré */
+        .grade-tag { color: #cbd5e1; }
+        .dep-tag { color: #f97316; font-weight: 600; } /* Orange département */
+        .spes-tag { color: #38bdf8; } /* Bleu compétences */
 
-    /* Masque les filtres et boutons */
-    .header-bar, 
-    .btn-imprimer, 
-    button, 
-    .no-print,
-    div[style*="Filtrer par"] {
-        display: none !important;
-    }
+        .btn-imprimer {
+            background: #334155;
+            color: #f8fafc;
+            border: 1px solid #475569;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
-    body, html {
-        background: white !important;
-        color: black !important;
-        height: auto !important;
-        overflow: visible !important;
-    }
+        /* Impression Optimisée */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 5mm;
+            }
 
-    /* Adapte la grille pour qu'elle ne deborde pas horizontalement */
-    .conteneur-organigramme, main, .grille-equipes {
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 6px !important;
-        width: 100% !important;
-    }
+            header, 
+            .filtres-container, 
+            .btn-imprimer, 
+            button, 
+            .no-print {
+                display: none !important;
+            }
 
-    .colonne-equipe, .carte-agent {
-        background: white !important;
-        border: 1px solid #94a3b8 !important;
-        max-height: none !important;
-        height: auto !important;
-        overflow: visible !important;
-        page-break-inside: avoid;
-    }
-}        
+            body, html {
+                background: white !important;
+                color: black !important;
+                height: auto !important;
+                overflow: visible !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .grille-equipes {
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr) !important; /* Passe à 4 colonnes selon le nombre d'équipes */
+                gap: 6px !important;
+                width: 100% !important;
+                overflow: visible !important;
+            }
+
+            .colonne-equipe {
+                background: white !important;
+                border: 1px solid #64748b !important;
+                padding: 4px !important;
+                max-height: none !important;
+                height: auto !important;
+            }
+
+            .colonne-titre {
+                color: black !important;
+                border-bottom-color: #000 !important;
+                font-size: 0.85rem !important;
+                padding-bottom: 2px !important;
+                margin-bottom: 4px !important;
+            }
+
+            .badge-compteur {
+                background: #e2e8f0 !important;
+                color: black !important;
+            }
+
+            .carte-agent {
+                background: white !important;
+                border: 1px solid #cbd5e1 !important;
+                border-left-width: 3px !important;
+                padding: 3px 5px !important;
+                margin-bottom: 2px !important;
+                box-shadow: none !important;
+                page-break-inside: avoid;
+            }
+
+            .carte-nom { color: black !important; font-size: 0.75rem !important; }
+            .carte-details { color: #334155 !important; font-size: 0.65rem !important; }
+            .fonction-tag { color: #d97706 !important; }
+            .dep-tag { color: #ea580c !important; }
+            .spes-tag { color: #0284c7 !important; }
+        }        
     </style>
 </head>
 <body>
