@@ -239,45 +239,93 @@
 
 /* Ajustements automatiques lors de l'impression */
 @media print {
-    /* Masque le panneau de réglages de gauche et les boutons */
-    .panneau-reglages, .btn-imprimer, .select-equipe-deplacement, .modal-suggestions {
-        display: none !important;
-    }
-    
-    /* Force l'affichage sur toute la largeur */
-    .layout-grid {
-        display: block !important;
-    }
-    
-    .grille-equipes {
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 10px !important;
+    /* 1. Force le format A4 Paysage et reduit les marges de la page */
+    @page {
+        size: A4 landscape;
+        margin: 5mm;
     }
 
+    /* 2. Masque les elements d'interface inutiles a l'impression */
+    .panneau-reglages, 
+    .btn-imprimer, 
+    .header-bar,
+    .select-equipe-deplacement, 
+    .modal-suggestions,
+    input[type="checkbox"] {
+        display: none !important;
+    }
+
+    /* 3. Reinitialise le conteneur principal */
     body, html {
         background: white !important;
         color: black !important;
+        height: auto !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        margin: 0 !important;
     }
 
-    .colonne-equipe, .carte-agent-simu, .dashboard-stats {
+    .layout-grid {
+        display: block !important;
+    }
+
+    .grille-equipes {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 6px !important;
+        width: 100% !important;
+    }
+
+    /* 4. Libere la hauteur pour afficher TOUS les agents sans coupure */
+    .colonne-equipe {
+        background: white !important;
+        border: 1px solid #64748b !important;
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+        padding: 4px !important;
+    }
+
+    .liste-agents {
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* 5. Optimisation compacte des cartes et stats pour le papier */
+    .dashboard-stats {
+        background: #f8fafc !important;
+        border: 1px solid #cbd5e1 !important;
+        padding: 3px !important;
+        font-size: 0.62rem !important;
+    }
+
+    .stat-badge {
         background: #ffffff !important;
-        color: #000000 !important;
-        border: 1px solid #ccc !important;
+        border-color: #cbd5e1 !important;
+        color: black !important;
     }
 
-    .stat-badge, .tag-detail {
-        background: #f1f5f9 !important;
-        color: #000000 !important;
-        border-color: #cbd5e1 !important;
+    .stat-badge-container {
+        max-height: none !important; /* Affiche tous les badges de spés sans scroll */
+    }
+
+    .carte-agent-simu {
+        background: white !important;
+        border: 1px solid #cbd5e1 !important;
+        padding: 3px 5px !important;
+        margin-bottom: 2px !important;
+        page-break-inside: avoid; /* Empeche une carte d'etre coupee en deux */
     }
 
     .agent-nom, .stat-value {
-        color: #000000 !important;
+        color: black !important;
     }
-}
 
-        
+    .agent-details, .stat-label {
+        color: #334155 !important;
+    }
+}        
     </style>
 </head>
 <body>
