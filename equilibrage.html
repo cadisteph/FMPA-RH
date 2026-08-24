@@ -229,64 +229,69 @@
     </div>
 
     <div class="layout-grid">
-       <!-- Panneau des Réglages Généré Dynamiquement -->
-<aside class="panneau-reglages">
-    <h3 style="margin: 0; font-size: 0.95rem;">⚙️ Pondération des 10 Priorités</h3>
-    <p style="font-size: 0.7rem; color: #94a3b8; margin: 0 0 8px 0;">Ajuste l'importance de chaque critère (0 = ignoré, 10 = prioritaire).</p>
+        <!-- Panneau des Réglages -->
+        <aside class="panneau-reglages">
+            <h3 style="margin: 0; font-size: 0.95rem;">⚙️ Pondération des 10 Priorités</h3>
+            <p style="font-size: 0.7rem; color: #94a3b8; margin: 0 0 8px 0;">Ajuste l'importance de chaque critère (0 = ignoré, 10 = prioritaire).</p>
 
-    <div style="margin-bottom: 12px; font-size: 0.8rem; color: #e2e8f0; background: rgba(255,255,255,0.05); padding: 6px 8px; border-radius: 4px;">
-        <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
-            <input type="checkbox" id="chk-conserver-niveaux" checked>
-            <span>Distinguer les niveaux (ex: RAD1 vs RAD2)</span>
-        </label>
-    </div>
+            <div style="margin-bottom: 12px; font-size: 0.8rem; color: #e2e8f0; background: rgba(255,255,255,0.05); padding: 6px 8px; border-radius: 4px;">
+                <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <input type="checkbox" id="chk-conserver-niveaux" checked onchange="rendreEquipes()">
+                    <span>Distinguer les niveaux (ex: RAD1 vs RAD2)</span>
+                </label>
+            </div>
 
-    <div class="section-titre-reglage">Effectifs & Hiérarchie</div>
-    <div class="reglage-group">
-        <label>P1 - Effectif global : <span id="val-poids-effectif">10</span></label>
-        <input type="range" id="poids-effectif" min="0" max="10" value="10" oninput="document.getElementById('val-poids-effectif').innerText=this.value">
-    </div>
-    <div class="reglage-group">
-        <label>P2 - Parité Femmes : <span id="val-poids-genre">9</span></label>
-        <input type="range" id="poids-genre" min="0" max="10" value="9" oninput="document.getElementById('val-poids-genre').innerText=this.value">
-    </div>
-<div class="stat-badge"><span class="stat-label">CDG:</span> <span class="stat-value">${s.cdg}</span></div>
-<div class="stat-badge"><span class="stat-label">ACDG/CATE:</span> <span class="stat-value">${s.acdgCate}</span></div>
-    <div class="reglage-group">
-        <label>P5 - CEQU / EQU : <span id="val-poids-equ">6</span></label>
-        <input type="range" id="poids-equ" min="0" max="10" value="6" oninput="document.getElementById('val-poids-equ').innerText=this.value">
-    </div>
+            <div class="section-titre-reglage">Effectifs & Hiérarchie</div>
+            <div class="reglage-group">
+                <label>P1 - Effectif global : <span id="val-poids-effectif">10</span></label>
+                <input type="range" id="poids-effectif" min="0" max="10" value="10" oninput="document.getElementById('val-poids-effectif').innerText=this.value">
+            </div>
+            <div class="reglage-group">
+                <label>P2 - Parité Femmes : <span id="val-poids-genre">9</span></label>
+                <input type="range" id="poids-genre" min="0" max="10" value="9" oninput="document.getElementById('val-poids-genre').innerText=this.value">
+            </div>
+            <div class="reglage-group">
+                <label>P3 - CDG : <span id="val-poids-cdg">8</span></label>
+                <input type="range" id="poids-cdg" min="0" max="10" value="8" oninput="document.getElementById('val-poids-cdg').innerText=this.value">
+            </div>
+            <div class="reglage-group">
+                <label>P4 - ACDG / CATE : <span id="val-poids-cate">7</span></label>
+                <input type="range" id="poids-cate" min="0" max="10" value="7" oninput="document.getElementById('val-poids-cate').innerText=this.value">
+            </div>
+            <div class="reglage-group">
+                <label>P5 - CEQU / EQU : <span id="val-poids-equ">6</span></label>
+                <input type="range" id="poids-equ" min="0" max="10" value="6" oninput="document.getElementById('val-poids-equ').innerText=this.value">
+            </div>
 
-    <div class="section-titre-reglage" style="color:#60a5fa;">Spécialités & Compétences</div>
-    <div class="reglage-group">
-        <label>P6 - Spécialités : <span id="val-poids-specs">5</span></label>
-        <input type="range" id="poids-specs" min="0" max="10" value="5" oninput="document.getElementById('val-poids-specs').innerText=this.value">
-    </div>
-    <div id="container-reglages-specs"></div>
+            <div class="section-titre-reglage" style="color:#60a5fa;">Spécialités & Compétences</div>
+            <div class="reglage-group">
+                <label>P6 - Spécialités : <span id="val-poids-specs">5</span></label>
+                <input type="range" id="poids-specs" min="0" max="10" value="5" oninput="document.getElementById('val-poids-specs').innerText=this.value">
+            </div>
+            <div id="container-reglages-specs"></div>
 
-    <div class="reglage-group">
-        <label>P7 - Compétences : <span id="val-poids-comps">4</span></label>
-        <input type="range" id="poids-comps" min="0" max="10" value="4" oninput="document.getElementById('val-poids-comps').innerText=this.value">
-    </div>
-    <div id="container-reglages-comps"></div>
+            <div class="reglage-group">
+                <label>P7 - Compétences : <span id="val-poids-comps">4</span></label>
+                <input type="range" id="poids-comps" min="0" max="10" value="4" oninput="document.getElementById('val-poids-comps').innerText=this.value">
+            </div>
+            <div id="container-reglages-comps"></div>
 
-    <div class="section-titre-reglage" style="color:#f59e0b;">Régimes & Informations Profil</div>
-    <div class="reglage-group">
-        <label>P8 - Régimes (G24/Mixte) : <span id="val-poids-regimes">3</span></label>
-        <input type="range" id="poids-regimes" min="0" max="10" value="3" oninput="document.getElementById('val-poids-regimes').innerText=this.value">
-    </div>
-    <div class="reglage-group">
-        <label>P9 - Âge moyen : <span id="val-poids-age">2</span></label>
-        <input type="range" id="poids-age" min="0" max="10" value="2" oninput="document.getElementById('val-poids-age').innerText=this.value">
-    </div>
-    <div class="reglage-group">
-        <label>P10 - Domiciliation (Dép.) : <span id="val-poids-dept">1</span></label>
-        <input type="range" id="poids-dept" min="0" max="10" value="1" oninput="document.getElementById('val-poids-dept').innerText=this.value">
-    </div>
+            <div class="section-titre-reglage" style="color:#f59e0b;">Régimes & Informations Profil</div>
+            <div class="reglage-group">
+                <label>P8 - Régimes (G24/Mixte) : <span id="val-poids-regimes">3</span></label>
+                <input type="range" id="poids-regimes" min="0" max="10" value="3" oninput="document.getElementById('val-poids-regimes').innerText=this.value">
+            </div>
+            <div class="reglage-group">
+                <label>P9 - Âge moyen : <span id="val-poids-age">2</span></label>
+                <input type="range" id="poids-age" min="0" max="10" value="2" oninput="document.getElementById('val-poids-age').innerText=this.value">
+            </div>
+            <div class="reglage-group">
+                <label>P10 - Domiciliation (Dép.) : <span id="val-poids-dept">1</span></label>
+                <input type="range" id="poids-dept" min="0" max="10" value="1" oninput="document.getElementById('val-poids-dept').innerText=this.value">
+            </div>
 
-    <!-- Seul ce bouton déclenche le rééquilibrage -->
-    <button class="btn-algo" onclick="suggererReequilibrage()" style="margin-top: 15px; width: 100%;">⚡ Suggérer un Rééquilibrage</button>
-</aside>
+            <button class="btn-algo" onclick="suggererReequilibrage()" style="margin-top: 15px; width: 100%;">⚡ Suggérer un Rééquilibrage</button>
+        </aside>
 
         <!-- Grille des 3 Équipes -->
         <main class="grille-equipes">
