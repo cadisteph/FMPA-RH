@@ -250,14 +250,8 @@
         <label>P2 - Parité Femmes : <span id="val-poids-genre">9</span></label>
         <input type="range" id="poids-genre" min="0" max="10" value="9" oninput="document.getElementById('val-poids-genre').innerText=this.value">
     </div>
-    <div class="reglage-group">
-        <label>P3 - CDG / ACDG : <span id="val-poids-cmd">8</span></label>
-        <input type="range" id="poids-cmd" min="0" max="10" value="8" oninput="document.getElementById('val-poids-cmd').innerText=this.value">
-    </div>
-    <div class="reglage-group">
-        <label>P4 - CATE / CA1E : <span id="val-poids-cate">7</span></label>
-        <input type="range" id="poids-cate" min="0" max="10" value="7" oninput="document.getElementById('val-poids-cate').innerText=this.value">
-    </div>
+<div class="stat-badge"><span class="stat-label">CDG:</span> <span class="stat-value">${s.cdg}</span></div>
+<div class="stat-badge"><span class="stat-label">ACDG/CATE:</span> <span class="stat-value">${s.acdgCate}</span></div>
     <div class="reglage-group">
         <label>P5 - CEQU / EQU : <span id="val-poids-equ">6</span></label>
         <input type="range" id="poids-equ" min="0" max="10" value="6" oninput="document.getElementById('val-poids-equ').innerText=this.value">
