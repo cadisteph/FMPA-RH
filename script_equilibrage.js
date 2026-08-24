@@ -163,7 +163,12 @@ function calculerStatsEquipe(membres, conserverNiveaux = true) {
     }, 0) / nb) : 0;
     
     // 3. Comptage des fonctions
-    const compteFn = (fn) => membres.filter(a => normaliserTexte(a.fonction) === fn.toLowerCase()).length;
+    const compteFn = (fn) => membres.filter(a => {
+    const f = String(a?.fonction || '').toLowerCase();
+    const g = String(a?.grade || '').toLowerCase();
+    const cible = fn.toLowerCase();
+    return f.includes(cible) || g.includes(cible);
+}).length;
 
     // 4. Régimes de travail
     const nbG24 = membres.filter(a => normaliserTexte(a.regime).includes('g24')).length;
