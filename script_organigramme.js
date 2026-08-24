@@ -187,7 +187,7 @@ function afficherColonnes() {
             <div class="cartes-container">
         `;
 
-        membres.forEach(agent => {
+       membres.forEach(agent => {
             const statutNorm = normaliserTexte(agent.statut);
             
             let classeStatut = 'spp';
@@ -197,11 +197,14 @@ function afficherColonnes() {
                 classeStatut = 'pats';
             }
 
+            // Éléments de la Ligne 1
             const grade = agent.grade ? `<span class="grade-tag">${agent.grade}</span>` : '';
             const fonction = agent.fonction ? `<span class="fonction-tag">${agent.fonction}</span>` : '';
+            const nomPrenom = `<strong>${(agent.nom || '').toUpperCase()}</strong> ${agent.prenom || ''}`;
+
+            // Éléments de la Ligne 2 (Département + Compétences/Spécialités)
             const dep = agent.departement ? `<span class="dep-tag">Dép:${agent.departement}</span>` : '';
             
-            // Formatage propre des spécialités / compétences
             let compList = [];
             if (agent.specialites) compList.push(agent.specialites);
             if (agent.competences) compList.push(agent.competences);
@@ -209,16 +212,17 @@ function afficherColonnes() {
             let listeTexte = compList.join(', ').split(',').map(s => s.trim()).filter(s => s.length > 0);
             const spes = listeTexte.length > 0 ? `<span class="spes-tag">[${listeTexte.join(', ')}]</span>` : '';
 
-            // Rendu condensé sur 2 lignes
+            // Rendu : Ligne 1 (Grade Nom Prénom Fonction) / Ligne 2 (Spécialités)
             html += `
                 <div class="carte-agent ${classeStatut}">
-                    <div class="carte-nom">${(agent.nom || '').toUpperCase()} ${agent.prenom || ''}</div>
+                    <div class="carte-nom">
+                        ${grade} ${nomPrenom} ${fonction}
+                    </div>
+                    ${(dep || spes) ? `
                     <div class="carte-details">
-                        ${fonction}
-                        ${grade}
                         ${dep}
                         ${spes}
-                    </div>
+                    </div>` : ''}
                 </div>
             `;
         });
