@@ -162,61 +162,76 @@ function genererBadgesHTML(dictionnaire, couleurHex) {
 }
 
 function rendreEquipes() {
-    const tresEquipes = ['A', 'B', 'C'];
+    const lettresEquipes = ['A', 'B', 'C'];
 
-    tresEquipes.forEach(tre => {
-        const membres = agentsLocaux.filter(a => extraireLettreEquipe(a.equipe) === tre);
+    lettresEquipes.forEach(lettre => {
+        // Filtrage des membres de l'équipe courante
+        const membres = agentsLocaux.filter(a => a && a.equipe && extraireLettreEquipe(a.equipe) === lettre);
         membres.sort(trierAgentsHierarchie);
 
         const s = calculerStatsEquipe(membres);
         
-        document.getElementById(`count-${lettre}`).innerText = s.nb;
-        document.getElementById(`stats-${lettre}`).innerHTML = `
-            <div class="stat-badge full-width"><span class="stat-label">Agents:</span> <span class="stat-value">${s.nb}</span></div>
-            <div class="stat-badge"><span class="stat-label">Femmes:</span> <span class="stat-value">${s.nbF} (${s.pctF}%)</span></div>
-            <div class="stat-badge"><span class="stat-label">Âge moy:</span> <span class="stat-value">${s.ageMoy} ans</span></div>
-            <div class="stat-badge"><span class="stat-label">CDG/ACDG:</span> <span class="stat-value">${s.cdg}</span></div>
-            <div class="stat-badge"><span class="stat-label">CATE:</span> <span class="stat-value">${s.cate}</span></div>
-            <div class="stat-badge"><span class="stat-label">CA1E:</span> <span class="stat-value">${s.ca1e}</span></div>
-            <div class="stat-badge"><span class="stat-label">CEQU:</span> <span class="stat-value">${s.cequ}</span></div>
-            <div class="stat-badge full-width"><span class="stat-label">EQU:</span> <span class="stat-value">${s.equ}</span></div>
-            
-            <div class="stat-section-title">Spécialités :</div>
-            <div class="stat-badge-container">${genererBadgesHTML(s.dicSpecs, '#60a5fa')}</div>
+        const countEl = document.getElementById(`count-${lettre}`);
+        if (countEl) countEl.innerText = s.nb;
 
-            <div class="stat-section-title">Compétences :</div>
-            <div class="stat-badge-container">${genererBadgesHTML(s.dicComps, '#34d399')}</div>
+        const statsEl = document.getElementById(`stats-${lettre}`);
+        if (statsEl) {
+            statsEl.innerHTML = `
+                <div class="stat-badge full-width"><span class="stat-label">Agents:</span> <span class="stat-value">${s.nb}</span></div>
+                <div class="stat-badge"><span class="stat-label">Femmes:</span> <span class="stat-value">${s.nbF} (${s.pctF}%)</span></div>
+                <div class="stat-badge"><span class="stat-label">Âge moy:</span> <span class="stat-value">${s.ageMoy} ans</span></div>
+                <div class="stat-badge"><span class="stat-label">CDG/ACDG:</span> <span class="stat-value">${s.cdg}</span></div>
+                <div class="stat-badge"><span class="stat-label">CATE:</span> <span class="stat-value">${s.cate}</span></div>
+                <div class="stat-badge"><span class="stat-label">CA1E:</span> <span class="stat-value">${s.ca1e}</span></div>
+                <div class="stat-badge"><span class="stat-label">CEQU:</span> <span class="stat-value">${s.cequ}</span></div>
+                <div class="stat-badge full-width"><span class="stat-label">EQU:</span> <span class="stat-value">${s.equ}</span></div>
+                
+                <div class="stat-section-title">Spécialités :</div>
+                <div class="stat-badge-container">${genererBadgesHTML(s.dicSpecs, '#60a5fa')}</div>
 
-            <div class="stat-section-title">Départements Domicile :</div>
-            <div class="stat-badge-container">${genererBadgesHTML(s.dicDept, '#f59e0b')}</div>
-        `;
+                <div class="stat-section-title">Compétences :</div>
+                <div class="stat-badge-container">${genererBadgesHTML(s.dicComps, '#34d399')}</div>
+
+                <div class="stat-section-title">Départements Domicile :</div>
+                <div class="stat-badge-container">${genererBadgesHTML(s.dicDept, '#f59e0b')}</div>
+            `;
+        }
 
         const container = document.getElementById(`container-${lettre}`);
-        container.innerHTML = "";
-        membres.forEach(agent => {
-            const specs = agent.specialites ? `<span class="agent-spec">[${agent.specialites}]</span>` : '';
-            const dep = extraireDepartement(agent);
-            container.innerHTML += `
-                <div class="carte-agent-simu ${agent.verrouille ? 'locked' : ''}">
-                    <div class="agent-info-compact">
-                        <span class="agent-nom">${(agent.nom || '').toUpperCase()} ${agent.prenom || ''}</span>
-                        <div class="agent-details">
-                            <span>${agent.fonction || 'Agent'}</span>
-                            <span>${agent.grade || '-'}</span>
-                            <span style="color:#f59e0b;">Dép:${dep}</span>
-                            ${specs}
+        if (container) {
+            container.innerHTML = "";
+            membres.forEach(agent => {
+                const specs = agent.specialites ? `<span class="agent-spec">[${agent.specialites}]</span>` : '';
+                const dep = extraireDepartement(agent);
+                
+                // Génération des options du select (évite l'erreur de portée de 'lettre')
+                const optionsDeplacement = lettresEquipes
+                    .filter(l => l !== lettre)
+                    .map(l => `<option value="Équipe ${l}">Vers ${l}</option>`)
+                    .join('');
+
+                container.innerHTML += `
+                    <div class="carte-agent-simu ${agent.verrouille ? 'locked' : ''}">
+                        <div class="agent-info-compact">
+                            <span class="agent-nom">${(agent.nom || '').toUpperCase()} ${agent.prenom || ''}</span>
+                            <div class="agent-details">
+                                <span>${agent.fonction || 'Agent'}</span>
+                                <span>${agent.grade || '-'}</span>
+                                <span style="color:#f59e0b;">Dép:${dep}</span>
+                                ${specs}
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:4px;">
+                            <input type="checkbox" title="Verrouiller" ${agent.verrouille ? 'checked' : ''} onchange="basculerVerrou('${agent.idUnique}')">
+                            <select class="select-equipe-deplacement" onchange="deplacerAgent('${agent.idUnique}', this.value)">
+                                <option value="">Déplacer...</option>
+                                ${optionsDeplacement}
+                            </select>
                         </div>
                     </div>
-                    <div style="display:flex; align-items:center; gap:4px;">
-                        <input type="checkbox" title="Verrouiller" ${agent.verrouille ? 'checked' : ''} onchange="basculerVerrou('${agent.idUnique}')">
-                        <select class="select-equipe-deplacement" onchange="deplacerAgent('${agent.idUnique}', this.value)">
-                            <option value="">Déplacer...</option>
-                            ${lettresEquipes.filter(l => l !== lettre).map(l => `<option value="Équipe ${l}">Vers ${l}</option>`).join('')}
-                        </select>
-                    </div>
-                </div>
-            `;
-        });
+                `;
+            });
+        }
     });
 }
 
