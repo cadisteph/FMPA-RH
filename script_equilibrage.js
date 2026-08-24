@@ -130,11 +130,19 @@ function trierAgentsHierarchie(a, b) {
 
 function calculerStatsEquipe(membres) {
     const nb = membres.length;
-    const nbF = membres.filter(a => normaliserTexte(a.sexe).startsWith('F') || normaliserTexte(a.genre).startsWith('F')).length;
-    const ageMoy = nb > 0 ? Math.round(membres.reduce((s, a) => s + calculerAge(a.dateNaissance), 0) / nb) : 0;
+    
+    // Priorité 1 : Effectif & Femmes
+    const nbF = membres.filter(a => normaliserTexte(a.sexe).startsWith('f') || normaliserTexte(a.genre).startsWith('f')).length;
+    const pctF = nb > 0 ? Math.round((nbF / nb) * 100) : 0;
+    const ageMoy = nb > 0 ? Math.round(membres.reduce((s, a) => s + (a.dateNaissance ? calculerAge(a.dateNaissance) : (a.naissanceDate ? calculerAge(a.naissanceDate) : 0)), 0) / nb) : 0;
     
     const compteFn = (fn) => membres.filter(a => normaliserTexte(a.fonction) === fn).length;
 
+    // Priorité 4 : Régimes
+    const nbG24 = membres.filter(a => normaliserTexte(a.regime).includes('g24')).length;
+    const nbMixte = membres.filter(a => normaliserTexte(a.regime).includes('mixte')).length;
+
+    // Dictionnaires pour Spécialités (P3), Compétences (P3) et Départements (P5)
     const dicSpecs = {};
     const dicComps = {};
     const dicDept = {};
@@ -143,14 +151,19 @@ function calculerStatsEquipe(membres) {
         extraireItems(a.specialites).forEach(s => { dicSpecs[s] = (dicSpecs[s] || 0) + 1; });
         extraireItems(a.competences).forEach(c => { dicComps[c] = (dicComps[c] || 0) + 1; });
         const dep = extraireDepartement(a);
-        dicDept[dep] = (dicDept[dep] || 0) + 1;
+        if (dep) dicDept[dep] = (dicDept[dep] || 0) + 1;
     });
 
     return { 
-        nb, nbF, pctF: nb > 0 ? Math.round((nbF/nb)*100) : 0, ageMoy,
-        cate: compteFn('CATE'), ca1e: compteFn('CA1E'),
-        cequ: compteFn('CEQU'), equ: compteFn('EQU'),
-        cdg: compteFn('CDG') + compteFn('ACDG1') + compteFn('ACDG2'),
+        nb, nbF, pctF, ageMoy,
+        nbG24, nbMixte,
+        cdg: compteFn('CDG'),
+        acdg1: compteFn('ACDG1'),
+        acdg2: compteFn('ACDG2'),
+        cate: compteFn('CATE'), 
+        ca1e: compteFn('CA1E'),
+        cequ: compteFn('CEQU'), 
+        equ: compteFn('EQU'),
         dicSpecs, dicComps, dicDept
     };
 }
