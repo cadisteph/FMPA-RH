@@ -156,9 +156,20 @@ function calculerStatsEquipe(membres) {
 }
 
 function genererBadgesHTML(dictionnaire, couleurHex) {
-    const cles = Object.keys(dictionnaire);
-    if (cles.length === 0) return '<span style="color:#64748b; font-size:0.65rem;">Aucune</span>';
-    return cles.map(k => `<span class="tag-detail" style="border-color:${couleurHex}; color:${couleurHex};">${k}:<b>${dictionnaire[k]}</b></span>`).join(" ");
+    if (!dictionnaire || Object.keys(dictionnaire).length === 0) {
+        return '<span style="color:#6b7280; font-size:0.8em;">Aucun</span>';
+    }
+
+    // 1. Récupérer les clés et les trier par ordre alphabétique
+    const clefsTriees = Object.keys(dictionnaire).sort((a, b) => a.localeCompare(b));
+
+    // 2. Générer les badges dans cet ordre strict
+    return clefsTriees.map(cle => {
+        const val = dictionnaire[cle];
+        return `<span class="stat-badge-item" style="border-color:${couleurHex};">
+                    ${cle}:<strong style="color:${couleurHex};">${val}</strong>
+                </span>`;
+    }).join('');
 }
 
 function rendreEquipes() {
