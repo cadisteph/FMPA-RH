@@ -622,6 +622,7 @@ function enregistrerAgent() {
     } else {
         listeAgents.push(agentObj);
     }
+      localStorage.setItem("baseAgents", JSON.stringify(listeAgents));
 
     actualiserTableauRH();
     viderFormulaireRH();
