@@ -128,21 +128,23 @@ function genererControlesDynamiques() {
 }
 
 function trierAgentsHierarchie(a, b) {
-    const fA = normaliserTexte(a.fonction);
-    const fB = normaliserTexte(b.fonction);
-     idxFA = ORDRE_FONCTIONS.indexOf(fA);
-     idxFB = ORDRE_FONCTIONS.indexOf(fB);
+    const ordreFonctions = {
+        'CDG': 1, 'ACDG1': 2, 'ACDG2': 3, 
+        'CATE': 4, 'CA1E': 5, 'CEQU': 6, 'EQU': 7
+    };
     
-    if (idxFA === -1) idxFA = 999;
-    if (idxFB === -1) idxFB = 999;
-    
-    if (idxFA !== idxFB) return idxFA - idxFB;
+    const fA = String(a?.fonction || '').trim().toUpperCase();
+    const fB = String(b?.fonction || '').trim().toUpperCase();
 
-    const nomA = normaliserTexte(a.nom);
-    const nomB = normaliserTexte(b.nom);
-    if (nomA !== nomB) return nomA.localeCompare(nomB, 'fr', { sensitivity: 'base' });
-    
-    return normaliserTexte(a.prenom).localeCompare(normaliserTexte(b.prenom), 'fr', { sensitivity: 'base' });
+    const rankA = ordreFonctions[fA] || 99;
+    const rankB = ordreFonctions[fB] || 99;
+
+    if (rankA !== rankB) {
+        return rankA - rankB; // Affiche les plus hauts rangs en premier
+    }
+
+    // Si même fonction, tri alphabétique par nom
+    return String(a?.nom || '').localeCompare(String(b?.nom || ''));
 }
 
 function calculerStatsEquipe(membres, conserverNiveaux = true) {
@@ -343,8 +345,8 @@ statsEl.innerHTML = `
     <div class="stat-badge full-width"><span class="stat-label">Agents:</span> <span class="stat-value">${s.nb}</span></div>
     <div class="stat-badge"><span class="stat-label">Femmes:</span> <span class="stat-value">${s.nbF} (${s.pctF}%)</span></div>
     <div class="stat-badge"><span class="stat-label">Âge moy:</span> <span class="stat-value">${s.ageMoy} ans</span></div>
-    <div class="stat-badge"><span class="stat-label">CDG/ACDG:</span> <span class="stat-value">${s.cdg + s.acdg1 + s.acdg2}</span></div>
-    <div class="stat-badge"><span class="stat-label">CATE:</span> <span class="stat-value">${s.cate}</span></div>
+    <div class="stat-badge"><span class="stat-label">CDG:</span> <span class="stat-value">${s.cdg}</span></div>
+    <div class="stat-badge"><span class="stat-label">ACDG/CATE:</span> <span class="stat-value">${s.acdgCate}</span></div>
     <div class="stat-badge"><span class="stat-label">CA1E:</span> <span class="stat-value">${s.ca1e}</span></div>
     <div class="stat-badge"><span class="stat-label">CEqu:</span> <span class="stat-value">${s.cequ}</span></div>
     <div class="stat-badge"><span class="stat-label">Equ:</span> <span class="stat-value">${s.equ}</span></div>
