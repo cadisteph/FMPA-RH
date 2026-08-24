@@ -107,24 +107,19 @@ function afficherColonnes() {
         const equipe = normaliserTexte(agent.equipe);
         const fn = normaliserTexte(agent.fonction);
 
-        // MODE TOUT : On prend l'ensemble des agents sans exception
         if (filtreNorm === 'TOUT') return true;
         
-        // MODE ENCADREMENT : Tous les cadres
         if (filtreNorm === 'ENCADREMENT') {
             const fonctionsEncadrement = ['CDC', 'ACDC', 'OFPAO', 'OFTECH', 'SOFPAO', 'SOFTECH', 'ASSISTANTE', 'SECRETARIAT', 'ADMINISTRATIF'];
             return estAgentEncadrement(agent) || fonctionsEncadrement.includes(fn);
         }
         
-        // MODE SPP (GARDE) : SPP uniquement ET EXCLUSION STRICTE DE L'ENCADREMENT
         if (estFiltreSPPGarde) {
             return statut.includes('SPP') && !estAgentEncadrement(agent);
         }
 
-        // MODE SPV
         if (filtreNorm === 'SPV') return statut.includes('SPV');
 
-        // Filtre d'une équipe spécifique (ex: Équipe A)
         const termeFiltre = filtreNorm.replace("EQUIPE", "").trim();
         const termeEquipe = equipe.replace("EQUIPE", "").trim();
 
@@ -139,16 +134,11 @@ function afficherColonnes() {
     } else if (filtreNorm !== 'TOUT' && !estFiltreSPPGarde && filtreNorm !== 'SPV') {
         listeColonnes = [{ titre: filtreActuel, identifiant: filtreNorm }];
     } else {
-        // MODE TOUT, SPP (GARDE) ou SPV
-        
-        // A. Première colonne : Encadrement 
-        // -> Affichée SI des cadres existent ET QU'ON N'EST PAS sur le filtre SPP Garde
         const aDesCadres = agentsFiltres.some(a => estAgentEncadrement(a));
         if (aDesCadres && !estFiltreSPPGarde) {
             listeColonnes.push({ titre: "Encadrement", identifiant: "ENCADREMENT" });
         }
 
-        // B. Colonnes d'équipes (Équipe A, Équipe B, etc.)
         let equipesUniques = [...new Set(
             agentsFiltres
                 .filter(a => !estAgentEncadrement(a))
@@ -162,7 +152,7 @@ function afficherColonnes() {
         });
     }
 
-    // 3. Rendu HTML
+    // 3. Rendu HTML ULTRA-COMPACT
     listeColonnes.forEach(colInfo => {
         let membres = [];
 
@@ -172,7 +162,7 @@ function afficherColonnes() {
             const idNorm = colInfo.identifiant;
 
             membres = agentsFiltres.filter(a => {
-                if (estAgentEncadrement(a)) return false; // Exclut les cadres des colonnes d'équipes
+                if (estAgentEncadrement(a)) return false;
                 
                 const eq = normaliserTexte(a.equipe);
                 const termeCol = idNorm.replace("EQUIPE", "").trim();
@@ -207,24 +197,28 @@ function afficherColonnes() {
                 classeStatut = 'pats';
             }
 
-            const grade = agent.grade || '-';
-            const fonction = agent.fonction || 'Agent';
-            const tpEng = agent.engagement || agent.tempsPartiel || '';
+            const grade = agent.grade ? `<span class="grade-tag">${agent.grade}</span>` : '';
+            const fonction = agent.fonction ? `<span class="fonction-tag">${agent.fonction}</span>` : '';
+            const dep = agent.departement ? `<span class="dep-tag">Dép:${agent.departement}</span>` : '';
+            
+            // Formatage propre des spécialités / compétences
+            let compList = [];
+            if (agent.specialites) compList.push(agent.specialites);
+            if (agent.competences) compList.push(agent.competences);
+            
+            let listeTexte = compList.join(', ').split(',').map(s => s.trim()).filter(s => s.length > 0);
+            const spes = listeTexte.length > 0 ? `<span class="spes-tag">[${listeTexte.join(', ')}]</span>` : '';
 
+            // Rendu condensé sur 2 lignes
             html += `
                 <div class="carte-agent ${classeStatut}">
-                    <div class="carte-header">
-                        <span>${grade}</span>
-                        <span class="badge badge-statut">${agent.statut || 'SPP'}</span>
-                    </div>
                     <div class="carte-nom">${(agent.nom || '').toUpperCase()} ${agent.prenom || ''}</div>
                     <div class="carte-details">
-                        <span class="fonction-tag">${fonction}</span>
-                        <span style="color:#60a5fa; font-weight:bold;">${tpEng}</span>
+                        ${fonction}
+                        ${grade}
+                        ${dep}
+                        ${spes}
                     </div>
-                    
-                    ${genererBadgesHTML(agent.specialites, 'specialite')}
-                    ${genererBadgesHTML(agent.competences, 'competence')}
                 </div>
             `;
         });
@@ -235,38 +229,13 @@ function afficherColonnes() {
     });
 }
 
-function genererBadgesHTML(chaineTxt, type) {
-    if (!chaineTxt || chaineTxt.trim() === "") return "";
-
-    const elements = chaineTxt.split(",").map(i => i.trim()).filter(i => i.length > 0);
-    if (elements.length === 0) return "";
-
-    const couleurClass = (type === 'specialite') ? 'badge-spec' : 'badge-comp';
-
-    return `
-        <div class="carte-badges">
-            ${elements.map(e => `<span class="badge ${couleurClass}">${e}</span>`).join("")}
-        </div>
-    `;
-}
-
 // Synchronisation automatique en temps réel entre onglets/pages
 window.addEventListener("storage", (event) => {
     if (event.key === "baseAgents") {
         const data = event.newValue;
         if (data) {
-            // Recharger la variable locale et rafraîchir l'affichage
-            agentsLocaux = JSON.parse(data).filter(a => {
-                if (!a) return false;
-                const eq = normaliserTexte(a.equipe);
-                const fn = normaliserTexte(a.fonction);
-                const st = normaliserTexte(a.statut);
-                const estCadre = ['CDC', 'ACDC', 'OFPAO', 'OFTECH', 'ADMINISTRATIF'].includes(fn) || eq.includes('ENCADREMENT');
-                return st.includes('SPP') && !estCadre;
-            });
-
-            genererControlesDynamiques();
-            rendreEquipes();
+            tousLesAgents = JSON.parse(data);
+            afficherColonnes();
         }
     }
 });
