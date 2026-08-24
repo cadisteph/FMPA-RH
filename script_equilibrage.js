@@ -173,7 +173,7 @@ function genererBadgesHTML(dictionnaire, couleurHex) {
             padding: 2px 6px;
             margin: 2px;
             border-radius: 4px;
-            font-size: 0.75rem;
+            font-size: 0.6rem;
             border: 1px solid ${couleurHex};
             background-color: ${couleurHex}20;
             color: #ffffff;
