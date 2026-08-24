@@ -2,7 +2,7 @@ let agentsLocaux = [];
 let propositionsEnAttente = [];
 
 // ORDRE HIÉRARCHIQUE DES FONCTIONS EXACT : CDG -> ACDG1 -> ACDG2 -> CATE -> CA1E -> CEQU -> EQU
-const ORDRE_FONCTIONS = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
+const ORDRE_FONCTIONS = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEqu', 'Equ'];
 
 document.addEventListener("DOMContentLoaded", () => {
     const data = localStorage.getItem("baseAgents");
@@ -200,8 +200,8 @@ function calculerStatsEquipe(membres, conserverNiveaux = true) {
         acdg2: compteFn('ACDG2'),
         cate: compteFn('CATE'), 
         ca1e: compteFn('CA1E'),
-        cequ: compteFn('CEQU'), 
-        equ: compteFn('EQU'),
+        cequ: compteFn('CEqu'), 
+        equ: compteFn('Equ'),
         dicSpecs, dicComps, dicDept
     };
 }
@@ -331,8 +331,8 @@ statsEl.innerHTML = `
     <div class="stat-badge"><span class="stat-label">CDG/ACDG:</span> <span class="stat-value">${s.cdg + s.acdg1 + s.acdg2}</span></div>
     <div class="stat-badge"><span class="stat-label">CATE:</span> <span class="stat-value">${s.cate}</span></div>
     <div class="stat-badge"><span class="stat-label">CA1E:</span> <span class="stat-value">${s.ca1e}</span></div>
-    <div class="stat-badge"><span class="stat-label">CEQU:</span> <span class="stat-value">${s.cequ}</span></div>
-    <div class="stat-badge"><span class="stat-label">EQU:</span> <span class="stat-value">${s.equ}</span></div>
+    <div class="stat-badge"><span class="stat-label">CEqu:</span> <span class="stat-value">${s.cequ}</span></div>
+    <div class="stat-badge"><span class="stat-label">Equ:</span> <span class="stat-value">${s.equ}</span></div>
 
     <div class="stat-badge"><span class="stat-label">G24:</span> <span class="stat-value" style="color:#60a5fa;">${s.nbG24}</span></div>
     <div class="stat-badge"><span class="stat-label">Mixte:</span> <span class="stat-value" style="color:#f59e0b;">${s.nbMixte}</span></div>
