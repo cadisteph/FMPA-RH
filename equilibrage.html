@@ -220,12 +220,72 @@
             width: 90%;
             border: 1px solid #334155;
         }
+
+/* Style du bouton */
+.btn-imprimer {
+    background: #334155;
+    color: #f8fafc;
+    border: 1px solid #475569;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.btn-imprimer:hover {
+    background: #475569;
+}
+
+/* Ajustements automatiques lors de l'impression */
+@media print {
+    /* Masque le panneau de réglages de gauche et les boutons */
+    .panneau-reglages, .btn-imprimer, .select-equipe-deplacement, .modal-suggestions {
+        display: none !important;
+    }
+    
+    /* Force l'affichage sur toute la largeur */
+    .layout-grid {
+        display: block !important;
+    }
+    
+    .grille-equipes {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 10px !important;
+    }
+
+    body, html {
+        background: white !important;
+        color: black !important;
+    }
+
+    .colonne-equipe, .carte-agent-simu, .dashboard-stats {
+        background: #ffffff !important;
+        color: #000000 !important;
+        border: 1px solid #ccc !important;
+    }
+
+    .stat-badge, .tag-detail {
+        background: #f1f5f9 !important;
+        color: #000000 !important;
+        border-color: #cbd5e1 !important;
+    }
+
+    .agent-nom, .stat-value {
+        color: #000000 !important;
+    }
+}
+
+        
     </style>
 </head>
 <body>
 
     <div class="header-bar">
         <h2 style="margin: 0; font-size: 1.2rem;">⚖️ Optimisation & Équilibrage des Équipes</h2>
+        <button onclick="window.print()" class="btn-imprimer">🖨️ Imprimer la simulation</button>
+</div>
     </div>
 
     <div class="layout-grid">
