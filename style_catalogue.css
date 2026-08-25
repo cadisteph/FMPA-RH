@@ -1,11 +1,13 @@
 * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
-/* Blocage de la page globale */
+/* Adaptation fluide pour tous les écrans (fixe + portable) */
 html, body { 
     margin: 0; 
     padding: 5px; 
     height: 100vh; 
-    overflow: hidden; /* Supprime le scroll général à droite */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Empêche la scrollbar globale */
     background-color: #475569; 
     color: #f8fafc; 
 }
@@ -14,26 +16,27 @@ header {
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    height: 45px; 
-    margin-bottom: 5px; 
     padding-bottom: 5px; 
     border-bottom: 1px solid #334155; 
+    flex-shrink: 0; /* Garde une hauteur constante */
 }
-h1 { margin: 0; font-size: 1.4rem; color: #f8fafc; }
+h1 { margin: 0; font-size: 1.3rem; color: #f8fafc; }
 
 .actions-reseau { display: flex; gap: 5px; }
-.btn-reseau { border: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 0.85rem; color: white; }
+.btn-reseau { border: none; padding: 6px 10px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 0.8rem; color: white; }
 .btn-blue { background: #0284c7; }
 .btn-blue:hover { background: #0369a1; }
 .btn-green { background: #16a34a; }
 .btn-green:hover { background: #15803d; }
 
-/* Conteneur principal fixe sous le header */
+/* Conteneur principal flexible */
 .layout-container { 
     display: flex; 
     gap: 5px; 
     align-items: flex-start; 
-    height: calc(100vh - 60px); 
+    flex: 1; /* Occupe 100% de l'espace vertical disponible sous le header */
+    min-height: 0; /* PERMET LE SCROLL INTERNE SUR PETITS ECRANS */
+    margin-top: 5px;
 }
 
 /* Colonne Gauche (Tableau) */
@@ -41,11 +44,14 @@ h1 { margin: 0; font-size: 1.4rem; color: #f8fafc; }
     flex: 7.5; 
     min-width: 0; 
     height: 100%; 
+    display: flex;
+    flex-direction: column;
 }
 
 .colonne-gauche .panel {
-    height: 100%;
-    overflow-y: auto; /* Active le scroll uniquement ici */
+    flex: 1;
+    min-height: 0; /* Force le navigateur à activer le scroll si contenu trop grand */
+    overflow-y: auto; /* La scrollbar apparaîtra ici quel que soit l'écran */
 }
 
 /* Style de la scrollbar du tableau */
@@ -57,12 +63,13 @@ h1 { margin: 0; font-size: 1.4rem; color: #f8fafc; }
 /* Colonne Droite (Formulaire) */
 .colonne-droite { 
     flex: 2.5; 
-    min-width: 280px; 
+    min-width: 260px; 
     height: 100%;
+    overflow-y: auto; /* Permet de scroller le formulaire si l'écran portable est très court */
 }
 
 .panel { background: #1e293b; border-radius: 8px; border: 1px solid #334155; padding: 5px; }
-.panel-titre { font-size: 1rem; font-weight: bold; color: #38bdf8; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.panel-titre { font-size: 0.95rem; font-weight: bold; color: #38bdf8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
 
 /* Tableau compact */
 table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.85rem; }
@@ -73,10 +80,10 @@ th {
     border-bottom: 2px solid #334155; 
     font-weight: 600; 
     position: sticky; 
-    top: -5px; /* En-tête collé en haut du panneau */
+    top: -5px; 
     z-index: 10; 
 }
-td { padding: 5px 5px; border-bottom: 1px solid #334155; vertical-align: middle; line-height: 1.2; }
+td { padding: 4px 5px; border-bottom: 1px solid #334155; vertical-align: middle; line-height: 1.2; }
 tr:hover { background: #334155; }
 
 .badge-type { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; white-space: nowrap; }
@@ -84,11 +91,11 @@ tr:hover { background: #334155; }
 .badge-specialite { background: #8b5cf6; color: white; }
 
 /* Formulaire */
-.form-group { margin-bottom: 10px; }
-.form-row { display: flex; gap: 8px; }
+.form-group { margin-bottom: 8px; }
+.form-row { display: flex; gap: 6px; }
 .form-row .form-group { flex: 1; }
-label { display: block; font-size: 0.75rem; font-weight: 600; color: #cbd5e1; margin-bottom: 3px; }
-input, select, textarea { width: 100%; background: #0f172a; border: 1px solid #475569; color: white; padding: 6px 8px; border-radius: 5px; font-size: 0.8rem; }
+label { display: block; font-size: 0.75rem; font-weight: 600; color: #cbd5e1; margin-bottom: 2px; }
+input, select, textarea { width: 100%; background: #0f172a; border: 1px solid #475569; color: white; padding: 5px 7px; border-radius: 5px; font-size: 0.8rem; }
 input:focus, select:focus, textarea:focus { outline: none; border-color: #38bdf8; }
 
 .btn-action { border: none; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; font-weight: bold; margin-right: 2px; }
@@ -97,6 +104,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #38bdf8
 .btn-delete { background: #ef4444; color: white; }
 .btn-delete:hover { background: #dc2626; }
 
-.btn-submit { width: 100%; background: #22c55e; color: white; border: none; padding: 8px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; margin-top: 8px; }
+.btn-submit { width: 100%; background: #22c55e; color: white; border: none; padding: 7px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; margin-top: 6px; }
 .btn-submit:hover { background: #16a34a; }
-.btn-cancel { width: 100%; background: #475569; color: white; border: none; padding: 6px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; cursor: pointer; margin-top: 5px; }
+.btn-cancel { width: 100%; background: #475569; color: white; border: none; padding: 5px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; cursor: pointer; margin-top: 4px; }
