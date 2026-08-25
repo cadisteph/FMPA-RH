@@ -15,7 +15,7 @@ function chargerCatalogueInitial() {
     const localData = localStorage.getItem("catalogueFormations");
     if (localData) {
         catalogue = JSON.parse(localData);
-        afficherCatalogue();
+        trierEtAfficherCatalogue();
     }
 
     fetch('catalogueFormations.json')
@@ -23,13 +23,37 @@ function chargerCatalogueInitial() {
         .then(data => {
             catalogue = data;
             sauvegarderLocalement();
-            afficherCatalogue();
+            trierEtAfficherCatalogue();
         })
         .catch(() => console.log("Chargement direct du JSON : mode local actif."));
 }
 
 function sauvegarderLocalement() {
     localStorage.setItem("catalogueFormations", JSON.stringify(catalogue));
+}
+
+// Fonction de tri multi-critères : Type -> Activité -> Thème
+function trierCatalogue(data) {
+    return data.sort((a, b) => {
+        // 1. Tri par Type (Socle Commun en premier, Spécialité ensuite)
+        if (a.type !== b.type) {
+            return a.type === "Socle Commun" ? -1 : 1;
+        }
+
+        // 2. Tri par Activité (Ordre alphabétique)
+        const compActivite = a.activite.localeCompare(b.activite, 'fr', { sensitivity: 'base' });
+        if (compActivite !== 0) {
+            return compActivite;
+        }
+
+        // 3. Tri par Thème / Libellé (Ordre alphanumérique naturel, ex: INC 1 avant INC 2)
+        return a.libelle.localeCompare(b.libelle, 'fr', { numeric: true, sensitivity: 'base' });
+    });
+}
+
+function trierEtAfficherCatalogue() {
+    catalogue = trierCatalogue(catalogue);
+    afficherCatalogue();
 }
 
 function afficherCatalogue() {
@@ -81,7 +105,7 @@ function sauvegarderFormation(e) {
     }
 
     sauvegarderLocalement();
-    afficherCatalogue();
+    trierEtAfficherCatalogue();
     reinitialiserFormulaire();
 }
 
@@ -105,7 +129,7 @@ function supprimerFormation(id) {
     if (confirm("Supprimer cette formation du catalogue ?")) {
         catalogue = catalogue.filter(f => f.id !== id);
         sauvegarderLocalement();
-        afficherCatalogue();
+        trierEtAfficherCatalogue();
         reinitialiserFormulaire();
     }
 }
@@ -119,6 +143,8 @@ function reinitialiserFormulaire() {
 }
 
 function exporterCatalogueJSON() {
+    // S'assurer d'exporter une liste bien triée
+    catalogue = trierCatalogue(catalogue);
     const blob = new Blob([JSON.stringify(catalogue, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -135,7 +161,7 @@ function chargerFichierLocal(e) {
         try {
             catalogue = JSON.parse(evt.target.result);
             sauvegarderLocalement();
-            afficherCatalogue();
+            trierEtAfficherCatalogue();
         } catch {
             alert("Format JSON invalide.");
         }
