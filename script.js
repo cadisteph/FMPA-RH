@@ -631,13 +631,22 @@ function enregistrerAgent() {
 function supprimerAgent() {
     const idVal = document.getElementById("agentId").value;
     if (!idVal) return;
-    if (confirm("❓ Êtes-vous sûr de vouloir supprimer cet agent ?")) {
-        listeAgents = listeAgents.filter(a => a.id !== parseInt(idVal));
 
-       localStorage.setItem("baseAgents", JSON.stringify(listeAgents));
+    if (confirm("❓ Êtes-vous sûr de vouloir supprimer cet agent ?")) {
+
+        const id = parseInt(idVal);
+
+        const index = listeAgents.findIndex(a => a.id === id);
+
+        if (index !== -1) {
+            listeAgents.splice(index, 1);
+        }
+
+        // 💾 Mise à jour du localStorage
+        localStorage.setItem("baseAgents", JSON.stringify(listeAgents));
+
         actualiserTableauRH();
         viderFormulaireRH();
-        
     }
 }
 
