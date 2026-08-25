@@ -1,13 +1,11 @@
 * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
-/* Adaptation fluide pour tous les écrans (fixe + portable) */
+/* Blocage propre du body */
 html, body { 
     margin: 0; 
     padding: 5px; 
     height: 100vh; 
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; /* Empêche la scrollbar globale */
+    overflow: hidden; /* Empêche tout scroll global de la page */
     background-color: #475569; 
     color: #f8fafc; 
 }
@@ -16,9 +14,10 @@ header {
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
+    height: 45px; 
+    margin-bottom: 5px; 
     padding-bottom: 5px; 
     border-bottom: 1px solid #334155; 
-    flex-shrink: 0; /* Garde une hauteur constante */
 }
 h1 { margin: 0; font-size: 1.3rem; color: #f8fafc; }
 
@@ -29,43 +28,37 @@ h1 { margin: 0; font-size: 1.3rem; color: #f8fafc; }
 .btn-green { background: #16a34a; }
 .btn-green:hover { background: #15803d; }
 
-/* Conteneur principal flexible */
+/* Conteneur principal */
 .layout-container { 
     display: flex; 
     gap: 5px; 
     align-items: flex-start; 
-    flex: 1; /* Occupe 100% de l'espace vertical disponible sous le header */
-    min-height: 0; /* PERMET LE SCROLL INTERNE SUR PETITS ECRANS */
-    margin-top: 5px;
 }
 
 /* Colonne Gauche (Tableau) */
 .colonne-gauche { 
     flex: 7.5; 
     min-width: 0; 
-    height: 100%; 
-    display: flex;
-    flex-direction: column;
 }
 
+/* LE REGLAGE CLEF : Hauteur max fixe par rapport à la vue du portable */
 .colonne-gauche .panel {
-    flex: 1;
-    min-height: 0; /* Force le navigateur à activer le scroll si contenu trop grand */
-    overflow-y: auto; /* La scrollbar apparaîtra ici quel que soit l'écran */
+    max-height: calc(100vh - 65px) !important;
+    overflow-y: scroll !important; /* Force l'apparition de la barre */
 }
 
-/* Style de la scrollbar du tableau */
-.colonne-gauche .panel::-webkit-scrollbar { width: 8px; }
+/* Style bien visible pour la scrollbar du tableau */
+.colonne-gauche .panel::-webkit-scrollbar { width: 10px; }
 .colonne-gauche .panel::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
-.colonne-gauche .panel::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-.colonne-gauche .panel::-webkit-scrollbar-thumb:hover { background: #64748b; }
+.colonne-gauche .panel::-webkit-scrollbar-thumb { background: #38bdf8; border-radius: 4px; } /* Couleur bleue pour bien la repérer */
+.colonne-gauche .panel::-webkit-scrollbar-thumb:hover { background: #0284c7; }
 
 /* Colonne Droite (Formulaire) */
 .colonne-droite { 
     flex: 2.5; 
     min-width: 260px; 
-    height: 100%;
-    overflow-y: auto; /* Permet de scroller le formulaire si l'écran portable est très court */
+    max-height: calc(100vh - 65px);
+    overflow-y: auto;
 }
 
 .panel { background: #1e293b; border-radius: 8px; border: 1px solid #334155; padding: 5px; }
@@ -76,7 +69,7 @@ table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0
 th { 
     background: #0f172a; 
     color: #cbd5e1; 
-    padding: 5px 2px; 
+    padding: 6px 2px; 
     border-bottom: 2px solid #334155; 
     font-weight: 600; 
     position: sticky; 
