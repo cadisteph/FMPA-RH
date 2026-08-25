@@ -20,25 +20,27 @@
     </header>
 
     <div class="layout-container">
-        <!-- COLONNE GAUCHE : LISTE DES FORMATIONS -->
-        <div class="colonne-gauche panel" style="height: calc(100vh - 70px); overflow-y: auto;">
-            <div class="panel-titre">Contenu des Formations</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Type</th>
-                        <th>Activité</th>
-                        <th>Thème / Libellé</th>
-                        <th>Séquence / Thématiques</th>
-                        <th>Quota (h)</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="liste-formations">
-                    <!-- Généré dynamiquement par script_catalogue.js -->
-                </tbody>
-            </table>
-        </div>
+<!-- COLONNE GAUCHE : LISTE DES FORMATIONS -->
+<div class="colonne-gauche">
+    <div class="panel" style="height: calc(100vh - 65px); overflow-y: auto; background-color: #1e293b;">
+        <div class="panel-titre">Contenu des Formations</div>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="position: sticky; top: -5px; background-color: #0f172a; z-index: 10;">Type</th>
+                    <th style="position: sticky; top: -5px; background-color: #0f172a; z-index: 10;">Activité</th>
+                    <th style="position: sticky; top: -5px; background-color: #0f172a; z-index: 10;">Thème / Libellé</th>
+                    <th style="position: sticky; top: -5px; background-color: #0f172a; z-index: 10;">Séquence / Thématiques</th>
+                    <th style="position: sticky; top: -5px; background-color: #0f172a; z-index: 10;">Quota (h)</th>
+                    <th style="position: sticky; top: -5px; background-color: #0f172a; z-index: 10;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="liste-formations">
+                <!-- Généré dynamiquement par script_catalogue.js -->
+            </tbody>
+        </table>
+    </div>
+</div>
 
         <!-- COLONNE DROITE : FORMULAIRE DE CREATION ET EDITION -->
         <div class="colonne-droite panel">
