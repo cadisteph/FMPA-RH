@@ -20,25 +20,33 @@
     </header>
 
     <div class="layout-container">
+        
 <!-- COLONNE GAUCHE : LISTE DES FORMATIONS -->
 <div class="colonne-gauche">
-    <div class="panel" style="height: calc(100vh - 65px); overflow-y: auto; background-color: #1e293b;">
-        <div class="panel-titre">Contenu des Formations</div>
-        <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr>
-                    <th style="position: sticky; top: -5px; background-color: #0f172a; z-index: 10;">Type</th>
-                    <th style="position: sticky; top: -5px; background-color: #0f172a; z-index: 10;">Activité</th>
-                    <th style="position: sticky; top: -5px; background-color: #0f172a; z-index: 10;">Thème / Libellé</th>
-                    <th style="position: sticky; top: -5px; background-color: #0f172a; z-index: 10;">Séquence / Thématiques</th>
-                    <th style="position: sticky; top: -5px; background-color: #0f172a; z-index: 10;">Quota (h)</th>
-                    <th style="position: sticky; top: -5px; background-color: #0f172a; z-index: 10;">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="liste-formations">
-                <!-- Généré dynamiquement par script_catalogue.js -->
-            </tbody>
-        </table>
+    <div class="panel" style="height: calc(100vh - 65px); display: flex; flex-direction: column; background-color: #1e293b;">
+        
+        <!-- Le titre reste fixe tout en haut -->
+        <div class="panel-titre" style="flex-shrink: 0; padding: 5px;">Contenu des Formations</div>
+
+        <!-- Ce conteneur intermédiaire prend le scroll uniquement pour le tableau -->
+        <div style="flex: 1; overflow-y: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="position: sticky; top: 0; background-color: #0f172a; z-index: 10;">Type</th>
+                        <th style="position: sticky; top: 0; background-color: #0f172a; z-index: 10;">Activité</th>
+                        <th style="position: sticky; top: 0; background-color: #0f172a; z-index: 10;">Thème / Libellé</th>
+                        <th style="position: sticky; top: 0; background-color: #0f172a; z-index: 10;">Séquence / Thématiques</th>
+                        <th style="position: sticky; top: 0; background-color: #0f172a; z-index: 10;">Quota (h)</th>
+                        <th style="position: sticky; top: 0; background-color: #0f172a; z-index: 10;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="liste-formations">
+                    <!-- Généré dynamiquement par script_catalogue.js -->
+                </tbody>
+            </table>
+        </div>
+
     </div>
 </div>
 
