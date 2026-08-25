@@ -1,1 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catalogue des Formations & Recyclages - CIS</title>
+    <link rel="stylesheet" href="style_catalogue.css">
+    <!-- PapaParse si besoin de traiter du CSV localement -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+</head>
+<body>
 
+    <header>
+        <h1>📚 Catalogue des Formations & Recyclages (FMPA)</h1>
+        <div class="actions-reseau">
+            <button class="btn-reseau btn-blue" id="btn-charger">📁 Charger JSON</button>
+            <button class="btn-reseau btn-green" id="btn-exporter">💾 Enregistrer le Catalogue (JSON)</button>
+            <input type="file" id="file-input" accept=".json" style="display:none;">
+        </div>
+    </header>
+
+    <div class="layout-container">
+        <!-- COLONNE GAUCHE : LISTE DES FORMATIONS -->
+        <div class="colonne-gauche panel">
+            <div class="panel-titre">Catalogue des Formations (2026)</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Activité</th>
+                        <th>Thème / Libellé</th>
+                        <th>Séquence / Thématiques</th>
+                        <th>Quota (h)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="liste-formations">
+                    <!-- Généré dynamiquement par script_catalogue.js -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- COLONNE DROITE : FORMULAIRE DE CREATION ET EDITION -->
+        <div class="colonne-droite panel">
+            <div class="panel-titre" id="form-titre">Ajouter une Formation</div>
+            <form id="form-formation">
+                <input type="hidden" id="form-id">
+
+                <div class="form-group">
+                    <label for="type-module">Type de Module *</label>
+                    <select id="type-module" required>
+                        <option value="Socle Commun">Socle Commun (Tronc Commun)</option>
+                        <option value="Spécialité">Spécialité</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="activite">Activité / Domaine *</label>
+                        <input type="text" id="activite" placeholder="Ex: INC, SUAP, COD..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="libelle">Thème / Libellé *</label>
+                        <input type="text" id="libelle" placeholder="Ex: INC 1, RAD 2..." required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="sequence">Séquence / Contenu (Optionnel)</label>
+                    <textarea id="sequence" rows="3" placeholder="Ex: Malaise et aggravation de maladie..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="quota">Quota Horaire Standard (Heures) *</label>
+                    <input type="number" id="quota" min="1" step="0.5" value="6" required>
+                </div>
+
+                <button type="submit" class="btn-submit" id="btn-save">➕ Ajouter au catalogue</button>
+                <button type="button" class="btn-cancel" id="btn-cancel" style="display: none;">Annuler la modification</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script_catalogue.js"></script>
+</body>
+</html>
