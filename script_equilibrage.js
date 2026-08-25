@@ -102,8 +102,8 @@ function genererControlesDynamiques() {
             const id = `poids-spec-${spec}`;
             containerSpecs.innerHTML += `
                 <div class="reglage-group">
-                    <label><span>${spec}</span> : <span id="val-${id}">3</span></label>
-                    <input type="range" id="${id}" data-item="${spec}" class="input-poids-spec" min="0" max="5" value="3" oninput="document.getElementById('val-${id}').innerText=this.value">
+                    <label><span>${spec}</span> : <span id="val-${id}">5</span></label>
+                    <input type="range" id="${id}" data-item="${spec}" class="input-poids-spec" min="0" max="5" value="5" oninput="document.getElementById('val-${id}').innerText=this.value">
                 </div>
             `;
         });
@@ -115,8 +115,8 @@ function genererControlesDynamiques() {
             const id = `poids-comp-${comp}`;
             containerComps.innerHTML += `
                 <div class="reglage-group">
-                    <label><span>${comp}</span> : <span id="val-${id}">3</span></label>
-                    <input type="range" id="${id}" data-item="${comp}" class="input-poids-comp" min="0" max="5" value="3" oninput="document.getElementById('val-${id}').innerText=this.value">
+                    <label><span>${comp}</span> : <span id="val-${id}">5</span></label>
+                    <input type="range" id="${id}" data-item="${comp}" class="input-poids-comp" min="0" max="5" value="5" oninput="document.getElementById('val-${id}').innerText=this.value">
                 </div>
             `;
         });
