@@ -11,35 +11,37 @@ h1 { margin: 0; font-size: 1.4rem; color: #f8fafc; }
 .btn-green { background: #16a34a; }
 .btn-green:hover { background: #15803d; }
 
-.layout-container { display: flex; gap: 20px; align-items: flex-start; }
-.colonne-gauche { flex: 2; min-width: 0; }
-.colonne-droite { flex: 1; min-width: 340px; }
+/* Inversion des proportions : Tableau à 70% et Formulaire à 30% */
+.layout-container { display: flex; gap: 15px; align-items: flex-start; }
+.colonne-gauche { flex: 7; min-width: 0; }
+.colonne-droite { flex: 3; min-width: 280px; }
 
-.panel { background: #1e293b; border-radius: 8px; border: 1px solid #334155; padding: 15px; }
-.panel-titre { font-size: 1.1rem; font-weight: bold; color: #38bdf8; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
+.panel { background: #1e293b; border-radius: 8px; border: 1px solid #334155; padding: 12px; }
+.panel-titre { font-size: 1rem; font-weight: bold; color: #38bdf8; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
-th { background: #0f172a; color: #cbd5e1; padding: 10px; border-bottom: 2px solid #334155; font-weight: 600; }
-td { padding: 10px; border-bottom: 1px solid #334155; vertical-align: middle; }
+/* Tableau compact */
+table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+th { background: #0f172a; color: #cbd5e1; padding: 6px 8px; border-bottom: 2px solid #334155; font-weight: 600; }
+td { padding: 5px 8px; border-bottom: 1px solid #334155; vertical-align: middle; line-height: 1.2; }
 tr:hover { background: #334155; }
 
-.badge-type { font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block; }
+.badge-type { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; white-space: nowrap; }
 .badge-socle { background: #0284c7; color: white; }
 .badge-specialite { background: #8b5cf6; color: white; }
 
-.form-group { margin-bottom: 12px; }
-.form-row { display: flex; gap: 10px; }
+.form-group { margin-bottom: 10px; }
+.form-row { display: flex; gap: 8px; }
 .form-row .form-group { flex: 1; }
-label { display: block; font-size: 0.8rem; font-weight: 600; color: #cbd5e1; margin-bottom: 4px; }
-input, select, textarea { width: 100%; background: #0f172a; border: 1px solid #475569; color: white; padding: 8px 10px; border-radius: 5px; font-size: 0.85rem; }
+label { display: block; font-size: 0.75rem; font-weight: 600; color: #cbd5e1; margin-bottom: 3px; }
+input, select, textarea { width: 100%; background: #0f172a; border: 1px solid #475569; color: white; padding: 6px 8px; border-radius: 5px; font-size: 0.8rem; }
 input:focus, select:focus, textarea:focus { outline: none; border-color: #38bdf8; }
 
-.btn-action { border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; margin-right: 4px; }
+.btn-action { border: none; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; font-weight: bold; margin-right: 2px; }
 .btn-edit { background: #334155; color: #cbd5e1; border: 1px solid #475569; }
 .btn-edit:hover { background: #475569; color: white; }
 .btn-delete { background: #ef4444; color: white; }
 .btn-delete:hover { background: #dc2626; }
 
-.btn-submit { width: 100%; background: #22c55e; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 0.9rem; cursor: pointer; margin-top: 10px; }
+.btn-submit { width: 100%; background: #22c55e; color: white; border: none; padding: 8px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; margin-top: 8px; }
 .btn-submit:hover { background: #16a34a; }
-.btn-cancel { width: 100%; background: #475569; color: white; border: none; padding: 8px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; margin-top: 5px; }
+.btn-cancel { width: 100%; background: #475569; color: white; border: none; padding: 6px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; cursor: pointer; margin-top: 5px; }
