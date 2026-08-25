@@ -47,11 +47,14 @@ h1 { margin: 0; font-size: 1.3rem; color: #f8fafc; }
     overflow-y: scroll !important; /* Force l'apparition de la barre */
 }
 
-/* Style bien visible pour la scrollbar du tableau */
-.colonne-gauche .panel::-webkit-scrollbar { width: 1px; }
-.colonne-gauche .panel::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
-.colonne-gauche .panel::-webkit-scrollbar-thumb { background: #38bdf8; border-radius: 4px; } /* Couleur bleue pour bien la repérer */
-.colonne-gauche .panel::-webkit-scrollbar-thumb:hover { background: #0284c7; }
+/* 1. Largeur globale de la scrollbar */
+.colonne-gauche div::-webkit-scrollbar {width: 1px;}
+/* 2. LE FOND / RAIL (Track) de la scrollbar */
+.colonne-gauche div::-webkit-scrollbar-track {background-color: #0f172a; border-radius: 2px;}
+/* 3. LE CURSEUR (Thumb) qui bouge */
+.colonne-gauche div::-webkit-scrollbar-thumb {background-color: #38bdf8; border-radius: 2px;}
+/* 4. Effet au survol du curseur */
+.colonne-gauche div::-webkit-scrollbar-thumb:hover {background-color: #0284c7;}
 
 /* Colonne Droite (Formulaire) */
 .colonne-droite { 
