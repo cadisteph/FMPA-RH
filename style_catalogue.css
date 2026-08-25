@@ -11,9 +11,15 @@ h1 { margin: 0; font-size: 1.4rem; color: #f8fafc; }
 .btn-green { background: #16a34a; }
 .btn-green:hover { background: #15803d; }
 
-/* Inversion des proportions : Tableau à 70% et Formulaire à 30% */
+/* Inversion des proportions : Tableau à 75% et Formulaire à 25% */
 .layout-container { display: flex; gap: 5px; align-items: flex-start; }
 .colonne-gauche { flex: 7.5; min-width: 0; }
+    /* Scrollbar */
+.colonne-gauche .panel {max-height: calc(100vh - 100px); overflow-y: auto; }
+.colonne-gauche .panel::-webkit-scrollbar { width: 8px; }
+.colonne-gauche .panel::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
+.colonne-gauche .panel::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+.colonne-gauche .panel::-webkit-scrollbar-thumb:hover { background: #64748b; }
 .colonne-droite { flex: 2.5; min-width: 280px; }
 
 .panel { background: #1e293b; border-radius: 8px; border: 1px solid #334155; padding: 5px; }
@@ -21,7 +27,7 @@ h1 { margin: 0; font-size: 1.4rem; color: #f8fafc; }
 
 /* Tableau compact */
 table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.85rem; }
-th { background: #0f172a; color: #cbd5e1; padding: 5px 2px; border-bottom: 2px solid #334155; font-weight: 600; }
+th { background: #0f172a; color: #cbd5e1; padding: 5px 2px; border-bottom: 2px solid #334155; font-weight: 600; position: sticky; top: -12px; z-index: 10}
 td { padding: 5px 5px; border-bottom: 1px solid #334155; vertical-align: middle; line-height: 1.2; }
 tr:hover { background: #334155; }
 
