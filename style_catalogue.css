@@ -48,7 +48,7 @@ h1 { margin: 0; font-size: 1.3rem; color: #f8fafc; }
 }
 
 /* Style bien visible pour la scrollbar du tableau */
-.colonne-gauche .panel::-webkit-scrollbar { width: 10px; }
+.colonne-gauche .panel::-webkit-scrollbar { width: 1px; }
 .colonne-gauche .panel::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
 .colonne-gauche .panel::-webkit-scrollbar-thumb { background: #38bdf8; border-radius: 4px; } /* Couleur bleue pour bien la repérer */
 .colonne-gauche .panel::-webkit-scrollbar-thumb:hover { background: #0284c7; }
@@ -62,7 +62,7 @@ h1 { margin: 0; font-size: 1.3rem; color: #f8fafc; }
 }
 
 .panel { background: #1e293b; border-radius: 8px; border: 1px solid #334155; padding: 5px; }
-.panel-titre { font-size: 0.95rem; font-weight: bold; color: #38bdf8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.panel-titre { font-size: 0.95rem; font-weight: bold; color: #38bdf8; margin-bottom: 1px; text-transform: uppercase; letter-spacing: 0.5px; }
 
 /* Tableau compact */
 table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.85rem; }
