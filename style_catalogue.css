@@ -1,7 +1,24 @@
 * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-body { margin: 0; background-color: #475569; color: #f8fafc; padding: 5px; }
 
-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px solid #334155; }
+/* Blocage de la page globale */
+html, body { 
+    margin: 0; 
+    padding: 5px; 
+    height: 100vh; 
+    overflow: hidden; /* Supprime le scroll général à droite */
+    background-color: #475569; 
+    color: #f8fafc; 
+}
+
+header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    height: 45px; 
+    margin-bottom: 5px; 
+    padding-bottom: 5px; 
+    border-bottom: 1px solid #334155; 
+}
 h1 { margin: 0; font-size: 1.4rem; color: #f8fafc; }
 
 .actions-reseau { display: flex; gap: 5px; }
@@ -11,23 +28,54 @@ h1 { margin: 0; font-size: 1.4rem; color: #f8fafc; }
 .btn-green { background: #16a34a; }
 .btn-green:hover { background: #15803d; }
 
-/* Inversion des proportions : Tableau à 75% et Formulaire à 25% */
-.layout-container { display: flex; gap: 5px; align-items: flex-start; }
-.colonne-gauche { flex: 7.5; min-width: 0; }
-    /* Scrollbar */
-.colonne-gauche .panel {max-height: calc(100vh - 100px); overflow-y: auto; }
+/* Conteneur principal fixe sous le header */
+.layout-container { 
+    display: flex; 
+    gap: 5px; 
+    align-items: flex-start; 
+    height: calc(100vh - 60px); 
+}
+
+/* Colonne Gauche (Tableau) */
+.colonne-gauche { 
+    flex: 7.5; 
+    min-width: 0; 
+    height: 100%; 
+}
+
+.colonne-gauche .panel {
+    height: 100%;
+    overflow-y: auto; /* Active le scroll uniquement ici */
+}
+
+/* Style de la scrollbar du tableau */
 .colonne-gauche .panel::-webkit-scrollbar { width: 8px; }
 .colonne-gauche .panel::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
 .colonne-gauche .panel::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
 .colonne-gauche .panel::-webkit-scrollbar-thumb:hover { background: #64748b; }
-.colonne-droite { flex: 2.5; min-width: 280px; }
+
+/* Colonne Droite (Formulaire) */
+.colonne-droite { 
+    flex: 2.5; 
+    min-width: 280px; 
+    height: 100%;
+}
 
 .panel { background: #1e293b; border-radius: 8px; border: 1px solid #334155; padding: 5px; }
 .panel-titre { font-size: 1rem; font-weight: bold; color: #38bdf8; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
 
 /* Tableau compact */
 table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.85rem; }
-th { background: #0f172a; color: #cbd5e1; padding: 5px 2px; border-bottom: 2px solid #334155; font-weight: 600; position: sticky; top: 0px; z-index: 10}
+th { 
+    background: #0f172a; 
+    color: #cbd5e1; 
+    padding: 5px 2px; 
+    border-bottom: 2px solid #334155; 
+    font-weight: 600; 
+    position: sticky; 
+    top: -5px; /* En-tête collé en haut du panneau */
+    z-index: 10; 
+}
 td { padding: 5px 5px; border-bottom: 1px solid #334155; vertical-align: middle; line-height: 1.2; }
 tr:hover { background: #334155; }
 
@@ -35,6 +83,7 @@ tr:hover { background: #334155; }
 .badge-socle { background: #0284c7; color: white; }
 .badge-specialite { background: #8b5cf6; color: white; }
 
+/* Formulaire */
 .form-group { margin-bottom: 10px; }
 .form-row { display: flex; gap: 8px; }
 .form-row .form-group { flex: 1; }
