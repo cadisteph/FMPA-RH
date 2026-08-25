@@ -24,29 +24,41 @@
 <!-- COLONNE GAUCHE : LISTE DES FORMATIONS -->
 <div class="colonne-gauche">
     <div class="panel" style="height: calc(100vh - 65px); display: flex; flex-direction: column; background-color: #1e293b; padding: 0;">
-        <!-- 1. TITRE FIXE -->
+        
+        <!-- TITRE FIXE -->
         <div class="panel-titre" style="flex-shrink: 0; padding: 10px;">Contenu des Formations</div>
-        <!-- 2. EN-TÊTES FIXES (Tableau d'en-tête) -->
+
+        <!-- EN-TÊTES FIXES (Largeurs optimisées par colonne) -->
         <table style="width: 100%; border-collapse: collapse; table-layout: fixed; flex-shrink: 0;">
             <thead>
-                <tr style="background-color: #0f172a;">
-                    <th style="padding: 4px 4px; color: #cbd5e1; font-weight: 600;">Type</th>
-                    <th style="padding: 4px 4px; color: #cbd5e1; font-weight: 600;">Activité</th>
-                    <th style="padding: 4px 4px; color: #cbd5e1; font-weight: 600;">Thème / Libellé</th>
-                    <th style="padding: 4px 4px; color: #cbd5e1; font-weight: 600;">Séquence / Thématiques</th>
-                    <th style="padding: 4px 4px; color: #cbd5e1; font-weight: 600;">Quota (h)</th>
-                    <th style="padding: 4px 4px; color: #cbd5e1; font-weight: 600;">Actions</th>
+                <tr style="background-color: #0f172a; font-size: 0.85rem;">
+                    <th style="width: 13%; padding: 8px 4px; color: #cbd5e1; font-weight: 600;">Type</th>
+                    <th style="width: 14%; padding: 8px 4px; color: #cbd5e1; font-weight: 600;">Activité</th>
+                    <th style="width: 15%; padding: 8px 4px; color: #cbd5e1; font-weight: 600;">Thème / Libellé</th>
+                    <th style="width: 40%; padding: 8px 4px; color: #cbd5e1; font-weight: 600;">Séquence / Thématiques</th>
+                    <th style="width: 8%; padding: 8px 4px; color: #cbd5e1; font-weight: 600;">Quota (h)</th>
+                    <th style="width: 10%; padding: 8px 4px; color: #cbd5e1; font-weight: 600;">Actions</th>
                 </tr>
             </thead>
         </table>
-        <!-- 3. CORPS DÉROULANT (Seul le tbody défile) -->
+
+        <!-- CORPS DÉROULANT -->
         <div style="flex: 1; overflow-y: auto;">
             <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+                <colgroup>
+                    <col style="width: 13%;">
+                    <col style="width: 14%;">
+                    <col style="width: 15%;">
+                    <col style="width: 40%;">
+                    <col style="width: 8%;">
+                    <col style="width: 10%;">
+                </colgroup>
                 <tbody id="liste-formations">
                     <!-- Généré dynamiquement par script_catalogue.js -->
                 </tbody>
             </table>
         </div>
+
     </div>
 </div>
 
