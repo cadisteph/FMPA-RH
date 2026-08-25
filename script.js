@@ -635,7 +635,7 @@ function supprimerAgent() {
         listeAgents = listeAgents.filter(a => a.id !== parseInt(idVal));
         actualiserTableauRH();
         viderFormulaireRH();
-        enregistrerAgent();
+        
     }
 }
 
