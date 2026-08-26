@@ -1,1 +1,247 @@
-
+const catalogueInitial = [
+  {
+    "id": "fmpa-goc-1",
+    "type": "Socle Commun",
+    "fmpa": "GOC",
+    "activite": "GOC",
+    "libelle": "GOC 1",
+    "quota": 1,
+    "sequence": "Rappel sur les notions importantes (Feu éteint, surveillance...)",
+    "profils": [
+      "Tous profils"
+    ]
+  },
+  {
+    "id": "fmpa-inc-1",
+    "type": "Socle Commun",
+    "fmpa": "INCENDIE",
+    "activite": "INCENDIE",
+    "libelle": "INC 1",
+    "quota": 2,
+    "sequence": "Principe et règles d'alimentation",
+    "profils": [
+      "Tous profils"
+    ]
+  },
+  {
+    "id": "fmpa-inc-2",
+    "type": "Socle Commun",
+    "fmpa": "INCENDIE",
+    "activite": "INCENDIE",
+    "libelle": "INC 2",
+    "quota": 2,
+    "sequence": "Soutien à l'intervention : Toxicité des fumées, Amiante",
+    "profils": [
+      "Tous profils"
+    ]
+  },
+  {
+    "id": "fmpa-inc-3",
+    "type": "Socle Commun",
+    "fmpa": "INCENDIE",
+    "activite": "INCENDIE",
+    "libelle": "INC 3",
+    "quota": 2,
+    "sequence": "Techniques de lance",
+    "profils": [
+      "Tous profils"
+    ]
+  },
+  {
+    "id": "fmpa-inc-4",
+    "type": "Socle Commun",
+    "fmpa": "INCENDIE",
+    "activite": "INCENDIE",
+    "libelle": "INC 4",
+    "quota": 2,
+    "sequence": "Feux particuliers (VL transportant des matières dangereuses)",
+    "profils": [
+      "Tous profils"
+    ]
+  },
+  {
+    "id": "fmpa-nexsis-1",
+    "type": "Socle Commun",
+    "fmpa": "NEXSIS",
+    "activite": "NEXSIS",
+    "libelle": "Nexsis 1",
+    "quota": 3,
+    "sequence": "Formation des agents en CIS",
+    "profils": [
+      "Tous profils"
+    ]
+  },
+  {
+    "id": "fmpa-sic-1",
+    "type": "Socle Commun",
+    "fmpa": "SIC",
+    "activite": "SIC",
+    "libelle": "SIC 1",
+    "quota": 1,
+    "sequence": "Remontées d'informations opérationnelles (temporalité, contenu...)",
+    "profils": [
+      "Tous profils"
+    ]
+  },
+  {
+    "id": "fmpa-suap-1",
+    "type": "Socle Commun",
+    "fmpa": "SUAP",
+    "activite": "SUAP",
+    "libelle": "SUAP 1",
+    "quota": 6,
+    "sequence": "Thém DGSCGC : Malaise et aggravation de maladie, Accompagnement à la mobilité",
+    "profils": [
+      "COD 1",
+      "COD 6 MEA & BEA",
+      "COD 6 MEA",
+      "COD 6 BEA",
+      "EQ / CE / CA / CATE",
+      "Engagement Différencié"
+    ]
+  },
+  {
+    "id": "fmpa-suap-2",
+    "type": "Socle Commun",
+    "fmpa": "SUAP",
+    "activite": "SUAP",
+    "libelle": "SUAP 2",
+    "quota": 2,
+    "sequence": "Thématiques complémentaires : VIF, Traumatismes du dos et du cou",
+    "profils": [
+      "COD 1",
+      "COD 6 MEA & BEA",
+      "COD 6 MEA",
+      "COD 6 BEA",
+      "EQ / CE / CA / CATE",
+      "Engagement Différencié"
+    ]
+  },
+  {
+    "id": "fmpa-trans-1",
+    "type": "Socle Commun",
+    "fmpa": "TRANSVERSALE",
+    "activite": "TRANSVERSALE",
+    "libelle": "Transverse",
+    "quota": 1,
+    "sequence": "Interventions en contexte menaçant",
+    "profils": [
+      "Tous profils",
+      "Engagement Différencié"
+    ]
+  },
+  {
+    "id": "fmpa-cond-1",
+    "type": "Spécialité",
+    "fmpa": "Conduite",
+    "activite": "CONDUITE",
+    "libelle": "COD 1",
+    "quota": 4,
+    "sequence": "Règles d'utilisation d'un engin pompe",
+    "profils": [
+      "COD 1",
+      "COD 6 MEA & BEA",
+      "COD 6 MEA",
+      "COD 6 BEA"
+    ]
+  },
+  {
+    "id": "fmpa-cond-3",
+    "type": "Spécialité",
+    "fmpa": "Conduite",
+    "activite": "CONDUITE",
+    "libelle": "COD 6 BEA",
+    "quota": 4,
+    "sequence": "Règles d'utilisation d'un BEA",
+    "profils": [
+      "COD 1",
+      "COD 6 BEA"
+    ]
+  },
+  {
+    "id": "fmpa-cond-2",
+    "type": "Spécialité",
+    "fmpa": "Conduite",
+    "activite": "CONDUITE",
+    "libelle": "COD 6 MEA",
+    "quota": 4,
+    "sequence": "Règles d'utilisation d'un MEA",
+    "profils": [
+      "COD 1",
+      "COD 6 MEA & BEA"
+    ]
+  },
+  {
+    "id": "fmpa-emrs-6",
+    "type": "Spécialité",
+    "fmpa": "EMRS",
+    "activite": "EMRS",
+    "libelle": "EMRS (6h)",
+    "quota": 6,
+    "sequence": "Engins, moyens et risques spécifiques du CIS",
+    "profils": [
+      "COD 1 / COD 6 MEA & BEA",
+      "Engagement Différencié"
+    ]
+  },
+  {
+    "id": "fmpa-emrs-10",
+    "type": "Spécialité",
+    "fmpa": "EMRS",
+    "activite": "EMRS",
+    "libelle": "EMRS (10h)",
+    "quota": 10,
+    "sequence": "Engins, moyens et risques spécifiques du CIS",
+    "profils": [
+      "COD 1 / COD 6 MEA"
+    ]
+  },
+  {
+    "id": "fmpa-emrs-14",
+    "type": "Spécialité",
+    "fmpa": "EMRS",
+    "activite": "EMRS",
+    "libelle": "EMRS (14h)",
+    "quota": 14,
+    "sequence": "Engins, moyens et risques spécifiques du CIS",
+    "profils": [
+      "COD 1"
+    ]
+  },
+  {
+    "id": "fmpa-emrs-18",
+    "type": "Spécialité",
+    "fmpa": "EMRS",
+    "activite": "EMRS",
+    "libelle": "EMRS (18h)",
+    "quota": 18,
+    "sequence": "Engins, moyens et risques spécifiques du CIS",
+    "profils": [
+      "EQ / CE / CA / CATE"
+    ]
+  },
+  {
+    "id": "fmpa-fdf-1",
+    "type": "Spécialité",
+    "fmpa": "FDF",
+    "activite": "FDF1",
+    "libelle": "FDF 1",
+    "quota": 8,
+    "sequence": "FMPA dédiée aux FDF1 (temps décompté des EMRS puis de l'INC)",
+    "profils": [
+      "FDF1"
+    ]
+  },
+  {
+    "id": "fmpa-fdf-2",
+    "type": "Spécialité",
+    "fmpa": "FDF",
+    "activite": "FDF2",
+    "libelle": "FDF 2",
+    "quota": 12,
+    "sequence": "FMPA dédiée aux FDF2 (temps décompté des EMRS puis de l'INC)",
+    "profils": [
+      "FDF2"
+    ]
+  }
+];
