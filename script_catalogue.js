@@ -142,29 +142,42 @@ function reinitialiserFormulaire() {
     document.getElementById("btn-cancel").style.display = "none";
 }
 
-function exporterCatalogueJSON() {
-    // S'assurer d'exporter une liste bien triée
+// Exportation avec option d'écrasement direct du fichier existant
+async function exporterCatalogueJSON() {
     catalogue = trierCatalogue(catalogue);
-    const blob = new Blob([JSON.stringify(catalogue, null, 2)], { type: "application/json" });
+    const contenuJSON = JSON.stringify(catalogue, null, 2);
+
+    // Si l'API moderne est supportée par le navigateur (Edge, Chrome...)
+    if ('showSaveFilePicker' in window) {
+        try {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: 'catalogueFormations.json',
+                types: [{
+                    description: 'Fichier JSON',
+                    accept: { 'application/json': ['.json'] },
+                }],
+            });
+            const writable = await handle.createWritable();
+            await writable.write(contenuJSON);
+            await writable.close();
+        } catch (err) {
+            // L'utilisateur a simplement fermé la fenêtre d'enregistrement
+            if (err.name !== 'AbortError') {
+                console.error("Erreur lors de la sauvegarde :", err);
+                alert("Erreur lors de la mise à jour du fichier.");
+            }
+        }
+    } else {
+        // Mode de secours : téléchargement direct classique
+        telechargerJSONSecours(contenuJSON);
+    }
+}
+
+function telechargerJSONSecours(contenu) {
+    const blob = new Blob([contenu], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "catalogueFormations.json";
     a.click();
-}
-
-function chargerFichierLocal(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-        try {
-            catalogue = JSON.parse(evt.target.result);
-            sauvegarderLocalement();
-            trierEtAfficherCatalogue();
-        } catch {
-            alert("Format JSON invalide.");
-        }
-    };
-    reader.readAsText(file);
+    URL.revokeObjectURL(a.href);
 }
