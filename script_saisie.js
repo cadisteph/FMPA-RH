@@ -93,7 +93,8 @@ function traiterContenuCSV(texteCSV) {
 }
 
 /**
- * Parsing brut du CSV issu d'Excel sans traitement
+/**
+ * Lit le fichier baseAgents.csv et nettoie les guillemets
  */
 function parseCSVAgentsBrut(texteCSV) {
     const lignes = texteCSV.split(/\r\n|\n/).filter(l => l.trim() !== "");
@@ -101,12 +102,15 @@ function parseCSVAgentsBrut(texteCSV) {
 
     const enTeteBrute = lignes[0];
     const separateur = enTeteBrute.includes(";") ? ";" : ",";
-    const entetes = enTeteBrute.split(separateur).map(h => h.trim().toLowerCase());
+    
+    // Nettoyage des en-têtes (suppression des guillemets et espaces)
+    const entetes = enTeteBrute.split(separateur).map(h => h.replace(/"/g, '').trim().toLowerCase());
 
     const resultats = [];
 
     for (let i = 1; i < lignes.length; i++) {
-        const valeurs = lignes[i].split(separateur).map(v => v.trim());
+        // Nettoyage de chaque valeur (suppression des guillemets encadrants)
+        const valeurs = lignes[i].split(separateur).map(v => v.replace(/"/g, '').trim());
         if (valeurs.length < entetes.length) continue;
 
         const ligneObj = {};
