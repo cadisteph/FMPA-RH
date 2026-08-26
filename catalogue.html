@@ -99,15 +99,13 @@
 <!-- Dispense de formation -->
 <div class="form-group">
   <label for="dispenses">Profils dispensés de cette formation :</label>
-  <select id="dispenses" multiple size="4" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #cbd5e1;">
-    <option value="Aucune">Aucune dispense</option>
-    <option value="Spécialiste">Spécialiste</option>
-    <option value="Engagement Différencié">Engagement Différencié</option>
-    <option value="Hors-rang">Hors-rang</option>
-    <!-- Tu peux ajouter d'autres <option> selon tes besoins -->
-  </select>
-  <small style="color: #64748b; display: block; margin-top: 4px;">
-    💡 Maintiens la touche <strong>Ctrl</strong> (ou Cmd sur Mac) pour sélectionner plusieurs profils.
+  <input type="text" id="dispenses" list="liste-profils-dispenses" placeholder="Saisis ou choisis un profil (ex: FDF1, COD 6 MEA...)" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #cbd5e1;">
+  
+  <!-- Cette liste sera remplie par le CSV -->
+  <datalist id="liste-profils-dispenses"></datalist>
+  
+  <small style="color: #94a3b8; display: block; margin-top: 4px;">
+    💡 Saisie libre. Les suggestions proviennent de ton fichier RH. Sépare les profils multiples par une virgule.
   </small>
 </div>
 
