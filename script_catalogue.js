@@ -23,20 +23,20 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function chargerCatalogueInitial() {
-    // Suppression complète du cache local pour le test
-    localStorage.removeItem("catalogueFormations");
+    // 1. Priorité au cache local si tu viens d'ajouter/modifier une formation dans la session
+    const localData = localStorage.getItem("catalogueFormations");
+    
+    if (localData) {
+        catalogue = JSON.parse(localData);
+    } else if (typeof catalogueInitial !== 'undefined') {
+        // 2. Sinon, chargement direct du fichier JS réseau sans passer par le cache du serveur
+        catalogue = catalogueInitial;
+        sauvegarderLocalement();
+    } else {
+        catalogue = [];
+    }
 
-    fetch('catalogueFormations.json?t=' + Date.now())
-        .then(res => {
-            if (!res.ok) throw new Error("Erreur HTTP " + res.status);
-            return res.json();
-        })
-        .then(data => {
-            console.log("Données brutes reçues du JSON :", data);
-            catalogue = data;
-            trierEtAfficherCatalogue();
-        })
-        .catch(err => console.error("Échec du chargement du fichier JSON :", err));
+    trierEtAfficherCatalogue();
 }
 
 function sauvegarderLocalement() {
