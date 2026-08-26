@@ -10,22 +10,26 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-cancel").addEventListener("click", reinitialiserFormulaire);
 });
 
-// Chargement auto du catalogue JSON du dépôt
+// Chargement automatique : va TOUJOURS chercher le fichier réseau le plus récent
 function chargerCatalogueInitial() {
-    const localData = localStorage.getItem("catalogueFormations");
-    if (localData) {
-        catalogue = JSON.parse(localData);
-        trierEtAfficherCatalogue();
-    }
-
-    fetch('catalogueFormations.json')
+    // Le paramètre ?t=... empêche le navigateur de garder une vieille version en cache
+    fetch('catalogueFormations.json?t=' + Date.now())
         .then(res => res.ok ? res.json() : Promise.reject())
         .then(data => {
             catalogue = data;
-            sauvegarderLocalement();
+            sauvegarderLocalement(); // Met à jour le secours local
             trierEtAfficherCatalogue();
+            console.log("Catalogue réseau chargé avec succès.");
         })
-        .catch(() => console.log("Chargement direct du JSON : mode local actif."));
+        .catch(() => {
+            console.warn("Impossible de joindre catalogueFormations.json. Passage au secours local.");
+            // Si le réseau plante, on bascule sur la mémoire locale en secours
+            const localData = localStorage.getItem("catalogueFormations");
+            if (localData) {
+                catalogue = JSON.parse(localData);
+                trierEtAfficherCatalogue();
+            }
+        });
 }
 
 function sauvegarderLocalement() {
@@ -74,7 +78,7 @@ function afficherCatalogue() {
     });
 }
 
-function sauvegarderFormation(e) {
+async function sauvegarderFormation(e) {
     e.preventDefault();
     const id = document.getElementById("form-id").value;
     const type = document.getElementById("type-module").value;
@@ -83,6 +87,7 @@ function sauvegarderFormation(e) {
     const sequence = document.getElementById("sequence").value.trim();
     const quota = parseFloat(document.getElementById("quota").value);
 
+    // 1. Mise à jour ou ajout dans la mémoire JS
     if (id) {
         const idx = catalogue.findIndex(f => f.id === id);
         if (idx !== -1) {
@@ -99,9 +104,13 @@ function sauvegarderFormation(e) {
         });
     }
 
+    // 2. Sauvegarde locale et mise à jour du tableau visuel
     sauvegarderLocalement();
     trierEtAfficherCatalogue();
     reinitialiserFormulaire();
+
+    // 3. Déclenchement automatique de l'écriture sur le fichier JSON réseau
+    await exporterCatalogueJSON();
 }
 
 function editerFormation(id) {
@@ -133,7 +142,7 @@ function reinitialiserFormulaire() {
     document.getElementById("form-formation").reset();
     document.getElementById("form-id").value = "";
     document.getElementById("form-titre").innerText = "Ajouter une Formation";
-    document.getElementById("btn-save").innerText = "➕ Ajouter au catalogue";
+    document.getElementById("btn-save").innerText = "💾 Enregistrer dans le catalogue (JSON)";
     document.getElementById("btn-cancel").style.display = "none";
 }
 
