@@ -4,8 +4,6 @@ document.addEventListener("DOMContentLoaded", () => {
     chargerCatalogueInitial();
     
     document.getElementById("form-formation").addEventListener("submit", sauvegarderFormation);
-    document.getElementById("btn-charger").addEventListener("click", () => document.getElementById("file-input").click());
-    document.getElementById("btn-exporter").addEventListener("click", exporterCatalogueJSON);
     document.getElementById("file-input").addEventListener("change", chargerFichierLocal);
     document.getElementById("btn-cancel").addEventListener("click", reinitialiserFormulaire);
 });
