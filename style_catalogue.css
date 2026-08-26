@@ -68,23 +68,54 @@ h1 { margin: 0; font-size: 1.3rem; color: #f8fafc; }
 .panel-titre { font-size: 0.95rem; font-weight: bold; color: #38bdf8; margin-bottom: 1px; text-transform: uppercase; letter-spacing: 0.5px; }
 
 /* Tableau compact */
-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 0.85rem; }
+table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    text-align: center; 
+    font-size: 0.85rem; 
+    table-layout: auto; /* Permet un ajustement fluide des colonnes */
+}
+
 th { 
     background: #0f172a; 
     color: #cbd5e1; 
-    padding: 6px 2px; 
+    padding: 6px 4px; 
     border-bottom: 2px solid #334155; 
     font-weight: 600; 
     position: sticky; 
     top: -5px; 
     z-index: 10; 
 }
-td { padding: 4px 5px; border-bottom: 1px solid #334155; vertical-align: middle; line-height: 1.2; }
+
+td { 
+    padding: 4px 5px; 
+    border-bottom: 1px solid #334155; 
+    vertical-align: middle; 
+    line-height: 1.2; 
+    word-break: break-word; /* Évite qu'un texte trop long ne pousse le tableau hors de l'écran */
+}
+
 tr:hover { background: #334155; }
 
+/* Badges */
 .badge-type { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; white-space: nowrap; }
 .badge-socle { background: #0284c7; color: white; }
 .badge-specialite { background: #8b5cf6; color: white; }
+
+/* Fixation de la colonne des actions (Éditer / Corbeille) */
+td:last-child {
+    white-space: nowrap; /* Empêche les boutons de passer à la ligne */
+    width: 1%;           /* Force la colonne à coller au plus près des boutons */
+}
+
+/* Boutons d'action ultra-compacts */
+.btn-action {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    margin: 0 1px;
+    cursor: pointer;
+}
 
 /* Formulaire */
 .form-group { margin-bottom: 8px; }
