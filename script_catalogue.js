@@ -102,10 +102,10 @@ async function sauvegarderFormation(e) {
     const sequence = document.getElementById("sequence").value.trim();
     const quota = parseFloat(document.getElementById("quota").value);
 
-    // Récupération des choix multiples du sélecteur "dispenses"
-    const selectDispenses = document.getElementById("dispenses");
-    const dispenses = selectDispenses 
-        ? Array.from(selectDispenses.selectedOptions).map(opt => opt.value)
+    // Récupération de la saisie texte et découpage par virgule pour créer le tableau
+    const dispensesInput = document.getElementById("dispenses") ? document.getElementById("dispenses").value : "";
+    const dispenses = dispensesInput 
+        ? dispensesInput.split(",").map(p => p.trim()).filter(p => p.length > 0)
         : [];
 
     if (id) {
@@ -118,7 +118,7 @@ async function sauvegarderFormation(e) {
                 libelle, 
                 sequence: sequence || "-", 
                 quota,
-                dispenses // <-- Mise à jour des dispenses
+                dispenses
             };
         }
     } else {
@@ -129,7 +129,7 @@ async function sauvegarderFormation(e) {
             libelle,
             sequence: sequence || "-",
             quota,
-            dispenses // <-- Ajout des dispenses
+            dispenses
         });
     }
 
@@ -149,12 +149,12 @@ function editerFormation(id) {
     document.getElementById("sequence").value = item.sequence === "-" ? "" : item.sequence;
     document.getElementById("quota").value = item.quota;
 
-    // Sélection automatique des dispenses enregistrées
-    const selectDispenses = document.getElementById("dispenses");
-    if (selectDispenses) {
-        Array.from(selectDispenses.options).forEach(opt => {
-            opt.selected = item.dispenses ? item.dispenses.includes(opt.value) : false;
-        });
+    // Affichage des dispenses sous forme de texte séparé par des virgules
+    const inputDispenses = document.getElementById("dispenses");
+    if (inputDispenses) {
+        inputDispenses.value = (item.dispenses && item.dispenses.length > 0) 
+            ? item.dispenses.join(", ") 
+            : "";
     }
 
     document.getElementById("form-titre").innerText = "Modifier la Formation";
@@ -175,10 +175,10 @@ function reinitialiserFormulaire() {
     document.getElementById("form-formation").reset();
     document.getElementById("form-id").value = "";
     
-    // Réinitialisation du sélecteur multiple
-    const selectDispenses = document.getElementById("dispenses");
-    if (selectDispenses) {
-        selectDispenses.selectedIndex = -1;
+    // Vider le champ texte des dispenses
+    const inputDispenses = document.getElementById("dispenses");
+    if (inputDispenses) {
+        inputDispenses.value = "";
     }
 
     document.getElementById("form-titre").innerText = "Ajouter une Formation";
@@ -201,4 +201,31 @@ function chargerFichierLocal(e) {
         }
     };
     reader.readAsText(file);
+}
+
+/**
+ * À appeler lors du chargement de ton fichier CSV RH
+ * Remplit automatiquement la datalist "liste-profils-dispenses"
+ */
+function alimenterDatalistProfils(tableauAgentsRH) {
+    const datalist = document.getElementById("liste-profils-dispenses");
+    if (!datalist || !Array.isArray(tableauAgentsRH)) return;
+
+    // 1. Extraire tous les profils / spécialités du fichier CSV
+    const tousLesProfils = tableauAgentsRH.flatMap(agent => {
+        if (Array.isArray(agent.profil)) return agent.profil;
+        if (typeof agent.profil === 'string') return agent.profil.split(',').map(p => p.trim());
+        return [];
+    });
+
+    // 2. Conserver les profils uniques et non vides
+    const profilsUniques = [...new Set(tousLesProfils)].filter(p => p.length > 0).sort();
+
+    // 3. Remplir la datalist
+    datalist.innerHTML = "";
+    profilsUniques.forEach(profil => {
+        const option = document.createElement("option");
+        option.value = profil;
+        datalist.appendChild(option);
+    });
 }
