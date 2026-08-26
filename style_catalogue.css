@@ -188,7 +188,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #38bdf8
     }
     100% {
         background-color: #dc2626; /* Rouge */
-        color: white;
         box-shadow: 0 0 10px #dc2626;
     }
 }
@@ -196,7 +195,8 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #38bdf8
 /* État connecté (désactive l'animation) */
 #btn-connect-file.connecte {
     animation: none !important;
-    background-color: #16a34a !important; /* Vert */
+    background-color: #22a4527a !important; /* Vert transparent*/
+    color: #38bdf8;
     font-weight: normal;
     box-shadow: none !important;
 }
