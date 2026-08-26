@@ -172,7 +172,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #38bdf8
 /* Bouton de connexion réseau et son animation d'alerte */
 #btn-connect-file {
     background-color: #f9d016; /* Orange d'alerte */
-    color: #dc2626;
+    color: #38bdf8;
     font-weight: bold;
     padding: 6px 10px;
     border: none;
