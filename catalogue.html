@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catalogue des Formations - CIS</title>
     <link rel="stylesheet" href="style_catalogue.css">
-    <!-- PapaParse si besoin de traiter du CSV localement -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
 <body>
@@ -19,48 +18,35 @@
 
     <div class="layout-container">
         
-<!-- COLONNE GAUCHE : LISTE DES FORMATIONS -->
-<div class="colonne-gauche">
-    <div class="panel" style="height: calc(100vh - 65px); display: flex; flex-direction: column; background-color: #1e293b; padding: 0;">
-        
-        <!-- TITRE FIXE -->
-        <div class="panel-titre" style="flex-shrink: 0; padding: 10px;">Contenu des Formations</div>
+        <!-- COLONNE GAUCHE : TABLEAU -->
+        <div class="colonne-gauche">
+            <div class="panel panel-tableau">
+                
+                <div class="panel-titre">Contenu des Formations</div>
 
-        <!-- EN-TÊTES FIXES (Largeurs optimisées par colonne) -->
-        <table style="width: 100%; border-collapse: collapse; table-layout: fixed; flex-shrink: 0;">
-            <thead>
-                <tr style="background-color: #0f172a; font-size: 0.85rem;">
-                    <th style="width: 13%; padding: 8px 4px; color: #cbd5e1; font-weight: 600;">Type</th>
-                    <th style="width: 14%; padding: 8px 4px; color: #cbd5e1; font-weight: 600;">Activité</th>
-                    <th style="width: 15%; padding: 8px 4px; color: #cbd5e1; font-weight: 600;">Thème / Libellé</th>
-                    <th style="width: 40%; padding: 8px 4px; color: #cbd5e1; font-weight: 600;">Séquence / Thématiques</th>
-                    <th style="width: 8%; padding: 8px 4px; color: #cbd5e1; font-weight: 600;">Quota (h)</th>
-                    <th style="width: 10%; padding: 8px 4px; color: #cbd5e1; font-weight: 600;">Actions</th>
-                </tr>
-            </thead>
-        </table>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="col-type">Type</th>
+                                <th class="col-activite">Activité</th>
+                                <th class="col-libelle">Thème / Libellé</th>
+                                <th class="col-sequence">Séquence / Thématiques</th>
+                                <th class="col-quota">Quota (h)</th>
+                                <th class="col-dispenses">Dispenses</th>
+                                <th class="col-actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="liste-formations">
+                            <!-- Généré dynamiquement par script_catalogue.js -->
+                        </tbody>
+                    </table>
+                </div>
 
-        <!-- CORPS DÉROULANT -->
-        <div style="flex: 1; overflow-y: auto;">
-            <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
-                <colgroup>
-                    <col style="width: 13%;">
-                    <col style="width: 14%;">
-                    <col style="width: 15%;">
-                    <col style="width: 40%;">
-                    <col style="width: 8%;">
-                    <col style="width: 10%;">
-                </colgroup>
-                <tbody id="liste-formations">
-                    <!-- Généré dynamiquement par script_catalogue.js -->
-                </tbody>
-            </table>
+            </div>
         </div>
 
-    </div>
-</div>
-
-        <!-- COLONNE DROITE : FORMULAIRE DE CREATION ET EDITION -->
+        <!-- COLONNE DROITE : FORMULAIRE -->
         <div class="colonne-droite panel">
             <div class="panel-titre" id="form-titre">Ajouter une Formation</div>
             <form id="form-formation">
@@ -95,26 +81,22 @@
                     <input type="number" id="quota" min="1" step="0.5" value="6" required>
                 </div>
 
-                
-<!-- Dispense de formation -->
-<div class="form-group">
-  <label for="dispenses">Profils dispensés de cette formation :</label>
-  <input type="text" id="dispenses" list="liste-profils-dispenses" placeholder="Saisis ou choisis un profil (ex: FDF1, COD 6 MEA...)" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #cbd5e1;">
-  
-  <!-- Cette liste sera remplie par le CSV -->
-  <datalist id="liste-profils-dispenses"></datalist>
-  
-  <small style="color: #94a3b8; display: block; margin-top: 4px;">
-    💡 Saisie libre. Les suggestions proviennent de ton fichier RH. Sépare les profils multiples par une virgule.
-  </small>
-</div>
+                <div class="form-group">
+                    <label for="dispenses">Profils dispensés de cette formation :</label>
+                    <input type="text" id="dispenses" list="liste-profils-dispenses" placeholder="Ex: FDF1, COD 6 MEA...">
+                    <datalist id="liste-profils-dispenses"></datalist>
+                    <small class="help-text">
+                        💡 Saisie libre. Les suggestions proviennent de ton fichier RH.
+                    </small>
+                </div>
 
-                
-                <button type="submit" id="btn-save" class="btn-primary" style = "background-color : #3845f8; color : white">💾 Enregistrer dans le catalogue (JSON)</button>
+                <button type="submit" id="btn-save" class="btn-submit">💾 Enregistrer dans le catalogue</button>
                 <button type="button" class="btn-cancel" id="btn-cancel" style="display: none;">Annuler la modification</button>
             </form>
         </div>
+
     </div>
+
     <script src="donnees_catalogue.js"></script>
     <script src="script_catalogue.js"></script>
 </body>
