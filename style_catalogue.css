@@ -6,7 +6,7 @@
 /* Fixation globale de la page sans aucun scroll principal */
 html, body { 
     margin: 0; 
-    padding: 6px; 
+    padding: 1px; 
     height: 100vh; 
     overflow: hidden; 
     background-color: #5c7fb1; 
