@@ -29,7 +29,7 @@ function chargerCatalogueInitial() {
     if (localData) {
         catalogue = JSON.parse(localData);
     } else if (typeof catalogueInitial !== 'undefined') {
-        // 2. Sinon, chargement direct du fichier JS réseau sans passer par le cache du serveur
+        // 2. Chargement direct du fichier JS réseau
         catalogue = catalogueInitial;
         sauvegarderLocalement();
     } else {
@@ -71,6 +71,11 @@ function afficherCatalogue() {
     catalogue.forEach(item => {
         const tr = document.createElement("tr");
         const badgeClass = item.type === "Socle Commun" ? "badge-socle" : "badge-specialite";
+        
+        // Formatage de l'affichage des dispenses
+        const affichageDispenses = (item.dispenses && item.dispenses.length > 0) 
+            ? item.dispenses.join(", ") 
+            : "Aucune";
 
         tr.innerHTML = `
             <td><span class="badge-type ${badgeClass}">${item.type}</span></td>
@@ -78,6 +83,7 @@ function afficherCatalogue() {
             <td>${item.libelle}</td>
             <td style="color:#cbd5e1; font-size:0.8rem;">${item.sequence || '-'}</td>
             <td><strong>${item.quota} h</strong></td>
+            <td><small style="color:#94a3b8;">${affichageDispenses}</small></td>
             <td>
                 <button class="btn-action btn-edit" onclick="editerFormation('${item.id}')">Éditer ✏️</button>
                 <button class="btn-action btn-delete" onclick="supprimerFormation('${item.id}')">🗑️</button>
@@ -96,10 +102,24 @@ async function sauvegarderFormation(e) {
     const sequence = document.getElementById("sequence").value.trim();
     const quota = parseFloat(document.getElementById("quota").value);
 
+    // Récupération des choix multiples du sélecteur "dispenses"
+    const selectDispenses = document.getElementById("dispenses");
+    const dispenses = selectDispenses 
+        ? Array.from(selectDispenses.selectedOptions).map(opt => opt.value)
+        : [];
+
     if (id) {
         const idx = catalogue.findIndex(f => f.id === id);
         if (idx !== -1) {
-            catalogue[idx] = { ...catalogue[idx], type, activite, libelle, sequence: sequence || "-", quota };
+            catalogue[idx] = { 
+                ...catalogue[idx], 
+                type, 
+                activite, 
+                libelle, 
+                sequence: sequence || "-", 
+                quota,
+                dispenses // <-- Mise à jour des dispenses
+            };
         }
     } else {
         catalogue.push({
@@ -108,16 +128,14 @@ async function sauvegarderFormation(e) {
             activite,
             libelle,
             sequence: sequence || "-",
-            quota
+            quota,
+            dispenses // <-- Ajout des dispenses
         });
     }
 
     sauvegarderLocalement();
     trierEtAfficherCatalogue();
     reinitialiserFormulaire();
-
-    // Déclenche la mise à jour directe du fichier sur le réseau
-    await exporterCatalogueJSON();
 }
 
 function editerFormation(id) {
@@ -131,8 +149,16 @@ function editerFormation(id) {
     document.getElementById("sequence").value = item.sequence === "-" ? "" : item.sequence;
     document.getElementById("quota").value = item.quota;
 
+    // Sélection automatique des dispenses enregistrées
+    const selectDispenses = document.getElementById("dispenses");
+    if (selectDispenses) {
+        Array.from(selectDispenses.options).forEach(opt => {
+            opt.selected = item.dispenses ? item.dispenses.includes(opt.value) : false;
+        });
+    }
+
     document.getElementById("form-titre").innerText = "Modifier la Formation";
-    document.getElementById("btn-save").innerText = "💾 Enregistrer la modification dans le catalogue (JSON)";
+    document.getElementById("btn-save").innerText = "💾 Enregistrer la modification";
     document.getElementById("btn-cancel").style.display = "block";
 }
 
@@ -148,8 +174,15 @@ function supprimerFormation(id) {
 function reinitialiserFormulaire() {
     document.getElementById("form-formation").reset();
     document.getElementById("form-id").value = "";
+    
+    // Réinitialisation du sélecteur multiple
+    const selectDispenses = document.getElementById("dispenses");
+    if (selectDispenses) {
+        selectDispenses.selectedIndex = -1;
+    }
+
     document.getElementById("form-titre").innerText = "Ajouter une Formation";
-    document.getElementById("btn-save").innerText = "💾 Enregistrer la formation dans le catalogue (JSON)";
+    document.getElementById("btn-save").innerText = "💾 Enregistrer la formation";
     document.getElementById("btn-cancel").style.display = "none";
 }
 
@@ -168,41 +201,4 @@ function chargerFichierLocal(e) {
         }
     };
     reader.readAsText(file);
-}
-
-async function exporterCatalogueJSON() {
-    catalogue = trierCatalogue(catalogue);
-    const contenuJSON = JSON.stringify(catalogue, null, 2);
-
-    if ('showSaveFilePicker' in window) {
-        try {
-            const handle = await window.showSaveFilePicker({
-                suggestedName: 'catalogueFormations.json',
-                types: [{
-                    description: 'Fichier JSON',
-                    accept: { 'application/json': ['.json'] },
-                }],
-            });
-
-            const writable = await handle.createWritable();
-            await writable.write(contenuJSON);
-            await writable.close();
-            return;
-        } catch (err) {
-            if (err.name === 'AbortError') return;
-            console.warn("Passage au secours de téléchargement :", err);
-        }
-    }
-
-    telechargerJSONSecours(contenuJSON);
-}
-
-function telechargerJSONSecours(contenu) {
-    const blob = new Blob([contenu], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "catalogueFormations.json";
-    a.click();
-    URL.revokeObjectURL(url);
 }
