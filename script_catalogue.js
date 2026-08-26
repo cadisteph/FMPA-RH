@@ -62,14 +62,13 @@ async function lierFichierReseau() {
 
         const btnConnect = document.getElementById("btn-connect-file");
         if (btnConnect) {
-            btnConnect.innerText = "🟢 Fichier réseau connecté";
-            btnConnect.style.backgroundColor = "#16a34a"; // Vert
+            btnConnect.innerText = "🌐 Réseau Connecté";
+            btnConnect.classList.add("connecte"); // Applique le style vert fixe
         }
-        alert("Fichier réseau lié avec succès ! Les modifications y seront écrites directement.");
     } catch (err) {
         if (err.name !== 'AbortError') {
             console.error("Erreur de sélection :", err);
-            alert("L'accès au fichier a échoué. Vérifiez la compatibilité du navigateur.");
+            alert("L'accès au fichier a échoué.");
         }
     }
 }
