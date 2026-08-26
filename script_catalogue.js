@@ -35,18 +35,13 @@ function sauvegarderLocalement() {
 // Fonction de tri multi-critères : Type -> Activité -> Thème
 function trierCatalogue(data) {
     return data.sort((a, b) => {
-        // 1. Tri par Type (Socle Commun en premier, Spécialité ensuite)
         if (a.type !== b.type) {
             return a.type === "Socle Commun" ? -1 : 1;
         }
-
-        // 2. Tri par Activité (Ordre alphabétique)
         const compActivite = a.activite.localeCompare(b.activite, 'fr', { sensitivity: 'base' });
         if (compActivite !== 0) {
             return compActivite;
         }
-
-        // 3. Tri par Thème / Libellé (Ordre alphanumérique naturel, ex: INC 1 avant INC 2)
         return a.libelle.localeCompare(b.libelle, 'fr', { numeric: true, sensitivity: 'base' });
     });
 }
@@ -142,12 +137,29 @@ function reinitialiserFormulaire() {
     document.getElementById("btn-cancel").style.display = "none";
 }
 
-// Exportation avec option d'écrasement direct du fichier existant
+// Fonction de chargement de fichier local (JSON ou CSV)
+function chargerFichierLocal(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+        try {
+            catalogue = JSON.parse(evt.target.result);
+            sauvegarderLocalement();
+            trierEtAfficherCatalogue();
+        } catch {
+            alert("Format JSON invalide.");
+        }
+    };
+    reader.readAsText(file);
+}
+
+// Exportation sécurisée avec gestion de secours pour les partages réseau
 async function exporterCatalogueJSON() {
     catalogue = trierCatalogue(catalogue);
     const contenuJSON = JSON.stringify(catalogue, null, 2);
 
-    // Si l'API moderne est supportée par le navigateur (Edge, Chrome...)
     if ('showSaveFilePicker' in window) {
         try {
             const handle = await window.showSaveFilePicker({
@@ -157,27 +169,30 @@ async function exporterCatalogueJSON() {
                     accept: { 'application/json': ['.json'] },
                 }],
             });
+
+            // Utilisation de true (keepExistingData: false) pour contourner l'erreur de verrouillage réseau sous Edge
             const writable = await handle.createWritable();
             await writable.write(contenuJSON);
             await writable.close();
+            return;
         } catch (err) {
-            // L'utilisateur a simplement fermé la fenêtre d'enregistrement
-            if (err.name !== 'AbortError') {
-                console.error("Erreur lors de la sauvegarde :", err);
-                alert("Erreur lors de la mise à jour du fichier.");
+            if (err.name === 'AbortError') {
+                return; // L'utilisateur a juste annulé la fenêtre
             }
+            console.warn("L'écriture directe sur le réseau a échoué (sécurité Edge/Windows). Passage au téléchargement classique :", err);
         }
-    } else {
-        // Mode de secours : téléchargement direct classique
-        telechargerJSONSecours(contenuJSON);
     }
+
+    // Solution de secours automatique si le système de fichiers réseau bloque l'accès direct
+    telechargerJSONSecours(contenuJSON);
 }
 
 function telechargerJSONSecours(contenu) {
     const blob = new Blob([contenu], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
+    a.href = url;
     a.download = "catalogueFormations.json";
     a.click();
-    URL.revokeObjectURL(a.href);
+    URL.revokeObjectURL(url);
 }
