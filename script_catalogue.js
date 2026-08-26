@@ -1,4 +1,6 @@
 let catalogue = [];
+// Variable globale pour conserver l'accès au fichier réseau pendant la session
+let fileHandle = null;
 
 document.addEventListener("DOMContentLoaded", () => {
     chargerCatalogueInitial();
@@ -41,6 +43,39 @@ function chargerCatalogueInitial() {
 
 function sauvegarderLocalement() {
     localStorage.setItem("catalogueFormations", JSON.stringify(catalogue));
+}
+
+/**
+ * Sauvegarde directement le catalogue dans le fichier donnees_catalogue.js sur le réseau.
+ * La première fois, le navigateur demandera de désigner le fichier sur le réseau.
+ */
+async function exporterFichierJSReseau() {
+    const contenuJS = `const catalogueInitial = ${JSON.stringify(catalogue, null, 4)};`;
+    
+    try {
+        // Si le lien vers le fichier n'a pas encore été établi dans cette session
+        if (!fileHandle) {
+            alert("Veuillez sélectionner votre fichier 'donnees_catalogue.js' sur le réseau pour lier l'écriture automatique.");
+            [fileHandle] = await window.showOpenFilePicker({
+                types: [{
+                    description: 'Fichier JavaScript Catalogue',
+                    accept: { 'text/javascript': ['.js'] },
+                }],
+                multiple: false
+            });
+        }
+
+        // Écriture directe dans le fichier réseau sélectionné
+        const writable = await fileHandle.createWritable();
+        await writable.write(contenuJS);
+        await writable.close();
+        
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            console.error("Erreur d'écriture sur le réseau :", err);
+            alert("Attention : Les données sont enregistrées en local, mais la mise à jour du fichier réseau a échoué.");
+        }
+    }
 }
 
 // Tri : Type -> Activité -> Thème
@@ -134,6 +169,10 @@ async function sauvegarderFormation(e) {
     }
 
     sauvegarderLocalement();
+    
+    // Écriture automatique sur le fichier du réseau
+    await exporterFichierJSReseau();
+
     trierEtAfficherCatalogue();
     reinitialiserFormulaire();
 }
@@ -162,10 +201,14 @@ function editerFormation(id) {
     document.getElementById("btn-cancel").style.display = "block";
 }
 
-function supprimerFormation(id) {
+async function supprimerFormation(id) {
     if (confirm("Supprimer cette formation du catalogue ?")) {
         catalogue = catalogue.filter(f => f.id !== id);
         sauvegarderLocalement();
+        
+        // Mise à jour sur le fichier réseau après suppression
+        await exporterFichierJSReseau();
+
         trierEtAfficherCatalogue();
         reinitialiserFormulaire();
     }
