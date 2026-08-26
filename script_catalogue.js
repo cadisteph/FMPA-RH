@@ -3,33 +3,37 @@ let catalogue = [];
 document.addEventListener("DOMContentLoaded", () => {
     chargerCatalogueInitial();
     
-    // Soumission du formulaire (Ajout / Modification + Sauvegarde réseau)
+    // Écouteur pour la soumission du formulaire (Ajout / Modification + Sauvegarde)
     const formFormation = document.getElementById("form-formation");
-    if (formFormation) formFormation.addEventListener("submit", sauvegarderFormation);
+    if (formFormation) {
+        formFormation.addEventListener("submit", sauvegarderFormation);
+    }
 
-    // Annulation
+    // Écouteur pour le bouton Annuler
     const btnCancel = document.getElementById("btn-cancel");
-    if (btnCancel) btnCancel.addEventListener("click", reinitialiserFormulaire);
+    if (btnCancel) {
+        btnCancel.addEventListener("click", reinitialiserFormulaire);
+    }
 
-    // Champ fichier local (s'il existe encore dans le HTML)
+    // Sécurité au cas où l'input fichier existe encore dans le HTML
     const fileInput = document.getElementById("file-input");
-    if (fileInput) fileInput.addEventListener("change", chargerFichierLocal);
+    if (fileInput) {
+        fileInput.addEventListener("change", chargerFichierLocal);
+    }
 });
 
-// Chargement automatique : va TOUJOURS chercher le fichier réseau le plus récent
+// Chargement automatique du JSON réseau
 function chargerCatalogueInitial() {
-    // Le paramètre ?t=... empêche le navigateur de garder une vieille version en cache
     fetch('catalogueFormations.json?t=' + Date.now())
         .then(res => res.ok ? res.json() : Promise.reject())
         .then(data => {
             catalogue = data;
-            sauvegarderLocalement(); // Met à jour le secours local
+            sauvegarderLocalement();
             trierEtAfficherCatalogue();
             console.log("Catalogue réseau chargé avec succès.");
         })
         .catch(() => {
             console.warn("Impossible de joindre catalogueFormations.json. Passage au secours local.");
-            // Si le réseau plante, on bascule sur la mémoire locale en secours
             const localData = localStorage.getItem("catalogueFormations");
             if (localData) {
                 catalogue = JSON.parse(localData);
@@ -42,7 +46,7 @@ function sauvegarderLocalement() {
     localStorage.setItem("catalogueFormations", JSON.stringify(catalogue));
 }
 
-// Fonction de tri multi-critères : Type -> Activité -> Thème
+// Tri : Type -> Activité -> Thème
 function trierCatalogue(data) {
     return data.sort((a, b) => {
         if (a.type !== b.type) {
@@ -63,6 +67,8 @@ function trierEtAfficherCatalogue() {
 
 function afficherCatalogue() {
     const tbody = document.getElementById("liste-formations");
+    if (!tbody) return;
+    
     tbody.innerHTML = "";
 
     catalogue.forEach(item => {
@@ -93,7 +99,6 @@ async function sauvegarderFormation(e) {
     const sequence = document.getElementById("sequence").value.trim();
     const quota = parseFloat(document.getElementById("quota").value);
 
-    // 1. Mise à jour ou ajout dans la mémoire JS
     if (id) {
         const idx = catalogue.findIndex(f => f.id === id);
         if (idx !== -1) {
@@ -110,12 +115,11 @@ async function sauvegarderFormation(e) {
         });
     }
 
-    // 2. Sauvegarde locale et mise à jour du tableau visuel
     sauvegarderLocalement();
     trierEtAfficherCatalogue();
     reinitialiserFormulaire();
 
-    // 3. Déclenchement automatique de l'écriture sur le fichier JSON réseau
+    // Déclenche la mise à jour directe du fichier sur le réseau
     await exporterCatalogueJSON();
 }
 
@@ -131,7 +135,7 @@ function editerFormation(id) {
     document.getElementById("quota").value = item.quota;
 
     document.getElementById("form-titre").innerText = "Modifier la Formation";
-    document.getElementById("btn-save").innerText = "💾 Enregistrer les modifications";
+    document.getElementById("btn-save").innerText = "💾 Enregistrer la modification dans le catalogue (JSON)";
     document.getElementById("btn-cancel").style.display = "block";
 }
 
@@ -148,11 +152,10 @@ function reinitialiserFormulaire() {
     document.getElementById("form-formation").reset();
     document.getElementById("form-id").value = "";
     document.getElementById("form-titre").innerText = "Ajouter une Formation";
-    document.getElementById("btn-save").innerText = "💾 Enregistrer dans le catalogue (JSON)";
+    document.getElementById("btn-save").innerText = "💾 Enregistrer la formation dans le catalogue (JSON)";
     document.getElementById("btn-cancel").style.display = "none";
 }
 
-// Fonction de chargement de fichier local (JSON ou CSV)
 function chargerFichierLocal(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -170,7 +173,6 @@ function chargerFichierLocal(e) {
     reader.readAsText(file);
 }
 
-// Exportation sécurisée avec gestion de secours pour les partages réseau
 async function exporterCatalogueJSON() {
     catalogue = trierCatalogue(catalogue);
     const contenuJSON = JSON.stringify(catalogue, null, 2);
@@ -185,20 +187,16 @@ async function exporterCatalogueJSON() {
                 }],
             });
 
-            // Utilisation de true (keepExistingData: false) pour contourner l'erreur de verrouillage réseau sous Edge
             const writable = await handle.createWritable();
             await writable.write(contenuJSON);
             await writable.close();
             return;
         } catch (err) {
-            if (err.name === 'AbortError') {
-                return; // L'utilisateur a juste annulé la fenêtre
-            }
-            console.warn("L'écriture directe sur le réseau a échoué (sécurité Edge/Windows). Passage au téléchargement classique :", err);
+            if (err.name === 'AbortError') return;
+            console.warn("Passage au secours de téléchargement :", err);
         }
     }
 
-    // Solution de secours automatique si le système de fichiers réseau bloque l'accès direct
     telechargerJSONSecours(contenuJSON);
 }
 
