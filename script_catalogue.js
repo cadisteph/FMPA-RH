@@ -22,24 +22,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// Chargement automatique : le réseau écrase TOUJOURS la mémoire locale
 function chargerCatalogueInitial() {
+    // Suppression complète du cache local pour le test
+    localStorage.removeItem("catalogueFormations");
+
     fetch('catalogueFormations.json?t=' + Date.now())
-        .then(res => res.ok ? res.json() : Promise.reject())
-        .then(data => {
-            catalogue = data;
-            sauvegarderLocalement(); // On remplace le cache local par les données fraîches
-            trierEtAfficherCatalogue(); // On rafraîchit le tableau visuel
-            console.log("Catalogue réseau chargé et affiché avec succès (", catalogue.length, "formations).");
+        .then(res => {
+            if (!res.ok) throw new Error("Erreur HTTP " + res.status);
+            return res.json();
         })
-        .catch((err) => {
-            console.warn("Impossible de charger le JSON réseau. Utilisation du secours local.", err);
-            const localData = localStorage.getItem("catalogueFormations");
-            if (localData) {
-                catalogue = JSON.parse(localData);
-                trierEtAfficherCatalogue();
-            }
-        });
+        .then(data => {
+            console.log("Données brutes reçues du JSON :", data);
+            catalogue = data;
+            trierEtAfficherCatalogue();
+        })
+        .catch(err => console.error("Échec du chargement du fichier JSON :", err));
 }
 
 function sauvegarderLocalement() {
