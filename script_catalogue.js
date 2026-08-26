@@ -3,9 +3,17 @@ let catalogue = [];
 document.addEventListener("DOMContentLoaded", () => {
     chargerCatalogueInitial();
     
-    document.getElementById("form-formation").addEventListener("submit", sauvegarderFormation);
-    document.getElementById("file-input").addEventListener("change", chargerFichierLocal);
-    document.getElementById("btn-cancel").addEventListener("click", reinitialiserFormulaire);
+    // Soumission du formulaire (Ajout / Modification + Sauvegarde réseau)
+    const formFormation = document.getElementById("form-formation");
+    if (formFormation) formFormation.addEventListener("submit", sauvegarderFormation);
+
+    // Annulation
+    const btnCancel = document.getElementById("btn-cancel");
+    if (btnCancel) btnCancel.addEventListener("click", reinitialiserFormulaire);
+
+    // Champ fichier local (s'il existe encore dans le HTML)
+    const fileInput = document.getElementById("file-input");
+    if (fileInput) fileInput.addEventListener("change", chargerFichierLocal);
 });
 
 // Chargement automatique : va TOUJOURS chercher le fichier réseau le plus récent
