@@ -82,14 +82,21 @@
                     <input type="number" id="quota" min="1" step="0.5" value="6" required>
                 </div>
 
-                <div class="form-group">
-                    <label for="dispenses">Profils dispensés de cette formation :</label>
-                    <input type="text" id="dispenses" list="liste-profils-dispenses" placeholder="Ex: FDF1, COD 6 MEA...">
-                    <datalist id="liste-profils-dispenses"></datalist>
-                    <small class="help-text">
-                        💡 Saisie libre. Les suggestions proviennent de ton fichier RH.
-                    </small>
-                </div>
+<!-- Bloc DISPENSES dynamiques par Profil -->
+<div class="form-group">
+    <label>Profils spécifiques / Dispenses :</label>
+    
+    <!-- Zone où s'ajouteront les lignes de profil + quota -->
+    <div id="liste-lignes-modulations"></div>
+
+    <button type="button" id="btn-ajouter-ligne-profil" class="btn-action margin-top-5">
+        ➕ Ajouter un profil / quota spécifique
+    </button>
+    
+    <small style="color: #94a3b8; display: block; margin-top: 6px;">
+        Exemple : Profil = <code>COD1, COD6...</code> | Quota = <code>0</code> (pour dispense totale), ou <code>6</code> h, <code>10</code> h...
+    </small>
+</div>
 
                 <button type="submit" id="btn-save" class="btn-submit">💾 Enregistrer dans le catalogue</button>
                 <button type="button" class="btn-cancel" id="btn-cancel" style="display: none;">Annuler la modification</button>
