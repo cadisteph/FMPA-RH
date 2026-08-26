@@ -40,7 +40,7 @@ h1 { margin: 0; font-size: 1.2rem; color: #f8fafc; }
 }
 
 .colonne-droite { 
-    width: 250px; /* Largeur fixe ultra-compacte pour le formulaire */
+    width: 240px; /* Largeur fixe ultra-compacte pour le formulaire */
     flex-shrink: 0;
     height: 100%;
     overflow-y: auto;
