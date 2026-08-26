@@ -1,11 +1,10 @@
 let catalogue = [];
-// Variable globale pour conserver l'accès au fichier réseau pendant la session
 let fileHandle = null;
 
 document.addEventListener("DOMContentLoaded", () => {
     chargerCatalogueInitial();
     
-    // Écouteur pour la soumission du formulaire (Ajout / Modification + Sauvegarde)
+    // Écouteur pour la soumission du formulaire
     const formFormation = document.getElementById("form-formation");
     if (formFormation) {
         formFormation.addEventListener("submit", sauvegarderFormation);
@@ -17,7 +16,12 @@ document.addEventListener("DOMContentLoaded", () => {
         btnCancel.addEventListener("click", reinitialiserFormulaire);
     }
 
-    // Sécurité au cas où l'input fichier existe encore dans le HTML
+    // NOUVEAU : Bouton pour lier le fichier réseau directement au clic
+    const btnConnect = document.getElementById("btn-connect-file");
+    if (btnConnect) {
+        btnConnect.addEventListener("click", lierFichierReseau);
+    }
+
     const fileInput = document.getElementById("file-input");
     if (fileInput) {
         fileInput.addEventListener("change", chargerFichierLocal);
@@ -25,13 +29,11 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function chargerCatalogueInitial() {
-    // 1. Priorité au cache local si tu viens d'ajouter/modifier une formation dans la session
     const localData = localStorage.getItem("catalogueFormations");
     
     if (localData) {
         catalogue = JSON.parse(localData);
     } else if (typeof catalogueInitial !== 'undefined') {
-        // 2. Chargement direct du fichier JS réseau
         catalogue = catalogueInitial;
         sauvegarderLocalement();
     } else {
@@ -46,35 +48,47 @@ function sauvegarderLocalement() {
 }
 
 /**
- * Sauvegarde directement le catalogue dans le fichier donnees_catalogue.js sur le réseau.
- * La première fois, le navigateur demandera de désigner le fichier sur le réseau.
+ * Fonction déclenchée DIRECTEMENT par le clic utilisateur sur le bouton
+ */
+async function lierFichierReseau() {
+    try {
+        [fileHandle] = await window.showOpenFilePicker({
+            types: [{
+                description: 'Fichier JavaScript Catalogue',
+                accept: { 'text/javascript': ['.js'] },
+            }],
+            multiple: false
+        });
+
+        const btnConnect = document.getElementById("btn-connect-file");
+        if (btnConnect) {
+            btnConnect.innerText = "🟢 Fichier réseau connecté";
+            btnConnect.style.backgroundColor = "#16a34a"; // Vert
+        }
+        alert("Fichier réseau lié avec succès ! Les modifications y seront écrites directement.");
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            console.error("Erreur de sélection :", err);
+            alert("L'accès au fichier a échoué. Vérifiez la compatibilité du navigateur.");
+        }
+    }
+}
+
+/**
+ * Écriture silencieuse dans le fichier déjà lié
  */
 async function exporterFichierJSReseau() {
+    if (!fileHandle) return; // Si pas lié, on passe sans erreur
+
     const contenuJS = `const catalogueInitial = ${JSON.stringify(catalogue, null, 4)};`;
     
     try {
-        // Si le lien vers le fichier n'a pas encore été établi dans cette session
-        if (!fileHandle) {
-            alert("Veuillez sélectionner votre fichier 'donnees_catalogue.js' sur le réseau pour lier l'écriture automatique.");
-            [fileHandle] = await window.showOpenFilePicker({
-                types: [{
-                    description: 'Fichier JavaScript Catalogue',
-                    accept: { 'text/javascript': ['.js'] },
-                }],
-                multiple: false
-            });
-        }
-
-        // Écriture directe dans le fichier réseau sélectionné
         const writable = await fileHandle.createWritable();
         await writable.write(contenuJS);
         await writable.close();
-        
     } catch (err) {
-        if (err.name !== 'AbortError') {
-            console.error("Erreur d'écriture sur le réseau :", err);
-            alert("Attention : Les données sont enregistrées en local, mais la mise à jour du fichier réseau a échoué.");
-        }
+        console.error("Erreur d'écriture sur le réseau :", err);
+        alert("Attention : Enregistré en local, mais l'écriture sur le réseau a échoué.");
     }
 }
 
@@ -107,7 +121,6 @@ function afficherCatalogue() {
         const tr = document.createElement("tr");
         const badgeClass = item.type === "Socle Commun" ? "badge-socle" : "badge-specialite";
         
-        // Formatage de l'affichage des dispenses
         const affichageDispenses = (item.dispenses && item.dispenses.length > 0) 
             ? item.dispenses.join(", ") 
             : "Aucune";
@@ -137,7 +150,6 @@ async function sauvegarderFormation(e) {
     const sequence = document.getElementById("sequence").value.trim();
     const quota = parseFloat(document.getElementById("quota").value);
 
-    // Récupération de la saisie texte et découpage par virgule pour créer le tableau
     const dispensesInput = document.getElementById("dispenses") ? document.getElementById("dispenses").value : "";
     const dispenses = dispensesInput 
         ? dispensesInput.split(",").map(p => p.trim()).filter(p => p.length > 0)
@@ -169,10 +181,7 @@ async function sauvegarderFormation(e) {
     }
 
     sauvegarderLocalement();
-    
-    // Écriture automatique sur le fichier du réseau
     await exporterFichierJSReseau();
-
     trierEtAfficherCatalogue();
     reinitialiserFormulaire();
 }
@@ -188,7 +197,6 @@ function editerFormation(id) {
     document.getElementById("sequence").value = item.sequence === "-" ? "" : item.sequence;
     document.getElementById("quota").value = item.quota;
 
-    // Affichage des dispenses sous forme de texte séparé par des virgules
     const inputDispenses = document.getElementById("dispenses");
     if (inputDispenses) {
         inputDispenses.value = (item.dispenses && item.dispenses.length > 0) 
@@ -205,10 +213,7 @@ async function supprimerFormation(id) {
     if (confirm("Supprimer cette formation du catalogue ?")) {
         catalogue = catalogue.filter(f => f.id !== id);
         sauvegarderLocalement();
-        
-        // Mise à jour sur le fichier réseau après suppression
         await exporterFichierJSReseau();
-
         trierEtAfficherCatalogue();
         reinitialiserFormulaire();
     }
@@ -218,7 +223,6 @@ function reinitialiserFormulaire() {
     document.getElementById("form-formation").reset();
     document.getElementById("form-id").value = "";
     
-    // Vider le champ texte des dispenses
     const inputDispenses = document.getElementById("dispenses");
     if (inputDispenses) {
         inputDispenses.value = "";
@@ -246,25 +250,18 @@ function chargerFichierLocal(e) {
     reader.readAsText(file);
 }
 
-/**
- * À appeler lors du chargement de ton fichier CSV RH
- * Remplit automatiquement la datalist "liste-profils-dispenses"
- */
 function alimenterDatalistProfils(tableauAgentsRH) {
     const datalist = document.getElementById("liste-profils-dispenses");
     if (!datalist || !Array.isArray(tableauAgentsRH)) return;
 
-    // 1. Extraire tous les profils / spécialités du fichier CSV
     const tousLesProfils = tableauAgentsRH.flatMap(agent => {
         if (Array.isArray(agent.profil)) return agent.profil;
         if (typeof agent.profil === 'string') return agent.profil.split(',').map(p => p.trim());
         return [];
     });
 
-    // 2. Conserver les profils uniques et non vides
     const profilsUniques = [...new Set(tousLesProfils)].filter(p => p.length > 0).sort();
 
-    // 3. Remplir la datalist
     datalist.innerHTML = "";
     profilsUniques.forEach(profil => {
         const option = document.createElement("option");
