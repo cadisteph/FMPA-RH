@@ -32,16 +32,16 @@ h1 { margin: 0; font-size: 1.2rem; color: #f8fafc; }
     height: calc(100vh - 58px); 
 }
 
-/* Colonnes */
+/* Colonnes : Formulaire compacté et Tableau étendu */
 .colonne-gauche { 
-    flex: 7.5; 
+    flex: 1; /* Le tableau prend tout l'espace disponible restante */
     min-width: 0; 
     height: 100%;
 }
 
 .colonne-droite { 
-    flex: 2.5; 
-    min-width: 270px; 
+    width: 250px; /* Largeur fixe ultra-compacte pour le formulaire */
+    flex-shrink: 0;
     height: 100%;
     overflow-y: auto;
 }
@@ -74,7 +74,7 @@ h1 { margin: 0; font-size: 1.2rem; color: #f8fafc; }
 .table-container {
     flex: 1;
     overflow-y: auto;
-    overflow-x: hidden; /* Empêche formellement le scroll horizontal */
+    overflow-x: hidden; /* Empêche le scroll horizontal */
 }
 
 /* Structure du tableau */
@@ -109,14 +109,14 @@ td {
 
 tr:hover { background: #334155; }
 
-/* Largeurs fixes strictes par colonne pour supprimer le scroll horizontal */
-.col-type      { width: 110px; }
-.col-activite  { width: 95px;  }
-.col-libelle   { width: 95px;  }
-.col-sequence  { width: auto;  } /* Absorbe tout l'espace restant */
-.col-quota     { width: 65px;  }
-.col-dispenses { width: 100px; }
-.col-actions   { width: 90px;  }
+/* Largeurs ajustées au millimètre par colonne */
+.col-type      { width: 95px;  } /* Compacté */
+.col-activite  { width: 135px; } /* Élargi : évite le retour à la ligne pour "TRANSVERSALE" */
+.col-libelle   { width: 85px;  } /* Compacté */
+.col-sequence  { width: auto;  } /* Absorbe le reste de l'espace */
+.col-quota     { width: 55px;  } /* Resserré au maximum */
+.col-dispenses { width: 80px;  } /* Resserré */
+.col-actions   { width: 120px; } /* Élargi : affiche "Éditer" et "Corbeille" côte à côte sans "..." */
 
 /* Badges compacts */
 .badge-type { 
@@ -143,27 +143,28 @@ td:last-child {
     font-size: 0.7rem; 
     font-weight: bold; 
     display: inline-block;
+    margin: 0 1px;
 }
 .btn-edit { background: #334155; color: #cbd5e1; border: 1px solid #475569; }
 .btn-edit:hover { background: #475569; color: white; }
 .btn-delete { background: #ef4444; color: white; }
 .btn-delete:hover { background: #dc2626; }
 
-/* Formulaire */
-.form-group { margin-bottom: 8px; }
-.form-row { display: flex; gap: 6px; }
+/* Formulaire compact */
+.form-group { margin-bottom: 6px; }
+.form-row { display: flex; gap: 4px; }
 .form-row .form-group { flex: 1; }
-label { display: block; font-size: 0.75rem; font-weight: 600; color: #cbd5e1; margin-bottom: 2px; }
-input, select, textarea { width: 100%; background: #0f172a; border: 1px solid #475569; color: white; padding: 5px 7px; border-radius: 5px; font-size: 0.8rem; }
+label { display: block; font-size: 0.72rem; font-weight: 600; color: #cbd5e1; margin-bottom: 2px; }
+input, select, textarea { width: 100%; background: #0f172a; border: 1px solid #475569; color: white; padding: 4px 6px; border-radius: 4px; font-size: 0.78rem; }
 input:focus, select:focus, textarea:focus { outline: none; border-color: #38bdf8; }
 
-.help-text { color: #94a3b8; display: block; margin-top: 3px; font-size: 0.7rem; }
+.help-text { color: #94a3b8; display: block; margin-top: 2px; font-size: 0.68rem; }
 
-.btn-submit { width: 100%; background: #3845f8; color: white; border: none; padding: 7px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; margin-top: 6px; }
+.btn-submit { width: 100%; background: #3845f8; color: white; border: none; padding: 6px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; cursor: pointer; margin-top: 6px; }
 .btn-submit:hover { background: #2b36cd; }
-.btn-cancel { width: 100%; background: #475569; color: white; border: none; padding: 5px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; cursor: pointer; margin-top: 4px; }
+.btn-cancel { width: 100%; background: #475569; color: white; border: none; padding: 5px; border-radius: 5px; font-weight: bold; font-size: 0.78rem; cursor: pointer; margin-top: 4px; }
 
-/* Personnalisation de la barre de défilement verticale */
+/* Personnalisation de la barre de défilement verticale du tableau */
 .table-container::-webkit-scrollbar { width: 4px; }
 .table-container::-webkit-scrollbar-track { background: #0f172a; }
 .table-container::-webkit-scrollbar-thumb { background: #38bdf8; border-radius: 2px; }
