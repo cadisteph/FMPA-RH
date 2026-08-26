@@ -171,14 +171,14 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #38bdf8
 
 /* Bouton de connexion réseau et son animation d'alerte */
 #btn-connect-file {
-    background-color: #f97316; /* Orange d'alerte */
-    color: white;
+    background-color: #f9d016; /* Orange d'alerte */
+    color: #dc2626;
     font-weight: bold;
     padding: 6px 10px;
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    animation: clignoterAlerte 1.5s infinite alternate;
+    animation: clignoterAlerte 0.75s infinite alternate;
 }
 
 @keyframes clignoterAlerte {
@@ -188,6 +188,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #38bdf8
     }
     100% {
         background-color: #dc2626; /* Rouge */
+        color: white;
         box-shadow: 0 0 10px #dc2626;
     }
 }
@@ -196,5 +197,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #38bdf8
 #btn-connect-file.connecte {
     animation: none !important;
     background-color: #16a34a !important; /* Vert */
+    font-weight: normal;
     box-shadow: none !important;
 }
