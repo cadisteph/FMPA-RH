@@ -1,121 +1,153 @@
-* { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+* { 
+    box-sizing: border-box; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+}
 
-/* Blocage propre du body */
+/* Fixation globale de la page sans aucun scroll principal */
 html, body { 
     margin: 0; 
-    padding: 5px; 
+    padding: 6px; 
     height: 100vh; 
-    overflow: hidden; /* Empêche tout scroll global de la page */
+    overflow: hidden; 
     background-color: #5c7fb1; 
     color: #f8fafc; 
 }
 
+/* En-tête */
 header { 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    height: 45px; 
-    margin-bottom: 5px; 
-    padding-bottom: 5px; 
+    height: 40px; 
+    margin-bottom: 6px; 
+    padding-bottom: 4px; 
     border-bottom: 1px solid #334155; 
 }
-h1 { margin: 0; font-size: 1.3rem; color: #f8fafc; }
+h1 { margin: 0; font-size: 1.2rem; color: #f8fafc; }
 
-.actions-reseau { display: flex; gap: 5px; }
-.btn-reseau { border: none; padding: 6px 10px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 0.8rem; color: white; }
-.btn-blue { background: #0284c7; }
-.btn-blue:hover { background: #0369a1; }
-.btn-green { background: #16a34a; }
-.btn-green:hover { background: #15803d; }
-
-/* Conteneur principal */
+/* Conteneur principal flexible */
 .layout-container { 
     display: flex; 
-    gap: 5px; 
-    align-items: flex-start; 
+    gap: 8px; 
+    height: calc(100vh - 58px); 
 }
 
-/* Colonne Gauche (Tableau) */
+/* Colonnes */
 .colonne-gauche { 
     flex: 7.5; 
     min-width: 0; 
+    height: 100%;
 }
 
-/* LE REGLAGE CLEF : Hauteur max fixe par rapport à la vue du portable */
-.colonne-gauche .panel {
-    max-height: calc(100vh - 65px) !important;
-    overflow-y: scroll !important; /* Force l'apparition de la barre */
-}
-
-/* 1. Largeur globale de la scrollbar */
-.colonne-gauche div::-webkit-scrollbar {width: 1px;}
-/* 2. LE FOND / RAIL (Track) de la scrollbar */
-.colonne-gauche div::-webkit-scrollbar-track {background-color: #0f172a; border-radius: 2px;}
-/* 3. LE CURSEUR (Thumb) qui bouge */
-.colonne-gauche div::-webkit-scrollbar-thumb {background-color: #38bdf8; border-radius: 2px;}
-/* 4. Effet au survol du curseur */
-.colonne-gauche div::-webkit-scrollbar-thumb:hover {background-color: #0284c7;}
-
-/* Colonne Droite (Formulaire) */
 .colonne-droite { 
     flex: 2.5; 
-    min-width: 260px; 
-    max-height: calc(100vh - 65px);
+    min-width: 270px; 
+    height: 100%;
     overflow-y: auto;
 }
 
-.panel { background: #1e293b; border-radius: 8px; border: 1px solid #334155; padding: 5px; }
-.panel-titre { font-size: 0.95rem; font-weight: bold; color: #38bdf8; margin-bottom: 1px; text-transform: uppercase; letter-spacing: 0.5px; }
+/* Panels */
+.panel { 
+    background: #1e293b; 
+    border-radius: 8px; 
+    border: 1px solid #334155; 
+    padding: 8px; 
+}
 
-/* Tableau compact */
+.panel-tableau {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 4px;
+}
+
+.panel-titre { 
+    font-size: 0.9rem; 
+    font-weight: bold; 
+    color: #38bdf8; 
+    margin-bottom: 6px; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+}
+
+/* Zone de défilement vertical du tableau (et PAS horizontal) */
+.table-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden; /* Empêche formellement le scroll horizontal */
+}
+
+/* Structure du tableau */
 table { 
     width: 100%; 
     border-collapse: collapse; 
     text-align: center; 
-    font-size: 0.85rem; 
-    table-layout: auto; /* Permet un ajustement fluide des colonnes */
+    font-size: 0.8rem; 
+    table-layout: fixed; /* Respecte strictement les largeurs attribuées */
 }
 
 th { 
     background: #0f172a; 
     color: #cbd5e1; 
-    padding: 6px 4px; 
+    padding: 6px 2px; 
     border-bottom: 2px solid #334155; 
     font-weight: 600; 
     position: sticky; 
-    top: -5px; 
+    top: 0; 
     z-index: 10; 
 }
 
 td { 
-    padding: 4px 5px; 
+    padding: 3px 2px; /* Lignes ultra-compactes */
     border-bottom: 1px solid #334155; 
     vertical-align: middle; 
-    line-height: 1.2; 
-    word-break: break-word; /* Évite qu'un texte trop long ne pousse le tableau hors de l'écran */
+    line-height: 1.1; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
 }
 
 tr:hover { background: #334155; }
 
-/* Badges */
-.badge-type { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; white-space: nowrap; }
+/* Largeurs fixes strictes par colonne pour supprimer le scroll horizontal */
+.col-type      { width: 110px; }
+.col-activite  { width: 95px;  }
+.col-libelle   { width: 95px;  }
+.col-sequence  { width: auto;  } /* Absorbe tout l'espace restant */
+.col-quota     { width: 65px;  }
+.col-dispenses { width: 100px; }
+.col-actions   { width: 90px;  }
+
+/* Badges compacts */
+.badge-type { 
+    font-size: 0.65rem; 
+    padding: 2px 4px; 
+    border-radius: 4px; 
+    font-weight: bold; 
+    display: inline-block; 
+    white-space: nowrap; 
+}
 .badge-socle { background: #0284c7; color: white; }
 .badge-specialite { background: #8b5cf6; color: white; }
 
-/* Fixation de la colonne des actions (Éditer / Corbeille) */
+/* Alignement côte à côte des boutons d'actions */
 td:last-child {
-    white-space: nowrap; /* Empêche les boutons de passer à la ligne */
-    width: 1%;           /* Force la colonne à coller au plus près des boutons */
+    white-space: nowrap;
 }
 
-/* Boutons d'action ultra-compacts */
-.btn-action {
+.btn-action { 
+    border: none; 
+    padding: 2px 5px; 
+    border-radius: 4px; 
+    cursor: pointer; 
+    font-size: 0.7rem; 
+    font-weight: bold; 
     display: inline-block;
-    padding: 2px 6px;
-    font-size: 0.75rem;
-    margin: 0 1px;
-    cursor: pointer;
 }
+.btn-edit { background: #334155; color: #cbd5e1; border: 1px solid #475569; }
+.btn-edit:hover { background: #475569; color: white; }
+.btn-delete { background: #ef4444; color: white; }
+.btn-delete:hover { background: #dc2626; }
 
 /* Formulaire */
 .form-group { margin-bottom: 8px; }
@@ -125,12 +157,13 @@ label { display: block; font-size: 0.75rem; font-weight: 600; color: #cbd5e1; ma
 input, select, textarea { width: 100%; background: #0f172a; border: 1px solid #475569; color: white; padding: 5px 7px; border-radius: 5px; font-size: 0.8rem; }
 input:focus, select:focus, textarea:focus { outline: none; border-color: #38bdf8; }
 
-.btn-action { border: none; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; font-weight: bold; margin-right: 2px; }
-.btn-edit { background: #334155; color: #cbd5e1; border: 1px solid #475569; }
-.btn-edit:hover { background: #475569; color: white; }
-.btn-delete { background: #ef4444; color: white; }
-.btn-delete:hover { background: #dc2626; }
+.help-text { color: #94a3b8; display: block; margin-top: 3px; font-size: 0.7rem; }
 
-.btn-submit { width: 100%; background: #22c55e; color: white; border: none; padding: 7px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; margin-top: 6px; }
-.btn-submit:hover { background: #16a34a; }
+.btn-submit { width: 100%; background: #3845f8; color: white; border: none; padding: 7px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; margin-top: 6px; }
+.btn-submit:hover { background: #2b36cd; }
 .btn-cancel { width: 100%; background: #475569; color: white; border: none; padding: 5px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; cursor: pointer; margin-top: 4px; }
+
+/* Personnalisation de la barre de défilement verticale */
+.table-container::-webkit-scrollbar { width: 4px; }
+.table-container::-webkit-scrollbar-track { background: #0f172a; }
+.table-container::-webkit-scrollbar-thumb { background: #38bdf8; border-radius: 2px; }
