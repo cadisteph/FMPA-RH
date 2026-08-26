@@ -95,6 +95,23 @@
                     <input type="number" id="quota" min="1" step="0.5" value="6" required>
                 </div>
 
+                
+<!-- Dispense de formation -->
+<div class="form-group">
+  <label for="dispenses">Profils dispensés de cette formation :</label>
+  <select id="dispenses" multiple size="4" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #cbd5e1;">
+    <option value="Aucune">Aucune dispense</option>
+    <option value="Spécialiste">Spécialiste</option>
+    <option value="Engagement Différencié">Engagement Différencié</option>
+    <option value="Hors-rang">Hors-rang</option>
+    <!-- Tu peux ajouter d'autres <option> selon tes besoins -->
+  </select>
+  <small style="color: #64748b; display: block; margin-top: 4px;">
+    💡 Maintiens la touche <strong>Ctrl</strong> (ou Cmd sur Mac) pour sélectionner plusieurs profils.
+  </small>
+</div>
+
+                
                 <button type="submit" id="btn-save" class="btn-primary" style = "background-color : #3845f8; color : white">💾 Enregistrer dans le catalogue (JSON)</button>
                 <button type="button" class="btn-cancel" id="btn-cancel" style="display: none;">Annuler la modification</button>
             </form>
