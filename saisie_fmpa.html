@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Saisie Rapide & Suivi FMA</title>
+    <link rel="stylesheet" href="style_saisie.css">
+</head>
+<body>
+    <div class="main-container">
+        <!-- Barre supérieure de filtres -->
+        <div class="top-bar">
+            <div class="filter-group">
+                <label>EQUIPE</label>
+                <select id="filter-equipe">
+                    <option value="">Toutes</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>RECHERCHE</label>
+                <input type="text" id="filter-search" placeholder="Nom, prénom...">
+            </div>
+            <button id="btn-reset-filters" class="btn-sec">Réinitialiser Filtres</button>
+            <button id="btn-historique" class="btn-purple">📜 Historique des Saisies</button>
+            <button id="btn-fiche-equipe" class="btn-blue">📋 Fiche Équipe</button>
+            <div class="agent-count-badge" id="count-badge">0 / 0 agent(s)</div>
+        </div>
+
+        <!-- Contenu principal 2 colonnes -->
+        <div class="content-grid">
+            <!-- COLONNE GAUCHE : Tableau des agents -->
+            <div class="left-panel">
+                <table class="table-agents">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;"><input type="checkbox" id="select-all"></th>
+                            <th>Agent</th>
+                            <th>Equipe</th>
+                            <th>Grade / Fonction</th>
+                            <th>Avancement FMA Socle</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-agents">
+                        <!-- Lignes générées en JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- COLONNE DROITE : Formulaire de Saisie Rapide -->
+            <div class="right-panel">
+                <div class="card-saisie">
+                    <h3>SAISIE RAPIDE FMA SOCLE</h3>
+                    
+                    <div class="selection-alert" id="selection-status">
+                        👥 <strong>0 agent(s) sélectionné(s)</strong> dans le tableau
+                    </div>
+
+                    <form id="form-saisie-groupee">
+                        <div class="form-group">
+                            <label>Date de la Formation</label>
+                            <input type="date" id="saisie-date" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Heure Début</label>
+                                <input type="time" id="saisie-heure-debut">
+                            </div>
+                            <div class="form-group">
+                                <label>Heure Fin</label>
+                                <input type="time" id="saisie-heure-fin">
+                            </div>
+                        </div>
+
+                        <div class="duree-display">
+                            Durée calculée : <strong id="duree-calculee">0 h</strong>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Activité</label>
+                            <select id="saisie-activite" required>
+                                <option value="">-- Choisir une activité --</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Thème / Formation</label>
+                            <select id="saisie-theme" required disabled>
+                                <option value="">-- Choisir d'abord une activité --</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Formateur (Optionnel)</label>
+                            <input type="text" id="saisie-formateur" placeholder="Saisir ou choisir un agent..." list="liste-formateurs">
+                            <datalist id="liste-formateurs"></datalist>
+                        </div>
+
+                        <button type="submit" id="btn-valider-groupe" class="btn-valider" disabled>
+                            Valider la Saisie Groupée
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="agents_rh.js"></script>
+    <script src="donnees_catalogue.js"></script>
+    <script src="script_saisie.js"></script>
+</body>
+</html>
