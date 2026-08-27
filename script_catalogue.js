@@ -260,6 +260,9 @@ function editerFormation(id) {
     document.getElementById("form-titre").innerText = "Modifier la Formation";
     document.getElementById("btn-save").innerText = "💾 Enregistrer la modification";
     document.getElementById("btn-cancel").style.display = "block";
+
+    trierEtAfficherCatalogue();
+    reinitialiserFormulaire();
 }
 
 async function supprimerFormation(id) {
@@ -295,6 +298,7 @@ function chargerFichierLocal(e) {
             catalogue = JSON.parse(evt.target.result);
             sauvegarderLocalement();
             trierEtAfficherCatalogue();
+            reinitialiserFormulaire();
         } catch {
             alert("Format JSON invalide.");
         }
