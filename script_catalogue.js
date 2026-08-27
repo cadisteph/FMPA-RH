@@ -260,9 +260,6 @@ function editerFormation(id) {
     document.getElementById("form-titre").innerText = "Modifier la Formation";
     document.getElementById("btn-save").innerText = "💾 Enregistrer la modification";
     document.getElementById("btn-cancel").style.display = "block";
-
-    trierEtAfficherCatalogue();
-    reinitialiserFormulaire();
 }
 
 async function supprimerFormation(id) {
