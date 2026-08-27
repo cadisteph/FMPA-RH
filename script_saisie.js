@@ -5,14 +5,20 @@ let cumulHeuresParAgent = {};   // Cumul par { agentId: { formationId: totalHeur
 let agentsSelectionnes = new Set();
 
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Appel automatique du fichier baseAgents.csv du même dossier
-    chargerCSVAutomatique();
+    // 1. Alimenter immédiatement le formulaire depuis donnees_catalogue.js
+    initialiserFiltresEtListes();
 
     // 2. Initialiser la date du jour
     const elDate = document.getElementById("saisie-date");
     if (elDate) elDate.valueAsDate = new Date();
+    // 3. Appel automatique du fichier baseAgents.csv du même dossier
+    chargerCSVAutomatique();
 
-    // 3. Importation manuelle du CSV si besoin
+    // 4. Initialiser la date du jour
+    const elDate = document.getElementById("saisie-date");
+    if (elDate) elDate.valueAsDate = new Date();
+
+    // 5. Importation manuelle du CSV si besoin
     const btnImport = document.getElementById("btn-import-csv");
     const fileInput = document.getElementById("file-input-csv");
     if (btnImport && fileInput) {
@@ -20,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
         fileInput.addEventListener("change", importerCSVManuel);
     }
 
-    // 4. Exportation du CSV de suivi
+    // 6. Exportation du CSV de suivi
     const btnExport = document.getElementById("btn-export-csv");
     if (btnExport) {
         btnExport.addEventListener("click", exporterSuiviCSV);
