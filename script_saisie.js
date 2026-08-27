@@ -5,16 +5,17 @@ let cumulHeuresParAgent = {};   // Cumul par { agentId: { formationId: totalHeur
 let agentsSelectionnes = new Set();
 
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Alimenter immédiatement le formulaire depuis donnees_catalogue.js
+    // 1. Initialiser les listes déroulantes du catalogue (donnees_catalogue.js)
     initialiserFiltresEtListes();
 
     // 2. Initialiser la date du jour
-    let elDate = document.getElementById("saisie-date");
-    if (elDate) elDate.valueAsDate = new Date();
-    // 3. Appel automatique du fichier baseAgents.csv du même dossier
-    chargerCSVAutomatique();
+    const dateInput = document.getElementById("saisie-date");
+    if (dateInput) dateInput.valueAsDate = new Date();
 
-    // 4. Importation manuelle du CSV si besoin
+    // 3. Message initial dans le tableau
+    afficherMessageAccueil();
+
+    // 4. Gestionnaires d'événements Import / Export CSV
     const btnImport = document.getElementById("btn-import-csv");
     const fileInput = document.getElementById("file-input-csv");
     if (btnImport && fileInput) {
@@ -22,57 +23,45 @@ document.addEventListener("DOMContentLoaded", () => {
         fileInput.addEventListener("change", importerCSVManuel);
     }
 
-    // 5. Exportation du CSV de suivi
     const btnExport = document.getElementById("btn-export-csv");
     if (btnExport) {
         btnExport.addEventListener("click", exporterSuiviCSV);
     }
 
-    // Filtres
+    // Filtres du tableau
     document.getElementById("filter-equipe").addEventListener("change", filtrerEtAfficherTableau);
     document.getElementById("filter-search").addEventListener("input", filtrerEtAfficherTableau);
     document.getElementById("btn-reset-filters").addEventListener("click", reinitialiserFiltres);
 
-    // Calcul de durée
+    // Formulaire de saisie
     document.getElementById("saisie-heure-debut").addEventListener("change", calculerDuree);
     document.getElementById("saisie-heure-fin").addEventListener("change", calculerDuree);
-
-    // Liste déroulante dynamique Activité -> Thème
     document.getElementById("saisie-activite").addEventListener("change", majListeThemes);
-
-    // Sélection globale
     document.getElementById("select-all").addEventListener("change", basculerToutSelectionner);
-
-    // Soumission du formulaire
     document.getElementById("form-saisie-groupee").addEventListener("submit", validerSaisieGroupee);
 
-    initialiserFiltresEtListes();
     calculerDuree();
 });
 
 /**
- * Appel direct au fichier baseAgents.csv via fetch()
+ * Affiche l'invitation à importer le CSV au démarrage
  */
-function chargerCSVAutomatique() {
-    fetch("baseAgents.csv")
-        .then(response => {
-            if (!response.ok) throw new Error("Fichier non disponible par fetch");
-            return response.text();
-        })
-        .then(contenu => {
-            traiterContenuCSV(contenu);
-        })
-        .catch(() => {
-            // Message si exécuté sans serveur local (file://)
-            const tbody = document.getElementById("tbody-agents");
-            if (tbody) {
-                tbody.innerHTML = `<tr><td colspan="5" class="empty-msg">
-                    Veuillez importer le fichier via le bouton <strong>"📂 Importer baseAgents.csv"</strong>.
-                </td></tr>`;
-            }
-        });
+function afficherMessageAccueil() {
+    const tbody = document.getElementById("tbody-agents");
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 40px; color: #64748b;">
+                    <div style="font-size: 1.1rem; margin-bottom: 8px;"><strong>Aucune liste d'agents chargée</strong></div>
+                    Veuillez cliquer sur le bouton <strong>"📂 Importer baseAgents.csv"</strong> ci-dessus pour charger votre fichier réseau.
+                </td>
+            </tr>`;
+    }
 }
 
+/**
+ * Importation et lecture manuelle du fichier CSV des agents
+ */
 function importerCSVManuel(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -90,13 +79,12 @@ function traiterContenuCSV(texteCSV) {
         initialiserFiltresEtListes();
         filtrerEtAfficherTableau();
     } else {
-        alert("Aucun agent n'a pu être extrait du fichier CSV.");
+        alert("Aucun agent n'a pu être extrait du fichier CSV. Vérifiez le format du fichier.");
     }
 }
 
 /**
-/**
- * Lit le fichier baseAgents.csv et nettoie les guillemets
+ * Parsing brut du CSV issu d'Excel avec nettoyage automatique des guillemets
  */
 function parseCSVAgentsBrut(texteCSV) {
     const lignes = texteCSV.split(/\r\n|\n/).filter(l => l.trim() !== "");
@@ -105,13 +93,13 @@ function parseCSVAgentsBrut(texteCSV) {
     const enTeteBrute = lignes[0];
     const separateur = enTeteBrute.includes(";") ? ";" : ",";
     
-    // Nettoyage des en-têtes (suppression des guillemets et espaces)
+    // Suppression des guillemets et espaces dans les en-têtes
     const entetes = enTeteBrute.split(separateur).map(h => h.replace(/"/g, '').trim().toLowerCase());
 
     const resultats = [];
 
     for (let i = 1; i < lignes.length; i++) {
-        // Nettoyage de chaque valeur (suppression des guillemets encadrants)
+        // Suppression des guillemets et espaces dans les valeurs
         const valeurs = lignes[i].split(separateur).map(v => v.replace(/"/g, '').trim());
         if (valeurs.length < entetes.length) continue;
 
@@ -339,9 +327,6 @@ function majStatutSelection() {
     document.getElementById("btn-valider-groupe").disabled = count === 0;
 }
 
-/**
- * Valide et enregistre la saisie dans l'historique en mémoire
- */
 function validerSaisieGroupee(e) {
     e.preventDefault();
 
@@ -367,12 +352,10 @@ function validerSaisieGroupee(e) {
     const formationObj = catalogueInitial.find(f => f.id === idFormation);
     const libelleFormation = formationObj ? formationObj.libelle : idFormation;
 
-    // Enregistrement des lignes d'historique et mise à jour des cumuls
     agentsSelectionnes.forEach(idAgent => {
         const agent = tableauAgentsRH.find(a => a.id === idAgent);
         if (!agent) return;
 
-        // 1. Ajouter la ligne d'historique
         historiqueSaisiesFMPA.push({
             date: dateSaisie,
             matricule: agent.matricule,
@@ -389,7 +372,6 @@ function validerSaisieGroupee(e) {
             commentaires: commentaires
         });
 
-        // 2. Mettre à jour le cumul
         if (!cumulHeuresParAgent[idAgent]) cumulHeuresParAgent[idAgent] = {};
         const heuresActuelles = cumulHeuresParAgent[idAgent][idFormation] || 0;
         cumulHeuresParAgent[idAgent][idFormation] = heuresActuelles + duree;
@@ -402,9 +384,6 @@ function validerSaisieGroupee(e) {
     filtrerEtAfficherTableau();
 }
 
-/**
- * Génère et télécharge le fichier CSV des saisies (suivi_formations_fmpa.csv)
- */
 function exporterSuiviCSV() {
     if (historiqueSaisiesFMPA.length === 0) {
         alert("Aucune saisie n'a encore été effectuée pour cette session.");
