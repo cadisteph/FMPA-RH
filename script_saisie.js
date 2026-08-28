@@ -288,9 +288,30 @@ function genererAvancementSocle(agent) {
     return socleFormations.map(f => {
         let quotaRequis = f.quota;
 
-        if (f.modulations && f.modulations.length > 0 && agent.fonction) {
-            const mod = f.modulations.find(m => m.profil.trim().toUpperCase() === agent.fonction.trim().toUpperCase());
-            if (mod !== undefined) quotaRequis = mod.quota;
+        // 1. Recherche d'une modulation ou dispense basée sur la fonction, le grade ou le statut
+        if (f.modulations && Array.isArray(f.modulations) && f.modulations.length > 0) {
+            const agentProfils = [agent.fonction, agent.grade, agent.statut]
+                .filter(Boolean)
+                .map(p => p.trim().toUpperCase());
+
+            // Trouve si l'un des profils de l'agent correspond à une modulation
+            const mod = f.modulations.find(m => 
+                m.profil && agentProfils.includes(m.profil.trim().toUpperCase())
+            );
+
+            if (mod !== undefined) {
+                quotaRequis = Number(mod.quota);
+            }
+        } 
+        // Rétrocompatibilité : gestion des anciens tableaux `dispenses` (strings)
+        else if (f.dispenses && Array.isArray(f.dispenses) && agent.fonction) {
+            const isDispense = f.dispenses.some(d => d.trim().toUpperCase() === agent.fonction.trim().toUpperCase());
+            if (isDispense) quotaRequis = 0;
+        }
+
+        // 2. Si l'agent est dispensé (quotaRequis === 0), on ne l'affiche pas (ou on affiche "Dispensé")
+        if (quotaRequis === 0) {
+            return null; // Ignore la formation dispensée dans le badge
         }
 
         const fait = heuresAgent[f.id] || 0;
@@ -300,7 +321,9 @@ function genererAvancementSocle(agent) {
         else if (fait > 0) styleClass = "fma-partial";
 
         return `<span class="${styleClass}">${f.libelle}: ${fait}/${quotaRequis}h</span>`;
-    }).join(" | ");
+    })
+    .filter(Boolean) // Retire les formations dispensées (null)
+    .join(" | ") || "<span style='color:#64748b;'>Aucun socle requis</span>";
 }
 
 function toggleAgent(idAgent) {
