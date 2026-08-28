@@ -16,13 +16,13 @@ document.addEventListener("DOMContentLoaded", () => {
         btnCancel.addEventListener("click", reinitialiserFormulaire);
     }
 
-    // Bouton pour lier le fichier réseau directement au clic
+    // Bouton pour lier le fichier réseau directement au clic (désormais CSV)
     const btnConnect = document.getElementById("btn-connect-file");
     if (btnConnect) {
         btnConnect.addEventListener("click", lierFichierReseau);
     }
 
-    // NOUVEAU : Écouteur pour le bouton d'ajout de ligne profil/quota
+    // Écouteur pour le bouton d'ajout de ligne profil/quota
     const btnAjouterLigne = document.getElementById("btn-ajouter-ligne-profil");
     if (btnAjouterLigne) {
         btnAjouterLigne.addEventListener("click", () => ajouterLigneProfil());
@@ -54,46 +54,63 @@ function sauvegarderLocalement() {
 }
 
 /**
- * Fonction déclenchée DIRECTEMENT par le clic utilisateur sur le bouton
+ * Fonction déclenchée DIRECTEMENT par le clic utilisateur sur le bouton pour lier un CSV
  */
 async function lierFichierReseau() {
     try {
         [fileHandle] = await window.showOpenFilePicker({
             types: [{
-                description: 'Fichier JavaScript Catalogue',
-                accept: { 'text/javascript': ['.js'] },
+                description: 'Fichier CSV Catalogue',
+                accept: { 'text/csv': ['.csv'] },
             }],
             multiple: false
         });
 
         const btnConnect = document.getElementById("btn-connect-file");
         if (btnConnect) {
-            btnConnect.innerText = "🌐 Réseau Connecté";
-            btnConnect.classList.add("connecte"); // Applique le style vert fixe
+            btnConnect.innerText = "🌐 CSV Réseau Connecté";
+            btnConnect.classList.add("connecte");
         }
     } catch (err) {
         if (err.name !== 'AbortError') {
             console.error("Erreur de sélection :", err);
-            alert("L'accès au fichier a échoué.");
+            alert("L'accès au fichier CSV a échoué.");
         }
     }
 }
 
 /**
- * Écriture silencieuse dans le fichier déjà lié
+ * Écriture du tableau de formations au format CSV dans le fichier réseau lié
  */
 async function exporterFichierJSReseau() {
-    if (!fileHandle) return; // Si pas lié, on passe sans erreur
+    if (!fileHandle) return; // Si pas lié, on passe silencieusement
 
-    const contenuJS = `const catalogueInitial = ${JSON.stringify(catalogue, null, 4)};`;
+    // Conversion du tableau JS vers une structure CSV via PapaParse
+    const donneesPourCSV = catalogue.map(f => {
+        let dispensesStr = "";
+        if (f.modulations && f.modulations.length > 0) {
+            dispensesStr = f.modulations.map(m => `${m.profil}:${m.quota}`).join(";");
+        }
+        return {
+            id: f.id,
+            type: f.type,
+            activite: f.activite,
+            libelle: f.libelle,
+            sequence: f.sequence,
+            quota: f.quota,
+            modulations: dispensesStr
+        };
+    });
+
+    const contenuCSV = Papa.unparse(donneesPourCSV, { delimiter: ";" });
     
     try {
         const writable = await fileHandle.createWritable();
-        await writable.write(contenuJS);
+        await writable.write(contenuCSV);
         await writable.close();
     } catch (err) {
-        console.error("Erreur d'écriture sur le réseau :", err);
-        alert("Attention : Enregistré en local, mais l'écriture sur le réseau a échoué.");
+        console.error("Erreur d'écriture CSV sur le réseau :", err);
+        alert("Attention : Enregistré en local, mais l'écriture du CSV sur le réseau a échoué.");
     }
 }
 
@@ -108,12 +125,11 @@ function ajouterLigneProfil(profilNom = "", quotaValeur = "") {
     divLigne.className = "ligne-modulation";
 
     divLigne.innerHTML = `
-        <input type="text" class="input-profil" list="liste-profils-dispenses" placeholder="Profil / Grade (ex: EQUIPPIER)" value="${profilNom}">
+        <input type="text" class="input-profil" list="liste-profils-dispenses" placeholder="Profil / Grade (ex: EQUIPIER)" value="${profilNom}">
         <input type="number" class="input-quota-mod" min="0" step="0.5" placeholder="Heures (ex: 6 ou 0)" value="${quotaValeur}">
         <button type="button" class="btn-suppr-ligne" title="Supprimer cette ligne">✕</button>
     `;
 
-    // Suppression de la ligne au clic sur ✕
     divLigne.querySelector(".btn-suppr-ligne").addEventListener("click", () => {
         divLigne.remove();
     });
@@ -157,7 +173,6 @@ function afficherCatalogue() {
                 return m.quota === 0 ? `${m.profil} (0h)` : `${m.profil} (${m.quota}h)`;
             }).join(", ");
         } else if (item.dispenses && item.dispenses.length > 0) {
-            // Lecture des anciennes données sans heures précisées (considérées comme 0h)
             affichageDispenses = item.dispenses.map(p => `${p} (0h)`).join(", ");
         }
 
@@ -186,7 +201,6 @@ async function sauvegarderFormation(e) {
     const sequence = document.getElementById("sequence").value.trim();
     const quota = parseFloat(document.getElementById("quota").value);
 
-    // Récupération dynamique de toutes les lignes "Profil / Quota"
     const modulations = [];
     const lignes = document.querySelectorAll(".ligne-modulation");
 
@@ -245,15 +259,12 @@ function editerFormation(id) {
     document.getElementById("sequence").value = item.sequence === "-" ? "" : item.sequence;
     document.getElementById("quota").value = item.quota;
 
-    // Réinitialiser le conteneur des lignes dans le formulaire
     const conteneur = document.getElementById("liste-lignes-modulations");
     if (conteneur) conteneur.innerHTML = "";
 
-    // Reconstruire les lignes Profil/Quota enregistrées
     if (item.modulations && Array.isArray(item.modulations) && item.modulations.length > 0) {
         item.modulations.forEach(m => ajouterLigneProfil(m.profil, m.quota));
     } else if (item.dispenses && Array.isArray(item.dispenses) && item.dispenses.length > 0) {
-        // Rétrocompatibilité : si l'élément utilisait l'ancien format string, on applique 0h
         item.dispenses.forEach(p => ajouterLigneProfil(p, 0));
     }
 
@@ -276,7 +287,6 @@ function reinitialiserFormulaire() {
     document.getElementById("form-formation").reset();
     document.getElementById("form-id").value = "";
     
-    // Vider toutes les lignes de profil modulé
     const conteneur = document.getElementById("liste-lignes-modulations");
     if (conteneur) conteneur.innerHTML = "";
 
@@ -285,22 +295,52 @@ function reinitialiserFormulaire() {
     document.getElementById("btn-cancel").style.display = "none";
 }
 
+/**
+ * Charge et analyse un fichier CSV sélectionné manuellement via l'input
+ */
 function chargerFichierLocal(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-        try {
-            catalogue = JSON.parse(evt.target.result);
+    Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        dynamicTyping: true,
+        complete: function(results) {
+            catalogue = results.data.map((item, index) => {
+                // Reconstitution des modulations au format objet
+                let modulations = [];
+                const rawMod = item.modulations || item.dispenses || "";
+                
+                if (typeof rawMod === 'string' && rawMod.trim() !== '') {
+                    modulations = rawMod.split(';').map(mStr => {
+                        const parts = mStr.split(':');
+                        return {
+                            profil: parts[0] ? parts[0].trim().toUpperCase() : '',
+                            quota: parts[1] ? parseFloat(parts[1]) : 0
+                        };
+                    });
+                }
+
+                return {
+                    id: item.id ? String(item.id) : "fmpa-" + (Date.now() + index),
+                    type: item.type || item.Type || "Socle Commun",
+                    activite: item.activite || item.Activité || "",
+                    libelle: item.libelle || item['Thème'] || item.Libellé || "",
+                    sequence: item.sequence || item['Séquence'] || "-",
+                    quota: parseFloat(item.quota || item['Durée(h)'] || 0),
+                    modulations: modulations
+                };
+            });
+
             sauvegarderLocalement();
             trierEtAfficherCatalogue();
             reinitialiserFormulaire();
-        } catch {
-            alert("Format JSON invalide.");
+        },
+        error: function(err) {
+            alert("Format CSV invalide ou illisible : " + err.message);
         }
-    };
-    reader.readAsText(file);
+    });
 }
 
 function alimenterDatalistProfils(tableauAgentsRH) {
