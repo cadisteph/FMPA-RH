@@ -160,7 +160,9 @@ function initialiserFiltresEtListes() {
         datalistFormateurs.innerHTML = "";
         tableauAgentsRH.forEach(agent => {
             const opt = document.createElement("option");
-            opt.value = `${agent.nom} ${agent.prenom}`;
+            // Inclut aussi la forme [Grade] NOM Prénom pour la datalist du formateur
+            const gradeStr = agent.grade ? `${agent.grade} ` : '';
+            opt.value = `${gradeStr}${agent.nom} ${agent.prenom}`;
             datalistFormateurs.appendChild(opt);
         });
     }
@@ -250,19 +252,21 @@ function afficherTableauAgents(listeAgents) {
         const tr = document.createElement("tr");
         if (isChecked) tr.classList.add("selected-row");
 
+        // Formatage de la colonne Agent : [Grade] NOM Prénom [(Fonction)] sans le matricule
+        const gradeStr = agent.grade ? `${agent.grade} ` : '';
+        const fonctionStr = agent.fonction ? ` (${agent.fonction})` : '';
+        const agentLibelle = `${gradeStr}<strong>${agent.nom}</strong> ${agent.prenom}${fonctionStr}`;
+
         tr.innerHTML = `
             <td>
                 <input type="checkbox" class="chk-agent" value="${idAgent}" ${isChecked} onchange="toggleAgent('${idAgent}')">
             </td>
             <td>
-                <strong>${agent.nom}</strong> ${agent.prenom}
-                <div style="font-size: 0.75rem; color: #64748b;">Matricule: ${agent.matricule}</div>
+                ${agentLibelle}
             </td>
             <td>${agent.equipe}</td>
             <td>
-                <span class="badge-tag badge-statut">${agent.statut || 'SPP'}</span>
-                <span class="badge-tag badge-grade">${agent.grade || '-'}</span>
-                ${agent.fonction ? `<span class="badge-tag badge-fonction">${agent.fonction}</span>` : ''}
+                <span class="badge-tag badge-statut">${agent.statut || '-'}</span>
             </td>
             <td><small>${avancementHtml}</small></td>
         `;
