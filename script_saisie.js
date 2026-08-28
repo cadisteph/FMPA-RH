@@ -374,7 +374,7 @@ function genererAvancementSocle(agent) {
         else if (fait > 0) styleClass = "fma-partial";
 
         // L'intitulé reste en noir/sombre (#0f172a), bleu foncé (#1e40af), bleu discret (#334155); seule la valeur conserve la classe de couleur
-        return `<span style="color: #0f172a; font-weight: 500;">${f.libelle} :</span> <span class="${styleClass}">${fait}/${quotaRequis}h</span>`;
+        return `<span style="color: #0f172a; font-size: 1.1em; font-weight: 650;">${f.libelle} :</span> <span class="${styleClass}">${fait}/${quotaRequis}h</span>`;
     })
     .filter(Boolean)
     .join(" | ") || "<span style='color:#64748b;'>Aucun socle requis</span>";
