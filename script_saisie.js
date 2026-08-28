@@ -5,7 +5,7 @@ let cumulHeuresParAgent = {};   // Cumul par { agentId: { formationId: totalHeur
 let agentsSelectionnes = new Set();
 
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Initialiser les listes déroulantes du catalogue (donnees_catalogue.js)
+    // 1. Initialiser les listes déroulantes du catalogue
     initialiserFiltresEtListes();
 
     // 2. Initialiser la date du jour
@@ -30,6 +30,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Filtres du tableau
     document.getElementById("filter-equipe").addEventListener("change", filtrerEtAfficherTableau);
+    
+    const filterStatut = document.getElementById("filter-statut");
+    if (filterStatut) filterStatut.addEventListener("change", filtrerEtAfficherTableau);
+
     document.getElementById("filter-search").addEventListener("input", filtrerEtAfficherTableau);
     document.getElementById("btn-reset-filters").addEventListener("click", reinitialiserFiltres);
 
@@ -75,7 +79,7 @@ function traiterContenuCSV(texteCSV) {
     tableauAgentsRH = parseCSVAgentsBrut(texteCSV);
 
     if (tableauAgentsRH.length > 0) {
-        alimenterSelectEquipes();
+        alimenterSelectFiltres();
         initialiserFiltresEtListes();
         filtrerEtAfficherTableau();
     } else {
@@ -142,19 +146,35 @@ function parseCSVAgentsBrut(texteCSV) {
     return resultats;
 }
 
-function alimenterSelectEquipes() {
+/**
+ * Alimentation dynamique des filtres Équipe et Statut
+ */
+function alimenterSelectFiltres() {
+    // 1. Filtre Équipes
     const selectEquipe = document.getElementById("filter-equipe");
-    if (!selectEquipe) return;
+    if (selectEquipe) {
+        selectEquipe.innerHTML = '<option value="">Toutes</option>';
+        const equipes = [...new Set(tableauAgentsRH.map(a => a.equipe).filter(Boolean))].sort();
+        equipes.forEach(eq => {
+            const opt = document.createElement("option");
+            opt.value = eq;
+            opt.textContent = eq;
+            selectEquipe.appendChild(opt);
+        });
+    }
 
-    selectEquipe.innerHTML = '<option value="">Toutes</option>';
-
-    const equipes = [...new Set(tableauAgentsRH.map(a => a.equipe).filter(Boolean))].sort();
-    equipes.forEach(eq => {
-        const opt = document.createElement("option");
-        opt.value = eq;
-        opt.textContent = eq;
-        selectEquipe.appendChild(opt);
-    });
+    // 2. Filtre Statuts (SPP, SPV, PATS, etc.)
+    const selectStatut = document.getElementById("filter-statut");
+    if (selectStatut) {
+        selectStatut.innerHTML = '<option value="">Tous</option>';
+        const statuts = [...new Set(tableauAgentsRH.map(a => a.statut).filter(Boolean))].sort();
+        statuts.forEach(st => {
+            const opt = document.createElement("option");
+            opt.value = st;
+            opt.textContent = st;
+            selectStatut.appendChild(opt);
+        });
+    }
 }
 
 function initialiserFiltresEtListes() {
@@ -176,7 +196,6 @@ function initialiserFiltresEtListes() {
         datalistFormateurs.innerHTML = "";
         tableauAgentsRH.forEach(agent => {
             const opt = document.createElement("option");
-            // Inclut aussi la forme [Grade] NOM Prénom pour la datalist du formateur
             const gradeStr = agent.grade ? `${agent.grade} ` : '';
             opt.value = `${gradeStr}${agent.nom} ${agent.prenom}`;
             datalistFormateurs.appendChild(opt);
@@ -229,13 +248,16 @@ function calculerDuree() {
 
 function filtrerEtAfficherTableau() {
     const equipeFiltre = document.getElementById("filter-equipe").value;
+    const statutFiltre = document.getElementById("filter-statut") ? document.getElementById("filter-statut").value : "";
     const recherche = document.getElementById("filter-search").value.toLowerCase().trim();
 
     const agentsFiltres = tableauAgentsRH.filter(agent => {
         const matchEquipe = !equipeFiltre || agent.equipe === equipeFiltre;
+        const matchStatut = !statutFiltre || agent.statut === statutFiltre;
         const terme = `${agent.nom} ${agent.prenom} ${agent.matricule} ${agent.grade} ${agent.fonction}`.toLowerCase();
         const matchRecherche = !recherche || terme.includes(recherche);
-        return matchEquipe && matchRecherche;
+        
+        return matchEquipe && matchStatut && matchRecherche;
     });
 
     agentsFiltres.sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
@@ -245,6 +267,7 @@ function filtrerEtAfficherTableau() {
 
 function reinitialiserFiltres() {
     document.getElementById("filter-equipe").value = "";
+    if (document.getElementById("filter-statut")) document.getElementById("filter-statut").value = "";
     document.getElementById("filter-search").value = "";
     filtrerEtAfficherTableau();
 }
@@ -268,7 +291,6 @@ function afficherTableauAgents(listeAgents) {
         const tr = document.createElement("tr");
         if (isChecked) tr.classList.add("selected-row");
 
-        // Formatage de la colonne Agent : [Grade] NOM Prénom [(Fonction)] sans le matricule
         const gradeStr = agent.grade ? `${agent.grade} ` : '';
         const fonctionStr = agent.fonction ? ` (${agent.fonction})` : '';
         const agentLibelle = `${gradeStr}<strong>${agent.nom}</strong> ${agent.prenom}${fonctionStr}`;
@@ -300,14 +322,12 @@ function genererAvancementSocle(agent) {
     const heuresAgent = cumulHeuresParAgent[idAgent] || {};
     const socleFormations = catalogueInitial.filter(f => f.type === "Socle Commun");
 
-    // Helper pour convertir une valeur (String ou Array) en liste d'éléments propres
     const extraireValeurs = (champ) => {
         if (!champ) return [];
         if (Array.isArray(champ)) return champ.map(v => v.toString().trim().toUpperCase());
         return champ.toString().split(/[,/;]/).map(v => v.trim().toUpperCase());
     };
 
-    // 1. On rassemble TOUS les profils / qualifications / engagements de l'agent
     const tousLesProfilsAgent = new Set([
         ...extraireValeurs(agent.statut),
         ...extraireValeurs(agent.grade),
@@ -321,7 +341,6 @@ function genererAvancementSocle(agent) {
     return socleFormations.map(f => {
         let quotaRequis = f.quota;
 
-        // 2. Vérification des modulations (dérogations)
         if (f.modulations && Array.isArray(f.modulations) && f.modulations.length > 0) {
             const mod = f.modulations.find(m => 
                 m.profil && tousLesProfilsAgent.has(m.profil.trim().toUpperCase())
@@ -331,7 +350,6 @@ function genererAvancementSocle(agent) {
                 quotaRequis = Number(mod.quota);
             }
         } 
-        // Rétrocompatibilité : anciens tableaux `dispenses`
         else if (f.dispenses && Array.isArray(f.dispenses)) {
             const isDispense = f.dispenses.some(d => 
                 tousLesProfilsAgent.has(d.trim().toUpperCase())
@@ -339,7 +357,6 @@ function genererAvancementSocle(agent) {
             if (isDispense) quotaRequis = 0;
         }
 
-        // 3. Si l'agent est dispensé à 100% (0h requises), on masque la formation du badge
         if (quotaRequis === 0) {
             return null; 
         }
@@ -352,7 +369,7 @@ function genererAvancementSocle(agent) {
 
         return `<span class="${styleClass}">${f.libelle}: ${fait}/${quotaRequis}h</span>`;
     })
-    .filter(Boolean) // Masquer les formations dispensées (0h)
+    .filter(Boolean)
     .join(" | ") || "<span style='color:#64748b;'>Aucun socle requis</span>";
 }
 
