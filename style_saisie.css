@@ -174,7 +174,7 @@ body {
 
 .data-table th,
 .data-table td {
-    padding: 10px 12px;
+    padding: 5px 5px;
     border-bottom: 1px solid var(--border-color);
     text-align: left;
 }
