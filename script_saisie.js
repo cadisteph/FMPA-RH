@@ -373,7 +373,8 @@ function genererAvancementSocle(agent) {
         if (fait >= quotaRequis) styleClass = "fma-done";
         else if (fait > 0) styleClass = "fma-partial";
 
-        return `<span class="${styleClass}">${f.libelle}: ${fait}/${quotaRequis}h</span>`;
+        // L'intitulé reste en noir/sombre (#0f172a), seule la valeur conserve la classe de couleur
+        return `<span style="color: #0f172a; font-weight: 500;">${f.libelle} :</span> <span class="${styleClass}">${fait}/${quotaRequis}h</span>`;
     })
     .filter(Boolean)
     .join(" | ") || "<span style='color:#64748b;'>Aucun socle requis</span>";
