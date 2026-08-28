@@ -54,54 +54,37 @@ function sauvegarderLocalement() {
 }
 
 /**
- * Fonction déclenchée DIRECTEMENT par le clic utilisateur sur le bouton pour lier un CSV
- */
-async function lierFichierReseau() {
-    try {
-        [fileHandle] = await window.showOpenFilePicker({
-            types: [{
-                description: 'Fichier CSV Catalogue',
-                accept: { 'text/csv': ['.csv'] },
-            }],
-            multiple: false
-        });
-
-        const btnConnect = document.getElementById("btn-connect-file");
-        if (btnConnect) {
-            btnConnect.innerText = "🌐 CSV Réseau Connecté";
-            btnConnect.classList.add("connecte");
-        }
-    } catch (err) {
-        if (err.name !== 'AbortError') {
-            console.error("Erreur de sélection :", err);
-            alert("L'accès au fichier CSV a échoué.");
-        }
-    }
-}
-
-/**
  * Écriture du tableau de formations au format CSV dans le fichier réseau lié
  */
 async function exporterFichierJSReseau() {
     if (!fileHandle) return; // Si pas lié, on passe silencieusement
 
-    // Conversion du tableau JS vers une structure CSV via PapaParse
+    // Conversion des objets de modulation en chaîne texte propre (ex: "COD1:0;SUAP:2")
     const donneesPourCSV = catalogue.map(f => {
-        let dispensesStr = "";
-        if (f.modulations && f.modulations.length > 0) {
-            dispensesStr = f.modulations.map(m => `${m.profil}:${m.quota}`).join(";");
+        let modulationsStr = "";
+        
+        if (f.modulations && Array.isArray(f.modulations) && f.modulations.length > 0) {
+            modulationsStr = f.modulations
+                .map(m => `${m.profil}:${m.quota ?? 0}`)
+                .join(";");
+        } else if (f.dispenses && Array.isArray(f.dispenses) && f.dispenses.length > 0) {
+            // Rétrocompatibilité avec les anciennes dispenses
+            modulationsStr = f.dispenses.map(p => `${p}:0`).join(";");
         }
+
         return {
             id: f.id,
             type: f.type,
+            fmpa: f.fmpa || f.activite,
             activite: f.activite,
             libelle: f.libelle,
-            sequence: f.sequence,
             quota: f.quota,
-            modulations: dispensesStr
+            sequence: f.sequence || "-",
+            modulations: modulationsStr
         };
     });
 
+    // Génération du CSV sans BOM parasite
     const contenuCSV = Papa.unparse(donneesPourCSV, { delimiter: ";" });
     
     try {
@@ -308,23 +291,27 @@ function chargerFichierLocal(e) {
         dynamicTyping: true,
         complete: function(results) {
             catalogue = results.data.map((item, index) => {
-                // Reconstitution des modulations au format objet
+                // Nettoyage de l'ID (au cas où la clé contienne le BOM UTF-8 '\ufeffid')
+                const rawId = item.id || item['\ufeffid'] || item['ID'];
+
+                // Reconstitution propre des modulations
                 let modulations = [];
                 const rawMod = item.modulations || item.dispenses || "";
                 
-                if (typeof rawMod === 'string' && rawMod.trim() !== '') {
+                if (typeof rawMod === 'string' && rawMod.trim() !== '' && rawMod !== '[object Object]') {
                     modulations = rawMod.split(';').map(mStr => {
                         const parts = mStr.split(':');
                         return {
                             profil: parts[0] ? parts[0].trim().toUpperCase() : '',
-                            quota: parts[1] ? parseFloat(parts[1]) : 0
+                            quota: parts[1] !== undefined ? parseFloat(parts[1]) : 0
                         };
                     });
                 }
 
                 return {
-                    id: item.id ? String(item.id) : "fmpa-" + (Date.now() + index),
+                    id: rawId ? String(rawId) : "fmpa-" + (Date.now() + index),
                     type: item.type || item.Type || "Socle Commun",
+                    fmpa: item.fmpa || item.activite || "",
                     activite: item.activite || item.Activité || "",
                     libelle: item.libelle || item['Thème'] || item.Libellé || "",
                     sequence: item.sequence || item['Séquence'] || "-",
