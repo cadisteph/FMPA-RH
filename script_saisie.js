@@ -93,14 +93,22 @@ function parseCSVAgentsBrut(texteCSV) {
     const enTeteBrute = lignes[0];
     const separateur = enTeteBrute.includes(";") ? ";" : ",";
     
-    // Suppression des guillemets et espaces dans les en-têtes
-    const entetes = enTeteBrute.split(separateur).map(h => h.replace(/"/g, '').trim().toLowerCase());
+    // Suppression des guillemets, espaces et du BOM UTF-8 éventuel dans les en-têtes
+    const entetes = enTeteBrute
+        .replace(/^\ufeff/, '')
+        .split(separateur)
+        .map(h => h.replace(/"/g, '').trim().toLowerCase());
 
     const resultats = [];
 
+    // Regex pour découper en tenant compte des valeurs entre guillemets
+    const regexSeparateur = new RegExp(`${separateur}(?=(?:(?:[^"]*"){2})*[^"]*$)`);
+
     for (let i = 1; i < lignes.length; i++) {
-        // Suppression des guillemets et espaces dans les valeurs
-        const valeurs = lignes[i].split(separateur).map(v => v.replace(/"/g, '').trim());
+        const valeurs = lignes[i]
+            .split(regexSeparateur)
+            .map(v => v.replace(/^"|"$/g, '').trim());
+
         if (valeurs.length < entetes.length) continue;
 
         const ligneObj = {};
@@ -109,6 +117,7 @@ function parseCSVAgentsBrut(texteCSV) {
         });
 
         const matricule = ligneObj["matricule"] || `AG-${i}`;
+
         resultats.push({
             id: matricule,
             matricule: matricule,
@@ -119,7 +128,12 @@ function parseCSVAgentsBrut(texteCSV) {
             statut: ligneObj["statut"] || "",
             grade: ligneObj["grade"] || "",
             fonction: ligneObj["fonction"] || "",
-            specialites: ligneObj["specialites"] ? ligneObj["specialites"].split(/[,/]/).map(s => s.trim()) : []
+            specialites: ligneObj["specialites"] 
+                ? ligneObj["specialites"].split(/[,/;]/).map(s => s.trim()).filter(Boolean) 
+                : [],
+            competences: ligneObj["competences"] 
+                ? ligneObj["competences"].split(/[,/;]/).map(c => c.trim()).filter(Boolean) 
+                : []
         });
     }
 
@@ -282,36 +296,52 @@ function genererAvancementSocle(agent) {
 
     const idAgent = agent.id;
     const heuresAgent = cumulHeuresParAgent[idAgent] || {};
-
     const socleFormations = catalogueInitial.filter(f => f.type === "Socle Commun");
+
+    // 1. On rassemble TOUS les profils / qualifications / compétences de l'agent
+    // (Statut, Grade, Fonction, Spécialités) sous forme d'un tableau propre en MAJUSCULES
+    const tousLesProfilsAgent = new Set();
+
+    [
+        agent.statut,
+        agent.grade,
+        agent.fonction,
+        ...(agent.specialites || []),
+        ...(agent.competences ? agent.competences.split(/[,/;]/) : [])
+    ].forEach(valeur => {
+        if (valeur) {
+            valeur.toString().split(/[,/;]/).forEach(item => {
+                const propre = item.trim().toUpperCase();
+                if (propre) tousLesProfilsAgent.add(propre);
+            });
+        }
+    });
 
     return socleFormations.map(f => {
         let quotaRequis = f.quota;
 
-        // 1. Recherche d'une modulation ou dispense basée sur la fonction, le grade ou le statut
+        // 2. Vérification des modulations (dérogations)
         if (f.modulations && Array.isArray(f.modulations) && f.modulations.length > 0) {
-            const agentProfils = [agent.fonction, agent.grade, agent.statut]
-                .filter(Boolean)
-                .map(p => p.trim().toUpperCase());
-
-            // Trouve si l'un des profils de l'agent correspond à une modulation
+            // On cherche s'il y a une modulation qui correspond à UN des profils de l'agent
             const mod = f.modulations.find(m => 
-                m.profil && agentProfils.includes(m.profil.trim().toUpperCase())
+                m.profil && tousLesProfilsAgent.has(m.profil.trim().toUpperCase())
             );
 
             if (mod !== undefined) {
                 quotaRequis = Number(mod.quota);
             }
         } 
-        // Rétrocompatibilité : gestion des anciens tableaux `dispenses` (strings)
-        else if (f.dispenses && Array.isArray(f.dispenses) && agent.fonction) {
-            const isDispense = f.dispenses.some(d => d.trim().toUpperCase() === agent.fonction.trim().toUpperCase());
+        // Rétrocompatibilité : anciens tableaux `dispenses`
+        else if (f.dispenses && Array.isArray(f.dispenses)) {
+            const isDispense = f.dispenses.some(d => 
+                tousLesProfilsAgent.has(d.trim().toUpperCase())
+            );
             if (isDispense) quotaRequis = 0;
         }
 
-        // 2. Si l'agent est dispensé (quotaRequis === 0), on ne l'affiche pas (ou on affiche "Dispensé")
+        // 3. Si l'agent est dispensé à 100% (0h requises), on masque la formation du badge
         if (quotaRequis === 0) {
-            return null; // Ignore la formation dispensée dans le badge
+            return null; 
         }
 
         const fait = heuresAgent[f.id] || 0;
@@ -322,7 +352,7 @@ function genererAvancementSocle(agent) {
 
         return `<span class="${styleClass}">${f.libelle}: ${fait}/${quotaRequis}h</span>`;
     })
-    .filter(Boolean) // Retire les formations dispensées (null)
+    .filter(Boolean) // Filtrer les éléments nuls (les dispenses 0h)
     .join(" | ") || "<span style='color:#64748b;'>Aucun socle requis</span>";
 }
 
