@@ -1,31 +1,37 @@
 // Structure de stockage 100% en mémoire (sans localStorage)
+let catalogueInitial = [];          // Contient le catalogue extrait du CSV
 let tableauAgentsRH = [];
-let historiqueSaisiesFMPA = []; // Stocke l'historique de chaque session
-let cumulHeuresParAgent = {};   // Cumul par { agentId: { formationId: totalHeures } }
+let historiqueSaisiesFMPA = [];      // Stocke l'historique de chaque session
+let cumulHeuresParAgent = {};        // Cumul par { agentId: { formationId: totalHeures } }
 let agentsSelectionnes = new Set();
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Forcer le nettoyage du cache local pour le catalogue
-    localStorage.removeItem("catalogueFormations");
+    // 1. Charger automatiquement le catalogue.csv (ou proposer l'import manuel)
+    chargerCatalogueCSVAutomatique();
 
-    // 1. Initialiser les listes déroulantes du catalogue
-    initialiserFiltresEtListes();
+    // 2. Écouteurs pour l'import manuels si besoin
+    const btnImportCat = document.getElementById("btn-import-catalogue");
+    const fileInputCat = document.getElementById("file-input-catalogue");
+    if (btnImportCat && fileInputCat) {
+        btnImportCat.addEventListener("click", () => fileInputCat.click());
+        fileInputCat.addEventListener("change", (e) => importerCSVManiereManuelle(e, traiterContenuCSVCatalogue));
+    }
 
-    // 2. Initialiser la date du jour
+    const btnImportAgents = document.getElementById("btn-import-csv");
+    const fileInputAgents = document.getElementById("file-input-csv");
+    if (btnImportAgents && fileInputAgents) {
+        btnImportAgents.addEventListener("click", () => fileInputAgents.click());
+        fileInputAgents.addEventListener("change", (e) => importerCSVManiereManuelle(e, traiterContenuCSVAgents));
+    }
+
+    // 3. Initialiser la date du jour
     const dateInput = document.getElementById("saisie-date");
     if (dateInput) dateInput.valueAsDate = new Date();
 
-    // 3. Message initial dans le tableau
+    // 4. Message initial dans le tableau
     afficherMessageAccueil();
 
-    // 4. Gestionnaires d'événements Import / Export CSV
-    const btnImport = document.getElementById("btn-import-csv");
-    const fileInput = document.getElementById("file-input-csv");
-    if (btnImport && fileInput) {
-        btnImport.addEventListener("click", () => fileInput.click());
-        fileInput.addEventListener("change", importerCSVManuel);
-    }
-
+    // Export CSV
     const btnExport = document.getElementById("btn-export-csv");
     if (btnExport) {
         btnExport.addEventListener("click", exporterSuiviCSV);
@@ -33,7 +39,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Filtres du tableau
     document.getElementById("filter-equipe").addEventListener("change", filtrerEtAfficherTableau);
-    
     const filterStatut = document.getElementById("filter-statut");
     if (filterStatut) filterStatut.addEventListener("change", filtrerEtAfficherTableau);
 
@@ -51,115 +56,194 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /**
- * Affiche l'invitation à importer le CSV au démarrage
+ * Tente de charger automatiquement `catalogue.csv` présent dans le même dossier
  */
-function afficherMessageAccueil() {
-    const tbody = document.getElementById("tbody-agents");
-    if (tbody) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5" style="text-align: center; padding: 40px; color: #64748b;">
-                    <div style="font-size: 1.1rem; margin-bottom: 8px;"><strong>Aucune liste d'agents chargée</strong></div>
-                    Veuillez cliquer sur le bouton <strong>"📂 Importer baseAgents.csv"</strong> ci-dessus pour charger votre fichier réseau.
-                </td>
-            </tr>`;
+function chargerCatalogueCSVAutomatique() {
+    if (typeof Papa === 'undefined') {
+        console.error("PapaParse n'est pas disponible.");
+        return;
+    }
+
+    Papa.parse("catalogue.csv", {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+            if (results.data && results.data.length > 0) {
+                traiterDonneesCatalogue(results.data);
+                console.log("Catalogue CSV chargé automatiquement avec succès.");
+            }
+        },
+        error: function(err) {
+            console.warn("Impossible de charger 'catalogue.csv' automatiquement, veuillez utiliser l'import manuel.", err);
+        }
+    });
+}
+
+/**
+ * Gestion générique de la lecture de fichier CSV par FileReader
+ */
+function importerCSVManiereManuelle(e, callbackTraitement) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (typeof Papa !== 'undefined') {
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                callbackTraitement(results.data);
+            }
+        });
+    } else {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const lines = evt.target.result.split(/\r\n|\n/);
+            // Fallback rudimentaire si PapaParse n'est pas chargé
+            alert("Veuillez vérifier que papaparse.min.js est bien incluse.");
+        };
+        reader.readAsText(file, "UTF-8");
     }
 }
 
 /**
- * Importation et lecture manuelle du fichier CSV des agents
+ * Traitement des données extraites du catalogue.csv
  */
-function importerCSVManuel(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (evt) => traiterContenuCSV(evt.target.result);
-    reader.readAsText(file, "UTF-8");
+function traiterContenuCSVCatalogue(data) {
+    traiterDonneesCatalogue(data);
+    alert("Catalogue de formations mis à jour avec succès !");
 }
 
-function traiterContenuCSV(texteCSV) {
-    tableauAgentsRH = parseCSVAgentsBrut(texteCSV);
+function traiterDonneesCatalogue(dataObjets) {
+    catalogueInitial = dataObjets.map((row, index) => {
+        // Extraction flexible des entêtes (gère majuscules/minuscules et accents)
+        const getVal = (cles) => {
+            for (let c of cles) {
+                const matchKey = Object.keys(row).find(k => k.trim().toLowerCase() === c.toLowerCase());
+                if (matchKey && row[matchKey] !== undefined) return row[matchKey].trim();
+            }
+            return "";
+        };
+
+        const id = getVal(["id", "code", "reference"]) || `F-${index + 1}`;
+        const libelle = getVal(["libelle", "titre", "formation", "nom"]) || "Formation sans titre";
+        const activite = getVal(["activite", "domaine", "categorie"]) || "Général";
+        const type = getVal(["type", "type_formation", "nature"]) || "Socle Commun";
+        const quota = parseFloat(getVal(["quota", "volume_horaire", "heures"])) || 0;
+        const profil = getVal(["profil", "specialite", "public"]) || "";
+
+        // Traitement des modulations (ex: "SPP:24|SPV:12" ou au format JSON/texte)
+        const modulationsRaw = getVal(["modulations", "modulation"]);
+        let modulations = [];
+        if (modulationsRaw) {
+            try {
+                if (modulationsRaw.startsWith("[")) {
+                    modulations = JSON.parse(modulationsRaw);
+                } else {
+                    modulationsRaw.split("|").forEach(m => {
+                        const [p, q] = m.split(":");
+                        if (p && q) modulations.push({ profil: p.trim(), quota: parseFloat(q.trim()) });
+                    });
+                }
+            } catch (e) {
+                console.warn("Erreur parsing modulations pour", libelle, e);
+            }
+        }
+
+        // Traitement des dispenses (ex: "PATS, SPV" séparés par virgules/semicolons)
+        const dispensesRaw = getVal(["dispenses", "dispense"]);
+        let dispenses = [];
+        if (dispensesRaw) {
+            dispenses = dispensesRaw.split(/[,/;|]/).map(d => d.trim()).filter(Boolean);
+        }
+
+        return {
+            id: id,
+            libelle: libelle,
+            activite: activite,
+            type: type,
+            quota: quota,
+            profil: profil,
+            modulations: modulations,
+            dispenses: dispenses
+        };
+    });
+
+    initialiserFiltresEtListes();
+    if (tableauAgentsRH.length > 0) {
+        filtrerEtAfficherTableau();
+    }
+}
+
+/**
+ * Traitement des données extraites du fichier baseAgents.csv
+ */
+function traiterContenuCSVAgents(dataObjets) {
+    tableauAgentsRH = [];
+
+    dataObjets.forEach((row, i) => {
+        const getVal = (cles) => {
+            for (let c of cles) {
+                const matchKey = Object.keys(row).find(k => k.trim().toLowerCase() === c.toLowerCase());
+                if (matchKey && row[matchKey] !== undefined) return row[matchKey].trim();
+            }
+            return "";
+        };
+
+        const statut = getVal(["statut"]).toUpperCase();
+        // Exclusion des PATS
+        if (statut === "PATS") return;
+
+        const matricule = getVal(["matricule", "id"]) || `AG-${i + 1}`;
+        const specialitesStr = getVal(["specialites", "specialite"]);
+        const competencesStr = getVal(["competences", "competence"]);
+
+        tableauAgentsRH.push({
+            id: matricule,
+            matricule: matricule,
+            sexe: getVal(["sexe"]),
+            nom: getVal(["nom"]).toUpperCase(),
+            prenom: getVal(["prenom"]),
+            equipe: getVal(["equipe"]) || "Non affecté",
+            statut: statut,
+            grade: getVal(["grade"]),
+            fonction: getVal(["fonction"]),
+            specialites: specialitesStr ? specialitesStr.split(/[,/;]/).map(s => s.trim()).filter(Boolean) : [],
+            competences: competencesStr ? competencesStr.split(/[,/;]/).map(c => c.trim()).filter(Boolean) : [],
+            engagement: getVal(["engagement"]),
+            regime: getVal(["regime"])
+        });
+    });
 
     if (tableauAgentsRH.length > 0) {
         alimenterSelectFiltres();
         initialiserFiltresEtListes();
         filtrerEtAfficherTableau();
     } else {
-        alert("Aucun agent n'a pu être extrait du fichier CSV. Vérifiez le format du fichier.");
+        alert("Aucun agent valide (hors PATS) n'a pu être extrait du fichier CSV.");
     }
 }
 
 /**
- * Parsing brut du CSV issu d'Excel avec nettoyage automatique des guillemets
+ * Message d'accueil tableau
  */
-function parseCSVAgentsBrut(texteCSV) {
-    const lignes = texteCSV.split(/\r\n|\n/).filter(l => l.trim() !== "");
-    if (lignes.length < 2) return [];
-
-    const enTeteBrute = lignes[0];
-    const separateur = enTeteBrute.includes(";") ? ";" : ",";
-    
-    // Suppression des guillemets, espaces et du BOM UTF-8 éventuel dans les en-têtes
-    const entetes = enTeteBrute
-        .replace(/^\ufeff/, '')
-        .split(separateur)
-        .map(h => h.replace(/"/g, '').trim().toLowerCase());
-
-    const resultats = [];
-
-    // Regex pour découper en tenant compte des valeurs entre guillemets
-    const regexSeparateur = new RegExp(`${separateur}(?=(?:(?:[^"]*"){2})*[^"]*$)`);
-
-    for (let i = 1; i < lignes.length; i++) {
-        const valeurs = lignes[i]
-            .split(regexSeparateur)
-            .map(v => v.replace(/^"|"$/g, '').trim());
-
-        if (valeurs.length < entetes.length) continue;
-
-        const ligneObj = {};
-        entetes.forEach((cle, idx) => {
-            ligneObj[cle] = valeurs[idx] || "";
-        });
-
-    // --- SOLUTION : Ignorer les PATS ---
-    const statut = (ligneObj["statut"] || "").toUpperCase();
-    if (statut === "PATS") continue;
-    // ------------------------------------
-
-        
-        const matricule = ligneObj["matricule"] || `AG-${i}`;
-
-        resultats.push({
-            id: matricule,
-            matricule: matricule,
-            sexe: ligneObj["sexe"] || "",
-            nom: (ligneObj["nom"] || "").toUpperCase(),
-            prenom: ligneObj["prenom"] || "",
-            equipe: ligneObj["equipe"] || "Non affecté",
-            statut: ligneObj["statut"] || "",
-            grade: ligneObj["grade"] || "",
-            fonction: ligneObj["fonction"] || "",
-            specialites: ligneObj["specialites"] 
-                ? ligneObj["specialites"].split(/[,/;]/).map(s => s.trim()).filter(Boolean) 
-                : [],
-            competences: ligneObj["competences"] 
-                ? ligneObj["competences"].split(/[,/;]/).map(c => c.trim()).filter(Boolean) 
-                : [],
-            engagement: ligneObj["engagement"] || "",
-            regime: ligneObj["regime"] || ""
-        });
+function afficherMessageAccueil() {
+    const tbody = document.getElementById("tbody-agents");
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 40px; color: #64748b;">
+                    <div style="font-size: 1.1rem; margin-bottom: 8px;"><strong>Aucune liste d'agents chargée</strong></div>
+                    Veuillez cliquer sur le bouton <strong>"📂 Importer baseAgents.csv"</strong> ci-dessus pour charger vos agents.
+                </td>
+            </tr>`;
     }
-
-    return resultats;
 }
 
 /**
  * Alimentation dynamique des filtres Équipe et Statut
  */
 function alimenterSelectFiltres() {
-    // 1. Filtre Équipes
     const selectEquipe = document.getElementById("filter-equipe");
     if (selectEquipe) {
         selectEquipe.innerHTML = '<option value="">Toutes</option>';
@@ -172,7 +256,6 @@ function alimenterSelectFiltres() {
         });
     }
 
-    // 2. Filtre Statuts (SPP, SPV, PATS, etc.)
     const selectStatut = document.getElementById("filter-statut");
     if (selectStatut) {
         selectStatut.innerHTML = '<option value="">Tous</option>';
@@ -188,16 +271,21 @@ function alimenterSelectFiltres() {
 
 function initialiserFiltresEtListes() {
     const selectAct = document.getElementById("saisie-activite");
-    if (selectAct && typeof catalogueInitial !== 'undefined') {
-        selectAct.innerHTML = '<option value="">-- Choisir un domaine --</option>';
-        const activites = [...new Set(catalogueInitial.map(item => item.activite))].sort();
+    if (selectAct) {
+        selectAct.innerHTML = catalogueInitial.length > 0 
+            ? '<option value="">-- Choisir un domaine --</option>' 
+            : '<option value="">-- Catalogue non chargé --</option>';
 
-        activites.forEach(act => {
-            const opt = document.createElement("option");
-            opt.value = act;
-            opt.textContent = act;
-            selectAct.appendChild(opt);
-        });
+        if (catalogueInitial.length > 0) {
+            selectAct.disabled = false;
+            const activites = [...new Set(catalogueInitial.map(item => item.activite))].sort();
+            activites.forEach(act => {
+                const opt = document.createElement("option");
+                opt.value = act;
+                opt.textContent = act;
+                selectAct.appendChild(opt);
+            });
+        }
     }
 
     const datalistFormateurs = document.getElementById("liste-formateurs");
@@ -218,7 +306,7 @@ function majListeThemes() {
 
     selectTheme.innerHTML = '<option value="">-- Choisir une formation --</option>';
 
-    if (!activite || typeof catalogueInitial === 'undefined') {
+    if (!activite || catalogueInitial.length === 0) {
         selectTheme.disabled = true;
         return;
     }
@@ -286,7 +374,6 @@ function afficherTableauAgents(listeAgents) {
     tbody.innerHTML = "";
 
     if (listeAgents.length === 0) {
-        // Passé de colspan="5" à colspan="6" pour couvrir la nouvelle colonne
         tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">Aucun agent à afficher.</td></tr>';
         document.getElementById("count-badge").textContent = `0 / ${tableauAgentsRH.length} agent(s)`;
         majStatutSelection();
@@ -297,7 +384,7 @@ function afficherTableauAgents(listeAgents) {
         const idAgent = agent.id;
         const isChecked = agentsSelectionnes.has(idAgent) ? "checked" : "";
         const avancementSocleHtml = genererAvancementSocle(agent);
-        const avancementSpecHtml = genererAvancementSpecialites(agent); // Calcul de la nouvelle colonne
+        const avancementSpecHtml = genererAvancementSpecialites(agent);
 
         const tr = document.createElement("tr");
         if (isChecked) tr.classList.add("selected-row");
@@ -328,11 +415,11 @@ function afficherTableauAgents(listeAgents) {
 }
 
 function genererAvancementSocle(agent) {
-    if (typeof catalogueInitial === 'undefined') return "Catalogue non chargé";
+    if (catalogueInitial.length === 0) return "<span style='color:#94a3b8;'>Catalogue non chargé</span>";
 
     const idAgent = agent.id;
     const heuresAgent = cumulHeuresParAgent[idAgent] || {};
-    const socleFormations = catalogueInitial.filter(f => f.type === "Socle Commun");
+    const socleFormations = catalogueInitial.filter(f => f.type.toLowerCase().includes("socle"));
 
     const extraireValeurs = (champ) => {
         if (!champ) return [];
@@ -379,7 +466,6 @@ function genererAvancementSocle(agent) {
         if (fait >= quotaRequis) styleClass = "fma-done";
         else if (fait > 0) styleClass = "fma-partial";
 
-        // L'intitulé reste en noir/sombre (#0f172a), bleu foncé (#1e40af), bleu discret (#334155); seule la valeur conserve la classe de couleur
         return `<span style="color: #1e40af; font-size: 1.1em; font-weight: 640;">${f.libelle} :</span> <span class="${styleClass}">${fait}/${quotaRequis}h</span>`;
     })
     .filter(Boolean)
@@ -387,37 +473,31 @@ function genererAvancementSocle(agent) {
 }
 
 function genererAvancementSpecialites(agent) {
-    if (typeof catalogueInitial === 'undefined') return "Catalogue non chargé";
+    if (catalogueInitial.length === 0) return "<span style='color:#94a3b8;'>Catalogue non chargé</span>";
 
-    // 1. Spécialités brutes (ex: ["SAV 1", "IMP"])
     const specAgentBrutes = (agent.specialites || []).map(s => s.trim().toUpperCase()).filter(Boolean);
 
     if (specAgentBrutes.length === 0) {
         return "<span style='color:#94a3b8;'>Aucune spé.</span>";
     }
 
-    // 2. Extraire la version "sans niveau" (ex: "SAV 1" -> "SAV")
     const specAgentBase = specAgentBrutes.map(s => s.replace(/\s*\d+$/, ''));
-
     const idAgent = agent.id;
     const heuresAgent = cumulHeuresParAgent[idAgent] || {};
 
-    // 3. Filtrer le catalogue
     const formationsSpec = catalogueInitial.filter(f => {
         const typeF = (f.type || "").toUpperCase();
         const estTypeSpec = typeF.includes("SPEC") || typeF.includes("SPÉCIALITÉ");
 
         if (!estTypeSpec) return false;
 
-        const activiteF = (f.activite || f.Activité || "").trim().toUpperCase();
-        const profilF = (f.profil || f.Profil || "").trim().toUpperCase();
+        const activiteF = (f.activite || "").trim().toUpperCase();
+        const profilF = (f.profil || "").trim().toUpperCase();
 
-        // Cas A : Le catalogue spécifie un profil avec niveau (ex: profil = "SAV 1")
         if (profilF && profilF !== "TOUS") {
             return specAgentBrutes.includes(profilF);
         }
 
-        // Cas B : Pas de profil spécifique -> la simple présence de l'activité suffit (ex: activite = "SAV")
         if (activiteF) {
             return specAgentBase.includes(activiteF);
         }
@@ -429,7 +509,6 @@ function genererAvancementSpecialites(agent) {
         return "<span style='color:#94a3b8;'>Aucun suivi requis</span>";
     }
 
-    // 4. Génération du rendu des badges
     return formationsSpec.map(f => {
         const quotaRequis = Number(f.quota) || 0;
         if (quotaRequis === 0) return null;
