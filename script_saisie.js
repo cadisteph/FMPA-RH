@@ -393,7 +393,7 @@ function genererAvancementSpecialites(agent) {
     const specAgentBrutes = (agent.specialites || []).map(s => s.trim().toUpperCase()).filter(Boolean);
 
     if (specAgentBrutes.length === 0) {
-        return "<span style='color:#94a3b8;'>Aucune spél.</span>";
+        return "<span style='color:#94a3b8;'>Aucune spé.</span>";
     }
 
     // 2. Extraire la version "sans niveau" (ex: "SAV 1" -> "SAV")
