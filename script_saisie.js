@@ -298,31 +298,27 @@ function genererAvancementSocle(agent) {
     const heuresAgent = cumulHeuresParAgent[idAgent] || {};
     const socleFormations = catalogueInitial.filter(f => f.type === "Socle Commun");
 
-    // 1. On rassemble TOUS les profils / qualifications / compétences de l'agent
-    // (Statut, Grade, Fonction, Spécialités) sous forme d'un tableau propre en MAJUSCULES
-    const tousLesProfilsAgent = new Set();
+    // Helper pour convertir une valeur (String ou Array) en liste d'éléments propres
+    const extraireValeurs = (champ) => {
+        if (!champ) return [];
+        if (Array.isArray(champ)) return champ.map(v => v.toString().trim().toUpperCase());
+        return champ.toString().split(/[,/;]/).map(v => v.trim().toUpperCase());
+    };
 
-    [
-        agent.statut,
-        agent.grade,
-        agent.fonction,
-        ...(agent.specialites || []),
-        ...(agent.competences ? agent.competences.split(/[,/;]/) : [])
-    ].forEach(valeur => {
-        if (valeur) {
-            valeur.toString().split(/[,/;]/).forEach(item => {
-                const propre = item.trim().toUpperCase();
-                if (propre) tousLesProfilsAgent.add(propre);
-            });
-        }
-    });
+    // 1. On rassemble TOUS les profils / qualifications / compétences de l'agent
+    const tousLesProfilsAgent = new Set([
+        ...extraireValeurs(agent.statut),
+        ...extraireValeurs(agent.grade),
+        ...extraireValeurs(agent.fonction),
+        ...extraireValeurs(agent.specialites),
+        ...extraireValeurs(agent.competences)
+    ]);
 
     return socleFormations.map(f => {
         let quotaRequis = f.quota;
 
         // 2. Vérification des modulations (dérogations)
         if (f.modulations && Array.isArray(f.modulations) && f.modulations.length > 0) {
-            // On cherche s'il y a une modulation qui correspond à UN des profils de l'agent
             const mod = f.modulations.find(m => 
                 m.profil && tousLesProfilsAgent.has(m.profil.trim().toUpperCase())
             );
@@ -339,7 +335,7 @@ function genererAvancementSocle(agent) {
             if (isDispense) quotaRequis = 0;
         }
 
-        // 3. Si l'agent est dispensé à 100% (0h requises), on masque la formation du badge
+        // 3. Si l'agent est dispensé à 100% (0h requises), on masque la formation
         if (quotaRequis === 0) {
             return null; 
         }
@@ -352,10 +348,9 @@ function genererAvancementSocle(agent) {
 
         return `<span class="${styleClass}">${f.libelle}: ${fait}/${quotaRequis}h</span>`;
     })
-    .filter(Boolean) // Filtrer les éléments nuls (les dispenses 0h)
+    .filter(Boolean) // Masquer les formations dispensées (0h)
     .join(" | ") || "<span style='color:#64748b;'>Aucun socle requis</span>";
 }
-
 function toggleAgent(idAgent) {
     if (agentsSelectionnes.has(idAgent)) {
         agentsSelectionnes.delete(idAgent);
