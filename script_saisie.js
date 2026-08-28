@@ -1,43 +1,40 @@
-// Structure de stockage 100% en mémoire (sans localStorage)
-let catalogueInitial = [];          // Contient le catalogue extrait du CSV
+// Structure de stockage 100% en mémoire
+let catalogueInitial = [];
 let tableauAgentsRH = [];
-let historiqueSaisiesFMPA = [];      // Stocke l'historique de chaque session
-let cumulHeuresParAgent = {};        // Cumul par { agentId: { formationId: totalHeures } }
+let historiqueSaisiesFMPA = [];
+let cumulHeuresParAgent = {};
 let agentsSelectionnes = new Set();
 
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Charger automatiquement le catalogue.csv (ou proposer l'import manuel)
+    // 1. Charger automatiquement le catalogue.csv
     chargerCatalogueCSVAutomatique();
 
-    // 2. Écouteurs pour l'import manuels si besoin
+    // 2. Écouteurs pour l'import manuels
     const btnImportCat = document.getElementById("btn-import-catalogue");
     const fileInputCat = document.getElementById("file-input-catalogue");
     if (btnImportCat && fileInputCat) {
         btnImportCat.addEventListener("click", () => fileInputCat.click());
-        fileInputCat.addEventListener("change", (e) => importerCSVManiereManuelle(e, traiterContenuCSVCatalogue));
+        fileInputCat.addEventListener("change", (e) => lireFichierCSVManuel(e, traiterContenuCSVCatalogue));
     }
 
     const btnImportAgents = document.getElementById("btn-import-csv");
     const fileInputAgents = document.getElementById("file-input-csv");
     if (btnImportAgents && fileInputAgents) {
         btnImportAgents.addEventListener("click", () => fileInputAgents.click());
-        fileInputAgents.addEventListener("change", (e) => importerCSVManiereManuelle(e, traiterContenuCSVAgents));
+        fileInputAgents.addEventListener("change", (e) => lireFichierCSVManuel(e, traiterContenuCSVAgents));
     }
 
     // 3. Initialiser la date du jour
     const dateInput = document.getElementById("saisie-date");
     if (dateInput) dateInput.valueAsDate = new Date();
 
-    // 4. Message initial dans le tableau
     afficherMessageAccueil();
 
     // Export CSV
     const btnExport = document.getElementById("btn-export-csv");
-    if (btnExport) {
-        btnExport.addEventListener("click", exporterSuiviCSV);
-    }
+    if (btnExport) btnExport.addEventListener("click", exporterSuiviCSV);
 
-    // Filtres du tableau
+    // Filtres
     document.getElementById("filter-equipe").addEventListener("change", filtrerEtAfficherTableau);
     const filterStatut = document.getElementById("filter-statut");
     if (filterStatut) filterStatut.addEventListener("change", filtrerEtAfficherTableau);
@@ -45,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("filter-search").addEventListener("input", filtrerEtAfficherTableau);
     document.getElementById("btn-reset-filters").addEventListener("click", reinitialiserFiltres);
 
-    // Formulaire de saisie
+    // Formulaire
     document.getElementById("saisie-heure-debut").addEventListener("change", calculerDuree);
     document.getElementById("saisie-heure-fin").addEventListener("change", calculerDuree);
     document.getElementById("saisie-activite").addEventListener("change", majListeThemes);
@@ -56,59 +53,65 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /**
- * Tente de charger automatiquement `catalogue.csv` présent dans le même dossier
+ * Parseur CSV autonome (gère séparateurs ; et , ainsi que les guillemets)
  */
-function chargerCatalogueCSVAutomatique() {
-    if (typeof Papa === 'undefined') {
-        console.error("PapaParse n'est pas disponible.");
-        return;
-    }
+function parseCSVNatif(texteCSV) {
+    const lignes = texteCSV.split(/\r\n|\n/).filter(l => l.trim() !== "");
+    if (lignes.length < 2) return [];
 
-    Papa.parse("catalogue.csv", {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-            if (results.data && results.data.length > 0) {
-                traiterDonneesCatalogue(results.data);
-                console.log("Catalogue CSV chargé automatiquement avec succès.");
-            }
-        },
-        error: function(err) {
-            console.warn("Impossible de charger 'catalogue.csv' automatiquement, veuillez utiliser l'import manuel.", err);
-        }
-    });
+    const separateur = lignes[0].includes(";") ? ";" : ",";
+    const regexSeparateur = new RegExp(`${separateur}(?=(?:(?:[^"]*"){2})*[^"]*$)`);
+
+    const entetes = lignes[0]
+        .replace(/^\ufeff/, '')
+        .split(separateur)
+        .map(h => h.replace(/^"|"$/g, '').trim());
+
+    const resultats = [];
+
+    for (let i = 1; i < lignes.length; i++) {
+        const valeurs = lignes[i]
+            .split(regexSeparateur)
+            .map(v => v.replace(/^"|"$/g, '').trim());
+
+        if (valeurs.length < entetes.length) continue;
+
+        const ligneObj = {};
+        entetes.forEach((cle, idx) => {
+            ligneObj[cle] = valeurs[idx] || "";
+        });
+        resultats.push(ligneObj);
+    }
+    return resultats;
 }
 
-/**
- * Gestion générique de la lecture de fichier CSV par FileReader
- */
-function importerCSVManiereManuelle(e, callbackTraitement) {
+function chargerCatalogueCSVAutomatique() {
+    fetch("catalogue.csv")
+        .then(response => {
+            if (!response.ok) throw new Error("Fichier introuvable");
+            return response.text();
+        })
+        .then(texte => {
+            const data = parseCSVNatif(texte);
+            if (data.length > 0) traiterDonneesCatalogue(data);
+        })
+        .catch(err => {
+            console.warn("Chargement auto de catalogue.csv impossible en local direct sans serveur web local. Utilisez l'import manuel si besoin.", err);
+        });
+}
+
+function lireFichierCSVManuel(e, callbackTraitement) {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (typeof Papa !== 'undefined') {
-        Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                callbackTraitement(results.data);
-            }
-        });
-    } else {
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-            const lines = evt.target.result.split(/\r\n|\n/);
-            // Fallback rudimentaire si PapaParse n'est pas chargé
-            alert("Veuillez vérifier que papaparse.min.js est bien incluse.");
-        };
-        reader.readAsText(file, "UTF-8");
-    }
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+        const data = parseCSVNatif(evt.target.result);
+        callbackTraitement(data);
+    };
+    reader.readAsText(file, "UTF-8");
 }
 
-/**
- * Traitement des données extraites du catalogue.csv
- */
 function traiterContenuCSVCatalogue(data) {
     traiterDonneesCatalogue(data);
     alert("Catalogue de formations mis à jour avec succès !");
@@ -116,7 +119,6 @@ function traiterContenuCSVCatalogue(data) {
 
 function traiterDonneesCatalogue(dataObjets) {
     catalogueInitial = dataObjets.map((row, index) => {
-        // Extraction flexible des entêtes (gère majuscules/minuscules et accents)
         const getVal = (cles) => {
             for (let c of cles) {
                 const matchKey = Object.keys(row).find(k => k.trim().toLowerCase() === c.toLowerCase());
@@ -132,7 +134,6 @@ function traiterDonneesCatalogue(dataObjets) {
         const quota = parseFloat(getVal(["quota", "volume_horaire", "heures"])) || 0;
         const profil = getVal(["profil", "specialite", "public"]) || "";
 
-        // Traitement des modulations (ex: "SPP:24|SPV:12" ou au format JSON/texte)
         const modulationsRaw = getVal(["modulations", "modulation"]);
         let modulations = [];
         if (modulationsRaw) {
@@ -146,38 +147,20 @@ function traiterDonneesCatalogue(dataObjets) {
                     });
                 }
             } catch (e) {
-                console.warn("Erreur parsing modulations pour", libelle, e);
+                console.warn("Erreur modulations :", libelle);
             }
         }
 
-        // Traitement des dispenses (ex: "PATS, SPV" séparés par virgules/semicolons)
         const dispensesRaw = getVal(["dispenses", "dispense"]);
-        let dispenses = [];
-        if (dispensesRaw) {
-            dispenses = dispensesRaw.split(/[,/;|]/).map(d => d.trim()).filter(Boolean);
-        }
+        let dispenses = dispensesRaw ? dispensesRaw.split(/[,/;|]/).map(d => d.trim()).filter(Boolean) : [];
 
-        return {
-            id: id,
-            libelle: libelle,
-            activite: activite,
-            type: type,
-            quota: quota,
-            profil: profil,
-            modulations: modulations,
-            dispenses: dispenses
-        };
+        return { id, libelle, activite, type, quota, profil, modulations, dispenses };
     });
 
     initialiserFiltresEtListes();
-    if (tableauAgentsRH.length > 0) {
-        filtrerEtAfficherTableau();
-    }
+    if (tableauAgentsRH.length > 0) filtrerEtAfficherTableau();
 }
 
-/**
- * Traitement des données extraites du fichier baseAgents.csv
- */
 function traiterContenuCSVAgents(dataObjets) {
     tableauAgentsRH = [];
 
@@ -191,7 +174,6 @@ function traiterContenuCSVAgents(dataObjets) {
         };
 
         const statut = getVal(["statut"]).toUpperCase();
-        // Exclusion des PATS
         if (statut === "PATS") return;
 
         const matricule = getVal(["matricule", "id"]) || `AG-${i + 1}`;
@@ -224,9 +206,6 @@ function traiterContenuCSVAgents(dataObjets) {
     }
 }
 
-/**
- * Message d'accueil tableau
- */
 function afficherMessageAccueil() {
     const tbody = document.getElementById("tbody-agents");
     if (tbody) {
@@ -240,9 +219,6 @@ function afficherMessageAccueil() {
     }
 }
 
-/**
- * Alimentation dynamique des filtres Équipe et Statut
- */
 function alimenterSelectFiltres() {
     const selectEquipe = document.getElementById("filter-equipe");
     if (selectEquipe) {
@@ -358,7 +334,6 @@ function filtrerEtAfficherTableau() {
     });
 
     agentsFiltres.sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
-
     afficherTableauAgents(agentsFiltres);
 }
 
@@ -397,13 +372,9 @@ function afficherTableauAgents(listeAgents) {
             <td>
                 <input type="checkbox" class="chk-agent" value="${idAgent}" ${isChecked} onchange="toggleAgent('${idAgent}')">
             </td>
-            <td>
-                ${agentLibelle}
-            </td>
+            <td>${agentLibelle}</td>
             <td>${agent.equipe}</td>
-            <td>
-                <span class="badge-tag badge-statut">${agent.statut || '-'}</span>
-            </td>
+            <td><span class="badge-tag badge-statut">${agent.statut || '-'}</span></td>
             <td><small>${avancementSocleHtml}</small></td>
             <td><small>${avancementSpecHtml}</small></td>
         `;
@@ -444,24 +415,16 @@ function genererAvancementSocle(agent) {
             const mod = f.modulations.find(m => 
                 m.profil && tousLesProfilsAgent.has(m.profil.trim().toUpperCase())
             );
-
-            if (mod !== undefined) {
-                quotaRequis = Number(mod.quota);
-            }
+            if (mod !== undefined) quotaRequis = Number(mod.quota);
         } 
         else if (f.dispenses && Array.isArray(f.dispenses)) {
-            const isDispense = f.dispenses.some(d => 
-                tousLesProfilsAgent.has(d.trim().toUpperCase())
-            );
+            const isDispense = f.dispenses.some(d => tousLesProfilsAgent.has(d.trim().toUpperCase()));
             if (isDispense) quotaRequis = 0;
         }
 
-        if (quotaRequis === 0) {
-            return null; 
-        }
+        if (quotaRequis === 0) return null;
 
         const fait = heuresAgent[f.id] || 0;
-
         let styleClass = "fma-todo";
         if (fait >= quotaRequis) styleClass = "fma-done";
         else if (fait > 0) styleClass = "fma-partial";
@@ -477,9 +440,7 @@ function genererAvancementSpecialites(agent) {
 
     const specAgentBrutes = (agent.specialites || []).map(s => s.trim().toUpperCase()).filter(Boolean);
 
-    if (specAgentBrutes.length === 0) {
-        return "<span style='color:#94a3b8;'>Aucune spé.</span>";
-    }
+    if (specAgentBrutes.length === 0) return "<span style='color:#94a3b8;'>Aucune spé.</span>";
 
     const specAgentBase = specAgentBrutes.map(s => s.replace(/\s*\d+$/, ''));
     const idAgent = agent.id;
@@ -488,26 +449,18 @@ function genererAvancementSpecialites(agent) {
     const formationsSpec = catalogueInitial.filter(f => {
         const typeF = (f.type || "").toUpperCase();
         const estTypeSpec = typeF.includes("SPEC") || typeF.includes("SPÉCIALITÉ");
-
         if (!estTypeSpec) return false;
 
         const activiteF = (f.activite || "").trim().toUpperCase();
         const profilF = (f.profil || "").trim().toUpperCase();
 
-        if (profilF && profilF !== "TOUS") {
-            return specAgentBrutes.includes(profilF);
-        }
-
-        if (activiteF) {
-            return specAgentBase.includes(activiteF);
-        }
+        if (profilF && profilF !== "TOUS") return specAgentBrutes.includes(profilF);
+        if (activiteF) return specAgentBase.includes(activiteF);
 
         return false;
     });
 
-    if (formationsSpec.length === 0) {
-        return "<span style='color:#94a3b8;'>Aucun suivi requis</span>";
-    }
+    if (formationsSpec.length === 0) return "<span style='color:#94a3b8;'>Aucun suivi requis</span>";
 
     return formationsSpec.map(f => {
         const quotaRequis = Number(f.quota) || 0;
@@ -526,11 +479,8 @@ function genererAvancementSpecialites(agent) {
 }
 
 function toggleAgent(idAgent) {
-    if (agentsSelectionnes.has(idAgent)) {
-        agentsSelectionnes.delete(idAgent);
-    } else {
-        agentsSelectionnes.add(idAgent);
-    }
+    if (agentsSelectionnes.has(idAgent)) agentsSelectionnes.delete(idAgent);
+    else agentsSelectionnes.add(idAgent);
     filtrerEtAfficherTableau();
 }
 
