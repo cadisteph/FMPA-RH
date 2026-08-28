@@ -5,6 +5,9 @@ let cumulHeuresParAgent = {};   // Cumul par { agentId: { formationId: totalHeur
 let agentsSelectionnes = new Set();
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Forcer le nettoyage du cache local pour le catalogue
+    localStorage.removeItem("catalogueFormations");
+
     // 1. Initialiser les listes déroulantes du catalogue
     initialiserFiltresEtListes();
 
