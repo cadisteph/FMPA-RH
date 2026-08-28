@@ -10,12 +10,14 @@
 <body>
 
     <header>
-        <h1>📚 Catalogue des Formations</h1>
-        <div class="actions-reseau">
-            <input type="file" id="file-input" accept=".json" style="display:none;">
-        </div>
-        <button type="button" id="btn-connect-file">🔗 Cliquer pour connecter le fichier réseau (.js)</button>
-    </header>
+    <h1>📚 Catalogue des Formations</h1>
+    <div class="actions-reseau">
+        <!-- Accepte désormais les fichiers CSV -->
+        <input type="file" id="file-input" accept=".csv" style="display:none;">
+    </div>
+    <!-- Bouton mis à jour -->
+    <button type="button" id="btn-connect-file">🔗 Charger le fichier catalogue (.csv)</button>
+</header>
 
     <div class="layout-container">
         
@@ -106,7 +108,7 @@
 
     </div>
 
-    <script src="donnees_catalogue.js?v=1"></script>
+   
     <script src="script_catalogue.js?v=1"></script>
 </body>
 </html>
