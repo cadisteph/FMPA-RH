@@ -133,7 +133,9 @@ function parseCSVAgentsBrut(texteCSV) {
                 : [],
             competences: ligneObj["competences"] 
                 ? ligneObj["competences"].split(/[,/;]/).map(c => c.trim()).filter(Boolean) 
-                : []
+                : [],
+            engagement: ligneObj["engagement"] || "",
+            regime: ligneObj["regime"] || ""
         });
     }
 
@@ -305,13 +307,15 @@ function genererAvancementSocle(agent) {
         return champ.toString().split(/[,/;]/).map(v => v.trim().toUpperCase());
     };
 
-    // 1. On rassemble TOUS les profils / qualifications / compétences de l'agent
+    // 1. On rassemble TOUS les profils / qualifications / engagements de l'agent
     const tousLesProfilsAgent = new Set([
         ...extraireValeurs(agent.statut),
         ...extraireValeurs(agent.grade),
         ...extraireValeurs(agent.fonction),
         ...extraireValeurs(agent.specialites),
-        ...extraireValeurs(agent.competences)
+        ...extraireValeurs(agent.competences),
+        ...extraireValeurs(agent.engagement),
+        ...extraireValeurs(agent.regime)
     ]);
 
     return socleFormations.map(f => {
@@ -335,7 +339,7 @@ function genererAvancementSocle(agent) {
             if (isDispense) quotaRequis = 0;
         }
 
-        // 3. Si l'agent est dispensé à 100% (0h requises), on masque la formation
+        // 3. Si l'agent est dispensé à 100% (0h requises), on masque la formation du badge
         if (quotaRequis === 0) {
             return null; 
         }
@@ -351,6 +355,7 @@ function genererAvancementSocle(agent) {
     .filter(Boolean) // Masquer les formations dispensées (0h)
     .join(" | ") || "<span style='color:#64748b;'>Aucun socle requis</span>";
 }
+
 function toggleAgent(idAgent) {
     if (agentsSelectionnes.has(idAgent)) {
         agentsSelectionnes.delete(idAgent);
