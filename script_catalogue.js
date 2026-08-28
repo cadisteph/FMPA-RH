@@ -2,8 +2,6 @@ let catalogue = [];
 let fileHandle = null;
 
 document.addEventListener("DOMContentLoaded", () => {
-    chargerCatalogueInitial();
-    
     // Écouteur pour la soumission du formulaire
     const formFormation = document.getElementById("form-formation");
     if (formFormation) {
@@ -16,50 +14,62 @@ document.addEventListener("DOMContentLoaded", () => {
         btnCancel.addEventListener("click", reinitialiserFormulaire);
     }
 
-    // Bouton pour lier le fichier réseau directement au clic (désormais CSV)
+    // Bouton pour lier le fichier CSV réseau (File System Access API)
     const btnConnect = document.getElementById("btn-connect-file");
     if (btnConnect) {
         btnConnect.addEventListener("click", lierFichierReseau);
     }
 
-    // Écouteur pour le bouton d'ajout de ligne profil/quota
+    // Écouteur pour l'ajout de ligne profil/quota
     const btnAjouterLigne = document.getElementById("btn-ajouter-ligne-profil");
     if (btnAjouterLigne) {
         btnAjouterLigne.addEventListener("click", () => ajouterLigneProfil());
     }
 
+    // Input d'import manuel de fichier CSV
     const fileInput = document.getElementById("file-input");
     if (fileInput) {
         fileInput.addEventListener("change", chargerFichierLocal);
     }
 });
 
-function chargerCatalogueInitial() {
-    const localData = localStorage.getItem("catalogueFormations");
-    
-    if (localData) {
-        catalogue = JSON.parse(localData);
-    } else if (typeof catalogueInitial !== 'undefined') {
-        catalogue = catalogueInitial;
-        sauvegarderLocalement();
-    } else {
-        catalogue = [];
+/**
+ * Lier le fichier CSV réseau
+ */
+async function lierFichierReseau() {
+    try {
+        [fileHandle] = await window.showOpenFilePicker({
+            types: [{
+                description: 'Fichier CSV Catalogue',
+                accept: { 'text/csv': ['.csv'] },
+            }],
+            multiple: false
+        });
+
+        // Lecture immédiate du fichier CSV directement depuis le disque/réseau
+        const file = await fileHandle.getFile();
+        const text = await file.text();
+        traiterContenuCSV(text);
+
+        const btnConnect = document.getElementById("btn-connect-file");
+        if (btnConnect) {
+            btnConnect.innerText = "🌐 CSV Réseau Connecté";
+            btnConnect.classList.add("connecte");
+        }
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            console.error("Erreur de sélection :", err);
+            alert("L'accès au fichier CSV a échoué.");
+        }
     }
-
-    trierEtAfficherCatalogue();
-}
-
-function sauvegarderLocalement() {
-    localStorage.setItem("catalogueFormations", JSON.stringify(catalogue));
 }
 
 /**
- * Écriture du tableau de formations au format CSV dans le fichier réseau lié
+ * Écriture du catalogue dans le fichier CSV réseau lié
  */
 async function exporterFichierJSReseau() {
-    if (!fileHandle) return; // Si pas lié, on passe silencieusement
+    if (!fileHandle) return;
 
-    // Conversion des objets de modulation en chaîne texte propre (ex: "COD1:0;SUAP:2")
     const donneesPourCSV = catalogue.map(f => {
         let modulationsStr = "";
         
@@ -68,7 +78,6 @@ async function exporterFichierJSReseau() {
                 .map(m => `${m.profil}:${m.quota ?? 0}`)
                 .join(";");
         } else if (f.dispenses && Array.isArray(f.dispenses) && f.dispenses.length > 0) {
-            // Rétrocompatibilité avec les anciennes dispenses
             modulationsStr = f.dispenses.map(p => `${p}:0`).join(";");
         }
 
@@ -84,7 +93,6 @@ async function exporterFichierJSReseau() {
         };
     });
 
-    // Génération du CSV sans BOM parasite
     const contenuCSV = Papa.unparse(donneesPourCSV, { delimiter: ";" });
     
     try {
@@ -93,13 +101,70 @@ async function exporterFichierJSReseau() {
         await writable.close();
     } catch (err) {
         console.error("Erreur d'écriture CSV sur le réseau :", err);
-        alert("Attention : Enregistré en local, mais l'écriture du CSV sur le réseau a échoué.");
+        alert("L'écriture dans le fichier CSV réseau a échoué.");
     }
 }
 
 /**
- * Génère dynamiquement une ligne de saisie Profil + Quota dans le formulaire
+ * Parse et charge les données du CSV directement dans le tableau global
  */
+function traiterContenuCSV(texteCSV) {
+    Papa.parse(texteCSV, {
+        header: true,
+        skipEmptyLines: true,
+        dynamicTyping: true,
+        complete: function(results) {
+            catalogue = results.data.map((item, index) => {
+                const rawId = item.id || item['\ufeffid'] || item['ID'];
+
+                let modulations = [];
+                const rawMod = item.modulations || item.dispenses || "";
+                
+                if (typeof rawMod === 'string' && rawMod.trim() !== '' && rawMod !== '[object Object]') {
+                    modulations = rawMod.split(';').map(mStr => {
+                        const parts = mStr.split(':');
+                        return {
+                            profil: parts[0] ? parts[0].trim().toUpperCase() : '',
+                            quota: parts[1] !== undefined ? parseFloat(parts[1]) : 0
+                        };
+                    });
+                }
+
+                return {
+                    id: rawId ? String(rawId) : "fmpa-" + (Date.now() + index),
+                    type: item.type || item.Type || "Socle Commun",
+                    fmpa: item.fmpa || item.activite || "",
+                    activite: item.activite || item.Activité || "",
+                    libelle: item.libelle || item['Thème'] || item.Libellé || "",
+                    sequence: item.sequence || item['Séquence'] || "-",
+                    quota: parseFloat(item.quota || item['Durée(h)'] || 0),
+                    modulations: modulations
+                };
+            });
+
+            trierEtAfficherCatalogue();
+            reinitialiserFormulaire();
+        },
+        error: function(err) {
+            alert("Format CSV invalide ou illisible : " + err.message);
+        }
+    });
+}
+
+/**
+ * Chargement manuel via un fichier CSV local
+ */
+function chargerFichierLocal(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        traiterContenuCSV(evt.target.result);
+    };
+    reader.readAsText(file);
+}
+
 function ajouterLigneProfil(profilNom = "", quotaValeur = "") {
     const conteneur = document.getElementById("liste-lignes-modulations");
     if (!conteneur) return;
@@ -120,7 +185,6 @@ function ajouterLigneProfil(profilNom = "", quotaValeur = "") {
     conteneur.appendChild(divLigne);
 }
 
-// Tri : Type -> Activité -> Thème
 function trierCatalogue(data) {
     return data.sort((a, b) => {
         if (a.type !== b.type) {
@@ -225,7 +289,6 @@ async function sauvegarderFormation(e) {
         });
     }
 
-    sauvegarderLocalement();
     await exporterFichierJSReseau();
     trierEtAfficherCatalogue();
     reinitialiserFormulaire();
@@ -259,7 +322,6 @@ function editerFormation(id) {
 async function supprimerFormation(id) {
     if (confirm("Supprimer cette formation du catalogue ?")) {
         catalogue = catalogue.filter(f => f.id !== id);
-        sauvegarderLocalement();
         await exporterFichierJSReseau();
         trierEtAfficherCatalogue();
         reinitialiserFormulaire();
@@ -276,58 +338,6 @@ function reinitialiserFormulaire() {
     document.getElementById("form-titre").innerText = "Ajouter une Formation";
     document.getElementById("btn-save").innerText = "💾 Enregistrer la formation";
     document.getElementById("btn-cancel").style.display = "none";
-}
-
-/**
- * Charge et analyse un fichier CSV sélectionné manuellement via l'input
- */
-function chargerFichierLocal(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        dynamicTyping: true,
-        complete: function(results) {
-            catalogue = results.data.map((item, index) => {
-                // Nettoyage de l'ID (au cas où la clé contienne le BOM UTF-8 '\ufeffid')
-                const rawId = item.id || item['\ufeffid'] || item['ID'];
-
-                // Reconstitution propre des modulations
-                let modulations = [];
-                const rawMod = item.modulations || item.dispenses || "";
-                
-                if (typeof rawMod === 'string' && rawMod.trim() !== '' && rawMod !== '[object Object]') {
-                    modulations = rawMod.split(';').map(mStr => {
-                        const parts = mStr.split(':');
-                        return {
-                            profil: parts[0] ? parts[0].trim().toUpperCase() : '',
-                            quota: parts[1] !== undefined ? parseFloat(parts[1]) : 0
-                        };
-                    });
-                }
-
-                return {
-                    id: rawId ? String(rawId) : "fmpa-" + (Date.now() + index),
-                    type: item.type || item.Type || "Socle Commun",
-                    fmpa: item.fmpa || item.activite || "",
-                    activite: item.activite || item.Activité || "",
-                    libelle: item.libelle || item['Thème'] || item.Libellé || "",
-                    sequence: item.sequence || item['Séquence'] || "-",
-                    quota: parseFloat(item.quota || item['Durée(h)'] || 0),
-                    modulations: modulations
-                };
-            });
-
-            sauvegarderLocalement();
-            trierEtAfficherCatalogue();
-            reinitialiserFormulaire();
-        },
-        error: function(err) {
-            alert("Format CSV invalide ou illisible : " + err.message);
-        }
-    });
 }
 
 function alimenterDatalistProfils(tableauAgentsRH) {
