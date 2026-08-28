@@ -38,7 +38,10 @@
 
             <button id="btn-reset-filters" class="btn-sec">Réinitialiser Filtres</button>
 
-            <!-- BOUTONS D'IMPORT / EXPORT CSV -->
+            <!-- BOUTONS D'IMPORT CATALOGUE & AGENTS CSV -->
+            <button id="btn-import-catalogue" class="btn-blue">📚 Importer catalogue.csv</button>
+            <input type="file" id="file-input-catalogue" accept=".csv" style="display: none;">
+
             <button id="btn-import-csv" class="btn-blue">📂 Importer baseAgents.csv</button>
             <input type="file" id="file-input-csv" accept=".csv" style="display: none;">
 
@@ -74,7 +77,7 @@
                         <tbody id="tbody-agents">
                             <tr>
                                 <td colspan="6" class="empty-msg">
-                                    Chargement de <strong>baseAgents.csv</strong> en cours ou appuyez sur "Importer baseAgents.csv"...
+                                    Chargement des données en cours...
                                 </td>
                             </tr>
                         </tbody>
@@ -111,8 +114,8 @@
 
                     <div class="form-group">
                         <label for="saisie-activite">Domaine / Activité *</label>
-                        <select id="saisie-activite" required>
-                            <option value="">-- Choisir un domaine --</option>
+                        <select id="saisie-activite" required disabled>
+                            <option value="">-- Chargement du catalogue CSV... --</option>
                         </select>
                     </div>
 
@@ -150,7 +153,7 @@
     </main>
 
     <!-- Fichiers de données et de logique -->
-    <script src="donnees_catalogue.js?v=1"></script>
-    <script src="script_saisie.js?v=1"></script>
+    <script src="papaparse.min.js"></script>
+    <script src="script_saisie.js?v=2"></script>
 </body>
 </html>
