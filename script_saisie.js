@@ -386,32 +386,49 @@ function genererAvancementSocle(agent) {
 function genererAvancementSpecialites(agent) {
     if (typeof catalogueInitial === 'undefined') return "Catalogue non chargé";
 
-    // Si l'agent n'a aucune spécialité renseignée dans sa fiche
-    if (!agent.specialites || agent.specialites.length === 0) {
+    // 1. Spécialités brutes (ex: ["SAV 1", "IMP"])
+    const specAgentBrutes = (agent.specialites || []).map(s => s.trim().toUpperCase()).filter(Boolean);
+
+    if (specAgentBrutes.length === 0) {
         return "<span style='color:#94a3b8;'>Aucune spél.</span>";
     }
+
+    // 2. Extraire la version "sans niveau" (ex: "SAV 1" -> "SAV")
+    const specAgentBase = specAgentBrutes.map(s => s.replace(/\s*\d+$/, ''));
 
     const idAgent = agent.id;
     const heuresAgent = cumulHeuresParAgent[idAgent] || {};
 
-    // Extraire les spécialités de l'agent en majuscules
-    const specAgent = agent.specialites.map(s => s.trim().toUpperCase());
-
-    // Filtrer le catalogue pour récupérer les formations correspondant aux spécialités de l'agent
+    // 3. Filtrer le catalogue
     const formationsSpec = catalogueInitial.filter(f => {
         const typeF = (f.type || "").toUpperCase();
-        const codeF = (f.code || f.libelle || "").toUpperCase();
-        
-        // Vérifie si la formation est de type "Spécialité" ou si son code correspond à une spé de l'agent
-        return typeF === "SPECIALITE" || specAgent.some(s => codeF.includes(s));
+        const estTypeSpec = typeF.includes("SPEC") || typeF.includes("SPÉCIALITÉ");
+
+        if (!estTypeSpec) return false;
+
+        const activiteF = (f.activite || f.Activité || "").trim().toUpperCase();
+        const profilF = (f.profil || f.Profil || "").trim().toUpperCase();
+
+        // Cas A : Le catalogue spécifie un profil avec niveau (ex: profil = "SAV 1")
+        if (profilF && profilF !== "TOUS") {
+            return specAgentBrutes.includes(profilF);
+        }
+
+        // Cas B : Pas de profil spécifique -> la simple présence de l'activité suffit (ex: activite = "SAV")
+        if (activiteF) {
+            return specAgentBase.includes(activiteF);
+        }
+
+        return false;
     });
 
     if (formationsSpec.length === 0) {
         return "<span style='color:#94a3b8;'>Aucun suivi requis</span>";
     }
 
+    // 4. Génération du rendu des badges
     return formationsSpec.map(f => {
-        const quotaRequis = f.quota || 0;
+        const quotaRequis = Number(f.quota) || 0;
         if (quotaRequis === 0) return null;
 
         const fait = heuresAgent[f.id] || 0;
