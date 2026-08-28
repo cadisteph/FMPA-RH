@@ -120,6 +120,12 @@ function parseCSVAgentsBrut(texteCSV) {
             ligneObj[cle] = valeurs[idx] || "";
         });
 
+    // --- SOLUTION : Ignorer les PATS ---
+    const statut = (ligneObj["statut"] || "").toUpperCase();
+    if (statut === "PATS") continue;
+    // ------------------------------------
+
+        
         const matricule = ligneObj["matricule"] || `AG-${i}`;
 
         resultats.push({
