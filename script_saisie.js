@@ -283,7 +283,8 @@ function afficherTableauAgents(listeAgents) {
     tbody.innerHTML = "";
 
     if (listeAgents.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">Aucun agent à afficher.</td></tr>';
+        // Passé de colspan="5" à colspan="6" pour couvrir la nouvelle colonne
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">Aucun agent à afficher.</td></tr>';
         document.getElementById("count-badge").textContent = `0 / ${tableauAgentsRH.length} agent(s)`;
         majStatutSelection();
         return;
@@ -292,7 +293,8 @@ function afficherTableauAgents(listeAgents) {
     listeAgents.forEach(agent => {
         const idAgent = agent.id;
         const isChecked = agentsSelectionnes.has(idAgent) ? "checked" : "";
-        const avancementHtml = genererAvancementSocle(agent);
+        const avancementSocleHtml = genererAvancementSocle(agent);
+        const avancementSpecHtml = genererAvancementSpecialites(agent); // Calcul de la nouvelle colonne
 
         const tr = document.createElement("tr");
         if (isChecked) tr.classList.add("selected-row");
@@ -312,7 +314,8 @@ function afficherTableauAgents(listeAgents) {
             <td>
                 <span class="badge-tag badge-statut">${agent.statut || '-'}</span>
             </td>
-            <td><small>${avancementHtml}</small></td>
+            <td><small>${avancementSocleHtml}</small></td>
+            <td><small>${avancementSpecHtml}</small></td>
         `;
         tbody.appendChild(tr);
     });
@@ -378,6 +381,49 @@ function genererAvancementSocle(agent) {
     })
     .filter(Boolean)
     .join(" | ") || "<span style='color:#64748b;'>Aucun socle requis</span>";
+}
+
+function genererAvancementSpecialites(agent) {
+    if (typeof catalogueInitial === 'undefined') return "Catalogue non chargé";
+
+    // Si l'agent n'a aucune spécialité renseignée dans sa fiche
+    if (!agent.specialites || agent.specialites.length === 0) {
+        return "<span style='color:#94a3b8;'>Aucune spél.</span>";
+    }
+
+    const idAgent = agent.id;
+    const heuresAgent = cumulHeuresParAgent[idAgent] || {};
+
+    // Extraire les spécialités de l'agent en majuscules
+    const specAgent = agent.specialites.map(s => s.trim().toUpperCase());
+
+    // Filtrer le catalogue pour récupérer les formations correspondant aux spécialités de l'agent
+    const formationsSpec = catalogueInitial.filter(f => {
+        const typeF = (f.type || "").toUpperCase();
+        const codeF = (f.code || f.libelle || "").toUpperCase();
+        
+        // Vérifie si la formation est de type "Spécialité" ou si son code correspond à une spé de l'agent
+        return typeF === "SPECIALITE" || specAgent.some(s => codeF.includes(s));
+    });
+
+    if (formationsSpec.length === 0) {
+        return "<span style='color:#94a3b8;'>Aucun suivi requis</span>";
+    }
+
+    return formationsSpec.map(f => {
+        const quotaRequis = f.quota || 0;
+        if (quotaRequis === 0) return null;
+
+        const fait = heuresAgent[f.id] || 0;
+
+        let styleClass = "fma-todo";
+        if (fait >= quotaRequis) styleClass = "fma-done";
+        else if (fait > 0) styleClass = "fma-partial";
+
+        return `<span style="color: #0f172a; font-weight: 500;">${f.libelle} :</span> <span class="${styleClass}">${fait}/${quotaRequis}h</span>`;
+    })
+    .filter(Boolean)
+    .join(" | ") || "<span style='color:#64748b;'>0/0h</span>";
 }
 
 function toggleAgent(idAgent) {
