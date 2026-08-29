@@ -4,143 +4,161 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Saisie Groupée des Formations FMPA</title>
+    <!-- Chargement de Bootstrap 5 pour le design -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Ton CSS sur-mesure -->
     <link rel="stylesheet" href="style_saisie.css">
 </head>
-<body>
+<body class="bg-light">
 
-    <header class="app-header">
-        <h1>🧑‍🚒 Saisie Groupée des Formations FMPA</h1>
-        <p>Gestion des saisies de formations et suivi d'avancement</p>
+    <header class="app-header p-3 bg-white border-bottom mb-3">
+        <div class="container-fluid">
+            <h1 class="h3 mb-1 text-primary">🧑‍🚒 Saisie Groupée des Formations FMPA</h1>
+            <p class="text-muted mb-0 small">Gestion des saisies de formations et suivi d'avancement</p>
+        </div>
     </header>
 
-    <div class="main-container">
-        <!-- Barre supérieure : Filtres + Actions de fichiers -->
-        <div class="top-bar">
-            <div class="filter-group">
-                <label for="filter-equipe">Équipe</label>
-                <select id="filter-equipe">
-                    <option value="">Toutes</option>
-                </select>
-            </div>
+    <div class="container-fluid px-4">
+        <!-- Barre supérieure : Filtres + Actions -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body d-flex flex-wrap align-items-end justify-content-between gap-3">
+                
+                <!-- Bloc Filtres -->
+                <div class="d-flex align-items-end gap-2 flex-wrap">
+                    <div>
+                        <label for="filter-equipe" class="form-label small fw-bold text-muted mb-1">Équipe</label>
+                        <select id="filter-equipe" class="form-select form-select-sm">
+                            <option value="">Toutes</option>
+                        </select>
+                    </div>
 
-            <div class="filter-group">
-                <label for="filter-statut">Statut</label>
-                <select id="filter-statut">
-                    <option value="">Tous</option>
-                </select>
-            </div>
+                    <div>
+                        <label for="filter-statut" class="form-label small fw-bold text-muted mb-1">Statut</label>
+                        <select id="filter-statut" class="form-select form-select-sm">
+                            <option value="">Tous</option>
+                        </select>
+                    </div>
 
-            <div class="filter-group search-group">
-                <label for="filter-search">Recherche</label>
-                <input type="text" id="filter-search" placeholder="Nom, prénom, matricule...">
-            </div>
+                    <div>
+                        <label for="filter-search" class="form-label small fw-bold text-muted mb-1">Recherche</label>
+                        <input type="text" id="filter-search" class="form-control form-control-sm" placeholder="Nom, prénom, matricule...">
+                    </div>
 
-            <button type="button" id="btn-reset-filters" class="btn-sec">Réinitialiser</button>
-
-            <!-- Groupe de boutons d'action -->
-            <div class="actions-group">
-                <button type="button" id="btn-import-suivi" class="btn-primary">📂 Charger suivi.csv</button>
-                <button type="button" id="btn-import-csv" class="btn-warning">📁 Importer baseAgents.csv</button>
-                <button type="button" id="btn-import-catalogue" class="btn-warning">📁 Importer catalogue.csv</button>
-                <button type="button" id="btn-export-csv" class="btn-success">🧪 Exporter le Suivi (CSV)</button>
-
-                <!-- Inputs cachés en pure Inline CSS pour être sûr qu'ils ne popent jamais -->
-                <input type="file" id="file-input-suivi" accept=".csv" style="display: none !important;" />
-                <input type="file" id="file-input-csv" accept=".csv" style="display: none !important;" />
-                <input type="file" id="file-input-catalogue" accept=".csv" style="display: none !important;" />
-            </div>
-
-            <span id="agent-count-badge" class="agent-count-badge">0 agent(s)</span>
-        </div>
-
-        <!-- Zone de contenu principale (Grid 2 cartes) -->
-        <div class="content-grid">
-            <!-- Carte Gauche : Tableau des agents -->
-            <div class="card agent-card">
-                <div class="card-header">
-                    <h2>Tableau de Suivi des Agents</h2>
-                    <span id="selection-status" class="selection-status">👥 0 agent(s) sélectionné(s)</span>
+                    <button type="button" id="btn-reset-filters" class="btn btn-sm btn-outline-secondary">Réinitialiser</button>
                 </div>
 
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr id="thead-row">
-                                <th style="width: 30px;"><input type="checkbox" id="select-all"></th>
-                                <th class="col-sticky">Agent</th>
-                                <th>Équipe</th>
-                                <th>Statut</th>
-                                <th>Avancement Socle</th>
-                                <th>Avancement Spécialités</th>
-                                <th>Total Socle (h)</th>
-                                <th>Total Spé. (h)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbody-agents">
-                            <tr>
-                                <td colspan="8" class="empty-msg">Veuillez charger le fichier baseAgents.csv ou suivi.csv</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <!-- Bloc Actions (Boutons d'import/export) -->
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <button type="button" id="btn-import-suivi" class="btn btn-sm btn-primary fw-bold">📂 Charger suivi.csv</button>
+                    <button type="button" id="btn-import-csv" class="btn btn-sm btn-outline-dark">📁 Importer baseAgents.csv</button>
+                    <button type="button" id="btn-import-catalogue" class="btn btn-sm btn-outline-dark">📁 Importer catalogue.csv</button>
+                    <button type="button" id="btn-export-csv" class="btn btn-sm btn-success">🧪 Exporter le Suivi (CSV)</button>
+
+                    <!-- File Inputs cachés -->
+                    <input type="file" id="file-input-suivi" accept=".csv" class="d-none" />
+                    <input type="file" id="file-input-csv" accept=".csv" class="d-none" />
+                    <input type="file" id="file-input-catalogue" accept=".csv" class="d-none" />
+                </div>
+
+                <!-- Compteur -->
+                <div>
+                    <span id="agent-count-badge" class="badge bg-secondary">0 agent(s)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zone de contenu principale -->
+        <div class="row g-3">
+            <!-- Carte Gauche : Tableau des agents -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h2 class="h5 mb-0 fw-bold">Tableau de Suivi des Agents</h2>
+                        <span id="selection-status" class="badge bg-light text-dark border">👥 0 agent(s) sélectionné(s)</span>
+                    </div>
+                    <div class="card-body p-0 table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr id="thead-row">
+                                    <th style="width: 40px;" class="text-center"><input type="checkbox" id="select-all" class="form-check-input"></th>
+                                    <th>Agent</th>
+                                    <th>Équipe</th>
+                                    <th>Statut</th>
+                                    <th>Avancement Socle</th>
+                                    <th>Avancement Spécialités</th>
+                                    <th>Total Socle (h)</th>
+                                    <th>Total Spé. (h)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-agents">
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">Veuillez charger le fichier baseAgents.csv ou suivi.csv</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
             <!-- Carte Droite : Formulaire de Saisie -->
-            <div class="card form-card">
-                <div class="card-header">
-                    <h2>Détails Formation</h2>
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h2 class="h5 mb-0 fw-bold">Détails Formation</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="form-saisie-groupee">
+                            <div class="mb-3">
+                                <label for="saisie-date" class="form-label small fw-bold">Date de réalisation *</label>
+                                <input type="date" id="saisie-date" class="form-control form-control-sm" required>
+                            </div>
+
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label for="saisie-heure-debut" class="form-label small fw-bold">Début *</label>
+                                    <input type="time" id="saisie-heure-debut" class="form-control form-control-sm" value="08:00" required>
+                                </div>
+                                <div class="col-6">
+                                    <label for="saisie-heure-fin" class="form-label small fw-bold">Fin *</label>
+                                    <input type="time" id="saisie-heure-fin" class="form-control form-control-sm" value="12:00" required>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info py-2 px-3 small text-center mb-3">
+                                Durée calculée : <strong id="duree-calculee">4.0 h</strong>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="saisie-activite" class="form-label small fw-bold">Domaine / Activité *</label>
+                                <select id="saisie-activite" class="form-select form-select-sm" required>
+                                    <option value="">-- Choisir un domaine --</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="saisie-theme" class="form-label small fw-bold">Thème de la formation *</label>
+                                <select id="saisie-theme" class="form-select form-select-sm" required disabled>
+                                    <option value="">-- Choisir une formation --</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="saisie-formateur" class="form-label small fw-bold">Formateur</label>
+                                <input type="text" id="saisie-formateur" class="form-control form-control-sm" list="liste-formateurs" placeholder="Nom du formateur">
+                                <datalist id="liste-formateurs"></datalist>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="saisie-commentaires" class="form-label small fw-bold">Commentaires</label>
+                                <textarea id="saisie-commentaires" class="form-control form-control-sm" rows="2" placeholder="Précisions éventuelles..."></textarea>
+                            </div>
+
+                            <button type="submit" id="btn-valider-groupe" class="btn btn-primary w-100" disabled>
+                                ✅ Valider pour la sélection
+                            </button>
+                        </form>
+                    </div>
                 </div>
-
-                <form id="form-saisie-groupee">
-                    <div class="form-group">
-                        <label for="saisie-date">Date de réalisation *</label>
-                        <input type="date" id="saisie-date" required>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="saisie-heure-debut">Début *</label>
-                            <input type="time" id="saisie-heure-debut" value="08:00" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="saisie-heure-fin">Fin *</label>
-                            <input type="time" id="saisie-heure-fin" value="12:00" required>
-                        </div>
-                    </div>
-
-                    <div class="duree-badge-container">
-                        Durée calculée : <strong id="duree-calculee">4.0 h</strong>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="saisie-activite">Domaine / Activité *</label>
-                        <select id="saisie-activite" required>
-                            <option value="">-- Choisir un domaine --</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="saisie-theme">Thème de la formation *</label>
-                        <select id="saisie-theme" class="select-small-text" required disabled>
-                            <option value="">-- Choisir une formation --</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="saisie-formateur">Formateur</label>
-                        <input type="text" id="saisie-formateur" list="liste-formateurs" placeholder="Nom du formateur">
-                        <datalist id="liste-formateurs"></datalist>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="saisie-commentaires">Commentaires</label>
-                        <textarea id="saisie-commentaires" rows="2" placeholder="Précisions éventuelles..."></textarea>
-                    </div>
-
-                    <button type="submit" id="btn-valider-groupe" class="btn-primary" disabled>
-                        ✅ Valider pour la sélection
-                    </button>
-                </form>
             </div>
         </div>
     </div>
