@@ -86,7 +86,19 @@ function remplirDomaines() {
     const selectDomaine = document.getElementById('saisie-activite');
     selectDomaine.innerHTML = '<option value="">-- Choisir un domaine --</option>';
 
-    const domaines = [...new Set(catalogueFormations.map(f => f.Domaine).filter(Boolean))];
+    if (!catalogueFormations || catalogueFormations.length === 0) return;
+
+    // Détection automatique du nom de la colonne du domaine
+    const sample = catalogueFormations[0];
+    const keyDomaine = Object.keys(sample).find(k => k.trim().toLowerCase().includes('domaine')) || 'Domaine';
+
+    const domaines = [...new Set(catalogueFormations.map(f => f[keyDomaine]).filter(Boolean))];
+
+    if (domaines.length === 0) {
+        alert("⚠️ Le CSV a été lu mais aucune colonne 'Domaine' n'a été détectée. Vérifie les entêtes de ton fichier CSV.");
+        return;
+    }
+
     domaines.forEach(d => {
         const opt = document.createElement('option');
         opt.value = d;
