@@ -22,8 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Gestion de la case "Tout cocher"
     document.getElementById('chk-all')?.addEventListener('change', toggleAllCheckboxes);
 
-    // Soumission du formulaire
-    document.getElementById('form-saisie')?.addEventListener('submit', Saisie);
+    // Soumission du formulaire (CORRIGÉ ICI : pointe bien sur enregistrerSaisie)
+    document.getElementById('form-saisie')?.addEventListener('submit', enregistrerSaisie);
 });
 
 // 2. Traitement et lecture des CSV
@@ -219,8 +219,6 @@ function enregistrerSaisie(e) {
     // Mettre à jour visuellement le tableau
     rafraichirTableau();
 
-    // REMARQUE : On a retiré exporterCSV() d'ici pour éviter de télécharger à chaque clic !
-
     // Message de confirmation
     const alertBox = document.getElementById('alert-msg');
     if (alertBox) {
@@ -228,4 +226,24 @@ function enregistrerSaisie(e) {
         alertBox.style.display = 'block';
         setTimeout(() => alertBox.style.display = 'none', 3000);
     }
+}
+
+// 6. Exportation manuelle au clic sur le bouton vert
+function exporterCSV() {
+    if (!historiqueSuivi.length) {
+        alert("Aucune donnée de suivi à exporter.");
+        return;
+    }
+    let csvContent = "data:text/csv;charset=utf-8,Matricule;Date;HeureDebut;HeureFin;Formation;Formateur;Commentaires\n";
+    historiqueSuivi.forEach(row => {
+        csvContent += `${row.Matricule};${row.Date};${row.HeureDebut};${row.HeureFin};"${row.Formation}";"${row.Formateur}";"${row.Commentaires}"\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `suivi.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
