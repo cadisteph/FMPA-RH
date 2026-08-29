@@ -37,28 +37,29 @@
 
             <button type="button" id="btn-reset-filters" class="btn-sec">Réinitialiser</button>
 
-<div class="d-flex align-items-center gap-2 flex-wrap">
-  <button type="button" id="btn-import-suivi" class="btn btn-primary">
-    📂 Charger suivi.csv
-  </button>
-  
-  <button type="button" id="btn-import-agents" class="btn btn-warning">
-    📁 Importer baseAgents.csv
-  </button>
-  
-  <button type="button" id="btn-import-catalogue" class="btn btn-warning">
-    📁 Importer catalogue.csv
-  </button>
-  
-  <button type="button" id="btn-export-csv" class="btn btn-success">
-    🧪 Exporter le Suivi (CSV)
-  </button>
+            <!-- Groupe de boutons d'action -->
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <button type="button" id="btn-import-suivi" class="btn btn-primary">
+                    📂 Charger suivi.csv
+                </button>
+                
+                <button type="button" id="btn-import-csv" class="btn btn-warning">
+                    📁 Importer baseAgents.csv
+                </button>
+                
+                <button type="button" id="btn-import-catalogue" class="btn btn-warning">
+                    📁 Importer catalogue.csv
+                </button>
+                
+                <button type="button" id="btn-export-csv" class="btn btn-success">
+                    🧪 Exporter le Suivi (CSV)
+                </button>
 
-  <!-- Inputs cachés -->
-  <input type="file" id="file-input-suivi" accept=".csv" style="display: none;" />
-  <input type="file" id="file-input-agents" accept=".csv" style="display: none;" />
-  <input type="file" id="file-input-catalogue" accept=".csv" style="display: none;" />
-</div>
+                <!-- Inputs cachés -->
+                <input type="file" id="file-input-suivi" accept=".csv" style="display: none;" />
+                <input type="file" id="file-input-csv" accept=".csv" style="display: none;" />
+                <input type="file" id="file-input-catalogue" accept=".csv" style="display: none;" />
+            </div>
 
             <span id="agent-count-badge" class="agent-count-badge">0 agent(s)</span>
         </div>
