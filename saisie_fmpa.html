@@ -15,54 +15,50 @@
 
     <div class="main-container">
         <!-- Barre supérieure : Filtres + Actions de fichiers -->
-        <div class="top-bar">
-            <div class="filter-group">
-                <label for="filter-equipe">Équipe</label>
-                <select id="filter-equipe">
-                    <option value="">Toutes</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="filter-statut">Statut</label>
-                <select id="filter-statut">
-                    <option value="">Tous</option>
-                </select>
-            </div>
-
-            <div class="filter-group search-group">
-                <label for="filter-search">Recherche</label>
-                <input type="text" id="filter-search" placeholder="Nom, prénom, matricule...">
-            </div>
-
-            <button type="button" id="btn-reset-filters" class="btn-sec">Réinitialiser</button>
-
-            <!-- Groupe de boutons d'action -->
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <button type="button" id="btn-import-suivi" class="btn btn-primary">
-                    📂 Charger suivi.csv
-                </button>
-                
-                <button type="button" id="btn-import-csv" class="btn btn-warning">
-                    📁 Importer baseAgents.csv
-                </button>
-                
-                <button type="button" id="btn-import-catalogue" class="btn btn-warning">
-                    📁 Importer catalogue.csv
-                </button>
-                
-                <button type="button" id="btn-export-csv" class="btn btn-success">
-                    🧪 Exporter le Suivi (CSV)
-                </button>
-
-                <!-- Inputs cachés -->
-                <input type="file" id="file-input-suivi" accept=".csv" style="display: none;" />
-                <input type="file" id="file-input-csv" accept=".csv" style="display: none;" />
-                <input type="file" id="file-input-catalogue" accept=".csv" style="display: none;" />
-            </div>
-
-            <span id="agent-count-badge" class="agent-count-badge">0 agent(s)</span>
+       <div class="top-bar d-flex align-items-end justify-content-between gap-3 mb-4 flex-wrap p-3 bg-white rounded shadow-sm">
+    
+    <!-- Zone Filtres -->
+    <div class="d-flex align-items-end gap-2 flex-wrap">
+        <div class="filter-group">
+            <label for="filter-equipe" class="form-label mb-1 fs-7 fw-bold text-muted">Équipe</label>
+            <select id="filter-equipe" class="form-select form-select-sm">
+                <option value="">Toutes</option>
+            </select>
         </div>
+
+        <div class="filter-group">
+            <label for="filter-statut" class="form-label mb-1 fs-7 fw-bold text-muted">Statut</label>
+            <select id="filter-statut" class="form-select form-select-sm">
+                <option value="">Tous</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="filter-search" class="form-label mb-1 fs-7 fw-bold text-muted">Recherche</label>
+            <input type="text" id="filter-search" class="form-control form-control-sm" placeholder="Nom, prénom, matricule...">
+        </div>
+
+        <button type="button" id="btn-reset-filters" class="btn btn-sm btn-outline-secondary">Réinitialiser</button>
+    </div>
+
+    <!-- Zone Actions / Imports (Alignés et propres) -->
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <button type="button" id="btn-import-suivi" class="btn btn-sm btn-primary">📂 Charger suivi.csv</button>
+        <button type="button" id="btn-import-csv" class="btn btn-sm btn-outline-warning text-dark">📁 Importer baseAgents.csv</button>
+        <button type="button" id="btn-import-catalogue" class="btn btn-sm btn-outline-warning text-dark">📁 Importer catalogue.csv</button>
+        <button type="button" id="btn-export-csv" class="btn btn-sm btn-outline-success">🧪 Exporter le Suivi (CSV)</button>
+
+        <!-- Inputs cachés -->
+        <input type="file" id="file-input-suivi" accept=".csv" class="d-none" />
+        <input type="file" id="file-input-csv" accept=".csv" class="d-none" />
+        <input type="file" id="file-input-catalogue" accept=".csv" class="d-none" />
+    </div>
+
+    <!-- Badge compteur -->
+    <div>
+        <span id="agent-count-badge" class="badge bg-secondary fs-6">0 agent(s)</span>
+    </div>
+</div>
 
         <!-- Zone de contenu principale (Grid 2 cartes) -->
         <div class="content-grid">
