@@ -267,6 +267,26 @@
             background-color: #ced4da;
             cursor: not-allowed;
         }
+
+        .progress-bar-bg {
+            background-color: #e9ecef;
+            border-radius: 10px;
+            height: 14px;
+            width: 100%;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .progress-bar-fill {
+            background-color: #2a9d8f;
+            height: 100%;
+            font-size: 0.65rem;
+            color: #fff;
+            text-align: center;
+            line-height: 14px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -391,7 +411,7 @@
                         <div class="field-group" style="margin-bottom: 12px;">
                             <label for="saisie-theme">Thème de la formation *</label>
                             <select id="saisie-theme" class="select-sm" required disabled style="width: 100%;">
-                                <option value="">-- Choisir une formation --</option>
+                                <option value="">-- Choisir d'abord un domaine --</option>
                             </select>
                         </div>
 
@@ -415,38 +435,67 @@
         </div>
     </div>
 
-    <!-- SCRIPT UNIQUE ET DEBOGUÉ -->
     <script>
         let catalogueFormations = [];
         let agentsData = [];
+        let heuresRealiseesParAgent = {}; 
 
-        // 1. Connexion des boutons d'import aux inputs cachés
-        document.getElementById('btn-import-suivi').addEventListener('click', () => {
-            document.getElementById('file-input-suivi').click();
+        // 1. Boutons
+        document.getElementById('btn-import-suivi').addEventListener('click', () => document.getElementById('file-input-suivi').click());
+        document.getElementById('btn-import-csv').addEventListener('click', () => document.getElementById('file-input-csv').click());
+        document.getElementById('btn-import-catalogue').addEventListener('click', () => document.getElementById('file-input-catalogue').click());
+
+        document.getElementById('file-input-suivi').addEventListener('change', (e) => e.target.files[0] && lireCSV(e.target.files[0], 'suivi'));
+        document.getElementById('file-input-csv').addEventListener('change', (e) => e.target.files[0] && lireCSV(e.target.files[0], 'baseAgents'));
+        document.getElementById('file-input-catalogue').addEventListener('change', (e) => e.target.files[0] && lireCSV(e.target.files[0], 'catalogue'));
+
+        // 2. Calcul des heures en direct dans le formulaire
+        function calculerDuree() {
+            const debut = document.getElementById('saisie-heure-debut').value;
+            const fin = document.getElementById('saisie-heure-fin').value;
+            if (debut && fin) {
+                const [hD, mD] = debut.split(':').map(Number);
+                const [hF, mF] = fin.split(':').map(Number);
+                let minutes = (hF * 60 + mF) - (hD * 60 + mD);
+                if (minutes < 0) minutes += 24 * 60;
+                const duree = (minutes / 60).toFixed(1);
+                document.getElementById('duree-calculee').textContent = `${duree} h`;
+            }
+        }
+        document.getElementById('saisie-heure-debut').addEventListener('change', calculerDuree);
+        document.getElementById('saisie-heure-fin').addEventListener('change', calculerDuree);
+
+        // 3. Changement de Domaine -> Filtre dynamique des Thèmes
+        document.getElementById('saisie-activite').addEventListener('change', function() {
+            const domaineSelectionne = this.value;
+            const selectTheme = document.getElementById('saisie-theme');
+            selectTheme.innerHTML = '<option value="">-- Choisir une formation --</option>';
+
+            if (!domaineSelectionne) {
+                selectTheme.disabled = true;
+                return;
+            }
+
+            // Filtrage dans catalogue.csv selon la colonne activite
+            const themesFiltres = catalogueFormations.filter(item => {
+                const act = item.activite || item.fmpa || item.Domaine || '';
+                return act.toLowerCase() === domaineSelectionne.toLowerCase();
+            });
+
+            if (themesFiltres.length > 0) {
+                themesFiltres.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.libelle || t.fmpa || t.id;
+                    opt.textContent = `${t.libelle || t.id} (${t.quota || 0}h) - ${t.sequence || ''}`;
+                    selectTheme.appendChild(opt);
+                });
+                selectTheme.disabled = false;
+            } else {
+                selectTheme.disabled = true;
+            }
         });
 
-        document.getElementById('btn-import-csv').addEventListener('click', () => {
-            document.getElementById('file-input-csv').click();
-        });
-
-        document.getElementById('btn-import-catalogue').addEventListener('click', () => {
-            document.getElementById('file-input-catalogue').click();
-        });
-
-        // 2. Écouteurs de fichiers
-        document.getElementById('file-input-suivi').addEventListener('change', (e) => {
-            if (e.target.files[0]) lireCSV(e.target.files[0], 'suivi');
-        });
-
-        document.getElementById('file-input-csv').addEventListener('change', (e) => {
-            if (e.target.files[0]) lireCSV(e.target.files[0], 'baseAgents');
-        });
-
-        document.getElementById('file-input-catalogue').addEventListener('change', (e) => {
-            if (e.target.files[0]) lireCSV(e.target.files[0], 'catalogue');
-        });
-
-        // 3. Fonction générique de lecture des fichiers CSV
+        // 4. Lecture des CSV
         function lireCSV(fichier, type) {
             const reader = new FileReader();
             reader.onload = function(evt) {
@@ -470,26 +519,24 @@
 
                 if (type === 'catalogue') {
                     catalogueFormations = rows;
-                    remplirDomainesFlex(headers);
+                    remplirDomainesFlex();
                 } else {
                     agentsData = rows;
-                    afficherAgentsDansTableau(agentsData, headers);
+                    afficherAgentsDansTableau(agentsData);
                 }
             };
             reader.readAsText(fichier, 'UTF-8');
         }
 
-        // 4. Remplissage du catalogue de formations
-        function remplirDomainesFlex(headers) {
+        // 5. Remplir le select Domaine depuis catalogue.csv
+        function remplirDomainesFlex() {
             const selectDomaine = document.getElementById('saisie-activite');
             selectDomaine.innerHTML = '<option value="">-- Choisir un domaine --</option>';
 
-            const keyDomaine = headers.find(h => {
-                const cleanHeader = h.toLowerCase();
-                return cleanHeader.includes('domaine') || cleanHeader.includes('activite') || cleanHeader.includes('theme') || cleanHeader.includes('categorie');
-            }) || headers[0];
+            if (!catalogueFormations || catalogueFormations.length === 0) return;
 
-            const domaines = [...new Set(catalogueFormations.map(f => f[keyDomaine]).filter(Boolean))].sort();
+            // Extraire tous les domaines uniques (colonne 'activite' ou 'fmpa')
+            const domaines = [...new Set(catalogueFormations.map(f => f.activite || f.fmpa).filter(Boolean))].sort();
 
             domaines.forEach(d => {
                 const opt = document.createElement('option');
@@ -498,11 +545,11 @@
                 selectDomaine.appendChild(opt);
             });
 
-            alert(`✅ Catalogue chargé avec succès (${catalogueFormations.length} éléments) !`);
+            alert(`✅ Catalogue chargé avec succès (${catalogueFormations.length} formations) !`);
         }
 
-        // 5. Affichage des agents dans le tableau
-        function afficherAgentsDansTableau(data, headers) {
+        // 6. Remplir le tableau des agents
+        function afficherAgentsDansTableau(data) {
             const tbody = document.getElementById('tbody-agents');
             tbody.innerHTML = '';
 
@@ -511,26 +558,56 @@
             data.forEach((agent, index) => {
                 const tr = document.createElement('tr');
                 
-                // Recherche intelligente des champs Nom / Prénom / Équipe
-                const nom = agent['Nom'] || agent['NOM'] || agent['Agent'] || agent[headers[0]] || '';
-                const prenom = agent['Prénom'] || agent['Prenom'] || agent['PRENOM'] || '';
-                const equipe = agent['Équipe'] || agent['Equipe'] || agent['EQUIPE'] || '-';
-                const statut = agent['Statut'] || agent['STATUT'] || '-';
+                const matricule = agent['Matricule'] || '';
+                const nom = agent['Nom'] || '';
+                const prenom = agent['Prenom'] || agent['Prénom'] || '';
+                const equipe = agent['Equipe'] || agent['Équipe'] || '-';
+                const statut = agent['Statut'] || '-';
+                const specialites = agent['Specialites'] || agent['Spécialités'] || '';
+
+                // Calculs d'heures par défaut
+                const hSocle = heuresRealiseesParAgent[matricule]?.socle || 0;
+                const hSpe = heuresRealiseesParAgent[matricule]?.spe || 0;
+                
+                // Quotas de base
+                const pctSocle = Math.min(100, Math.round((hSocle / 40) * 100));
 
                 tr.innerHTML = `
                     <td><input type="checkbox" class="agent-checkbox" value="${index}"></td>
-                    <td><strong>${nom} ${prenom}</strong></td>
+                    <td><strong>${nom} ${prenom}</strong> <br><small style="color:#6c757d;">${matricule}</small></td>
                     <td>${equipe}</td>
                     <td>${statut}</td>
-                    <td>-</td>
-                    <td>-</td>
-                    <td>0.0 h</td>
-                    <td>0.0 h</td>
+                    <td>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" style="width: ${pctSocle}%;">${pctSocle}%</div>
+                        </div>
+                    </td>
+                    <td>${specialites ? specialites : '<em>Aucune</em>'}</td>
+                    <td><strong>${hSocle.toFixed(1)} / 40 h</strong></td>
+                    <td><strong>${hSpe.toFixed(1)} h</strong></td>
                 `;
                 tbody.appendChild(tr);
             });
 
+            // Écouteur pour cocher/décocher
+            document.querySelectorAll('.agent-checkbox').forEach(cb => {
+                cb.addEventListener('change', mettreAJourSelection);
+            });
+
             alert(`✅ ${data.length} agent(s) chargé(s) dans le tableau !`);
+        }
+
+        // 7. Gestion de la sélection d'agents
+        document.getElementById('select-all').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.agent-checkbox');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+            mettreAJourSelection();
+        });
+
+        function mettreAJourSelection() {
+            const cocher = document.querySelectorAll('.agent-checkbox:checked').length;
+            document.getElementById('selection-status').textContent = `👥 ${cocher} agent(s) sélectionné(s)`;
+            document.getElementById('btn-valider-groupe').disabled = (cocher === 0);
         }
     </script>
 </body>
