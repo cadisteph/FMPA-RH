@@ -502,5 +502,135 @@
             alert(`✅ Catalogue chargé avec succès (${catalogueFormations.length} éléments) !\nColonne détectée pour le domaine : "${keyDomaine}"`);
         }
     </script>
+
+<script>
+    let catalogueFormations = [];
+    let agentsData = [];
+
+    // --- 1. LIAISON DES BOUTONS DE FICHIERS ---
+    document.getElementById('btn-import-suivi').addEventListener('click', () => {
+        document.getElementById('file-input-suivi').click();
+    });
+
+    document.getElementById('btn-import-csv').addEventListener('click', () => {
+        document.getElementById('file-input-csv').click();
+    });
+
+    document.getElementById('btn-import-catalogue').addEventListener('click', () => {
+        document.getElementById('file-input-catalogue').click();
+    });
+
+
+    // --- 2. GESTION DU CHARGEMENT DES FICHIERS ---
+    // Import suivi.csv
+    document.getElementById('file-input-suivi').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            parseCSVGeneric(evt.target.result, "Suivi");
+        };
+        reader.readAsText(file, 'UTF-8');
+    });
+
+    // Import baseAgents.csv
+    document.getElementById('file-input-csv').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            parseCSVGeneric(evt.target.result, "Base Agents");
+        };
+        reader.readAsText(file, 'UTF-8');
+    });
+
+    // Import catalogue.csv
+    document.getElementById('file-input-catalogue').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            parseCatalogueCSV(evt.target.result);
+        };
+        reader.readAsText(file, 'UTF-8');
+    });
+
+
+    // --- 3. FONCTIONS DE PARSING CSV ---
+    function parseCSVGeneric(csvText, typeFichier) {
+        const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
+        if (lines.length < 2) {
+            alert(`Le fichier ${typeFichier} semble vide ou invalide.`);
+            return;
+        }
+
+        const firstLine = lines[0];
+        const separator = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
+        const headers = firstLine.split(separator).map(h => h.replace(/^["\ufeff]+|["\s]+$/g, '').trim());
+
+        agentsData = lines.slice(1).map(line => {
+            const values = line.split(separator).map(v => v.replace(/^"|"$/g, '').trim());
+            let row = {};
+            headers.forEach((h, i) => { row[h] = values[i] || ''; });
+            return row;
+        });
+
+        // Mise à jour du compteur d'agents
+        const badgeCount = document.getElementById('agent-count-badge');
+        if (badgeCount) {
+            badgeCount.textContent = `${agentsData.length} agent(s)`;
+        }
+
+        alert(`✅ Fichier ${typeFichier} chargé avec succès (${agentsData.length} lignes) !`);
+    }
+
+    function parseCatalogueCSV(csvText) {
+        const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
+        if (lines.length < 2) {
+            alert("Le fichier catalogue semble vide.");
+            return;
+        }
+
+        const firstLine = lines[0];
+        const separator = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
+        const headers = firstLine.split(separator).map(h => h.replace(/^["\ufeff]+|["\s]+$/g, '').trim());
+
+        catalogueFormations = lines.slice(1).map(line => {
+            const values = line.split(separator).map(v => v.replace(/^"|"$/g, '').trim());
+            let row = {};
+            headers.forEach((h, i) => { row[h] = values[i] || ''; });
+            return row;
+        });
+
+        remplirDomainesFlex(headers);
+    }
+
+    function remplirDomainesFlex(headers) {
+        const selectDomaine = document.getElementById('saisie-activite');
+        selectDomaine.innerHTML = '<option value="">-- Choisir un domaine --</option>';
+
+        if (!catalogueFormations || catalogueFormations.length === 0) return;
+
+        const keyDomaine = headers.find(h => {
+            const cleanHeader = h.toLowerCase();
+            return cleanHeader.includes('domaine') || cleanHeader.includes('activite') || cleanHeader.includes('theme') || cleanHeader.includes('categorie');
+        }) || headers[0];
+
+        const domaines = [...new Set(catalogueFormations.map(f => f[keyDomaine]).filter(Boolean))].sort();
+
+        domaines.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d;
+            opt.textContent = d;
+            selectDomaine.appendChild(opt);
+        });
+
+        alert(`✅ Catalogue chargé (${catalogueFormations.length} éléments) !\nColonne détectée : "${keyDomaine}"`);
+    }
+</script>
+    
 </body>
 </html>
