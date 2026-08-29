@@ -37,19 +37,28 @@
 
             <button type="button" id="btn-reset-filters" class="btn-sec">Réinitialiser</button>
 
-            <!-- Actions CSV -->
-            <button type="button" id="btn-import-suivi" class="btn-blue">📂 Charger suivi.csv</button>
-            <input type="file" id="file-input-suivi" accept=".csv" style="display:none;">
+<div class="d-flex align-items-center gap-2 flex-wrap">
+  <button type="button" id="btn-import-suivi" class="btn btn-primary">
+    📂 Charger suivi.csv
+  </button>
+  
+  <button type="button" id="btn-import-agents" class="btn btn-warning">
+    📁 Importer baseAgents.csv
+  </button>
+  
+  <button type="button" id="btn-import-catalogue" class="btn btn-warning">
+    📁 Importer catalogue.csv
+  </button>
+  
+  <button type="button" id="btn-export-csv" class="btn btn-success">
+    🧪 Exporter le Suivi (CSV)
+  </button>
 
-            <button type="button" id="btn-import-csv" class="btn-sec">📂 Importer baseAgents.csv</button>
-            <input type="file" id="file-input-csv" accept=".csv" style="display:none;">
-
-            <!-- Bouton visible -->
-            <button type="button" id="btn-import-catalogue" class="btn btn-primary">📁 Importer catalogue.csv</button>
-            <!-- Input fichier caché -->
-            <input type="file" id="file-input-catalogue" accept=".csv" style="display: none;" />
-
-            <button type="button" id="btn-export-csv" class="btn-green">📥 Exporter le Suivi (CSV)</button>
+  <!-- Inputs cachés -->
+  <input type="file" id="file-input-suivi" accept=".csv" style="display: none;" />
+  <input type="file" id="file-input-agents" accept=".csv" style="display: none;" />
+  <input type="file" id="file-input-catalogue" accept=".csv" style="display: none;" />
+</div>
 
             <span id="agent-count-badge" class="agent-count-badge">0 agent(s)</span>
         </div>
