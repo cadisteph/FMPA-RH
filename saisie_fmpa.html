@@ -3,157 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saisie des Formations FMPA</title>
+    <title>Saisie Groupée des Formations FMPA</title>
     <link rel="stylesheet" href="style_saisie.css">
 </head>
 <body>
 
     <header class="app-header">
-        <h1>👨‍🚒 Saisie Groupée des Formations FMPA</h1>
-        <p>Gestion des saisies de formations en mémoire temps réel</p>
+        <div class="header-titles">
+            <h1>🧑‍🚒 Saisie Groupée des Formations FMPA</h1>
+            <p>Gestion des saisies de formations et suivi d'avancement</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" id="btn-import-suivi" class="btn btn-secondary">📂 Charger suivi.csv</button>
+            <input type="file" id="file-input-suivi" accept=".csv" style="display:none;">
+
+            <button type="button" id="btn-import-csv" class="btn btn-secondary">📂 Importer baseAgents.csv</button>
+            <input type="file" id="file-input-csv" accept=".csv" style="display:none;">
+
+            <button type="button" id="btn-export-csv" class="btn btn-success">📥 Exporter le Suivi (CSV)</button>
+        </div>
     </header>
 
     <main class="main-container">
-
-        <!-- Barre supérieure de filtres, import et export CSV -->
-        <section class="top-bar">
-            <div class="filter-group">
-                <label for="filter-equipe">ÉQUIPE</label>
-                <select id="filter-equipe">
-                    <option value="">Toutes</option>
-                </select>
+        <!-- Section de gauche : Tableau des agents -->
+        <section class="panel panel-left">
+            <div class="panel-header">
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <label for="filter-equipe">Équipe</label>
+                        <select id="filter-equipe">
+                            <option value="">Toutes</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter-statut">Statut</label>
+                        <select id="filter-statut">
+                            <option value="">Tous</option>
+                        </select>
+                    </div>
+                    <div class="filter-group search-group">
+                        <label for="filter-search">Recherche</label>
+                        <input type="text" id="filter-search" placeholder="Nom, prénom, matricule...">
+                    </div>
+                    <button type="button" id="btn-reset-filters" class="btn btn-small">Réinitialiser</button>
+                </div>
+                <div class="selection-info">
+                    <span id="count-badge" class="badge">0 agent(s)</span>
+                    <span id="selection-status">👥 0 agent(s) sélectionné(s)</span>
+                </div>
             </div>
 
-            <div class="filter-group">
-                <label for="filter-statut">STATUT</label>
-                <select id="filter-statut">
-                    <option value="">Tous</option>
-                </select>
+            <!-- Conteneur avec défilement horizontal -->
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th class="col-chk"><input type="checkbox" id="select-all"></th>
+                            <th class="col-sticky">Agent</th>
+                            <th>Équipe</th>
+                            <th>Statut</th>
+                            <th>Avancement Socle</th>
+                            <th>Avancement Spécialités</th>
+                            <th>Total Socle</th>
+                            <th>Total Spé.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-agents">
+                        <!-- Généré dynamiquement -->
+                    </tbody>
+                </table>
             </div>
-            
-            <div class="filter-group">
-                <label for="filter-search">RECHERCHE</label>
-                <input type="text" id="filter-search" placeholder="Nom, prénom, matricule...">
-            </div>
-
-            <button id="btn-reset-filters" class="btn-sec">Réinitialiser Filtres</button>
-
-            <!-- BOUTONS D'IMPORT CATALOGUE & AGENTS CSV -->
-            <button id="btn-import-catalogue" class="btn-blue">📚 Importer catalogue.csv</button>
-            <input type="file" id="file-input-catalogue" accept=".csv" style="display: none;">
-
-            <button id="btn-import-csv" class="btn-blue">📂 Importer baseAgents.csv</button>
-            <input type="file" id="file-input-csv" accept=".csv" style="display: none;">
-
-            <button id="btn-export-csv" class="btn-green">📥 Exporter le Suivi (CSV)</button>
-
-            <div class="agent-count-badge" id="count-badge">0 / 0 agent(s)</div>
         </section>
 
-        <!-- Contenu principal -->
-        <div class="content-grid">
-
-            <!-- Section Gauche : Tableau de sélection des Agents -->
-            <section class="card agent-card">
-                <div class="card-header">
-                    <h2>Sélection des Agents</h2>
-                    <span id="selection-status" class="selection-status">👥 0 agent(s) sélectionné(s)</span>
+        <!-- Section de droite : Formulaire de saisie -->
+        <section class="panel panel-right">
+            <h2>Détails de la Formation</h2>
+            <form id="form-saisie-groupee">
+                <div class="form-group">
+                    <label for="saisie-date">Date de réalisation *</label>
+                    <input type="date" id="saisie-date" required>
                 </div>
 
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 40px;">
-                                    <input type="checkbox" id="select-all" title="Tout sélectionner / désélectionner">
-                                </th>
-                                <th>Agent</th>
-                                <th>Équipe</th>
-                                <th>Statut</th>
-                                <th>Avancement Socle</th>
-                                <th>Avancement Spécialités</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbody-agents">
-                            <tr>
-                                <td colspan="6" class="empty-msg">
-                                    Chargement des données en cours...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- Section Droite : Formulaire de Saisie Groupée -->
-            <section class="card form-card">
-                <div class="card-header">
-                    <h2>Détails de la Formation</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="saisie-heure-debut">Heure Début *</label>
+                        <input type="time" id="saisie-heure-debut" value="08:00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="saisie-heure-fin">Heure Fin *</label>
+                        <input type="time" id="saisie-heure-fin" value="12:00" required>
+                    </div>
                 </div>
 
-                <form id="form-saisie-groupee">
-                    <div class="form-group">
-                        <label for="saisie-date">Date de la formation *</label>
-                        <input type="date" id="saisie-date" required>
-                    </div>
+                <div class="duree-box">
+                    Durée calculée : <strong id="duree-calculee">4.0 h</strong>
+                </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="saisie-heure-debut">Heure Début *</label>
-                            <input type="time" id="saisie-heure-debut" value="08:00" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="saisie-heure-fin">Heure Fin *</label>
-                            <input type="time" id="saisie-heure-fin" value="12:00" required>
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label for="saisie-activite">Domaine / Activité *</label>
+                    <select id="saisie-activite" required>
+                        <option value="">-- Choisir un domaine --</option>
+                    </select>
+                </div>
 
-                    <div class="duree-badge-container">
-                        Durée calculée : <strong id="duree-calculee">4.0 h</strong>
-                    </div>
+                <div class="form-group">
+                    <label for="saisie-theme">Thème de la formation *</label>
+                    <select id="saisie-theme" class="select-small-text" required disabled>
+                        <option value="">-- Choisir une formation --</option>
+                    </select>
+                </div>
 
-                    <div class="form-group">
-                        <label for="saisie-activite">Domaine / Activité *</label>
-                        <select id="saisie-activite" required disabled>
-                            <option value="">-- Chargement du catalogue CSV... --</option>
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label for="saisie-formateur">Formateur</label>
+                    <input type="text" id="saisie-formateur" list="liste-formateurs" placeholder="Nom du formateur">
+                    <datalist id="liste-formateurs"></datalist>
+                </div>
 
-                    <div class="form-group">
-                        <label for="saisie-theme">Thème de la formation *</label>
-                        <select id="saisie-theme" required disabled>
-                            <option value="">-- Choisir d'abord un domaine --</option>
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label for="saisie-commentaires">Commentaires / Remarques</label>
+                    <textarea id="saisie-commentaires" rows="2" placeholder="Précisions éventuelles..."></textarea>
+                </div>
 
-                    <div class="form-group">
-                        <label for="saisie-formateur">Formateur / Animateur</label>
-                        <input type="text" id="saisie-formateur" list="liste-formateurs" placeholder="Nom du formateur">
-                        <datalist id="liste-formateurs"></datalist>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="saisie-lieu">Lieu / Centre</label>
-                        <input type="text" id="saisie-lieu" placeholder="Ex: CIS, Plateau technique...">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="saisie-commentaires">Remarques / Observations</label>
-                        <textarea id="saisie-commentaires" rows="3" placeholder="Remarques éventuelles..."></textarea>
-                    </div>
-
-                    <button type="submit" id="btn-valider-groupe" class="btn-primary" disabled>
-                        ✅ Valider la saisie groupée
-                    </button>
-                </form>
-            </section>
-
-        </div>
-
+                <button type="submit" id="btn-valider-groupe" class="btn btn-primary btn-block" disabled>
+                    ✅ Valider la saisie pour la sélection
+                </button>
+            </form>
+        </section>
     </main>
 
-    <!-- Fichiers de données et de logique -->
-    <script src="papaparse.min.js"></script>
-    <script src="script_saisie.js?v=2"></script>
+    <script src="script_saisie.js"></script>
 </body>
 </html>
