@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('chk-all')?.addEventListener('change', toggleAllCheckboxes);
 
     // Soumission du formulaire
-    document.getElementById('form-saisie')?.addEventListener('submit', enregistrerSaisie);
+    document.getElementById('form-saisie')?.addEventListener('submit', Saisie);
 });
 
 // 2. Traitement et lecture des CSV
@@ -192,7 +192,7 @@ function mefSelection() {
 }
 
 function enregistrerSaisie(e) {
-    e.preventDefault(); // BLOQUE LE RECHARGEMENT DE PAGE DE SOURD !
+    e.preventDefault(); 
 
     const dateVal = document.getElementById('form-date').value;
     const debutVal = document.getElementById('form-debut').value;
@@ -216,67 +216,16 @@ function enregistrerSaisie(e) {
         });
     });
 
-    // Mettre à jour visuellement le tableau sans recharger
+    // Mettre à jour visuellement le tableau
     rafraichirTableau();
 
-    // Générer et télécharger le CSV mis à jour sur ton poste
-    CSV();
+    // REMARQUE : On a retiré exporterCSV() d'ici pour éviter de télécharger à chaque clic !
 
     // Message de confirmation
     const alertBox = document.getElementById('alert-msg');
     if (alertBox) {
+        alertBox.textContent = "✅ Saisie ajoutée au tableau ! Pensez à cliquer sur 'Télécharger le fichier Suivi' à la fin.";
         alertBox.style.display = 'block';
         setTimeout(() => alertBox.style.display = 'none', 3000);
     }
-}
-
-// 6. Exportation du fichier suivi.csv
-// Variable pour stocker le descripteur de fichier local
-let fileHandleSuivi = null;
-
-// Modifier la fonction exporterCSV dans script_saisie.js
-async function exporterCSV() {
-    if (!historiqueSuivi.length) {
-        alert("Aucune donnée de suivi à exporter.");
-        return;
-    }
-
-    // En-tête + lignes
-    let csvContent = "Matricule;Date;HeureDebut;HeureFin;Formation;Formateur;Commentaires\n";
-    historiqueSuivi.forEach(row => {
-        csvContent += `${row.Matricule};${row.Date};${row.HeureDebut};${row.HeureFin};"${row.Formation}";"${row.Formateur}";"${row.Commentaires}"\n`;
-    });
-
-    // Si l'API moderne est supportée (Chrome/Edge)
-    if ('showSaveFilePicker' in window) {
-        try {
-            if (!fileHandleSuivi) {
-                // Première fois : demande à l'utilisateur où enregistrer/écraser le fichier
-                fileHandleSuivi = await window.showSaveFilePicker({
-                    suggestedName: 'suivi.csv',
-                    types: [{
-                        description: 'Fichier CSV',
-                        accept: { 'text/csv': ['.csv'] },
-                    }],
-                });
-            }
-            // Écriture directe dans le fichier sélectionné (écrase le contenu)
-            const writable = await fileHandleSuivi.createWritable();
-            await writable.write(csvContent);
-            await writable.close();
-            return;
-        } catch (err) {
-            // L'utilisateur a annulé la sélection ou l'accès est refusé
-            if (err.name !== 'AbortError') console.error(err);
-        }
-    }
-
-    // Méthode de secours classique (si navigateur non compatible ou annulation)
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", "suivi.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
 }
