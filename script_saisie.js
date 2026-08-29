@@ -1,499 +1,250 @@
-// --- ÉTAT GLOBAL DE L'APPLICATION ---
-let agentsData = [];
-let suiviHistorique = []; // Liste de toutes les saisies effectuées
-let catalogueFormations = [];
-let selectedAgentIds = new Set();
+// Variable globale contenant les données en mémoire vive
+let baseAgents = [];
+let catalogue = [];
+let historiqueSuivi = []; // Démarre vide ou avec le suivi.csv importé
 
-// --- INITIALISATION AU CHARGEMENT ---
+// 1. Initialisation des événements
 document.addEventListener('DOMContentLoaded', () => {
-    initFormDefaults();
-    setupEventListeners();
-    loadCatalogue();
-});
+    // Écouteurs sur les boutons d'import
+    document.getElementById('btn-import-csv')?.addEventListener('click', () => document.getElementById('file-csv').click());
+    document.getElementById('btn-import-catalogue')?.addEventListener('click', () => document.getElementById('file-cat').click());
+    document.getElementById('btn-import-suivi')?.addEventListener('click', () => document.getElementById('file-suivi').click());
 
-function initFormDefaults() {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('saisie-date').value = today;
-    calculerDuree();
-}
+    document.getElementById('file-csv')?.addEventListener('change', (e) => chargerCSV(e.target.files[0], 'agents'));
+    document.getElementById('file-cat')?.addEventListener('change', (e) => chargerCSV(e.target.files[0], 'catalogue'));
+    document.getElementById('file-suivi')?.addEventListener('change', (e) => chargerCSV(e.target.files[0], 'suivi'));
 
-function setupEventListeners() {
-    // Calcul de durée auto
-    document.getElementById('saisie-heure-debut').addEventListener('change', calculerDuree);
-    document.getElementById('saisie-heure-fin').addEventListener('change', calculerDuree);
+    document.getElementById('btn-export-csv')?.addEventListener('click', exporterCSV);
 
-    // Imports / Exports
-    document.getElementById('btn-import-csv').addEventListener('click', () => document.getElementById('file-input-csv').click());
-    document.getElementById('file-input-csv').addEventListener('change', importerBaseAgents);
+    // Changement de domaine -> met à jour la liste des formations
+    document.getElementById('form-domaine')?.addEventListener('change', majThemes);
 
-    document.getElementById('btn-import-suivi').addEventListener('click', () => document.getElementById('file-input-suivi').click());
-    document.getElementById('file-input-suivi').addEventListener('change', importerSuiviCSV);
-
-    // Import Catalogue manuel (AJOUTÉ)
-    document.getElementById('btn-import-catalogue')?.addEventListener('click', () => document.getElementById('file-input-catalogue').click());
-    document.getElementById('file-input-catalogue')?.addEventListener('change', importerCatalogueCSV);
-
-    document.getElementById('btn-export-csv').addEventListener('click', exporterSuiviCSV);
-
-    // Filtres
-    document.getElementById('filter-equipe').addEventListener('change', appliquerFiltres);
-    document.getElementById('filter-statut').addEventListener('change', appliquerFiltres);
-    document.getElementById('filter-search').addEventListener('input', appliquerFiltres);
-    document.getElementById('btn-reset-filters').addEventListener('click', reinitialiserFiltres);
-
-    // Sélection globale
-    document.getElementById('select-all').addEventListener('change', toutSelectionner);
-
-    // Formulaire cascade Domaine -> Thème
-    document.getElementById('saisie-activite').addEventListener('change', onDomaineChange);
-    document.getElementById('saisie-theme').addEventListener('change', onThemeChange);
+    // Gestion de la case "Tout cocher"
+    document.getElementById('chk-all')?.addEventListener('change', toggleAllCheckboxes);
 
     // Soumission du formulaire
-    document.getElementById('form-saisie-groupee').addEventListener('submit', validerSaisieGroupee);
-}
+    document.getElementById('form-saisie')?.addEventListener('submit', enregistrerSaisie);
+});
 
-// --- CATALOGUE DES FORMATIONS ---
-function loadCatalogue() {
-    fetch('catalogue.csv')
-        .then(response => {
-            if (!response.ok) throw new Error('Catalogue introuvable');
-            return response.text();
-        })
-        .then(csvText => {
-            catalogueFormations = parseCSV(csvText);
-            remplirDomaines();
-        })
-        .catch(err => {
-            console.warn("Impossible de charger catalogue.csv automatiquement (CORS/404). Utilise le bouton d'import manuel.", err);
-        });
-}
-
-// Fonction d'importation manuelle (AJOUTÉE)
-function importerCatalogueCSV(e) {
-    const file = e.target.files[0];
+// 2. Traitement et lecture des CSV
+function chargerCSV(file, type) {
     if (!file) return;
-
     const reader = new FileReader();
-    reader.onload = (evt) => {
-        catalogueFormations = parseCSV(evt.target.result);
-        remplirDomaines();
-        alert("✅ Catalogue chargé avec succès !");
-    };
-    reader.readAsText(file, 'UTF-8');
-}
+    reader.onload = function(e) {
+        const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+        if (!lines.length) return;
+        
+        const sep = lines[0].includes(';') ? ';' : ',';
+        const headers = lines[0].split(sep).map(h => h.replace(/^["\ufeff]+|["\s]+$/g, '').trim());
 
-function remplirDomaines() {
-    const selectDomaine = document.getElementById('saisie-activite');
-    selectDomaine.innerHTML = '<option value="">-- Choisir un domaine --</option>';
-
-    if (!catalogueFormations || catalogueFormations.length === 0) return;
-
-    // Détection automatique du nom de la colonne du domaine
-    const sample = catalogueFormations[0];
-    const keyDomaine = Object.keys(sample).find(k => k.trim().toLowerCase().includes('domaine')) || 'Domaine';
-
-    const domaines = [...new Set(catalogueFormations.map(f => f[keyDomaine]).filter(Boolean))];
-
-    if (domaines.length === 0) {
-        alert("⚠️ Le CSV a été lu mais aucune colonne 'Domaine' n'a été détectée. Vérifie les entêtes de ton fichier CSV.");
-        return;
-    }
-
-    domaines.forEach(d => {
-        const opt = document.createElement('option');
-        opt.value = d;
-        opt.textContent = d;
-        selectDomaine.appendChild(opt);
-    });
-}
-
-function onDomaineChange() {
-    const domaine = document.getElementById('saisie-activite').value;
-    const selectTheme = document.getElementById('saisie-theme');
-    selectTheme.innerHTML = '<option value="">-- Choisir une formation --</option>';
-
-    if (!domaine) {
-        selectTheme.disabled = true;
-        recalculerCompatibiliteAgents(null);
-        return;
-    }
-
-    const formationsFiltrees = catalogueFormations.filter(f => f.Domaine === domaine);
-    formationsFiltrees.forEach(f => {
-        const opt = document.createElement('option');
-        opt.value = f.ID_Formation || f.Theme;
-        const detail = f.Contenu || f.Sequence || f.Description || '';
-        opt.textContent = `${f.Theme} ${detail ? ' - ' + detail : ''}`;
-        selectTheme.appendChild(opt);
-    });
-
-    selectTheme.disabled = false;
-}
-
-function onThemeChange() {
-    const themeId = document.getElementById('saisie-theme').value;
-    const formation = catalogueFormations.find(f => (f.ID_Formation || f.Theme) === themeId);
-    recalculerCompatibiliteAgents(formation);
-    actualiserEtatBoutonValidation();
-}
-
-// --- CALCUL DE LA DURÉE EN HEURES ---
-function calculerDuree() {
-    const debut = document.getElementById('saisie-heure-debut').value;
-    const fin = document.getElementById('saisie-heure-fin').value;
-
-    if (debut && fin) {
-        const [hD, mD] = debut.split(':').map(Number);
-        const [hF, mF] = fin.split(':').map(Number);
-
-        let minDebut = hD * 60 + mD;
-        let minFin = hF * 60 + mF;
-
-        if (minFin <= minDebut) minFin += 24 * 60; // Gestion dépassement minuit
-
-        const dureeHeures = ((minFin - minDebut) / 60).toFixed(1);
-        document.getElementById('duree-calculee').textContent = `${dureeHeures} h`;
-        return parseFloat(dureeHeures);
-    }
-    return 0;
-}
-
-// --- ANALYSEURS CSV (SANS PAPAPARSE) ---
-function parseCSV(text) {
-    const lines = text.split(/\r\n|\n/).filter(line => line.trim() !== '');
-    if (lines.length === 0) return [];
-
-    const headers = splitCSVLine(lines[0]);
-    return lines.slice(1).map(line => {
-        const values = splitCSVLine(line);
-        let obj = {};
-        headers.forEach((h, i) => {
-            obj[h.trim()] = values[i] ? values[i].trim() : '';
+        const data = lines.slice(1).map(l => {
+            const vals = l.split(sep).map(v => v.replace(/^"|"$/g, '').trim());
+            let obj = {};
+            headers.forEach((h, i) => obj[h] = vals[i] || '');
+            return obj;
         });
-        return obj;
-    });
-}
 
-function splitCSVLine(line) {
-    let result = [];
-    let insideQuotes = false;
-    let entry = '';
-
-    for (let i = 0; i < line.length; i++) {
-        let char = line[i];
-        if (char === '"') {
-            insideQuotes = !insideQuotes;
-        } else if ((char === ';' || char === ',') && !insideQuotes) {
-            result.push(entry);
-            entry = '';
-        } else {
-            entry += char;
+        if (type === 'agents') {
+            baseAgents = data;
+        } else if (type === 'catalogue') {
+            catalogue = data;
+            initDomaines();
+        } else if (type === 'suivi') {
+            historiqueSuivi = data;
         }
-    }
-    result.push(entry);
-    return result;
-}
 
-// --- IMPORTATION ET TRAITEMENT DES AGENTS ---
-function importerBaseAgents(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-        agentsData = parseCSV(evt.target.result);
-        remplirFiltresOptions();
-        afficherTableauAgents();
+        rafraichirTableau();
     };
     reader.readAsText(file, 'UTF-8');
 }
 
-function importerSuiviCSV(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-        suiviHistorique = parseCSV(evt.target.result);
-        afficherTableauAgents();
-    };
-    reader.readAsText(file, 'UTF-8');
+// 3. Remplissage dynamique des menus déroulants (Domaines & Thèmes)
+function initDomaines() {
+    const selDom = document.getElementById('form-domaine');
+    if (!selDom) return;
+    selDom.innerHTML = '<option value="">-- Choisir Domaine --</option>';
+    
+    const doms = [...new Set(catalogue.map(c => c.activite || c.fmpa).filter(Boolean))].sort();
+    doms.forEach(d => {
+        selDom.innerHTML += `<option value="${d}">${d}</option>`;
+    });
 }
 
-// --- FILTRES & AFFICHAGE TABLEAU ---
-function remplirFiltresOptions() {
-    const selectEquipe = document.getElementById('filter-equipe');
-    const selectStatut = document.getElementById('filter-statut');
+function majThemes() {
+    const dom = document.getElementById('form-domaine').value;
+    const selTh = document.getElementById('form-theme');
+    if (!selTh) return;
+    
+    selTh.innerHTML = '<option value="">-- Choisir Formation --</option>';
+    if (!dom) { selTh.disabled = true; return; }
 
-    const equipes = [...new Set(agentsData.map(a => a.Equipe).filter(Boolean))];
-    const statuts = [...new Set(agentsData.map(a => a.Statut).filter(Boolean))];
-
-    selectEquipe.innerHTML = '<option value="">Toutes</option>';
-    equipes.forEach(eq => selectEquipe.innerHTML += `<option value="${eq}">${eq}</option>`);
-
-    selectStatut.innerHTML = '<option value="">Tous</option>';
-    statuts.forEach(st => selectStatut.innerHTML += `<option value="${st}">${st}</option>`);
+    const items = catalogue.filter(c => (c.activite || c.fmpa) === dom);
+    items.forEach(i => {
+        selTh.innerHTML += `<option value="${i.libelle || i.id}">${i.libelle} (${i.quota || 0}h)</option>`;
+    });
+    selTh.disabled = false;
 }
 
-function appliquerFiltres() {
-    afficherTableauAgents();
-}
-
-function reinitialiserFiltres() {
-    document.getElementById('filter-equipe').value = '';
-    document.getElementById('filter-statut').value = '';
-    document.getElementById('filter-search').value = '';
-    afficherTableauAgents();
-}
-
-function afficherTableauAgents() {
+// 4. Affichage du Tableau avec Détails "Fait / À faire"
+function rafraichirTableau() {
     const tbody = document.getElementById('tbody-agents');
+    if (!tbody) return;
     tbody.innerHTML = '';
 
-    const eqFilter = document.getElementById('filter-equipe').value;
-    const stFilter = document.getElementById('filter-statut').value;
-    const searchFilter = document.getElementById('filter-search').value.toLowerCase();
+    const statCount = document.getElementById('stat-count');
+    if (statCount) statCount.textContent = `${baseAgents.length} Agent(s)`;
 
-    const agentsFiltres = agentsData.filter(agent => {
-        const matchEq = !eqFilter || agent.Equipe === eqFilter;
-        const matchSt = !stFilter || agent.Statut === stFilter;
-        const textToSearch = `${agent.Nom} ${agent.Prenom} ${agent.Matricule || ''}`.toLowerCase();
-        const matchSearch = !searchFilter || textToSearch.includes(searchFilter);
-        return matchEq && matchSt && matchSearch;
-    });
-
-    document.getElementById('agent-count-badge').textContent = `${agentsFiltres.length} agent(s)`;
-
-    if (agentsFiltres.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="empty-msg">Aucun agent trouvé</td></tr>';
+    if (!baseAgents.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Charger baseAgents.csv et catalogue.csv</td></tr>';
         return;
     }
 
-    agentsFiltres.forEach(agent => {
-        const id = agent.Matricule || agent.ID || (agent.Nom + '_' + agent.Prenom);
-        const isSelected = selectedAgentIds.has(id);
-        const isCompatible = agent._isCompatible !== false; // Par défaut compatible
+    const socleCatalogue = catalogue.filter(c => c.type === 'Socle Commun');
+    const speCatalogue = catalogue.filter(c => c.type === 'Spécialité');
 
-        // Calcul des totaux d'heures réalisées
-        const totaux = calculerTotauxAgent(id);
+    baseAgents.forEach((agent) => {
+        const mat = agent.Matricule;
+        const faitAgent = historiqueSuivi.filter(s => s.Matricule === mat);
+        const libellesFaits = faitAgent.map(s => s.Formation);
+
+        // --- DÉTAIL SOCLE ---
+        let socleFait = [];
+        let socleRestant = [];
+        let totalH = 0;
+
+        socleCatalogue.forEach(c => {
+            const lib = c.libelle;
+            if (libellesFaits.includes(lib)) {
+                socleFait.push(lib);
+                totalH += parseFloat(c.quota || 0);
+            } else {
+                socleRestant.push(lib);
+            }
+        });
+
+        // --- DÉTAIL SPÉCIALITÉS ---
+        const speAttribuees = (agent.Specialites || '').split(',').map(s => s.trim()).filter(Boolean);
+        let speFait = [];
+        let speRestant = [];
+        let totalHSpe = 0;
+
+        speCatalogue.forEach(c => {
+            const lib = c.libelle;
+            const dom = c.activite;
+            const concerne = speAttribuees.some(s => s.startsWith(dom));
+            
+            if (concerne) {
+                if (libellesFaits.includes(lib)) {
+                    speFait.push(lib);
+                    totalHSpe += parseFloat(c.quota || 0);
+                } else {
+                    speRestant.push(lib);
+                }
+            }
+        });
+
+        // Construction du HTML Socle
+        let htmlSocle = '<div class="tag-list">';
+        if (socleFait.length) htmlSocle += `<span class="tag tag-done"><b>Fait :</b> ${socleFait.join(', ')}</span>`;
+        if (socleRestant.length) htmlSocle += `<span class="tag tag-todo"><b>À faire :</b> ${socleRestant.join(', ')}</span>`;
+        if (!socleFait.length && !socleRestant.length) htmlSocle += '<em>Charger catalogue.csv</em>';
+        htmlSocle += '</div>';
+
+        // Construction du HTML Spécialités
+        let htmlSpe = '<div class="tag-list">';
+        if (!speAttribuees.length) {
+            htmlSpe += '<em style="color:#999;">Aucune spé. attribuée</em>';
+        } else {
+            if (speFait.length) htmlSpe += `<span class="tag tag-done"><b>Fait :</b> ${speFait.join(', ')}</span>`;
+            if (speRestant.length) htmlSpe += `<span class="tag tag-todo"><b>À faire :</b> ${speRestant.join(', ')}</span>`;
+        }
+        htmlSpe += '</div>';
 
         const tr = document.createElement('tr');
-        if (isSelected) tr.classList.add('selected-row');
-        if (!isCompatible) tr.classList.add('disabled-row');
-
         tr.innerHTML = `
-            <td><input type="checkbox" class="chk-agent" value="${id}" ${isSelected ? 'checked' : ''} ${!isCompatible ? 'disabled' : ''}></td>
-            <td class="col-sticky"><strong>${agent.Nom}</strong> ${agent.Prenom}</td>
+            <td><input type="checkbox" class="chk-agent" data-mat="${mat}"></td>
+            <td><b>${agent.Nom} ${agent.Prenom}</b><br><small style="color:#666;">${mat}</small></td>
             <td>${agent.Equipe || '-'}</td>
-            <td><span class="badge-tag badge-statut">${agent.Statut || '-'}</span></td>
-            <td><span class="${totaux.socle >= 16 ? 'fma-done' : 'fma-partial'}">${totaux.socle} h</span></td>
-            <td><span class="${totaux.specialites >= 8 ? 'fma-done' : 'fma-partial'}">${totaux.specialites} h</span></td>
-            <td><strong>${totaux.socle} h</strong></td>
-            <td><strong>${totaux.specialites} h</strong></td>
+            <td>${htmlSocle}</td>
+            <td>${htmlSpe}</td>
+            <td><b>Socle :</b> ${totalH}h<br><b>Spé :</b> ${totalHSpe}h</td>
         `;
-
-        // Interaction avec la case à cocher
-        const chk = tr.querySelector('.chk-agent');
-        chk.addEventListener('change', (e) => toggleAgentSelection(id, e.target.checked, tr));
-
         tbody.appendChild(tr);
     });
 
-    mettreAJourStatusSelection();
+    document.querySelectorAll('.chk-agent').forEach(c => c.addEventListener('change', mefSelection));
 }
 
-function calculerTotauxAgent(agentId) {
-    let socle = 0;
-    let specialites = 0;
+// 5. Sélection et Enregistrement
+function toggleAllCheckboxes() {
+    const isChecked = this.checked;
+    document.querySelectorAll('.chk-agent').forEach(c => c.checked = isChecked);
+    mefSelection();
+}
 
-    const saisiesAgent = suiviHistorique.filter(s => s.Matricule === agentId || s.AgentID === agentId);
-    saisiesAgent.forEach(s => {
-        const duree = parseFloat(s.Duree) || 0;
-        if (s.TypeDomaine === 'Spécialité') {
-            specialites += duree;
-        } else {
-            socle += duree;
-        }
+function mefSelection() {
+    const n = document.querySelectorAll('.chk-agent:checked').length;
+    const countSpan = document.getElementById('selected-count');
+    const btnSubmit = document.getElementById('btn-submit');
+    
+    if (countSpan) countSpan.textContent = `${n} coché(s)`;
+    if (btnSubmit) btnSubmit.disabled = (n === 0);
+}
+
+function enregistrerSaisie(e) {
+    e.preventDefault(); // BLOQUE LE RECHARGEMENT DE PAGE DE SOURD !
+
+    const dateVal = document.getElementById('form-date').value;
+    const debutVal = document.getElementById('form-debut').value;
+    const finVal = document.getElementById('form-fin').value;
+    const themeVal = document.getElementById('form-theme').value;
+    const formateurVal = document.getElementById('form-formateur').value;
+    const comVal = document.getElementById('form-commentaires').value;
+
+    const coches = document.querySelectorAll('.chk-agent:checked');
+
+    coches.forEach(c => {
+        const mat = c.dataset.mat;
+        historiqueSuivi.push({
+            Matricule: mat,
+            Date: dateVal,
+            HeureDebut: debutVal,
+            HeureFin: finVal,
+            Formation: themeVal,
+            Formateur: formateurVal,
+            Commentaires: comVal
+        });
     });
 
-    return { socle: socle.toFixed(1), specialites: specialites.toFixed(1) };
-}
+    // Mettre à jour visuellement le tableau sans recharger
+    rafraichirTableau();
 
-// --- SELECTION DES AGENTS ---
-function toggleAgentSelection(id, checked, trElement) {
-    if (checked) {
-        selectedAgentIds.add(id);
-        trElement.classList.add('selected-row');
-    } else {
-        selectedAgentIds.delete(id);
-        trElement.classList.remove('selected-row');
-    }
-    mettreAJourStatusSelection();
-}
+    // Générer et télécharger le CSV mis à jour sur ton poste
+    exporterCSV();
 
-function toutSelectionner(e) {
-    const isChecked = e.target.checked;
-    const checkboxes = document.querySelectorAll('.chk-agent:not(:disabled)');
-
-    checkboxes.forEach(chk => {
-        chk.checked = isChecked;
-        const tr = chk.closest('tr');
-        const id = chk.value;
-        if (isChecked) {
-            selectedAgentIds.add(id);
-            tr.classList.add('selected-row');
-        } else {
-            selectedAgentIds.delete(id);
-            tr.classList.remove('selected-row');
-        }
-    });
-
-    mettreAJourStatusSelection();
-}
-
-function mettreAJourStatusSelection() {
-    const statusText = document.getElementById('selection-status');
-    if (statusText) {
-        statusText.textContent = `👥 ${selectedAgentIds.size} agent(s) sélectionné(s)`;
-    }
-    actualiserEtatBoutonValidation();
-}
-
-function actualiserEtatBoutonValidation() {
-    const btnValider = document.getElementById('btn-valider-groupe');
-    const themeSelect = document.getElementById('saisie-theme').value;
-    if (btnValider) {
-        btnValider.disabled = (selectedAgentIds.size === 0 || !themeSelect);
+    // Message de confirmation
+    const alertBox = document.getElementById('alert-msg');
+    if (alertBox) {
+        alertBox.style.display = 'block';
+        setTimeout(() => alertBox.style.display = 'none', 3000);
     }
 }
 
-// --- RÈGLE MÉTIER : VERROUILLAGE AGENTS NON CONCERNÉS ---
-function recalculerCompatibiliteAgents(formation) {
-    agentsData.forEach(agent => {
-        if (!formation) {
-            agent._isCompatible = true;
-        } else {
-            const quotaRequis = agent[formation.Theme] || agent['Quota_' + formation.Domaine];
-            agent._isCompatible = (quotaRequis !== '0' && quotaRequis !== 0);
-        }
-    });
-    afficherTableauAgents();
-}
-
-// --- RÈGLE MÉTIER : CONTRÔLE DE CHEVAUCHEMENT HORAIRE ---
-function verifierChevauchements(agentId, date, hDebut, hFin) {
-    const saisiesAgentDate = suiviHistorique.filter(s => 
-        (s.Matricule === agentId || s.AgentID === agentId) && s.Date_Formation === date
-    );
-
-    for (let s of saisiesAgentDate) {
-        if (horairesSeChevauchent(hDebut, hFin, s.Heure_Debut, s.Heure_Fin)) {
-            return s; // Renvoie la saisie existante qui fait conflit
-        }
-    }
-    return null;
-}
-
-function horairesSeChevauchent(start1, end1, start2, end2) {
-    return (start1 < end2) && (end1 > start2);
-}
-
-// --- VALIDATION DE LA SAISIE GROUPEE ---
-function validerSaisieGroupee(e) {
-    e.preventDefault();
-
-    if (selectedAgentIds.size === 0) {
-        alert("Veuillez sélectionner au moins un agent.");
+// 6. Exportation du fichier suivi.csv
+function exporterCSV() {
+    if (!historiqueSuivi.length) {
+        alert("Aucune donnée de suivi à exporter.");
         return;
     }
-
-    const dateFormation = document.getElementById('saisie-date').value;
-    const hDebut = document.getElementById('saisie-heure-debut').value;
-    const hFin = document.getElementById('saisie-heure-fin').value;
-    const duree = calculerDuree();
-    const domaine = document.getElementById('saisie-activite').value;
-    const theme = document.getElementById('saisie-theme').value;
-    const formateur = document.getElementById('saisie-formateur').value;
-    const commentaires = document.getElementById('saisie-commentaires').value;
-    const dateSaisie = new Date().toISOString().split('T')[0];
-
-    let enregistrementsAjoutes = 0;
-    let conflits = [];
-
-    selectedAgentIds.forEach(agentId => {
-        const agent = agentsData.find(a => (a.Matricule || a.ID || (a.Nom + '_' + a.Prenom)) === agentId);
-        
-        // Vérification anti-chevauchement
-        const conflit = verifierChevauchements(agentId, dateFormation, hDebut, hFin);
-        if (conflit) {
-            conflits.push(`${agent.Nom} ${agent.Prenom} (conflit avec ${conflit.Theme} de ${conflit.Heure_Debut} à ${conflit.Heure_Fin})`);
-            return;
-        }
-
-        // Création de la ligne d'historique
-        const nouvelleSaisie = {
-            Date_Saisie: dateSaisie,
-            Matricule: agentId,
-            Nom: agent ? agent.Nom : '',
-            Prenom: agent ? agent.Prenom : '',
-            Equipe: agent ? agent.Equipe : '',
-            Date_Formation: dateFormation,
-            Heure_Debut: hDebut,
-            Heure_Fin: hFin,
-            Duree: duree,
-            TypeDomaine: domaine,
-            Theme: theme,
-            Formateur: formateur,
-            Commentaires: commentaires
-        };
-
-        suiviHistorique.push(nouvelleSaisie);
-        enregistrementsAjoutes++;
+    let csvContent = "data:text/csv;charset=utf-8,Matricule;Date;HeureDebut;HeureFin;Formation;Formateur;Commentaires\n";
+    historiqueSuivi.forEach(row => {
+        csvContent += `${row.Matricule};${row.Date};${row.HeureDebut};${row.HeureFin};"${row.Formation}";"${row.Formateur}";"${row.Commentaires}"\n`;
     });
 
-    if (conflits.length > 0) {
-        alert(`Attention, chevauchement d'horaires détecté pour certains agents :\n\n- ${conflits.join('\n- ')}\n\nCes agents n'ont pas été ajoutés.`);
-    }
-
-    if (enregistrementsAjoutes > 0) {
-        alert(`✅ ${enregistrementsAjoutes} saisie(s) enregistrée(s) avec succès !`);
-        afficherTableauAgents();
-    }
-}
-
-// --- EXPORTATION CSV (AVEC DATE DE SAISIE) ---
-function exporterSuiviCSV() {
-    if (suiviHistorique.length === 0) {
-        alert("Aucun suivi à exporter.");
-        return;
-    }
-
-    const headers = [
-        "Date_Saisie", "Matricule", "Nom", "Prenom", "Equipe", 
-        "Date_Formation", "Heure_Debut", "Heure_Fin", "Duree", 
-        "TypeDomaine", "Theme", "Formateur", "Commentaires"
-    ];
-
-    let csvLines = [headers.join(';')];
-
-    suiviHistorique.forEach(row => {
-        const line = headers.map(header => {
-            let val = row[header] !== undefined ? String(row[header]) : '';
-            if (val.includes(';') || val.includes('"') || val.includes('\n')) {
-                val = `"${val.replace(/"/g, '""')}"`;
-            }
-            return val;
-        }).join(';');
-        csvLines.push(line);
-    });
-
-    const csvContent = "\uFEFF" + csvLines.join('\n'); // UTF-8 BOM pour Excel
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `suivi_fmpa_${new Date().toISOString().split('T')[0]}.csv`);
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `suivi.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
