@@ -60,9 +60,9 @@ body {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
     background: var(--card-bg);
-    padding: 12px 15px;
+    padding: 10px 15px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
     margin-bottom: 10px;
@@ -72,7 +72,7 @@ body {
 .filter-group {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 4px;
 }
 
 .filter-group label {
@@ -83,54 +83,61 @@ body {
 
 .filter-group select,
 .filter-group input {
-    padding: 8px 12px;
+    padding: 7px 10px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
     outline: none;
+    font-size: 0.85rem;
 }
 
+.search-group {
+    flex-grow: 1;
+    max-width: 280px;
+}
+
+/* Boutons d'action */
 .btn-sec {
     background: #e2e8f0;
     border: none;
-    padding: 9px 15px;
+    padding: 8px 12px;
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
+    font-size: 0.85rem;
     align-self: flex-end;
 }
-
 .btn-sec:hover { background: #cbd5e1; }
 
 .btn-blue {
     background: #0284c7;
     color: white;
     border: none;
-    padding: 9px 15px;
+    padding: 8px 12px;
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
+    font-size: 0.85rem;
     align-self: flex-end;
 }
-
 .btn-blue:hover { background: #0369a1; }
 
 .btn-green {
     background: #10b981;
     color: white;
     border: none;
-    padding: 9px 15px;
+    padding: 8px 12px;
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
+    font-size: 0.85rem;
     align-self: flex-end;
 }
-
 .btn-green:hover { background: #059669; }
 
 .agent-count-badge {
     margin-left: auto;
     background: #f1f5f9;
-    padding: 8px 14px;
+    padding: 6px 12px;
     border-radius: 20px;
     font-weight: bold;
     font-size: 0.85rem;
@@ -162,7 +169,7 @@ body {
 
 /* Droite : Formulaire réduit en largeur et défilable */
 .form-card {
-    width: 320px; /* Largeur fixe réduite */
+    width: 320px; /* Largeur fixe */
     flex-shrink: 0;
     overflow-y: auto; /* Scrollbar interne au formulaire */
 }
@@ -188,7 +195,7 @@ body {
     font-size: 0.85rem;
 }
 
-/* Tableau avec scroll interne */
+/* Tableau avec scroll interne horizontal et vertical */
 .table-container {
     overflow-x: auto;
     overflow-y: auto;
@@ -197,14 +204,17 @@ body {
 
 .data-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     font-size: 0.75rem;
+    white-space: nowrap;
 }
 
 .data-table th,
 .data-table td {
-    padding: 6px 8px;
+    padding: 8px 10px;
     border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid #f1f5f9;
     text-align: left;
 }
 
@@ -213,9 +223,32 @@ body {
     position: sticky;
     top: 0;
     z-index: 2;
+    border-top: 1px solid var(--border-color);
 }
 
-.selected-row { background-color: #eff6ff !important; }
+/* Colonne Sticky pour l'Agent (bloquée à gauche au scroll horizontal) */
+.data-table .col-sticky {
+    position: sticky;
+    left: 0;
+    background-color: var(--card-bg);
+    z-index: 3;
+    border-right: 2px solid var(--border-color);
+}
+
+/* Intersection En-tête Sticky + Colonne Sticky Agent */
+.data-table th.col-sticky {
+    background: #f8fafc;
+    z-index: 4;
+}
+
+.selected-row td { background-color: #eff6ff !important; }
+
+/* Ligne désactivée / non concernée par la formation choisie */
+.disabled-row td {
+    background-color: #f8fafc !important;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
 
 .empty-msg {
     text-align: center;
@@ -264,6 +297,11 @@ body {
     font-size: 0.85rem;
 }
 
+/* Style spécifique pour la liste déroulante des thèmes (police réduite) */
+.select-small-text {
+    font-size: 0.78rem !important;
+}
+
 .form-row {
     display: flex;
     gap: 8px;
@@ -299,7 +337,7 @@ body {
     cursor: not-allowed;
 }
 
-/* Scrollbar esthétique pour la section formulaire */
+/* Scrollbar esthétique pour la section formulaire et tableau */
 .form-card::-webkit-scrollbar,
 .table-container::-webkit-scrollbar {
     width: 6px;
