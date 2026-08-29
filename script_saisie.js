@@ -29,6 +29,10 @@ function setupEventListeners() {
     document.getElementById('btn-import-suivi').addEventListener('click', () => document.getElementById('file-input-suivi').click());
     document.getElementById('file-input-suivi').addEventListener('change', importerSuiviCSV);
 
+    // Import Catalogue manuel (AJOUTÉ)
+    document.getElementById('btn-import-catalogue')?.addEventListener('click', () => document.getElementById('file-input-catalogue').click());
+    document.getElementById('file-input-catalogue')?.addEventListener('change', importerCatalogueCSV);
+
     document.getElementById('btn-export-csv').addEventListener('click', exporterSuiviCSV);
 
     // Filtres
@@ -60,8 +64,22 @@ function loadCatalogue() {
             remplirDomaines();
         })
         .catch(err => {
-            console.warn("Impossible de charger catalogue.csv automatiquement. Utilisation de la structure de secours.", err);
+            console.warn("Impossible de charger catalogue.csv automatiquement (CORS/404). Utilise le bouton d'import manuel.", err);
         });
+}
+
+// Fonction d'importation manuelle (AJOUTÉE)
+function importerCatalogueCSV(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+        catalogueFormations = parseCSV(evt.target.result);
+        remplirDomaines();
+        alert("✅ Catalogue chargé avec succès !");
+    };
+    reader.readAsText(file, 'UTF-8');
 }
 
 function remplirDomaines() {
@@ -92,7 +110,6 @@ function onDomaineChange() {
     formationsFiltrees.forEach(f => {
         const opt = document.createElement('option');
         opt.value = f.ID_Formation || f.Theme;
-        // On affiche le contenu de la séquence / libellé à la place de la durée seule
         const detail = f.Contenu || f.Sequence || f.Description || '';
         opt.textContent = `${f.Theme} ${detail ? ' - ' + detail : ''}`;
         selectTheme.appendChild(opt);
@@ -324,14 +341,18 @@ function toutSelectionner(e) {
 
 function mettreAJourStatusSelection() {
     const statusText = document.getElementById('selection-status');
-    statusText.textContent = `👥 ${selectedAgentIds.size} agent(s) sélectionné(s)`;
+    if (statusText) {
+        statusText.textContent = `👥 ${selectedAgentIds.size} agent(s) sélectionné(s)`;
+    }
     actualiserEtatBoutonValidation();
 }
 
 function actualiserEtatBoutonValidation() {
     const btnValider = document.getElementById('btn-valider-groupe');
     const themeSelect = document.getElementById('saisie-theme').value;
-    btnValider.disabled = (selectedAgentIds.size === 0 || !themeSelect);
+    if (btnValider) {
+        btnValider.disabled = (selectedAgentIds.size === 0 || !themeSelect);
+    }
 }
 
 // --- RÈGLE MÉTIER : VERROUILLAGE AGENTS NON CONCERNÉS ---
@@ -340,8 +361,6 @@ function recalculerCompatibiliteAgents(formation) {
         if (!formation) {
             agent._isCompatible = true;
         } else {
-            // Exemple : Si la formation requiert un quota ou une compétence spécifique
-            // Un agent n'ayant aucun besoin sur cette spécialité repasse à false
             const quotaRequis = agent[formation.Theme] || agent['Quota_' + formation.Domaine];
             agent._isCompatible = (quotaRequis !== '0' && quotaRequis !== 0);
         }
@@ -384,7 +403,7 @@ function validerSaisieGroupee(e) {
     const theme = document.getElementById('saisie-theme').value;
     const formateur = document.getElementById('saisie-formateur').value;
     const commentaires = document.getElementById('saisie-commentaires').value;
-    const dateSaisie = new Date().toISOString().split('T')[0]; // Aujourd'hui
+    const dateSaisie = new Date().toISOString().split('T')[0];
 
     let enregistrementsAjoutes = 0;
     let conflits = [];
@@ -401,7 +420,7 @@ function validerSaisieGroupee(e) {
 
         // Création de la ligne d'historique
         const nouvelleSaisie = {
-            Date_Saisie: dateSaisie, // Ajouté pour le CSV, masqué dans le tableau
+            Date_Saisie: dateSaisie,
             Matricule: agentId,
             Nom: agent ? agent.Nom : '',
             Prenom: agent ? agent.Prenom : '',
