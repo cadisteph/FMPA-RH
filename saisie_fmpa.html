@@ -56,7 +56,6 @@
             margin: 0 auto;
         }
 
-        /* Top Bar Layout */
         .top-bar {
             background: #ffffff;
             border-radius: 8px;
@@ -99,11 +98,6 @@
             border-radius: 5px;
             outline: none;
             background-color: #fff;
-            transition: border-color 0.15s ease-in-out;
-        }
-
-        .input-sm:focus, .select-sm:focus {
-            border-color: var(--secondary);
         }
 
         .actions-group {
@@ -113,7 +107,6 @@
             flex-wrap: wrap;
         }
 
-        /* Buttons */
         .btn {
             display: inline-flex;
             align-items: center;
@@ -124,7 +117,6 @@
             border-radius: 5px;
             border: 1px solid transparent;
             cursor: pointer;
-            transition: all 0.2s;
             white-space: nowrap;
         }
 
@@ -150,7 +142,6 @@
             border-color: #6c757d;
             color: #6c757d;
         }
-        .btn-outline-secondary:hover { background-color: #f8f9fa; }
 
         .badge-count {
             background-color: #6c757d;
@@ -161,7 +152,6 @@
             font-weight: 600;
         }
 
-        /* Grid Content */
         .content-grid {
             display: grid;
             grid-template-columns: 2.2fr 1fr;
@@ -244,7 +234,6 @@
             padding: 40px !important;
         }
 
-        /* Form styling */
         .card-body-form {
             padding: 20px;
             display: flex;
@@ -266,10 +255,6 @@
             border-radius: 5px;
             font-size: 0.85rem;
             text-align: center;
-        }
-
-        textarea {
-            resize: vertical;
         }
 
         .btn-submit {
@@ -430,65 +415,79 @@
         </div>
     </div>
 
-    <!-- SCRIPT DE LECTURE AUTOMATIQUE CSV SEPARATEURS & DOMAINES -->
+    <!-- SCRIPT UNIQUE ET DEBOGUÉ -->
     <script>
         let catalogueFormations = [];
+        let agentsData = [];
 
-        // Événements boutons de fichiers
+        // 1. Connexion des boutons d'import aux inputs cachés
+        document.getElementById('btn-import-suivi').addEventListener('click', () => {
+            document.getElementById('file-input-suivi').click();
+        });
+
+        document.getElementById('btn-import-csv').addEventListener('click', () => {
+            document.getElementById('file-input-csv').click();
+        });
+
         document.getElementById('btn-import-catalogue').addEventListener('click', () => {
             document.getElementById('file-input-catalogue').click();
         });
 
-        document.getElementById('file-input-catalogue').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+        // 2. Écouteurs de fichiers
+        document.getElementById('file-input-suivi').addEventListener('change', (e) => {
+            if (e.target.files[0]) lireCSV(e.target.files[0], 'suivi');
+        });
 
+        document.getElementById('file-input-csv').addEventListener('change', (e) => {
+            if (e.target.files[0]) lireCSV(e.target.files[0], 'baseAgents');
+        });
+
+        document.getElementById('file-input-catalogue').addEventListener('change', (e) => {
+            if (e.target.files[0]) lireCSV(e.target.files[0], 'catalogue');
+        });
+
+        // 3. Fonction générique de lecture des fichiers CSV
+        function lireCSV(fichier, type) {
             const reader = new FileReader();
             reader.onload = function(evt) {
                 const text = evt.target.result;
-                parseCatalogueCSV(text);
-            };
-            reader.readAsText(file, 'UTF-8');
-        });
+                const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+                if (lines.length < 2) {
+                    alert("Le fichier semble vide.");
+                    return;
+                }
 
-        // Détection universelle du CSV
-        function parseCatalogueCSV(csvText) {
-            const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
-            if (lines.length < 2) {
-                alert("Le fichier CSV semble vide.");
-                return;
-            }
+                const firstLine = lines[0];
+                const separator = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
+                const headers = firstLine.split(separator).map(h => h.replace(/^["\ufeff]+|["\s]+$/g, '').trim());
 
-            // Détecteur de séparateur (, ou ;)
-            const firstLine = lines[0];
-            const separator = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
-
-            // Clean headers (suppression guillemets, espaces et BOM)
-            const headers = firstLine.split(separator).map(h => h.replace(/^["\ufeff]+|["\s]+$/g, '').trim());
-
-            catalogueFormations = lines.slice(1).map(line => {
-                const values = line.split(separator).map(v => v.replace(/^"|"$/g, '').trim());
-                let row = {};
-                headers.forEach((h, i) => {
-                    row[h] = values[i] || '';
+                const rows = lines.slice(1).map(line => {
+                    const values = line.split(separator).map(v => v.replace(/^"|"$/g, '').trim());
+                    let row = {};
+                    headers.forEach((h, i) => { row[h] = values[i] || ''; });
+                    return row;
                 });
-                return row;
-            });
 
-            remplirDomainesFlex(headers);
+                if (type === 'catalogue') {
+                    catalogueFormations = rows;
+                    remplirDomainesFlex(headers);
+                } else {
+                    agentsData = rows;
+                    afficherAgentsDansTableau(agentsData, headers);
+                }
+            };
+            reader.readAsText(fichier, 'UTF-8');
         }
 
+        // 4. Remplissage du catalogue de formations
         function remplirDomainesFlex(headers) {
             const selectDomaine = document.getElementById('saisie-activite');
             selectDomaine.innerHTML = '<option value="">-- Choisir un domaine --</option>';
 
-            if (!catalogueFormations || catalogueFormations.length === 0) return;
-
-            // Recherche intelligente du nom de la colonne du domaine
             const keyDomaine = headers.find(h => {
                 const cleanHeader = h.toLowerCase();
                 return cleanHeader.includes('domaine') || cleanHeader.includes('activite') || cleanHeader.includes('theme') || cleanHeader.includes('categorie');
-            }) || headers[0]; // fallback sur 1ère colonne si introuvable
+            }) || headers[0];
 
             const domaines = [...new Set(catalogueFormations.map(f => f[keyDomaine]).filter(Boolean))].sort();
 
@@ -499,138 +498,40 @@
                 selectDomaine.appendChild(opt);
             });
 
-            alert(`✅ Catalogue chargé avec succès (${catalogueFormations.length} éléments) !\nColonne détectée pour le domaine : "${keyDomaine}"`);
+            alert(`✅ Catalogue chargé avec succès (${catalogueFormations.length} éléments) !`);
+        }
+
+        // 5. Affichage des agents dans le tableau
+        function afficherAgentsDansTableau(data, headers) {
+            const tbody = document.getElementById('tbody-agents');
+            tbody.innerHTML = '';
+
+            document.getElementById('agent-count-badge').textContent = `${data.length} agent(s)`;
+
+            data.forEach((agent, index) => {
+                const tr = document.createElement('tr');
+                
+                // Recherche intelligente des champs Nom / Prénom / Équipe
+                const nom = agent['Nom'] || agent['NOM'] || agent['Agent'] || agent[headers[0]] || '';
+                const prenom = agent['Prénom'] || agent['Prenom'] || agent['PRENOM'] || '';
+                const equipe = agent['Équipe'] || agent['Equipe'] || agent['EQUIPE'] || '-';
+                const statut = agent['Statut'] || agent['STATUT'] || '-';
+
+                tr.innerHTML = `
+                    <td><input type="checkbox" class="agent-checkbox" value="${index}"></td>
+                    <td><strong>${nom} ${prenom}</strong></td>
+                    <td>${equipe}</td>
+                    <td>${statut}</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>0.0 h</td>
+                    <td>0.0 h</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            alert(`✅ ${data.length} agent(s) chargé(s) dans le tableau !`);
         }
     </script>
-
-<script>
-    let catalogueFormations = [];
-    let agentsData = [];
-
-    // --- 1. LIAISON DES BOUTONS DE FICHIERS ---
-    document.getElementById('btn-import-suivi').addEventListener('click', () => {
-        document.getElementById('file-input-suivi').click();
-    });
-
-    document.getElementById('btn-import-csv').addEventListener('click', () => {
-        document.getElementById('file-input-csv').click();
-    });
-
-    document.getElementById('btn-import-catalogue').addEventListener('click', () => {
-        document.getElementById('file-input-catalogue').click();
-    });
-
-
-    // --- 2. GESTION DU CHARGEMENT DES FICHIERS ---
-    // Import suivi.csv
-    document.getElementById('file-input-suivi').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            parseCSVGeneric(evt.target.result, "Suivi");
-        };
-        reader.readAsText(file, 'UTF-8');
-    });
-
-    // Import baseAgents.csv
-    document.getElementById('file-input-csv').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            parseCSVGeneric(evt.target.result, "Base Agents");
-        };
-        reader.readAsText(file, 'UTF-8');
-    });
-
-    // Import catalogue.csv
-    document.getElementById('file-input-catalogue').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            parseCatalogueCSV(evt.target.result);
-        };
-        reader.readAsText(file, 'UTF-8');
-    });
-
-
-    // --- 3. FONCTIONS DE PARSING CSV ---
-    function parseCSVGeneric(csvText, typeFichier) {
-        const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
-        if (lines.length < 2) {
-            alert(`Le fichier ${typeFichier} semble vide ou invalide.`);
-            return;
-        }
-
-        const firstLine = lines[0];
-        const separator = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
-        const headers = firstLine.split(separator).map(h => h.replace(/^["\ufeff]+|["\s]+$/g, '').trim());
-
-        agentsData = lines.slice(1).map(line => {
-            const values = line.split(separator).map(v => v.replace(/^"|"$/g, '').trim());
-            let row = {};
-            headers.forEach((h, i) => { row[h] = values[i] || ''; });
-            return row;
-        });
-
-        // Mise à jour du compteur d'agents
-        const badgeCount = document.getElementById('agent-count-badge');
-        if (badgeCount) {
-            badgeCount.textContent = `${agentsData.length} agent(s)`;
-        }
-
-        alert(`✅ Fichier ${typeFichier} chargé avec succès (${agentsData.length} lignes) !`);
-    }
-
-    function parseCatalogueCSV(csvText) {
-        const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
-        if (lines.length < 2) {
-            alert("Le fichier catalogue semble vide.");
-            return;
-        }
-
-        const firstLine = lines[0];
-        const separator = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
-        const headers = firstLine.split(separator).map(h => h.replace(/^["\ufeff]+|["\s]+$/g, '').trim());
-
-        catalogueFormations = lines.slice(1).map(line => {
-            const values = line.split(separator).map(v => v.replace(/^"|"$/g, '').trim());
-            let row = {};
-            headers.forEach((h, i) => { row[h] = values[i] || ''; });
-            return row;
-        });
-
-        remplirDomainesFlex(headers);
-    }
-
-    function remplirDomainesFlex(headers) {
-        const selectDomaine = document.getElementById('saisie-activite');
-        selectDomaine.innerHTML = '<option value="">-- Choisir un domaine --</option>';
-
-        if (!catalogueFormations || catalogueFormations.length === 0) return;
-
-        const keyDomaine = headers.find(h => {
-            const cleanHeader = h.toLowerCase();
-            return cleanHeader.includes('domaine') || cleanHeader.includes('activite') || cleanHeader.includes('theme') || cleanHeader.includes('categorie');
-        }) || headers[0];
-
-        const domaines = [...new Set(catalogueFormations.map(f => f[keyDomaine]).filter(Boolean))].sort();
-
-        domaines.forEach(d => {
-            const opt = document.createElement('option');
-            opt.value = d;
-            opt.textContent = d;
-            selectDomaine.appendChild(opt);
-        });
-
-        alert(`✅ Catalogue chargé (${catalogueFormations.length} éléments) !\nColonne détectée : "${keyDomaine}"`);
-    }
-</script>
-    
 </body>
 </html>
