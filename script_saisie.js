@@ -34,22 +34,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-reset-filters")?.addEventListener("click", reinitialiserFiltres);
 
     const hDebut = document.getElementById("saisie-heure-debut");
-    const hFin = document.getElementById("saisie-heure-fin");
+const hFin = document.getElementById("saisie-heure-fin");
 
-    if (hDebut && hFin) {
-        // Recalcul de la durée à chaque frappe
-        hDebut.addEventListener("input", calculerDuree);
-        hFin.addEventListener("input", calculerDuree);
-
-        // Se déclenche uniquement quand le bloc complet (heure + minutes) est validé par la saisie
-        hDebut.addEventListener("change", () => {
-            if (hDebut.value) {
-                hFin.focus();
-                // Sélectionne automatiquement la partie "Heures" du champ de fin pour enchaîner la frappe
-                hFin.select?.(); 
-            }
-        });
-    }
+if (hDebut && hFin) {
+    // Calcule la durée uniquement quand la valeur change ou est modifiée
+    hDebut.addEventListener("input", calculerDuree);
+    hFin.addEventListener("input", calculerDuree);
+}
 
     document.getElementById("saisie-activite")?.addEventListener("change", majListeThemes);
     document.getElementById("select-all")?.addEventListener("change", basculerToutSelectionner);
