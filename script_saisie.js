@@ -433,7 +433,7 @@ function afficherTableauAgents(listeAgents) {
     tbody.innerHTML = "";
 
     if (listeAgents.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">Aucun agent à afficher.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-msg">Aucun agent à afficher.</td></tr>';
         document.getElementById("count-badge").textContent = `0 / ${tableauAgentsRH.length} agent(s)`;
         majStatutSelection();
         return;
@@ -442,8 +442,9 @@ function afficherTableauAgents(listeAgents) {
     listeAgents.forEach(agent => {
         const idAgent = agent.id;
         const isChecked = agentsSelectionnes.has(idAgent) ? "checked" : "";
-        const avancementSocleHtml = genererAvancementSocle(agent);
-        const avancementSpecHtml = genererAvancementSpecialites(agent);
+        
+        const resSocle = genererAvancementSocle(agent);
+        const resSpec = genererAvancementSpecialites(agent);
 
         const tr = document.createElement("tr");
         if (isChecked) tr.classList.add("selected-row");
@@ -453,14 +454,16 @@ function afficherTableauAgents(listeAgents) {
         const agentLibelle = `${gradeStr}<strong>${escapeHtml(agent.nom)}</strong> ${escapeHtml(agent.prenom)}${escapeHtml(fonctionStr)}`;
 
         tr.innerHTML = `
-            <td>
+            <td class="sticky-col col-chk">
                 <input type="checkbox" class="chk-agent" value="${escapeHtml(idAgent)}" ${isChecked} onchange="toggleAgent('${escapeJs(idAgent)}')">
             </td>
-            <td>${agentLibelle}</td>
-            <td>${escapeHtml(agent.equipe)}</td>
+            <td class="sticky-col col-agent">${agentLibelle}</td>
+            <td class="sticky-col col-equipe">${escapeHtml(agent.equipe)}</td>
             <td><span class="badge-tag badge-statut">${escapeHtml(agent.statut || "-")}</span></td>
-            <td><small>${avancementSocleHtml}</small></td>
-            <td><small>${avancementSpecHtml}</small></td>
+            <td class="col-avancement">${resSocle.html}</td>
+            <td class="col-avancement">${resSpec.html}</td>
+            <td class="col-total" style="color:#1e40af;">${resSocle.total} h</td>
+            <td class="col-total" style="color:#0f172a;">${resSpec.total} h</td>
         `;
         tbody.appendChild(tr);
     });
@@ -468,14 +471,13 @@ function afficherTableauAgents(listeAgents) {
     document.getElementById("count-badge").textContent = `${listeAgents.length} / ${tableauAgentsRH.length} agent(s)`;
     majStatutSelection();
 }
-
 /* 2. AVANCEMENT SOCLE AVEC MODULATIONS & DISPENSES */
 function genererAvancementSocle(agent) {
     const idAgent = agent.id;
     const heuresAgent = cumulHeuresParAgent[idAgent] || {};
     const socleFormations = catalogueInitial.filter(f => String(f.type).toUpperCase().includes("SOCLE"));
 
-    if (!socleFormations.length) return `<span style="color:#64748b;">Catalogue non chargé</span>`;
+    if (!socleFormations.length) return { html: `<span style="color:#64748b;">Catalogue non chargé</span>`, total: 0 };
 
     const profilsAgent = new Set([
         ...extraireValeurs(agent.statut),
@@ -487,7 +489,9 @@ function genererAvancementSocle(agent) {
         ...extraireValeurs(agent.regime)
     ]);
 
-    return socleFormations.map(f => {
+    let totalHeures = 0;
+
+    const itemsHtml = socleFormations.map(f => {
         let quotaRequis = Number(f.quota) || 0;
         let estDispense = false;
 
@@ -506,24 +510,25 @@ function genererAvancementSocle(agent) {
             }
         }
 
-        if (estDispense || quotaRequis === 0) {
-            return null;
-        }
+        if (estDispense || quotaRequis === 0) return null;
 
         const fait = heuresAgent[f.id] || heuresAgent[f.libelle] || 0;
+        totalHeures += fait;
         const styleClass = fait >= quotaRequis ? "fma-done" : (fait > 0 ? "fma-partial" : "fma-todo");
 
-        return `
-            <span style="color:#1e40af; font-weight:600;">${escapeHtml(f.libelle)} :</span>
-            <span class="${styleClass}">${fait}/${quotaRequis}h</span>
-        `;
-    }).filter(Boolean).join(" | ") || `<span style="color:#64748b;">Aucun socle requis</span>`;
+        return `<span class="fma-item"><span style="color:#1e40af; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${fait}/${quotaRequis}h</span></span>`;
+    }).filter(Boolean);
+
+    return {
+        html: itemsHtml.join(" | ") || `<span style="color:#64748b;">Aucun socle requis</span>`,
+        total: totalHeures
+    };
 }
 
-/* 3. AVANCEMENT SPÉCIALITÉS */
+/* Génération Spécialités sans coupure */
 function genererAvancementSpecialites(agent) {
     const specAgentBrutes = (agent.specialites || []).map(s => s.trim().toUpperCase()).filter(Boolean);
-    if (!specAgentBrutes.length) return `<span style="color:#94a3b8;">Aucune spé.</span>`;
+    if (!specAgentBrutes.length) return { html: `<span style="color:#94a3b8;">Aucune spé.</span>`, total: 0 };
 
     const specAgentBase = specAgentBrutes.map(s => s.replace(/\s*\d+$/, ""));
     const heuresAgent = cumulHeuresParAgent[agent.id] || {};
@@ -545,20 +550,25 @@ function genererAvancementSpecialites(agent) {
         return estTypeSpec || matchActivite || matchProfil;
     });
 
-    if (!formationsSpec.length) return `<span style="color:#94a3b8;">Aucun suivi requis</span>`;
+    if (!formationsSpec.length) return { html: `<span style="color:#94a3b8;">Aucun suivi requis</span>`, total: 0 };
 
-    return formationsSpec.map(f => {
+    let totalHeures = 0;
+
+    const itemsHtml = formationsSpec.map(f => {
         const quotaRequis = Number(f.quota) || 0;
         if (!quotaRequis) return null;
 
         const fait = heuresAgent[f.id] || heuresAgent[f.libelle] || 0;
+        totalHeures += fait;
         const styleClass = fait >= quotaRequis ? "fma-done" : (fait > 0 ? "fma-partial" : "fma-todo");
 
-        return `
-            <span style="color:#0f172a; font-weight:500;">${escapeHtml(f.libelle)} :</span>
-            <span class="${styleClass}">${fait}/${quotaRequis}h</span>
-        `;
-    }).filter(Boolean).join(" | ") || `<span style="color:#64748b;">0/0h</span>`;
+        return `<span class="fma-item"><span style="color:#0f172a; font-weight:500;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${fait}/${quotaRequis}h</span></span>`;
+    }).filter(Boolean);
+
+    return {
+        html: itemsHtml.join(" | ") || `<span style="color:#64748b;">0/0h</span>`,
+        total: totalHeures
+    };
 }
 
 function extraireValeurs(champ) {
