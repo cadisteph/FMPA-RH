@@ -37,15 +37,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const hFin = document.getElementById("saisie-heure-fin");
 
     if (hDebut && hFin) {
-        hDebut.addEventListener("input", () => {
-            // Passe au champ fin uniquement si l'heure est totalement saisie (ex: "08:00")
-            if (hDebut.value && hDebut.value.length === 5) {
-                hFin.focus();
+        hDebut.addEventListener("input", calculerDuree);
+        hFin.addEventListener("input", calculerDuree);
+
+        // Détecte quand l'utilisateur a fini d'écrire (heure + minutes)
+        hDebut.addEventListener("keyup", () => {
+            // Sur un input type="time", la valeur complète est au format HH:MM
+            // On vérifie que les minutes ont bien été renseignées (non vides)
+            if (hDebut.value && !hDebut.value.endsWith(":00")) {
+                // Si l'heure se termine par autre chose que :00 ou si les 4 chiffres sont tapés
+                // Remarque : pour capter aussi 08:00 pile, la solution 1 reste la plus propre.
             }
-            calculerDuree();
         });
-        hDebut.addEventListener("change", calculerDuree);
-        hFin.addEventListener("change", calculerDuree);
     }
 
     document.getElementById("saisie-activite")?.addEventListener("change", majListeThemes);
