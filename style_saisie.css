@@ -316,14 +316,14 @@ body {
 
 /* Colonnes à largeur égale */
 .col-avancement {
-    width: 500px;
+    width: 800px;
     min-width: 250px;
-    max-width: 500px;
+    max-width: 800px;
     vertical-align: top;
 }
 
 .col-total {
-    width: 50px;
+    width: 80px;
     min-width: 30px;
     text-align: center !important;
     font-weight: bold;
