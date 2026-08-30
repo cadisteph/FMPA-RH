@@ -349,3 +349,28 @@ body {
 .selected-row .sticky-col {
     background-color: #eff6ff !important;
 }
+
+.form-actions-inline {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.form-actions-inline .btn {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.btn-secondary {
+    background-color: #64748b;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-secondary:hover {
+    background-color: #475569;
+}
