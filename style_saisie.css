@@ -367,13 +367,17 @@ body {
     align-items: stretch; /* Force la même hauteur pour tous les enfants */
 }
 
+/* Conteneur principal */
+.form-actions-inline {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    width: 100%;
+    align-items: center; /* Aligne verticalement les boutons s'ils ont des hauteurs différentes */
+}
+
+/* Style de base partagé */
 .form-actions-inline .btn {
-    flex: 1;
-    min-height: 42px;         /* Hauteur minimale uniforme */
-    padding: 6px 8px;        /* Padding réduit pour éviter de saturer l'espace */
-    font-size: 0.85rem;      /* Taille de texte adaptée */
-    font-weight: 600;
-    white-space: nowrap;     /* Empêche le texte de passer sur 2 lignes */
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -381,10 +385,15 @@ body {
     align-items: center;
     justify-content: center;
     gap: 6px;
+    white-space: nowrap;
+    font-weight: 600;
 }
 
-/* Bouton Valider */
+/* --- BOUTON VALIDER (Spécifique) --- */
 .btn-primary {
+    flex: 1.2;               /* Donne plus de largeur (ex: 60% de l'espace) */
+    height: 45px;            /* Hauteur spécifique */
+    font-size: 0.9rem;       /* Taille de texte spécifique */
     background-color: #2563eb;
     color: #ffffff;
 }
@@ -395,8 +404,11 @@ body {
     cursor: not-allowed;
 }
 
-/* Bouton Annuler */
+/* --- BOUTON ANNULER (Spécifique) --- */
 .btn-secondary {
+    flex: 0.8;               /* Donne moins de largeur (ex: 40% de l'espace) */
+    height: 38px;            /* Hauteur plus petite si souhaitée */
+    font-size: 0.8rem;       /* Texte un peu plus discret */
     background-color: #dc2626;
     color: #ffffff;
 }
