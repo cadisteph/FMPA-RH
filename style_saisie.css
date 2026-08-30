@@ -260,7 +260,7 @@ body {
 /* Alignment Heure Début, Heure Fin & Durée Calculée */
 .form-row-heures {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     gap: 6px;
     margin-bottom: 10px;
 }
@@ -270,12 +270,12 @@ body {
 .inline-duree {
     background: #e0f2fe;
     color: #0369a1;
-    padding: 6px 8px;
+    padding: 6px 6px;
     border-radius: 6px;
     font-size: 0.75rem;
     white-space: nowrap;
     text-align: center;
-    height: 31px;
+    height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
