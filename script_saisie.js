@@ -38,7 +38,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (hDebut && hFin) {
         hDebut.addEventListener("input", () => {
-            if (hDebut.value) hFin.focus();
+            // Passe au champ fin uniquement si l'heure est totalement saisie (ex: "08:00")
+            if (hDebut.value && hDebut.value.length === 5) {
+                hFin.focus();
+            }
             calculerDuree();
         });
         hDebut.addEventListener("change", calculerDuree);
@@ -871,6 +874,16 @@ function escapeHtml(value) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+
+// Fonction pour le bouton Annuler Saisie
+function annulerSaisie() {
+    reinitialiserFormulaire();
+    agentsSelectionnes.clear();
+    const selectAll = document.getElementById("select-all");
+    if (selectAll) selectAll.checked = false;
+    filtrerEtAfficherTableau();
+}
+
 
 function escapeJs(value) {
     return String(value ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
