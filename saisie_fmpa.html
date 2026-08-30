@@ -9,7 +9,10 @@
 <body>
 
 <header class="app-header">
-    <h1>👨‍🚒 Saisie Groupée des Formations FMPA</h1>
+    <div class="header-title-bar">
+        <h1>👨‍🚒 Saisie Groupée des Formations FMPA</h1>
+        <div id="xlsx-status" class="status-inline">⚪ Aucun fichier Excel chargé</div>
+    </div>
     <p>Gestion des saisies de formations</p>
 </header>
 
@@ -36,14 +39,8 @@
         <button id="btn-open-xlsx" class="btn-blue">📂 Ouvrir FMPA-RH.xlsx</button>
         <input type="file" id="file-input-xlsx" accept=".xlsx,.xls" style="display:none;">
 
-        <button id="btn-save-xlsx" class="btn-green" disabled>💾 Enregistrer FMPA-RH.xlsx</button>
-
         <div class="agent-count-badge" id="count-badge">0 / 0 agent(s)</div>
     </section>
-
-    <div id="xlsx-status" style="margin: 8px 0 14px; padding: 8px 12px; border-radius: 8px; background:#f1f5f9; color:#475569;">
-        ⚪ Aucun fichier Excel chargé
-    </div>
 
     <div class="content-grid">
 
@@ -89,20 +86,20 @@
                     <input type="date" id="saisie-date" required>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
+                <div class="form-row form-row-heures">
+                    <div class="form-group flex-1">
                         <label for="saisie-heure-debut">Heure Début *</label>
-                        <input type="time" id="saisie-heure-debut" value="08:00" required>
+                        <input type="time" id="saisie-heure-debut" placeholder="08:00" required>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group flex-1">
                         <label for="saisie-heure-fin">Heure Fin *</label>
-                        <input type="time" id="saisie-heure-fin" value="12:00" required>
+                        <input type="time" id="saisie-heure-fin" placeholder="12:00" required>
                     </div>
-                </div>
 
-                <div class="duree-badge-container">
-                    Durée calculée : <strong id="duree-calculee">4.0 h</strong>
+                    <div class="duree-badge-container inline-duree">
+                        Durée : <strong id="duree-calculee">0.0 h</strong>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -126,11 +123,6 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="saisie-lieu">Lieu / Centre</label>
-                    <input type="text" id="saisie-lieu" placeholder="Ex: CIS, Plateau technique...">
-                </div>
-
-                <div class="form-group">
                     <label for="saisie-commentaires">Remarques / Observations</label>
                     <textarea id="saisie-commentaires" rows="3" placeholder="Remarques éventuelles..."></textarea>
                 </div>
@@ -143,8 +135,7 @@
     </div>
 </main>
 
-<!-- SheetJS : lecture et écriture du classeur Excel -->
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script src="script_saisie.js?v=2"></script>
+<script src="script_saisie.js?v=3"></script>
 </body>
 </html>
