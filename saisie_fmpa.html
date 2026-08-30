@@ -8,149 +8,143 @@
 </head>
 <body>
 
-    <header class="app-header">
-        <h1>👨‍🚒 Saisie Groupée des Formations FMPA</h1>
-        <p>Gestion des saisies de formations en mémoire temps réel</p>
-    </header>
+<header class="app-header">
+    <h1>👨‍🚒 Saisie Groupée des Formations FMPA</h1>
+    <p>Gestion des saisies de formations</p>
+</header>
 
-    <main class="main-container">
+<main class="main-container">
 
-        <!-- Barre supérieure de filtres, import et export CSV -->
-        <section class="top-bar">
-            <div class="filter-group">
-                <label for="filter-equipe">ÉQUIPE</label>
-                <select id="filter-equipe">
-                    <option value="">Toutes</option>
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="filter-statut">STATUT</label>
-                <select id="filter-statut">
-                    <option value="">Tous</option>
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label for="filter-search">RECHERCHE</label>
-                <input type="text" id="filter-search" placeholder="Nom, prénom, matricule...">
-            </div>
-
-            <button id="btn-reset-filters" class="btn-sec">Réinitialiser Filtres</button>
-
-            <!-- BOUTONS D'IMPORT / EXPORT CSV -->
-            <button id="btn-import-csv" class="btn-blue">📂 Importer baseAgents.csv</button>
-            <input type="file" id="file-input-csv" accept=".csv" style="display: none;">
-
-            <button id="btn-export-csv" class="btn-green">📥 Exporter le Suivi (CSV)</button>
-
-            <div class="agent-count-badge" id="count-badge">0 / 0 agent(s)</div>
-        </section>
-
-        <!-- Contenu principal -->
-        <div class="content-grid">
-
-            <!-- Section Gauche : Tableau de sélection des Agents -->
-            <section class="card agent-card">
-                <div class="card-header">
-                    <h2>Sélection des Agents</h2>
-                    <span id="selection-status" class="selection-status">👥 0 agent(s) sélectionné(s)</span>
-                </div>
-
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 40px;">
-                                    <input type="checkbox" id="select-all" title="Tout sélectionner / désélectionner">
-                                </th>
-                                <th>Agent</th>
-                                <th>Équipe</th>
-                                <th>Statut</th>
-                                <th>Avancement Socle</th>
-                                <th>Avancement Spécialités</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbody-agents">
-                            <tr>
-                                <td colspan="6" class="empty-msg">
-                                    Chargement de <strong>baseAgents.csv</strong> en cours ou appuyez sur "Importer baseAgents.csv"...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- Section Droite : Formulaire de Saisie Groupée -->
-            <section class="card form-card">
-                <div class="card-header">
-                    <h2>Détails de la Formation</h2>
-                </div>
-
-                <form id="form-saisie-groupee">
-                    <div class="form-group">
-                        <label for="saisie-date">Date de la formation *</label>
-                        <input type="date" id="saisie-date" required>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="saisie-heure-debut">Heure Début *</label>
-                            <input type="time" id="saisie-heure-debut" value="08:00" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="saisie-heure-fin">Heure Fin *</label>
-                            <input type="time" id="saisie-heure-fin" value="12:00" required>
-                        </div>
-                    </div>
-
-                    <div class="duree-badge-container">
-                        Durée calculée : <strong id="duree-calculee">4.0 h</strong>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="saisie-activite">Domaine / Activité *</label>
-                        <select id="saisie-activite" required>
-                            <option value="">-- Choisir un domaine --</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="saisie-theme">Thème de la formation *</label>
-                        <select id="saisie-theme" required disabled>
-                            <option value="">-- Choisir d'abord un domaine --</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="saisie-formateur">Formateur / Animateur</label>
-                        <input type="text" id="saisie-formateur" list="liste-formateurs" placeholder="Nom du formateur">
-                        <datalist id="liste-formateurs"></datalist>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="saisie-lieu">Lieu / Centre</label>
-                        <input type="text" id="saisie-lieu" placeholder="Ex: CIS, Plateau technique...">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="saisie-commentaires">Remarques / Observations</label>
-                        <textarea id="saisie-commentaires" rows="3" placeholder="Remarques éventuelles..."></textarea>
-                    </div>
-
-                    <button type="submit" id="btn-valider-groupe" class="btn-primary" disabled>
-                        ✅ Valider la saisie groupée
-                    </button>
-                </form>
-            </section>
-
+    <section class="top-bar">
+        <div class="filter-group">
+            <label for="filter-equipe">ÉQUIPE</label>
+            <select id="filter-equipe"><option value="">Toutes</option></select>
         </div>
 
-    </main>
+        <div class="filter-group">
+            <label for="filter-statut">STATUT</label>
+            <select id="filter-statut"><option value="">Tous</option></select>
+        </div>
 
-    <!-- Fichiers de données et de logique -->
-    <script src="donnees_catalogue.js?v=1"></script>
-    <script src="script_saisie.js?v=1"></script>
+        <div class="filter-group">
+            <label for="filter-search">RECHERCHE</label>
+            <input type="text" id="filter-search" placeholder="Nom, prénom, matricule...">
+        </div>
+
+        <button id="btn-reset-filters" class="btn-sec">Réinitialiser Filtres</button>
+
+        <button id="btn-open-xlsx" class="btn-blue">📂 Ouvrir FMPA-RH.xlsx</button>
+        <input type="file" id="file-input-xlsx" accept=".xlsx,.xls" style="display:none;">
+
+        <button id="btn-save-xlsx" class="btn-green" disabled>💾 Enregistrer FMPA-RH.xlsx</button>
+
+        <div class="agent-count-badge" id="count-badge">0 / 0 agent(s)</div>
+    </section>
+
+    <div id="xlsx-status" style="margin: 8px 0 14px; padding: 8px 12px; border-radius: 8px; background:#f1f5f9; color:#475569;">
+        ⚪ Aucun fichier Excel chargé
+    </div>
+
+    <div class="content-grid">
+
+        <section class="card agent-card">
+            <div class="card-header">
+                <h2>Sélection des Agents</h2>
+                <span id="selection-status" class="selection-status">👥 0 agent(s) sélectionné(s)</span>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:40px;">
+                                <input type="checkbox" id="select-all" title="Tout sélectionner / désélectionner">
+                            </th>
+                            <th>Agent</th>
+                            <th>Équipe</th>
+                            <th>Statut</th>
+                            <th>Avancement Socle</th>
+                            <th>Avancement Spécialités</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-agents">
+                        <tr>
+                            <td colspan="6" class="empty-msg">
+                                Ouvrez <strong>FMPA-RH.xlsx</strong> pour charger les agents, le catalogue et l'historique.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="card form-card">
+            <div class="card-header">
+                <h2>Détails de la Formation</h2>
+            </div>
+
+            <form id="form-saisie-groupee">
+                <div class="form-group">
+                    <label for="saisie-date">Date de la formation *</label>
+                    <input type="date" id="saisie-date" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="saisie-heure-debut">Heure Début *</label>
+                        <input type="time" id="saisie-heure-debut" value="08:00" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="saisie-heure-fin">Heure Fin *</label>
+                        <input type="time" id="saisie-heure-fin" value="12:00" required>
+                    </div>
+                </div>
+
+                <div class="duree-badge-container">
+                    Durée calculée : <strong id="duree-calculee">4.0 h</strong>
+                </div>
+
+                <div class="form-group">
+                    <label for="saisie-activite">Domaine / Activité *</label>
+                    <select id="saisie-activite" required disabled>
+                        <option value="">-- Ouvrir d'abord FMPA-RH.xlsx --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="saisie-theme">Thème de la formation *</label>
+                    <select id="saisie-theme" required disabled>
+                        <option value="">-- Choisir d'abord un domaine --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="saisie-formateur">Formateur / Animateur</label>
+                    <input type="text" id="saisie-formateur" list="liste-formateurs" placeholder="Nom du formateur">
+                    <datalist id="liste-formateurs"></datalist>
+                </div>
+
+                <div class="form-group">
+                    <label for="saisie-lieu">Lieu / Centre</label>
+                    <input type="text" id="saisie-lieu" placeholder="Ex: CIS, Plateau technique...">
+                </div>
+
+                <div class="form-group">
+                    <label for="saisie-commentaires">Remarques / Observations</label>
+                    <textarea id="saisie-commentaires" rows="3" placeholder="Remarques éventuelles..."></textarea>
+                </div>
+
+                <button type="submit" id="btn-valider-groupe" class="btn-primary" disabled>
+                    ✅ Valider la saisie groupée
+                </button>
+            </form>
+        </section>
+    </div>
+</main>
+
+<!-- SheetJS : lecture et écriture du classeur Excel -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="script_saisie.js?v=2"></script>
 </body>
 </html>
