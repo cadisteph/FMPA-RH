@@ -31,7 +31,7 @@ body {
     padding: 10px;
 }
 
-/* 4. Header & Statut discret à côté du titre */
+/* Header & Statut discret à côté du titre */
 .app-header {
     margin-bottom: 8px;
     flex-shrink: 0;
@@ -130,11 +130,13 @@ body {
     color: var(--primary-color);
 }
 
+/* Disposition principale en grille / colonnes */
 .content-grid {
     display: flex;
     gap: 10px;
     flex: 1;
     min-height: 0;
+    width: 100%;
 }
 
 .card {
@@ -147,7 +149,11 @@ body {
     min-height: 0;
 }
 
-.agent-card { flex: 1; }
+/* min-width: 0 empêche le tableau de pousser la carte du formulaire */
+.agent-card { 
+    flex: 1; 
+    min-width: 0; 
+}
 
 .form-card {
     width: 320px;
@@ -176,15 +182,19 @@ body {
     font-size: 0.8rem;
 }
 
+/* Conteneur du tableau avec double défilement (X et Y) */
 .table-container {
     overflow-x: auto;
     overflow-y: auto;
     flex: 1;
+    max-width: 100%;
 }
 
 .data-table {
-    width: 100%;
-    border-collapse: collapse;
+    width: max-content;
+    min-width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
     font-size: 0.75rem;
 }
 
@@ -223,6 +233,7 @@ body {
 .fma-partial { color: var(--badge-partial); font-weight: bold; }
 .fma-todo { color: var(--badge-todo); }
 
+/* Formulaire */
 .form-group {
     margin-bottom: 10px;
     display: flex;
@@ -245,7 +256,7 @@ body {
     font-size: 0.82rem;
 }
 
-/* 1. Alignment Heure Début, Heure Fin & Durée Calculée */
+/* Alignment Heure Début, Heure Fin & Durée Calculée */
 .form-row-heures {
     display: flex;
     align-items: flex-end;
@@ -297,22 +308,6 @@ body {
     border-radius: 3px;
 }
 
-/* Gestion du scrollbar horizontal sur le tableau */
-.table-container {
-    overflow-x: auto;
-    overflow-y: auto;
-    flex: 1;
-    max-width: 100%;
-}
-
-.data-table {
-    width: max-content;
-    min-width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    font-size: 0.75rem;
-}
-
 /* Éviter le saut de ligne entre le nom du thème et ses heures */
 .fma-item {
     display: inline-block;
@@ -342,7 +337,7 @@ body {
 }
 
 .data-table th.sticky-col {
-    z-index: 3; /* Priorité pour le header */
+    z-index: 3; /* Priorité pour les en-têtes figés croisés */
     background: #f8fafc;
 }
 
