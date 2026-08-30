@@ -17,7 +17,6 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* 1. Blocage du scroll global de la page */
 html, body {
     height: 100vh;
     overflow: hidden;
@@ -32,112 +31,105 @@ body {
     padding: 10px;
 }
 
+/* 4. Header & Statut discret à côté du titre */
 .app-header {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     flex-shrink: 0;
+}
+
+.header-title-bar {
+    display: flex;
+    align-items: baseline;
+    gap: 15px;
+    flex-wrap: wrap;
 }
 
 .app-header h1 {
     color: var(--primary-color);
-    font-size: 1.8rem;
+    font-size: 1.6rem;
+}
+
+.status-inline {
+    font-size: 0.85rem;
+    color: #475569;
+    background: #f1f5f9;
+    padding: 4px 10px;
+    border-radius: 6px;
+    display: inline-block;
 }
 
 .app-header p {
     color: #64748b;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
 }
 
-/* 2. Organisation de la zone principale */
 .main-container {
     display: flex;
     flex-direction: column;
     flex: 1;
-    min-height: 0; /* Permet aux enfants flex de gérer leur propre overflow */
+    min-height: 0;
 }
 
-/* Barre de filtres et boutons d'action */
 .top-bar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
     background: var(--card-bg);
-    padding: 12px 15px;
+    padding: 10px 14px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     flex-shrink: 0;
 }
 
 .filter-group {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 3px;
 }
 
 .filter-group label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: bold;
     color: #64748b;
 }
 
 .filter-group select,
 .filter-group input {
-    padding: 8px 12px;
+    padding: 6px 10px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
     outline: none;
+    font-size: 0.82rem;
 }
 
-.btn-sec {
-    background: #e2e8f0;
+.btn-sec, .btn-blue {
     border: none;
-    padding: 9px 15px;
+    padding: 7px 12px;
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
     align-self: flex-end;
+    font-size: 0.85rem;
 }
 
+.btn-sec { background: #e2e8f0; color: #334155; }
 .btn-sec:hover { background: #cbd5e1; }
 
-.btn-blue {
-    background: #0284c7;
-    color: white;
-    border: none;
-    padding: 9px 15px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    align-self: flex-end;
-}
-
+.btn-blue { background: #0284c7; color: white; }
 .btn-blue:hover { background: #0369a1; }
-
-.btn-green {
-    background: #10b981;
-    color: white;
-    border: none;
-    padding: 9px 15px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    align-self: flex-end;
-}
-
-.btn-green:hover { background: #059669; }
 
 .agent-count-badge {
     margin-left: auto;
     background: #f1f5f9;
-    padding: 8px 14px;
+    padding: 6px 12px;
     border-radius: 20px;
     font-weight: bold;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--primary-color);
 }
 
-/* 3. Grid principale avec hauteur contrôlée */
 .content-grid {
     display: flex;
     gap: 10px;
@@ -155,40 +147,35 @@ body {
     min-height: 0;
 }
 
-/* Gauche : Tableau prend la majorité de l'espace */
-.agent-card {
-    flex: 1;
-}
+.agent-card { flex: 1; }
 
-/* Droite : Formulaire réduit en largeur et défilable */
 .form-card {
-    width: 320px; /* Largeur fixe réduite */
+    width: 320px;
     flex-shrink: 0;
-    overflow-y: auto; /* Scrollbar interne au formulaire */
+    overflow-y: auto;
 }
 
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     border-bottom: 2px solid var(--bg-color);
-    padding-bottom: 5px;
+    padding-bottom: 4px;
     flex-shrink: 0;
 }
 
 .card-header h2 {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     color: var(--primary-color);
 }
 
 .selection-status {
     font-weight: bold;
     color: #2563eb;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
 }
 
-/* Tableau avec scroll interne */
 .table-container {
     overflow-x: auto;
     overflow-y: auto;
@@ -201,8 +188,7 @@ body {
     font-size: 0.75rem;
 }
 
-.data-table th,
-.data-table td {
+.data-table th, .data-table td {
     padding: 6px 8px;
     border-bottom: 1px solid var(--border-color);
     text-align: left;
@@ -223,60 +209,64 @@ body {
     padding: 30px !important;
 }
 
-/* Badges */
 .badge-tag {
     display: inline-block;
     padding: 2px 6px;
     border-radius: 4px;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: bold;
-    margin-right: 4px;
 }
 
 .badge-statut { background: #e0e7ff; color: #3730a3; }
-.badge-grade { background: #fef3c7; color: #92400e; }
-.badge-fonction { background: #f3e8ff; color: #6b21a8; }
 
 .fma-done { color: var(--badge-done); font-weight: bold; }
 .fma-partial { color: var(--badge-partial); font-weight: bold; }
 .fma-todo { color: var(--badge-todo); }
 
-/* Formulaire */
 .form-group {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
 }
 
 .form-group label {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 600;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
-    padding: 7px;
+    padding: 6px 8px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
     width: 100%;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
 }
 
-.form-row {
+/* 1. Alignment Heure Début, Heure Fin & Durée Calculée */
+.form-row-heures {
     display: flex;
-    gap: 8px;
+    align-items: flex-end;
+    gap: 6px;
+    margin-bottom: 10px;
 }
 
-.duree-badge-container {
+.flex-1 { flex: 1; }
+
+.inline-duree {
     background: #e0f2fe;
     color: #0369a1;
-    padding: 8px;
+    padding: 6px 8px;
     border-radius: 6px;
-    margin-bottom: 12px;
+    font-size: 0.75rem;
+    white-space: nowrap;
     text-align: center;
-    font-size: 0.85rem;
+    height: 31px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-primary {
@@ -284,26 +274,21 @@ body {
     background: var(--primary-color);
     color: white;
     border: none;
-    padding: 10px;
+    padding: 9px;
     border-radius: 6px;
     font-weight: bold;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     cursor: pointer;
     margin-top: 5px;
 }
 
 .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+.btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; }
 
-.btn-primary:disabled {
-    background: #cbd5e1;
-    cursor: not-allowed;
-}
-
-/* Scrollbar esthétique pour la section formulaire */
 .form-card::-webkit-scrollbar,
 .table-container::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
 }
 
 .form-card::-webkit-scrollbar-thumb,
