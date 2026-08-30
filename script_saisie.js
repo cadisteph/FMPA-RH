@@ -477,7 +477,6 @@ function genererAvancementSocle(agent) {
 
     if (!socleFormations.length) return `<span style="color:#64748b;">Catalogue non chargé</span>`;
 
-    // Regroupement de toutes les étiquettes/profils de l'agent
     const profilsAgent = new Set([
         ...extraireValeurs(agent.statut),
         ...extraireValeurs(agent.grade),
@@ -492,9 +491,7 @@ function genererAvancementSocle(agent) {
         let quotaRequis = Number(f.quota) || 0;
         let estDispense = false;
 
-        // Vérification des modulations pour les profils de cet agent
         if (Array.isArray(f.modulations) && f.modulations.length > 0) {
-            // Trouver si l'agent possède une modulation applicable
             const matchMod = f.modulations.find(m => {
                 const profilMod = String(m.profil || "").trim().toUpperCase();
                 return profilsAgent.has(profilMod);
@@ -509,12 +506,9 @@ function genererAvancementSocle(agent) {
             }
         }
 
-        // Si l'agent est dispensé par sa modulation (ex: INC pour SUAP = 0h)
-        if (estDispense) {
-            return `<span style="color:#94a3b8; text-decoration:line-through;" title="Dispensé selon modulation">${escapeHtml(f.libelle)} (Dispensé)</span>`;
+        if (estDispense || quotaRequis === 0) {
+            return null;
         }
-
-        if (quotaRequis === 0) return null;
 
         const fait = heuresAgent[f.id] || heuresAgent[f.libelle] || 0;
         const styleClass = fait >= quotaRequis ? "fma-done" : (fait > 0 ? "fma-partial" : "fma-todo");
