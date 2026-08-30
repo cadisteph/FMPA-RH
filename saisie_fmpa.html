@@ -52,21 +52,23 @@
 
             <div class="table-container">
                 <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th style="width:40px;">
-                                <input type="checkbox" id="select-all" title="Tout sélectionner / désélectionner">
-                            </th>
-                            <th>Agent</th>
-                            <th>Équipe</th>
-                            <th>Statut</th>
-                            <th>Avancement Socle</th>
-                            <th>Avancement Spécialités</th>
-                        </tr>
-                    </thead>
+<thead>
+    <tr>
+        <th style="width:40px;" class="sticky-col col-chk">
+            <input type="checkbox" id="select-all" title="Tout sélectionner / désélectionner">
+        </th>
+        <th class="sticky-col col-agent">Agent</th>
+        <th class="sticky-col col-equipe">Équipe</th>
+        <th>Statut</th>
+        <th class="col-avancement">Avancement Socle</th>
+        <th class="col-avancement">Avancement Spécialités</th>
+        <th class="col-total">Total Socle</th>
+        <th class="col-total">Total Spé.</th>
+    </tr>
+</thead>
                     <tbody id="tbody-agents">
                         <tr>
-                            <td colspan="6" class="empty-msg">
+                            <td colspan="8" class="empty-msg">
                                 Ouvrez <strong>FMPA-RH.xlsx</strong> pour charger les agents, le catalogue et l'historique.
                             </td>
                         </tr>
@@ -136,6 +138,6 @@
 </main>
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script src="script_saisie.js?v=5"></script>
+<script src="script_saisie.js?v=6"></script>
 </body>
 </html>
