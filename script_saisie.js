@@ -37,16 +37,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const hFin = document.getElementById("saisie-heure-fin");
 
     if (hDebut && hFin) {
+        // Recalcul de la durée à chaque frappe
         hDebut.addEventListener("input", calculerDuree);
         hFin.addEventListener("input", calculerDuree);
 
-        // Détecte quand l'utilisateur a fini d'écrire (heure + minutes)
-        hDebut.addEventListener("keyup", () => {
-            // Sur un input type="time", la valeur complète est au format HH:MM
-            // On vérifie que les minutes ont bien été renseignées (non vides)
-            if (hDebut.value && !hDebut.value.endsWith(":00")) {
-                // Si l'heure se termine par autre chose que :00 ou si les 4 chiffres sont tapés
-                // Remarque : pour capter aussi 08:00 pile, la solution 1 reste la plus propre.
+        // Se déclenche uniquement quand le bloc complet (heure + minutes) est validé par la saisie
+        hDebut.addEventListener("change", () => {
+            if (hDebut.value) {
+                hFin.focus();
+                // Sélectionne automatiquement la partie "Heures" du champ de fin pour enchaîner la frappe
+                hFin.select?.(); 
             }
         });
     }
