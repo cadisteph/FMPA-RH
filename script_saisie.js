@@ -516,7 +516,7 @@ function genererAvancementSocle(agent) {
         totalHeures += fait;
         const styleClass = fait >= quotaRequis ? "fma-done" : (fait > 0 ? "fma-partial" : "fma-todo");
 
-        return `<span class="fma-item"><span style="color:#1e40af; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${fait}/${quotaRequis}h</span></span>`;
+        return `<span class="fma-item"><span style="color:#0284c7; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${fait}/${quotaRequis}h</span></span>`;
     }).filter(Boolean);
 
     return {
@@ -562,7 +562,7 @@ function genererAvancementSpecialites(agent) {
         totalHeures += fait;
         const styleClass = fait >= quotaRequis ? "fma-done" : (fait > 0 ? "fma-partial" : "fma-todo");
 
-        return `<span class="fma-item"><span style="color:#0f172a; font-weight:500;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${fait}/${quotaRequis}h</span></span>`;
+        return `<span class="fma-item"><span style="color:#8b5cf6; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${fait}/${quotaRequis}h</span></span>`;
     }).filter(Boolean);
 
     return {
