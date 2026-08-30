@@ -129,9 +129,14 @@
                     <textarea id="saisie-commentaires" rows="3" placeholder="Remarques éventuelles..."></textarea>
                 </div>
 
-                <button type="submit" id="btn-valider-groupe" class="btn-primary" disabled>
-                    ✅ Valider la saisie groupée
-                </button>
+                <div class="form-actions-inline">
+    <button type="submit" id="btn-valider-groupe" class="btn btn-primary" disabled>
+        Valider Saisie
+    </button>
+    <button type="button" id="btn-annuler-saisie" class="btn btn-secondary" onclick="annulerSaisie()">
+        Annuler Saisie
+    </button>
+</div>
             </form>
         </section>
     </div>
