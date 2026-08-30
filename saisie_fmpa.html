@@ -3,400 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saisie Groupée des Formations FMPA</title>
-    <style>
-        :root {
-            --primary: #1d3557;
-            --primary-hover: #152744;
-            --border-color: #dee2e6;
-            --text-dark: #212529;
-            --bg-done: #d1e7dd;
-            --text-done: #0f5132;
-            --bg-todo: #fff3cd;
-            --text-todo: #664d03;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-        body { background-color: #f4f6f8; color: var(--text-dark); padding-bottom: 30px; }
-
-        header.app-header {
-            background: #ffffff;
-            padding: 16px 24px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        header.app-header h1 { font-size: 1.3rem; color: var(--primary); }
-
-        .main-container { padding: 20px; max-width: 1700px; margin: 0 auto; }
-
-        .top-bar {
-            background: #ffffff;
-            border-radius: 8px;
-            padding: 14px 18px;
-            border: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .actions-group { display: flex; gap: 8px; flex-wrap: wrap; }
-        .btn { padding: 7px 12px; font-size: 0.82rem; font-weight: 600; border-radius: 5px; border: 1px solid transparent; cursor: pointer; }
-        .btn-primary { background-color: var(--primary); color: #fff; }
-        .btn-warning { background-color: #ffb703; color: #000; }
-        .btn-success { background-color: #2a9d8f; color: #fff; }
-
-        .content-grid { display: grid; grid-template-columns: 2.3fr 1fr; gap: 20px; }
-
-        .card { background: #ffffff; border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; }
-        .card-header { padding: 12px 16px; background: #fff; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; }
-
-        .table-container { overflow-x: auto; max-height: 70vh; }
-        table.data-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left; }
-        table.data-table th, table.data-table td { padding: 8px 10px; border-bottom: 1px solid var(--border-color); vertical-align: top; }
-        table.data-table th { background: #f8f9fa; position: sticky; top: 0; z-index: 5; }
-
-        .tag-list { display: flex; flex-direction: column; gap: 3px; font-size: 0.75rem; }
-        .tag { padding: 3px 6px; border-radius: 4px; display: block; line-height: 1.2; }
-        .tag-done { background: var(--bg-done); color: var(--text-done); border: 1px solid #badbcc; }
-        .tag-todo { background: var(--bg-todo); color: var(--text-todo); border: 1px solid #ffecb5; }
-
-        .form-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-        .field-group { display: flex; flex-direction: column; gap: 4px; }
-        .field-group label { font-size: 0.75rem; font-weight: bold; color: #6c757d; }
-        .input-sm, .select-sm { padding: 6px; font-size: 0.85rem; border: 1px solid #ced4da; border-radius: 4px; width: 100%; }
-        
-        .alert-success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; font-size: 0.8rem; display: none; }
-    </style>
+    <title>Saisie des Formations FMPA</title>
+    <link rel="stylesheet" href="style_saisie.css">
 </head>
 <body>
 
     <header class="app-header">
-        <h1>🧑‍🚒 Saisie Groupée & Suivi Détaillé des Formations FMPA</h1>
+        <h1>👨‍🚒 Saisie Groupée des Formations FMPA</h1>
+        <p>Gestion des saisies de formations en mémoire temps réel</p>
     </header>
 
-    <div class="main-container">
-        <div class="top-bar">
-            <div class="actions-group">
-                <button type="button" id="btn-import-csv" class="btn btn-warning">📁 1. Charger baseAgents.csv</button>
-                <button type="button" id="btn-import-catalogue" class="btn btn-warning">📁 2. Charger catalogue.csv</button>
-                <button type="button" id="btn-import-suivi" class="btn btn-primary">📂 3. Charger un suivi.csv existant (Optionnel)</button>
-                <button type="button" id="btn-export-csv" class="btn btn-success">💾 Télécharger le fichier Suivi (.csv)</button>
+    <main class="main-container">
 
-                <input type="file" id="file-csv" accept=".csv" style="display:none;">
-                <input type="file" id="file-cat" accept=".csv" style="display:none;">
-                <input type="file" id="file-suivi" accept=".csv" style="display:none;">
+        <!-- Barre supérieure de filtres, import et export CSV -->
+        <section class="top-bar">
+            <div class="filter-group">
+                <label for="filter-equipe">ÉQUIPE</label>
+                <select id="filter-equipe">
+                    <option value="">Toutes</option>
+                </select>
             </div>
-            <span id="stat-count" style="font-weight: bold; font-size: 0.85rem;">0 Agent(s)</span>
-        </div>
 
+            <div class="filter-group">
+                <label for="filter-statut">STATUT</label>
+                <select id="filter-statut">
+                    <option value="">Tous</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="filter-search">RECHERCHE</label>
+                <input type="text" id="filter-search" placeholder="Nom, prénom, matricule...">
+            </div>
+
+            <button id="btn-reset-filters" class="btn-sec">Réinitialiser Filtres</button>
+
+            <!-- BOUTONS D'IMPORT / EXPORT CSV -->
+            <button id="btn-import-csv" class="btn-blue">📂 Importer baseAgents.csv</button>
+            <input type="file" id="file-input-csv" accept=".csv" style="display: none;">
+
+            <button id="btn-export-csv" class="btn-green">📥 Exporter le Suivi (CSV)</button>
+
+            <div class="agent-count-badge" id="count-badge">0 / 0 agent(s)</div>
+        </section>
+
+        <!-- Contenu principal -->
         <div class="content-grid">
-            <!-- Tableau -->
-            <div class="card">
+
+            <!-- Section Gauche : Tableau de sélection des Agents -->
+            <section class="card agent-card">
                 <div class="card-header">
-                    <h3>Tableau de Suivi Individuel et Avancement</h3>
-                    <span id="selected-count">0 coché(s)</span>
+                    <h2>Sélection des Agents</h2>
+                    <span id="selection-status" class="selection-status">👥 0 agent(s) sélectionné(s)</span>
                 </div>
+
                 <div class="table-container">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th style="width: 30px;"><input type="checkbox" id="chk-all"></th>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" id="select-all" title="Tout sélectionner / désélectionner">
+                                </th>
                                 <th>Agent</th>
                                 <th>Équipe</th>
-                                <th>Détail Avancement Socle</th>
-                                <th>Détail Avancement Spécialités</th>
-                                <th>Heures Total</th>
+                                <th>Statut</th>
+                                <th>Avancement Socle</th>
+                                <th>Avancement Spécialités</th>
                             </tr>
                         </thead>
                         <tbody id="tbody-agents">
-                            <tr><td colspan="6" style="text-align: center; padding: 30px; color: #6c757d;">Veuillez charger baseAgents.csv et catalogue.csv.</td></tr>
+                            <tr>
+                                <td colspan="6" class="empty-msg">
+                                    Chargement de <strong>baseAgents.csv</strong> en cours ou appuyez sur "Importer baseAgents.csv"...
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </section>
 
-            <!-- Formulaire -->
-            <div class="card">
-                <div class="card-header"><h3>Saisie d'une Formation</h3></div>
-                <div class="form-body">
-                    <div id="alert-msg" class="alert-success">✅ Saisie enregistrée ! Fichier suivi.csv généré.</div>
-
-                    <form id="form-saisie">
-                        <div class="field-group">
-                            <label>Date *</label>
-                            <input type="date" id="form-date" class="input-sm" required>
-                        </div>
-                        <div style="display: flex; gap: 8px;">
-                            <div class="field-group" style="flex:1;">
-                                <label>Début *</label>
-                                <input type="time" id="form-debut" class="input-sm" value="08:00" required>
-                            </div>
-                            <div class="field-group" style="flex:1;">
-                                <label>Fin *</label>
-                                <input type="time" id="form-fin" class="input-sm" value="12:00" required>
-                            </div>
-                        </div>
-
-                        <div class="field-group">
-                            <label>Domaine / Activité *</label>
-                            <select id="form-domaine" class="select-sm" required>
-                                <option value="">-- Choisir Domaine --</option>
-                            </select>
-                        </div>
-
-                        <div class="field-group">
-                            <label>Thème / Formation *</label>
-                            <select id="form-theme" class="select-sm" required disabled>
-                                <option value="">-- Choisir d'abord le domaine --</option>
-                            </select>
-                        </div>
-
-                        <div class="field-group">
-                            <label>Formateur</label>
-                            <input type="text" id="form-formateur" class="input-sm" placeholder="Nom du formateur">
-                        </div>
-
-                        <div class="field-group">
-                            <label>Commentaires</label>
-                            <textarea id="form-commentaires" class="input-sm" rows="2"></textarea>
-                        </div>
-
-                        <button type="submit" id="btn-submit" class="btn btn-primary" style="width:100%; padding: 10px; margin-top: 10px;" disabled>
-                            ✅ Enregistrer et Générer/Mettre à jour suivi.csv
-                        </button>
-                    </form>
+            <!-- Section Droite : Formulaire de Saisie Groupée -->
+            <section class="card form-card">
+                <div class="card-header">
+                    <h2>Détails de la Formation</h2>
                 </div>
-            </div>
+
+                <form id="form-saisie-groupee">
+                    <div class="form-group">
+                        <label for="saisie-date">Date de la formation *</label>
+                        <input type="date" id="saisie-date" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="saisie-heure-debut">Heure Début *</label>
+                            <input type="time" id="saisie-heure-debut" value="08:00" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="saisie-heure-fin">Heure Fin *</label>
+                            <input type="time" id="saisie-heure-fin" value="12:00" required>
+                        </div>
+                    </div>
+
+                    <div class="duree-badge-container">
+                        Durée calculée : <strong id="duree-calculee">4.0 h</strong>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="saisie-activite">Domaine / Activité *</label>
+                        <select id="saisie-activite" required>
+                            <option value="">-- Choisir un domaine --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="saisie-theme">Thème de la formation *</label>
+                        <select id="saisie-theme" required disabled>
+                            <option value="">-- Choisir d'abord un domaine --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="saisie-formateur">Formateur / Animateur</label>
+                        <input type="text" id="saisie-formateur" list="liste-formateurs" placeholder="Nom du formateur">
+                        <datalist id="liste-formateurs"></datalist>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="saisie-lieu">Lieu / Centre</label>
+                        <input type="text" id="saisie-lieu" placeholder="Ex: CIS, Plateau technique...">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="saisie-commentaires">Remarques / Observations</label>
+                        <textarea id="saisie-commentaires" rows="3" placeholder="Remarques éventuelles..."></textarea>
+                    </div>
+
+                    <button type="submit" id="btn-valider-groupe" class="btn-primary" disabled>
+                        ✅ Valider la saisie groupée
+                    </button>
+                </form>
+            </section>
+
         </div>
-    </div>
 
-    <script>
-        let baseAgents = [];
-        let catalogue = [];
-        let historiqueSuivi = []; // Démarre vide par défaut !
+    </main>
 
-        // 1. Boutons Fichiers
-        document.getElementById('btn-import-csv').onclick = () => document.getElementById('file-csv').click();
-        document.getElementById('btn-import-catalogue').onclick = () => document.getElementById('file-cat').click();
-        document.getElementById('btn-import-suivi').onclick = () => document.getElementById('file-suivi').click();
-
-        document.getElementById('file-csv').onchange = (e) => chargerCSV(e.target.files[0], 'agents');
-        document.getElementById('file-cat').onchange = (e) => chargerCSV(e.target.files[0], 'catalogue');
-        document.getElementById('file-suivi').onchange = (e) => chargerCSV(e.target.files[0], 'suivi');
-        document.getElementById('btn-export-csv').onclick = exporterCSV;
-
-        // 2. Traitement CSV
-        function chargerCSV(file, type) {
-            if (!file) return;
-            const r = new FileReader();
-            r.onload = function(e) {
-                const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
-                if (!lines.length) return;
-                
-                const sep = lines[0].includes(';') ? ';' : ',';
-                const headers = lines[0].split(sep).map(h => h.replace(/^["\ufeff]+|["\s]+$/g, '').trim());
-
-                const data = lines.slice(1).map(l => {
-                    const vals = l.split(sep).map(v => v.replace(/^"|"$/g, '').trim());
-                    let obj = {};
-                    headers.forEach((h, i) => obj[h] = vals[i] || '');
-                    return obj;
-                });
-
-                if (type === 'agents') {
-                    baseAgents = data;
-                } else if (type === 'catalogue') {
-                    catalogue = data;
-                    initDomaines();
-                } else if (type === 'suivi') {
-                    historiqueSuivi = data;
-                }
-
-                rafraichirTableau();
-            };
-            r.readAsText(file, 'UTF-8');
-        }
-
-        // 3. Remplissage Sélection Domaines & Thèmes
-        function initDomaines() {
-            const selDom = document.getElementById('form-domaine');
-            selDom.innerHTML = '<option value="">-- Choisir Domaine --</option>';
-            const doms = [...new Set(catalogue.map(c => c.activite || c.fmpa).filter(Boolean))].sort();
-            doms.forEach(d => {
-                selDom.innerHTML += `<option value="${d}">${d}</option>`;
-            });
-        }
-
-        document.getElementById('form-domaine').onchange = function() {
-            const dom = this.value;
-            const selTh = document.getElementById('form-theme');
-            selTh.innerHTML = '<option value="">-- Choisir Formation --</option>';
-            
-            if (!dom) { selTh.disabled = true; return; }
-
-            const items = catalogue.filter(c => (c.activite || c.fmpa) === dom);
-            items.forEach(i => {
-                selTh.innerHTML += `<option value="${i.libelle || i.id}">${i.libelle} (${i.quota || 0}h)</option>`;
-            });
-            selTh.disabled = false;
-        };
-
-        // 4. Calcul & Affichage "Réalisé / À faire"
-        function rafraichirTableau() {
-            const tbody = document.getElementById('tbody-agents');
-            tbody.innerHTML = '';
-            document.getElementById('stat-count').textContent = `${baseAgents.length} Agent(s)`;
-
-            if (!baseAgents.length) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 30px; color: #6c757d;">Veuillez charger baseAgents.csv</td></tr>';
-                return;
-            }
-
-            const socleCatalogue = catalogue.filter(c => c.type === 'Socle Commun');
-            const speCatalogue = catalogue.filter(c => c.type === 'Spécialité');
-
-            baseAgents.forEach((agent) => {
-                const mat = agent.Matricule;
-                const faitAgent = historiqueSuivi.filter(s => s.Matricule === mat);
-                const libellesFaits = faitAgent.map(s => s.Formation);
-
-                // --- CALCULE SOCLE ---
-                let socleFait = [];
-                let socleRestant = [];
-                let totalH = 0;
-
-                socleCatalogue.forEach(c => {
-                    const lib = c.libelle;
-                    if (libellesFaits.includes(lib)) {
-                        socleFait.push(lib);
-                        totalH += parseFloat(c.quota || 0);
-                    } else {
-                        socleRestant.push(lib);
-                    }
-                });
-
-                // --- CALCULE SPÉCIALITÉS ---
-                const speAttribuees = (agent.Specialites || '').split(',').map(s => s.trim()).filter(Boolean);
-                let speFait = [];
-                let speRestant = [];
-                let totalHSpe = 0;
-
-                speCatalogue.forEach(c => {
-                    const lib = c.libelle;
-                    const dom = c.activite; 
-                    
-                    const concerne = speAttribuees.some(s => s.startsWith(dom));
-                    if (concerne) {
-                        if (libellesFaits.includes(lib)) {
-                            speFait.push(lib);
-                            totalHSpe += parseFloat(c.quota || 0);
-                        } else {
-                            speRestant.push(lib);
-                        }
-                    }
-                });
-
-                // HTML Socle
-                let htmlSocle = '<div class="tag-list">';
-                if (socleFait.length) htmlSocle += `<span class="tag tag-done"><b>Fait :</b> ${socleFait.join(', ')}</span>`;
-                if (socleRestant.length) htmlSocle += `<span class="tag tag-todo"><b>À faire :</b> ${socleRestant.join(', ')}</span>`;
-                if (!socleFait.length && !socleRestant.length) htmlSocle += '<em style="color:#adb5bd;">Charger catalogue.csv</em>';
-                htmlSocle += '</div>';
-
-                // HTML Spécialité
-                let htmlSpe = '<div class="tag-list">';
-                if (!speAttribuees.length) {
-                    htmlSpe += '<em style="color:#adb5bd;">Aucune spé. attribuée</em>';
-                } else {
-                    if (speFait.length) htmlSpe += `<span class="tag tag-done"><b>Fait :</b> ${speFait.join(', ')}</span>`;
-                    if (speRestant.length) htmlSpe += `<span class="tag tag-todo"><b>À faire :</b> ${speRestant.join(', ')}</span>`;
-                }
-                htmlSpe += '</div>';
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><input type="checkbox" class="chk-agent" data-mat="${mat}"></td>
-                    <td><b>${agent.Nom} ${agent.Prenom}</b><br><small style="color:#6c757d;">${mat}</small></td>
-                    <td>${agent.Equipe || '-'}</td>
-                    <td>${htmlSocle}</td>
-                    <td>${htmlSpe}</td>
-                    <td><b>Socle :</b> ${totalH}h<br><b>Spé :</b> ${totalHSpe}h</td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            document.querySelectorAll('.chk-agent').forEach(c => c.onchange = mefSelection);
-        }
-
-        // 5. Enregistrement & Export
-        document.getElementById('chk-all').onchange = function() {
-            document.querySelectorAll('.chk-agent').forEach(c => c.checked = this.checked);
-            mefSelection();
-        };
-
-        function mefSelection() {
-            const n = document.querySelectorAll('.chk-agent:checked').length;
-            document.getElementById('selected-count').textContent = `${n} coché(s)`;
-            document.getElementById('btn-submit').disabled = (n === 0);
-        }
-
-        document.getElementById('form-saisie').onsubmit = function(e) {
-            e.preventDefault(); 
-
-            const dateVal = document.getElementById('form-date').value;
-            const debutVal = document.getElementById('form-debut').value;
-            const finVal = document.getElementById('form-fin').value;
-            const themeVal = document.getElementById('form-theme').value;
-            const formateurVal = document.getElementById('form-formateur').value;
-            const comVal = document.getElementById('form-commentaires').value;
-
-            const coches = document.querySelectorAll('.chk-agent:checked');
-
-            // Ajout des nouvelles entrées en mémoire
-            coches.forEach(c => {
-                const mat = c.dataset.mat;
-                historiqueSuivi.push({
-                    Matricule: mat,
-                    Date: dateVal,
-                    HeureDebut: debutVal,
-                    HeureFin: finVal,
-                    Formation: themeVal,
-                    Formateur: formateurVal,
-                    Commentaires: comVal
-                });
-            });
-
-            // Met à jour visuellement les colonnes "Fait / À faire"
-            rafraichirTableau();
-
-            // Génère et fait télécharger automatiquement le premier fichier suivi.csv
-            exporterCSV();
-
-            const alertBox = document.getElementById('alert-msg');
-            alertBox.style.display = 'block';
-            setTimeout(() => alertBox.style.display = 'none', 3000);
-        };
-
-        function exporterCSV() {
-            if (!historiqueSuivi.length) {
-                alert("Aucune donnée enregistrée à exporter pour le moment.");
-                return;
-            }
-            let csvContent = "data:text/csv;charset=utf-8,Matricule;Date;HeureDebut;HeureFin;Formation;Formateur;Commentaires\n";
-            historiqueSuivi.forEach(row => {
-                csvContent += `${row.Matricule};${row.Date};${row.HeureDebut};${row.HeureFin};"${row.Formation}";"${row.Formateur}";"${row.Commentaires}"\n`;
-            });
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `suivi.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    </script>
+    <!-- Fichiers de données et de logique -->
+    <script src="donnees_catalogue.js?v=1"></script>
+    <script src="script_saisie.js?v=1"></script>
 </body>
 </html>
