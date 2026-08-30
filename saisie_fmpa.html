@@ -10,7 +10,7 @@
 
 <header class="app-header">
     <div class="header-title-bar">
-        <h1>👨‍🚒 Saisie Groupée des Formations FMPA</h1>
+        <h1>📝 Saisie des FMPA</h1>
         <div id="xlsx-status" class="status-inline">⚪ Aucun fichier Excel chargé</div>
     </div>
     <p>Gestion des saisies de formations</p>
@@ -20,21 +20,21 @@
 
     <section class="top-bar">
         <div class="filter-group">
-            <label for="filter-equipe">ÉQUIPE</label>
+            <label for="filter-equipe">👥ÉQUIPE</label>
             <select id="filter-equipe"><option value="">Toutes</option></select>
         </div>
 
         <div class="filter-group">
-            <label for="filter-statut">STATUT</label>
+            <label for="filter-statut">⚖️STATUT</label>
             <select id="filter-statut"><option value="">Tous</option></select>
         </div>
 
         <div class="filter-group">
-            <label for="filter-search">RECHERCHE</label>
+            <label for="filter-search">🔎RECHERCHE</label>
             <input type="text" id="filter-search" placeholder="Nom, prénom, matricule...">
         </div>
 
-        <button id="btn-reset-filters" class="btn-sec">Réinitialiser Filtres</button>
+        <button id="btn-reset-filters" class="btn-sec">🔄Réinitialiser Filtres</button>
 
         <button id="btn-open-xlsx" class="btn-blue">📂 Ouvrir FMPA-RH.xlsx</button>
         <input type="file" id="file-input-xlsx" accept=".xlsx,.xls" style="display:none;">
@@ -131,10 +131,10 @@
 
                 <div class="form-actions-inline">
     <button type="submit" id="btn-valider-groupe" class="btn btn-primary" disabled>
-        Valider Saisie
+        💾Valider Saisie
     </button>
     <button type="button" id="btn-annuler-saisie" class="btn btn-secondary" onclick="annulerSaisie()">
-        Annuler Saisie
+        ❌Annuler Saisie
     </button>
 </div>
             </form>
