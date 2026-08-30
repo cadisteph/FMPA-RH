@@ -194,15 +194,50 @@ function convertirCatalogue(ws) {
 }
 
 function parserModulations(valeur) {
+    if (!valeur) return [];
+    
+    // Si déjà un tableau/objet JSON
     if (Array.isArray(valeur)) return valeur;
-    const texte = valeurTexte(valeur).trim();
+    if (typeof valeur === "object") return [valeur];
+
+    const texte = String(valeur).trim();
     if (!texte) return [];
-    try {
-        const parsed = JSON.parse(texte);
-        return Array.isArray(parsed) ? parsed : [];
-    } catch (_) {
-        return [];
+
+    // Tentative de parse JSON
+    if (texte.startsWith("[") || texte.startsWith("{")) {
+        try {
+            const parsed = JSON.parse(texte);
+            return Array.isArray(parsed) ? parsed : [parsed];
+        } catch (_) {}
     }
+
+    // Parse du format standard Excel (ex: "COD1:14; COD6:10; SUAP:6")
+    const result = [];
+    const elements = texte.split(/[,;\n]/);
+
+    elements.forEach(elt => {
+        const partie = elt.trim();
+        if (!partie) return;
+
+        if (partie.includes(":")) {
+            const [profil, rawQuota] = partie.split(":").map(s => s.trim());
+            const quotaNum = Number(rawQuota);
+            result.push({
+                profil: profil.toUpperCase(),
+                quota: isNaN(quotaNum) ? 0 : quotaNum,
+                dispense: quotaNum === 0
+            });
+        } else {
+            // Si le profil est seul sans heure spécifiée, on le considère dispensé (0h)
+            result.push({
+                profil: partie.toUpperCase(),
+                quota: 0,
+                dispense: true
+            });
+        }
+    });
+
+    return result;
 }
 
 function extraireProfilsDesModulations(modulations) {
@@ -442,7 +477,8 @@ function genererAvancementSocle(agent) {
 
     if (!socleFormations.length) return `<span style="color:#64748b;">Catalogue non chargé</span>`;
 
-    const tousProfils = new Set([
+    // Regroupement de toutes les étiquettes/profils de l'agent
+    const profilsAgent = new Set([
         ...extraireValeurs(agent.statut),
         ...extraireValeurs(agent.grade),
         ...extraireValeurs(agent.fonction),
@@ -456,19 +492,26 @@ function genererAvancementSocle(agent) {
         let quotaRequis = Number(f.quota) || 0;
         let estDispense = false;
 
+        // Vérification des modulations pour les profils de cet agent
         if (Array.isArray(f.modulations) && f.modulations.length > 0) {
-            const mod = f.modulations.find(m => m?.profil && tousProfils.has(String(m.profil).trim().toUpperCase()));
-            if (mod) {
-                if (mod.dispense === true || mod.type === "dispense" || mod.quota === 0) {
+            // Trouver si l'agent possède une modulation applicable
+            const matchMod = f.modulations.find(m => {
+                const profilMod = String(m.profil || "").trim().toUpperCase();
+                return profilsAgent.has(profilMod);
+            });
+
+            if (matchMod) {
+                if (matchMod.dispense === true || matchMod.quota === 0) {
                     estDispense = true;
-                } else if (mod.quota !== undefined) {
-                    quotaRequis = Number(mod.quota) || 0;
+                } else {
+                    quotaRequis = Number(matchMod.quota);
                 }
             }
         }
 
+        // Si l'agent est dispensé par sa modulation (ex: INC pour SUAP = 0h)
         if (estDispense) {
-            return `<span style="color:#64748b; text-decoration:line-through;" title="Dispensé par modulation">${escapeHtml(f.libelle)} (Dispensé)</span>`;
+            return `<span style="color:#94a3b8; text-decoration:line-through;" title="Dispensé selon modulation">${escapeHtml(f.libelle)} (Dispensé)</span>`;
         }
 
         if (quotaRequis === 0) return null;
