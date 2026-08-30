@@ -195,15 +195,12 @@ function convertirCatalogue(ws) {
 
 function parserModulations(valeur) {
     if (!valeur) return [];
-    
-    // Si déjà un tableau/objet JSON
     if (Array.isArray(valeur)) return valeur;
     if (typeof valeur === "object") return [valeur];
 
     const texte = String(valeur).trim();
     if (!texte) return [];
 
-    // Tentative de parse JSON
     if (texte.startsWith("[") || texte.startsWith("{")) {
         try {
             const parsed = JSON.parse(texte);
@@ -211,7 +208,6 @@ function parserModulations(valeur) {
         } catch (_) {}
     }
 
-    // Parse du format standard Excel (ex: "COD1:14; COD6:10; SUAP:6")
     const result = [];
     const elements = texte.split(/[,;\n]/);
 
@@ -228,7 +224,6 @@ function parserModulations(valeur) {
                 dispense: quotaNum === 0
             });
         } else {
-            // Si le profil est seul sans heure spécifiée, on le considère dispensé (0h)
             result.push({
                 profil: partie.toUpperCase(),
                 quota: 0,
@@ -352,6 +347,7 @@ function initialiserFiltresEtListes() {
     }
 }
 
+/* AFFICHAGE DE LA SÉQUENCE AU LIEU DE LA DURÉE */
 function majListeThemes() {
     const activite = document.getElementById("saisie-activite").value;
     const selectTheme = document.getElementById("saisie-theme");
@@ -366,7 +362,8 @@ function majListeThemes() {
     formations.forEach(f => {
         const opt = document.createElement("option");
         opt.value = f.id;
-        opt.textContent = `${f.libelle} (${f.quota}h)`;
+        const detailSeq = f.sequence ? ` - ${f.sequence}` : "";
+        opt.textContent = `${f.libelle}${detailSeq}`;
         selectTheme.appendChild(opt);
     });
     selectTheme.disabled = formations.length === 0;
@@ -401,6 +398,29 @@ function calculerDureeEntreHeures(debut, fin) {
     let min = (f[0] * 60 + f[1]) - (d[0] * 60 + d[1]);
     if (min < 0) min += 24 * 60;
     return min / 60;
+}
+
+/* CONTRÔLE DE CHEVAUCHEMENT D'HORAIRES */
+function verifierChevauchementHoraire(matricule, dateSaisie, heureDebutSaisie, heureFinSaisie) {
+    const convertMin = (hStr) => {
+        const [h, m] = hStr.split(":").map(Number);
+        return h * 60 + m;
+    };
+
+    const debutSaisie = convertMin(heureDebutSaisie);
+    let finSaisie = convertMin(heureFinSaisie);
+    if (finSaisie <= debutSaisie) finSaisie += 24 * 60;
+
+    return historiqueSaisiesFMPA.find(row => {
+        if (row.matricule !== matricule || row.date !== dateSaisie) return false;
+
+        const debutExist = convertMin(row.heureDebut);
+        let finExist = convertMin(row.heureFin);
+        if (finExist <= debutExist) finExist += 24 * 60;
+
+        // Condition de chevauchement strict : (Début1 < Fin2) ET (Fin1 > Début2)
+        return (debutSaisie < finExist) && (finSaisie > debutExist);
+    });
 }
 
 function filtrerEtAfficherTableau() {
@@ -471,7 +491,7 @@ function afficherTableauAgents(listeAgents) {
     document.getElementById("count-badge").textContent = `${listeAgents.length} / ${tableauAgentsRH.length} agent(s)`;
     majStatutSelection();
 }
-/* 2. AVANCEMENT SOCLE AVEC MODULATIONS & DISPENSES */
+
 function genererAvancementSocle(agent) {
     const idAgent = agent.id;
     const heuresAgent = cumulHeuresParAgent[idAgent] || {};
@@ -525,7 +545,6 @@ function genererAvancementSocle(agent) {
     };
 }
 
-/* Génération Spécialités sans coupure */
 function genererAvancementSpecialites(agent) {
     const specAgentBrutes = (agent.specialites || []).map(s => s.trim().toUpperCase()).filter(Boolean);
     if (!specAgentBrutes.length) return { html: `<span style="color:#94a3b8;">Aucune spé.</span>`, total: 0 };
@@ -628,7 +647,28 @@ function majStatutSelection() {
     document.getElementById("btn-valider-groupe").disabled = count === 0 || !classeurXLSX;
 }
 
-/* 1. VALIDATION ET SAISIE POUR LES SÉLECTIONNÉS + FORMATEUR */
+/* REINITIALISATION COMPLÈTE DU FORMULAIRE */
+function reinitialiserFormulaire() {
+    document.getElementById("form-saisie-groupee")?.reset();
+    
+    // Remettre la date du jour
+    const dateInput = document.getElementById("saisie-date");
+    if (dateInput) dateInput.valueAsDate = new Date();
+
+    // Reinitialiser les listes déroulantes dépendantes
+    const selectAct = document.getElementById("saisie-activite");
+    if (selectAct) selectAct.value = "";
+
+    const selectTheme = document.getElementById("saisie-theme");
+    if (selectTheme) {
+        selectTheme.innerHTML = '<option value="">-- Choisir d\'abord un domaine --</option>';
+        selectTheme.disabled = true;
+    }
+
+    calculerDuree();
+}
+
+/* VALIDATION AVEC CONTRÔLE DE CHEVAUCHEMENT ET RAZ FORMULAIRE */
 async function validerSaisieGroupee(e) {
     e.preventDefault();
 
@@ -661,9 +701,44 @@ async function validerSaisieGroupee(e) {
         return;
     }
 
+    // --- VÉRIFICATION DES CHEVAUCHEMENTS D'HORAIRES ---
+    const conflits = [];
+
+    // 1. Pour les agents bénéficiaires
+    agentsSelectionnes.forEach(idAgent => {
+        const agent = tableauAgentsRH.find(a => a.id === idAgent);
+        if (!agent) return;
+
+        const conflit = verifierChevauchementHoraire(agent.matricule, dateFormation, heureDebut, heureFin);
+        if (conflit) {
+            conflits.push(`Agent : ${agent.nom} ${agent.prenom} (déjà inscrit à "${conflit.formation}" de ${conflit.heureDebut} à ${conflit.heureFin})`);
+        }
+    });
+
+    // 2. Pour le formateur
+    let agentFormateur = null;
+    if (formateur) {
+        agentFormateur = tableauAgentsRH.find(a => {
+            const nomComplet = `${a.grade ? a.grade + ' ' : ''}${a.nom} ${a.prenom}`.toLowerCase();
+            return nomComplet.includes(formateur.toLowerCase()) || `${a.nom} ${a.prenom}`.toLowerCase() === formateur.toLowerCase();
+        });
+
+        if (agentFormateur) {
+            const conflitFormateur = verifierChevauchementHoraire(agentFormateur.matricule, dateFormation, heureDebut, heureFin);
+            if (conflitFormateur) {
+                conflits.push(`Formateur : ${agentFormateur.nom} ${agentFormateur.prenom} (déjà inscrit à "${conflitFormateur.formation}" de ${conflitFormateur.heureDebut} à ${conflitFormateur.heureFin})`);
+            }
+        }
+    }
+
+    if (conflits.length > 0) {
+        alert("❌ Impossible d'enregistrer la saisie, chevauchement d'horaires détecté :\n\n" + conflits.join("\n"));
+        return;
+    }
+
+    // --- ENREGISTREMENT DE LA SAISIE ---
     const dateSaisie = obtenirDateSaisie();
 
-    // 1. Enregistrement pour les agents bénéficiaires
     agentsSelectionnes.forEach(idAgent => {
         const agent = tableauAgentsRH.find(a => a.id === idAgent);
         if (!agent) return;
@@ -684,36 +759,32 @@ async function validerSaisieGroupee(e) {
         cumulHeuresParAgent[idAgent][cle] = (cumulHeuresParAgent[idAgent][cle] || 0) + duree;
     });
 
-    // 1. Comptabilisation pour le formateur s'il s'agit d'un agent connu
-    if (formateur) {
-        const agentFormateur = tableauAgentsRH.find(a => {
-            const nomComplet = `${a.grade ? a.grade + ' ' : ''}${a.nom} ${a.prenom}`.toLowerCase();
-            return nomComplet.includes(formateur.toLowerCase()) || `${a.nom} ${a.prenom}`.toLowerCase() === formateur.toLowerCase();
+    if (agentFormateur && !agentsSelectionnes.has(agentFormateur.id)) {
+        historiqueSaisiesFMPA.push({
+            matricule: agentFormateur.matricule,
+            date: dateFormation,
+            heureDebut,
+            heureFin,
+            formation: formationObj.libelle,
+            formateur: `${agentFormateur.nom} ${agentFormateur.prenom}`,
+            commentaires: `${commentaires ? commentaires + ' — ' : ''}(Animation / Formateur)`,
+            dateSaisie
         });
 
-        if (agentFormateur && !agentsSelectionnes.has(agentFormateur.id)) {
-            historiqueSaisiesFMPA.push({
-                matricule: agentFormateur.matricule,
-                date: dateFormation,
-                heureDebut,
-                heureFin,
-                formation: formationObj.libelle,
-                formateur: `${agentFormateur.nom} ${agentFormateur.prenom}`,
-                commentaires: `${commentaires ? commentaires + ' — ' : ''}(Animation / Formateur)`,
-                dateSaisie
-            });
-
-            if (!cumulHeuresParAgent[agentFormateur.id]) cumulHeuresParAgent[agentFormateur.id] = {};
-            const cle = formationObj.id;
-            cumulHeuresParAgent[agentFormateur.id][cle] = (cumulHeuresParAgent[agentFormateur.id][cle] || 0) + duree;
-        }
+        if (!cumulHeuresParAgent[agentFormateur.id]) cumulHeuresParAgent[agentFormateur.id] = {};
+        const cle = formationObj.id;
+        cumulHeuresParAgent[agentFormateur.id][cle] = (cumulHeuresParAgent[agentFormateur.id][cle] || 0) + duree;
     }
 
     reconstruireFeuilleHistorique();
 
     const nombreAgents = agentsSelectionnes.size;
     agentsSelectionnes.clear();
-    document.getElementById("select-all").checked = false;
+    const selectAll = document.getElementById("select-all");
+    if (selectAll) selectAll.checked = false;
+
+    // Vider le formulaire de droite
+    reinitialiserFormulaire();
 
     filtrerEtAfficherTableau();
 
