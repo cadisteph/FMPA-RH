@@ -359,45 +359,48 @@ body {
 }
 
 /* Style commun aux deux boutons (dimensions identiques) */
+.form-actions-inline {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    width: 100%;
+    align-items: stretch; /* Force la même hauteur pour tous les enfants */
+}
+
 .form-actions-inline .btn {
-    flex: 1;                  /* Garantit exactement la même largeur */
-    height: 42px;             /* Hauteur fixe identique */
-    padding: 0 15px;
-    font-size: 0.9rem;
+    flex: 1;
+    min-height: 42px;         /* Hauteur minimale uniforme */
+    padding: 6px 8px;        /* Padding réduit pour éviter de saturer l'espace */
+    font-size: 0.85rem;      /* Taille de texte adaptée */
     font-weight: 600;
+    white-space: nowrap;     /* Empêche le texte de passer sur 2 lignes */
     border: none;
     border-radius: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;                 /* Espace entre l'icône et le texte */
-    transition: background-color 0.2s, opacity 0.2s;
+    gap: 6px;
 }
 
-/* --- BOUTON VALIDER --- */
+/* Bouton Valider */
 .btn-primary {
-    background-color: #2563eb; /* Couleur de fond (Bleu) */
-    color: #ffffff;            /* Couleur du texte */
+    background-color: #2563eb;
+    color: #ffffff;
 }
 
-.btn-primary:hover:not(:disabled) {
-    background-color: #1d4ed8; /* Bleu plus foncé au survol */
-}
-
-/* État désactivé (quand aucun agent n'est sélectionné) */
 .btn-primary:disabled {
     background-color: #cbd5e1;
     color: #94a3b8;
     cursor: not-allowed;
 }
 
-/* --- BOUTON ANNULER --- */
+/* Bouton Annuler */
 .btn-secondary {
-    background-color: #dc2626; /* Couleur de fond (Rouge) */
-    color: #ffffff;            /* Couleur du texte */
+    background-color: #dc2626;
+    color: #ffffff;
 }
 
 .btn-secondary:hover {
-    background-color: #b91c1c; /* Rouge plus foncé au survol */
+    background-color: #b91c1c;
 }
