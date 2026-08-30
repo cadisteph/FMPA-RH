@@ -295,11 +295,13 @@ function initialiserFiltresEtListes() {
     const selectAct = document.getElementById("saisie-activite");
     if (selectAct) {
         selectAct.innerHTML = '<option value="">-- Choisir un domaine --</option>';
-        [...new Set(catalogueInitial.map(item => item.activite).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"fr")).forEach(act => {
-            const opt = document.createElement("option");
-            opt.value = opt.textContent = act;
-            selectAct.appendChild(opt);
-        });
+        [...new Set(catalogueInitial.map(item => item.activite).filter(Boolean))]
+            .sort((a, b) => a.localeCompare(b, "fr"))
+            .forEach(act => {
+                const opt = document.createElement("option");
+                opt.value = opt.textContent = act;
+                selectAct.appendChild(opt);
+            });
         selectAct.disabled = catalogueInitial.length === 0;
     }
 
