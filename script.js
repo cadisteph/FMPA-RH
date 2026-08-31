@@ -1,7 +1,38 @@
 window.fileHandleReseau = null;
 
+// Classeur Excel actuellement ouvert
+let classeurXLSX = null;
+let nomFichierXLSX = "FMPA-RH.xlsx";
+
 // Liste par défaut
 let listeAgents = [];
+
+// Nom exact des 23 colonnes de l'onglet baseAgents
+const HEADERS_BASE_AGENTS = [
+    "Matricule",
+    "Sexe",
+    "Nom",
+    "Prenom",
+    "Equipe",
+    "Statut",
+    "Grade",
+    "Fonction",
+    "Specialites",
+    "Competences",
+    "Regime",
+    "TempsPartiel",
+    "Engagement",
+    "DateNaissance",
+    "LieuNaissance",
+    "DateEntreeSDIS",
+    "DatePL",
+    "DateVMA",
+    "Telephone",
+    "Email",
+    "Adresse",
+    "DispoSPV",
+    "Commentaire"
+];
 
 /* ==========================================================================
    1. UTILITAIRES DE FORMATAGE, DATES & BADGES
