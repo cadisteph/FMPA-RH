@@ -45,22 +45,20 @@ function echapperHTML(str) {
 
 function formaterPrenom(str) {
     if (!str) return "";
-    return str.trim().toLowerCase().replace(/(^|\s|-)\S/g, match => match.toUpperCase());
+    return String(str).trim().toLowerCase().replace(/(^|\s|-)\S/g, match => match.toUpperCase());
 }
-
 
 // Convertit JJ/MM/AAAA ou AAAA-MM-JJ vers AAAA-MM-JJ (pour les <input type="date">)
 function formaterDatePourInput(dateStr) {
     if (!dateStr) return "";
-    dateStr = dateStr.trim();
+    dateStr = String(dateStr).trim();
     if (dateStr.includes('/')) {
         const parts = dateStr.split('/');
         if (parts.length === 3) {
-            // Si c'est au format JJ/MM/AAAA
             return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
         }
     }
-    return dateStr; // Déjà au format AAAA-MM-JJ
+    return dateStr;
 }
 
 // Convertit n'importe quelle date valide vers le format Français JJ/MM/AAAA (pour le tableau)
@@ -74,13 +72,12 @@ function formaterDateFR(dateStr) {
     return dateStr;
 }
 
-
 function formaterTelephone(str) {
     if (!str) return "";
     let cleaned = str.toString().replace(/\D/g, '');
     if (cleaned.length === 9) cleaned = "0" + cleaned;
     if (cleaned.length === 10) return cleaned.match(/.{1,2}/g).join('-');
-    return str.trim();
+    return String(str).trim();
 }
 
 function calculerAge(dateNaissanceStr) {
@@ -102,11 +99,10 @@ function mettreAJourAffichageAge() {
     if (dateInput && label) label.innerText = calculerAge(dateInput.value);
 }
 
-// Générateur de badges triés par ordre alphabétique
+// Générateur de badges triés par ordre alphabétique (CORRIGÉ POUR GÉRER LES NOMBRES)
 function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#2d3748") {
     if (chaineTxt === null || chaineTxt === undefined) return "-";
-    
-    // Force la conversion en chaîne de caractères (gère les nombres comme 1, 0.8, 100, etc.)
+
     const txt = String(chaineTxt).trim();
     if (txt === "") return "-";
 
@@ -119,46 +115,42 @@ function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#
     return liste.map(badge => {
         const txtUpper = badge.toUpperCase();
         let bg = couleurBg;
-        let txt = couleurTexte;
+        let txtColor = couleurTexte;
 
-        // --- PERSONNALISATION DES COULEURS SELON LE VALEUR ---
-        
-        // 1. Temps plein / Complet
+        // 1. Temps plein / Complet / 100%
         if (txtUpper === "COMPLET") {
             bg = "#05fb5287";
-            txt = "#058148";
+            txtColor = "#058148";
         } 
-
-        else if (txtUpper === "100%") {
+        else if (txtUpper === "100%" || txtUpper === "1") {
             bg = "#05fb5233";
-            txt = "#058148";
+            txtColor = "#058148";
         }
         // 2. Temps partiels (80%, 70%, 50%, etc.)
-        else if (/^\d{2,3}\s*%$/.test(badge)) { 
+        else if (/^\d{2,3}\s*%$/.test(badge) || /^(0\.\d+)$/.test(badge)) { 
             bg = "#feebc8"; 
-            txt = "#744210";
+            txtColor = "#744210";
         } 
         // 3. Spécialités / Statuts SUAP
         else if (txtUpper === "SUAP") {
             bg = "#f3bdd6"; 
-            txt = "#f218c9";
+            txtColor = "#f218c9";
         } 
         else if (txtUpper === "SUAP/PPABE") {
             bg = "#f39927"; 
-            txt = "#542b01";
+            txtColor = "#542b01";
         } 
         // 4. Indisponibilité / Dispo
         else if (txtUpper === "EN DISPO" || txtUpper === "DISPO") {
             bg = "#ff6363"; 
-            txt = "#ffffff";
+            txtColor = "#ffffff";
         }
 
-        return `<span style="background:${bg}; color:${txt}; padding:2px 6px; border-radius:4px; font-size:0.75em; font-weight:bold; margin-right:3px; display:inline-block; margin-bottom:2px;">
+        return `<span style="background:${bg}; color:${txtColor}; padding:2px 6px; border-radius:4px; font-size:0.75em; font-weight:bold; margin-right:3px; display:inline-block; margin-bottom:2px;">
             ${echapperHTML(badge)}
         </span>`;
     }).join("");
 }
-
 
 // Vérifie si la date VMA date de 10 mois ou plus
 function doitRenouvelerVMA(dateVMAStr) {
@@ -168,7 +160,7 @@ function doitRenouvelerVMA(dateVMAStr) {
     if (isNaN(dateVMA.getTime())) return false;
     const aujourdhui = new Date();
     const moisEcoules = (aujourdhui.getFullYear() - dateVMA.getFullYear()) * 12 + (aujourdhui.getMonth() - dateVMA.getMonth());
-    return moisEcoules >= 10; // Délai d'alerte 10 mois
+    return moisEcoules >= 10;
 }
 
 function doitRenouvelerPL(datePLStr) {
@@ -178,7 +170,7 @@ function doitRenouvelerPL(datePLStr) {
     if (isNaN(datePL.getTime())) return false;
     const aujourdhui = new Date();
     const moisEcoules = (aujourdhui.getFullYear() - datePL.getFullYear()) * 12 + (aujourdhui.getMonth() - datePL.getMonth());
-    return moisEcoules >= 54; // Délai d'alerte 54 mois
+    return moisEcoules >= 54;
 }
 
 /* ==========================================================================
@@ -202,11 +194,8 @@ function calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction) 
         return { g24: 0, g12: 0 };
     }
 
-    // --- CALCUL DE L'ÂGE AU 31/12 DE L'ANNÉE EN COURS ---
     const anneeEnCours = new Date().getFullYear();
     const age = anneeEnCours - dateNaissance.getFullYear();
-
-    // Condition Liste 2
     const estListe2 = (dateEntree < new Date("2013-10-01") && dateNaissance <= new Date("1976-12-31"));
 
     if (regime === "G12") {
@@ -243,6 +232,7 @@ function calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction) 
     return { g24: baseG24, g12: baseG12 };
 }
 
+// CORRIGÉ POUR GÉRER TEMPS PARTIEL (STRING ET NUMBER)
 function obtenirDetailsGardes(agent) {
     if (!agent || agent.regime === "SHR" || agent.regime === "SPV" || agent.statut === "SPV" || agent.statut === "PATS") {
         return { total: "-", repartition: "-" };
@@ -251,9 +241,19 @@ function obtenirDetailsGardes(agent) {
     const bases = calculerBasesGardes(agent.naissanceDate, agent.entreeSdis, agent.regime, agent.fonction);
     
     let ratio = 1;
-    if (agent.tempsPartiel && agent.tempsPartiel.includes("%")) {
-        let val = parseInt(agent.tempsPartiel);
-        if (!isNaN(val)) ratio = val / 100;
+    if (agent.tempsPartiel !== undefined && agent.tempsPartiel !== null) {
+        if (typeof agent.tempsPartiel === "number") {
+            ratio = agent.tempsPartiel > 1 ? agent.tempsPartiel / 100 : agent.tempsPartiel;
+        } else {
+            const tpStr = String(agent.tempsPartiel);
+            if (tpStr.includes("%")) {
+                let val = parseInt(tpStr, 10);
+                if (!isNaN(val)) ratio = val / 100;
+            } else {
+                let val = parseFloat(tpStr);
+                if (!isNaN(val)) ratio = val > 1 ? val / 100 : val;
+            }
+        }
     }
 
     let g24 = Math.round(bases.g24 * ratio);
@@ -374,13 +374,11 @@ function actualiserTableauRH() {
     if (!corps) return;
     corps.innerHTML = "";
 
-    // Récupération des filtres existants (avec id rh_)
     const fSexe = document.getElementById("rh_sexe") ? document.getElementById("rh_sexe").value : "";
     const fEquipe = document.getElementById("rh_equipe") ? document.getElementById("rh_equipe").value : "";
     const fStatut = document.getElementById("rh_statut") ? document.getElementById("rh_statut").value : "";
     const fRecherche = document.getElementById("rh_recherche") ? document.getElementById("rh_recherche").value.toLowerCase().trim() : "";
 
-    // Récupération des nouveaux filtres
     const fGrade = document.getElementById("filtreGrade") ? document.getElementById("filtreGrade").value : "";
     const fFonction = document.getElementById("filtreFonction") ? document.getElementById("filtreFonction").value : "";
     const fRegime = document.getElementById("filtreRegime") ? document.getElementById("filtreRegime").value : "";
@@ -389,7 +387,6 @@ function actualiserTableauRH() {
     const fSpec = document.getElementById("rechercheSpecialite") ? document.getElementById("rechercheSpecialite").value.toLowerCase().trim() : "";
     const fComp = document.getElementById("rechercheCompetence") ? document.getElementById("rechercheCompetence").value.toLowerCase().trim() : "";
 
-    // Filtrage des agents
     let agentsFiltres = listeAgents.filter(agent => {
         if (fSexe && agent.sexe !== fSexe) return false;
         if (fEquipe && agent.equipe !== fEquipe) return false;
@@ -398,25 +395,21 @@ function actualiserTableauRH() {
         if (fFonction && agent.fonction !== fFonction) return false;
         if (fRegime && agent.regime !== fRegime) return false;
 
-        // Filtre Temps Partiel ou Engagement selon le statut
         if (fEngagement) {
-            const valeurAgent = (agent.statut === "SPV") ? agent.engagement : agent.tempsPartiel;
+            const valeurAgent = (agent.statut === "SPV") ? agent.engagement : String(agent.tempsPartiel);
             if (valeurAgent !== fEngagement) return false;
         }
 
-        // Recherche globale (Nom, Prénom, Matricule)
         if (fRecherche) {
             const terme = `${agent.matricule || ''} ${agent.nom || ''} ${agent.prenom || ''}`.toLowerCase();
             if (!terme.includes(fRecherche)) return false;
         }
 
-        // Recherche dans les Spécialités (ex: "COD6")
         if (fSpec) {
             const specs = (agent.specialites || "").toLowerCase();
             if (!specs.includes(fSpec)) return false;
         }
 
-        // Recherche dans les Compétences (ex: "EAP")
         if (fComp) {
             const comps = (agent.competences || "").toLowerCase();
             if (!comps.includes(fComp)) return false;
@@ -425,7 +418,6 @@ function actualiserTableauRH() {
         return true;
     });
 
-    // Tri alphabétique Nom puis Prénom
     agentsFiltres.sort((a, b) => {
         const nomA = (a.nom || "").toUpperCase();
         const nomB = (b.nom || "").toUpperCase();
@@ -440,7 +432,6 @@ function actualiserTableauRH() {
         return compNom;
     });
 
-    // Mise à jour du compteur d'agents
     const compteur = document.getElementById("compteurAgentsRH");
     if (compteur) compteur.innerText = `${agentsFiltres.length} / ${listeAgents.length} agent(s)`;
 
@@ -449,8 +440,8 @@ function actualiserTableauRH() {
         if (agent.statut === "SPV") {
             tpEngagement = agent.engagement || "Complet";
         } else if (agent.statut === "SPP") {
-            tpEngagement = agent.tempsPartiel || "100%";
-                           }
+            tpEngagement = (agent.tempsPartiel !== undefined && agent.tempsPartiel !== null) ? agent.tempsPartiel : "100%";
+        }
 
         let coords = [];
         if (agent.telephone) coords.push(echapperHTML(agent.telephone));
@@ -458,15 +449,12 @@ function actualiserTableauRH() {
         if (agent.adresse) coords.push(echapperHTML(agent.adresse.toUpperCase()));
         let coordsText = coords.join("<br>") || "-";
 
-        // VERIFICATION SI L'AGENT EST SELECTIONNE DANS LE FORMULAIRE
         const estSelectionne = (typeof agentSelectionneId !== 'undefined' && agent.id === agentSelectionneId);
         
-        // Style conditionnel selon la sélection
         const styleLigne = estSelectionne 
             ? "cursor:pointer; background-color: #dce7f3; border-bottom:2px solid #2b6cb0; font-weight: 500;" 
             : "cursor:pointer; border-bottom:1px solid #e2e8f0;";
 
-        // --- CALCUL DES BADGES DE RENOUVELLEMENT ---
         const badgeVMA = doitRenouvelerVMA(agent.dateVMA) 
             ? `<span style="background-color: none; border: 1px solid #ff1493; color: #ff1493; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🩺 VMA</span>` 
             : '';
@@ -567,8 +555,8 @@ function editerAgent(id) {
 }
 
 function viderFormulaireRH() {
-agentSelectionneId = null;
-   document.getElementById("formRH").reset();
+    agentSelectionneId = null;
+    document.getElementById("formRH").reset();
     document.getElementById("agentId").value = "";
     document.getElementById("btnSupprimerAgent").style.display = "none";
     adapterFormulaireSelonStatut();
@@ -579,19 +567,17 @@ agentSelectionneId = null;
 
 function enregistrerAgent() {
     const idVal = document.getElementById("agentId").value;
-    const currentId = idVal ? parseInt(idVal) : null;
+    const currentId = idVal ? parseInt(idVal, 10) : null;
 
     const matricule = document.getElementById("agentMatricule").value.trim();
     const nom = document.getElementById("agentNom").value.trim().toUpperCase();
     const prenom = formaterPrenom(document.getElementById("agentPrenom").value);
 
-    // 1. Validation des champs obligatoires
     if (!matricule || !nom || !prenom) {
         alert("⚠️ Champs obligatoires manquants (Matricule, Nom, Prénom).");
         return;
     }
 
-    // 2. Vérification des doublons de Matricule
     const doublonMatricule = listeAgents.find(a => 
         a.id !== currentId && 
         a.matricule.toLowerCase() === matricule.toLowerCase()
@@ -601,7 +587,6 @@ function enregistrerAgent() {
         return;
     }
 
-    // 3. Vérification des doublons Nom + Prénom
     const doublonNomPrenom = listeAgents.find(a => 
         a.id !== currentId && 
         a.nom.toUpperCase() === nom.toUpperCase() && 
@@ -612,7 +597,6 @@ function enregistrerAgent() {
         return;
     }
 
-    // 4. Création / Mise à jour de l'objet Agent
     let agentObj = {
         id: currentId || Date.now(),
         matricule: matricule,
@@ -645,17 +629,15 @@ function enregistrerAgent() {
     } else {
         listeAgents.push(agentObj);
     }
-      localStorage.setItem("baseAgents", JSON.stringify(listeAgents));
+    localStorage.setItem("baseAgents", JSON.stringify(listeAgents));
 
     actualiserTableauRH();
     viderFormulaireRH();
 }
 
 async function enregistrerAgentEtSauvegarder() {
-    // Enregistre d'abord les modifications dans listeAgents
     enregistrerAgent();
 
-    // Si enregistrerAgent() a refusé la saisie, on ne sauvegarde pas
     if (!window.fileHandleReseau || !classeurXLSX) {
         alert(
             "⚠️ Les données ont été modifiées dans la page, " +
@@ -665,28 +647,22 @@ async function enregistrerAgentEtSauvegarder() {
         return;
     }
 
-    // Sauvegarde dans FMPA-RH.xlsx
     await enregistrerFichierReseau();
 }
-
 
 function supprimerAgent() {
     const idVal = document.getElementById("agentId").value;
     if (!idVal) return;
 
     if (confirm("❓ Êtes-vous sûr de vouloir supprimer cet agent ?")) {
-
-        const id = parseInt(idVal);
-
+        const id = parseInt(idVal, 10);
         const index = listeAgents.findIndex(a => a.id === id);
 
         if (index !== -1) {
             listeAgents.splice(index, 1);
         }
 
-        // 💾 Mise à jour du localStorage
         localStorage.setItem("baseAgents", JSON.stringify(listeAgents));
-
         actualiserTableauRH();
         viderFormulaireRH();
     }
@@ -700,521 +676,199 @@ const NOM_ONGLET_BASE_AGENTS = "baseAgents";
 
 function normaliserValeurExcel(valeur) {
     if (valeur === null || valeur === undefined) return "";
-
-    if (typeof valeur === "string") {
-        return valeur.trim();
-    }
-
     return String(valeur).trim();
 }
 
-
-// Convertit les dates Excel éventuelles en AAAA-MM-JJ
 function normaliserDateExcel(valeur) {
-    if (
-        valeur === null ||
-        valeur === undefined ||
-        valeur === ""
-    ) {
-        return "";
-    }
+    if (valeur === null || valeur === undefined || valeur === "") return "";
 
-    // Date JavaScript
-    if (
-        valeur instanceof Date &&
-        !isNaN(valeur.getTime())
-    ) {
+    if (valeur instanceof Date && !isNaN(valeur.getTime())) {
         const annee = valeur.getFullYear();
-        const mois = String(
-            valeur.getMonth() + 1
-        ).padStart(2, "0");
-
-        const jour = String(
-            valeur.getDate()
-        ).padStart(2, "0");
-
+        const mois = String(valeur.getMonth() + 1).padStart(2, "0");
+        const jour = String(valeur.getDate()).padStart(2, "0");
         return `${annee}-${mois}-${jour}`;
     }
 
-    // Numéro de série Excel
-    if (
-        typeof valeur === "number" &&
-        typeof XLSX !== "undefined" &&
-        XLSX.SSF
-    ) {
+    if (typeof valeur === "number" && typeof XLSX !== "undefined" && XLSX.SSF) {
         try {
-            const date =
-                XLSX.SSF.parse_date_code(valeur);
-
-            if (
-                date &&
-                date.y &&
-                date.m &&
-                date.d
-            ) {
+            const date = XLSX.SSF.parse_date_code(valeur);
+            if (date && date.y && date.m && date.d) {
                 return `${date.y}-${String(date.m).padStart(2, "0")}-${String(date.d).padStart(2, "0")}`;
             }
-
         } catch (e) {
-            console.warn(
-                "Date Excel non interprétable :",
-                valeur,
-                e
-            );
+            console.warn("Date Excel non interprétable :", valeur, e);
         }
     }
 
-    return formaterDatePourInput(
-        String(valeur)
-    );
+    return formaterDatePourInput(String(valeur));
 }
 
-
-// Affichage de l'état du fichier Excel
-function mettreAJourStatutExcel(
-    message,
-    couleur = "#475569"
-) {
-    const el =
-        document.getElementById("statusReseau");
-
+function mettreAJourStatutExcel(message, couleur = "#475569") {
+    const el = document.getElementById("statusReseau");
     if (!el) return;
-
     el.innerText = message;
     el.style.color = couleur;
 }
 
-
-// Affichage du nombre d'agents chargés
 function mettreAJourCompteurExcel() {
-
-    const el =
-        document.getElementById("statusReseau");
-
-    if (
-        !el ||
-        !window.fileHandleReseau
-    ) {
-        return;
-    }
-
-    el.innerText =
-        `🟢 ${nomFichierXLSX || "FMPA-RH.xlsx"} chargé — ${listeAgents.length} agent(s)`;
-
+    const el = document.getElementById("statusReseau");
+    if (!el || !window.fileHandleReseau) return;
+    el.innerText = `🟢 ${nomFichierXLSX || "FMPA-RH.xlsx"} chargé — ${listeAgents.length} agent(s)`;
     el.style.color = "#16803c";
 }
 
-
-// Vérifie que SheetJS est disponible
 function verifierSheetJS() {
-
     if (typeof XLSX === "undefined") {
-
         alert(
             "❌ La bibliothèque SheetJS n'est pas chargée.\n\n" +
             "Ajoutez SheetJS dans index.html avant script.js."
         );
-
         return false;
     }
-
     return true;
 }
 
+function verifierColonnesBaseAgents(ligneEntete) {
+    if (!Array.isArray(ligneEntete)) return false;
 
-// Vérifie les 23 colonnes attendues
-function verifierColonnesBaseAgents(
-    ligneEntete
-) {
-
-    if (!Array.isArray(ligneEntete)) {
-        return false;
-    }
-
-    const entetes =
-        ligneEntete.map(
-            valeur => normaliserValeurExcel(valeur)
-        );
-
-    const manquantes =
-        HEADERS_BASE_AGENTS.filter(
-            header =>
-                !entetes.includes(header)
-        );
+    const entetes = ligneEntete.map(valeur => normaliserValeurExcel(valeur));
+    const manquantes = HEADERS_BASE_AGENTS.filter(header => !entetes.includes(header));
 
     if (manquantes.length > 0) {
-
         alert(
             "❌ L'onglet baseAgents ne possède pas les colonnes attendues.\n\n" +
             "Colonnes manquantes :\n" +
             manquantes.join(", ")
         );
-
         return false;
     }
-
     return true;
 }
 
-
-// Recherche la position d'une colonne
-function trouverIndexEntete(
-    entetes,
-    nom
-) {
-
-    return entetes.findIndex(
-        header =>
-            normaliserValeurExcel(header) === nom
-    );
+function trouverIndexEntete(entetes, nom) {
+    return entetes.findIndex(header => normaliserValeurExcel(header) === nom);
 }
 
-
-// Lit l'onglet baseAgents
-function lireAgentsDepuisFeuille(
-    feuille
-) {
-
-    const lignes =
-        XLSX.utils.sheet_to_json(
-            feuille,
-            {
-                header: 1,
-                defval: "",
-                raw: true,
-                blankrows: false
-            }
-        );
+function lireAgentsDepuisFeuille(feuille) {
+    const lignes = XLSX.utils.sheet_to_json(feuille, {
+        header: 1,
+        defval: "",
+        raw: true,
+        blankrows: false
+    });
 
     if (!lignes.length) {
-
-        throw new Error(
-            "L'onglet baseAgents est vide."
-        );
+        throw new Error("L'onglet baseAgents est vide.");
     }
 
-    const entetes =
-        lignes[0].map(
-            valeur =>
-                normaliserValeurExcel(valeur)
-        );
+    const entetes = lignes[0].map(valeur => normaliserValeurExcel(valeur));
 
-    if (
-        !verifierColonnesBaseAgents(
-            entetes
-        )
-    ) {
-        throw new Error(
-            "Colonnes de baseAgents invalides."
-        );
+    if (!verifierColonnesBaseAgents(entetes)) {
+        throw new Error("Colonnes de baseAgents invalides.");
     }
 
     const index = {};
-
-    HEADERS_BASE_AGENTS.forEach(
-        nom => {
-            index[nom] =
-                trouverIndexEntete(
-                    entetes,
-                    nom
-                );
-        }
-    );
+    HEADERS_BASE_AGENTS.forEach(nom => {
+        index[nom] = trouverIndexEntete(entetes, nom);
+    });
 
     const agents = [];
 
-    for (
-        let i = 1;
-        i < lignes.length;
-        i++
-    ) {
+    for (let i = 1; i < lignes.length; i++) {
+        const ligne = lignes[i] || [];
+        const matricule = normaliserValeurExcel(ligne[index.Matricule]);
 
-        const ligne =
-            lignes[i] || [];
-
-        const matricule =
-            normaliserValeurExcel(
-                ligne[index.Matricule]
-            );
-
-        // Ignore les lignes complètement vides
-        if (!matricule) {
-            continue;
-        }
+        if (!matricule) continue;
 
         agents.push({
-
-            // Identifiant interne à la page
-            // NON enregistré dans Excel
             id: Date.now() + i,
-
             matricule: matricule,
-
-            sexe:
-                normaliserValeurExcel(
-                    ligne[index.Sexe]
-                ) || "Homme",
-
-            nom:
-                normaliserValeurExcel(
-                    ligne[index.Nom]
-                ).toUpperCase(),
-
-            prenom:
-                formaterPrenom(
-                    normaliserValeurExcel(
-                        ligne[index.Prenom]
-                    )
-                ),
-
-            equipe:
-                normaliserValeurExcel(
-                    ligne[index.Equipe]
-                ) || "Equipe A",
-
-            statut:
-                normaliserValeurExcel(
-                    ligne[index.Statut]
-                ) || "SPP",
-
-            grade:
-                normaliserValeurExcel(
-                    ligne[index.Grade]
-                ),
-
-            fonction:
-                normaliserValeurExcel(
-                    ligne[index.Fonction]
-                ) || "Equ",
-
-            specialites:
-                normaliserValeurExcel(
-                    ligne[index.Specialites]
-                ),
-
-            competences:
-                normaliserValeurExcel(
-                    ligne[index.Competences]
-                ),
-
-            regime:
-                normaliserValeurExcel(
-                    ligne[index.Regime]
-                ) || "G24",
-
-            tempsPartiel:
-    ligne[index.TempsPartiel] !== "" &&
-    ligne[index.TempsPartiel] !== null &&
-    ligne[index.TempsPartiel] !== undefined
-        ? Number(ligne[index.TempsPartiel])
-        : 1,
-
-            engagement:
-                normaliserValeurExcel(
-                    ligne[index.Engagement]
-                ) || "Complet",
-
-            naissanceDate:
-                normaliserDateExcel(
-                    ligne[index.DateNaissance]
-                ),
-
-            lieuNaissance:
-                normaliserValeurExcel(
-                    ligne[index.LieuNaissance]
-                ).toUpperCase(),
-
-            entreeSdis:
-                normaliserDateExcel(
-                    ligne[index.DateEntreeSDIS]
-                ),
-
-            datePL:
-                normaliserDateExcel(
-                    ligne[index.DatePL]
-                ),
-
-            dateVMA:
-                normaliserDateExcel(
-                    ligne[index.DateVMA]
-                ),
-
-            telephone:
-                formaterTelephone(
-                    normaliserValeurExcel(
-                        ligne[index.Telephone]
-                    )
-                ),
-
-            email:
-                normaliserValeurExcel(
-                    ligne[index.Email]
-                ),
-
-            adresse:
-                normaliserValeurExcel(
-                    ligne[index.Adresse]
-                ).toUpperCase(),
-
-            dispoSPV:
-                normaliserValeurExcel(
-                    ligne[index.DispoSPV]
-                ),
-
-            commentaire:
-                normaliserValeurExcel(
-                    ligne[index.Commentaire]
-                )
+            sexe: normaliserValeurExcel(ligne[index.Sexe]) || "Homme",
+            nom: normaliserValeurExcel(ligne[index.Nom]).toUpperCase(),
+            prenom: formaterPrenom(normaliserValeurExcel(ligne[index.Prenom])),
+            equipe: normaliserValeurExcel(ligne[index.Equipe]) || "Equipe A",
+            statut: normaliserValeurExcel(ligne[index.Statut]) || "SPP",
+            grade: normaliserValeurExcel(ligne[index.Grade]),
+            fonction: normaliserValeurExcel(ligne[index.Fonction]) || "Equ",
+            specialites: normaliserValeurExcel(ligne[index.Specialites]),
+            competences: normaliserValeurExcel(ligne[index.Competences]),
+            regime: normaliserValeurExcel(ligne[index.Regime]) || "G24",
+            tempsPartiel: (ligne[index.TempsPartiel] !== "" && ligne[index.TempsPartiel] !== null && ligne[index.TempsPartiel] !== undefined)
+                ? (isNaN(ligne[index.TempsPartiel]) ? normaliserValeurExcel(ligne[index.TempsPartiel]) : Number(ligne[index.TempsPartiel]))
+                : 1,
+            engagement: normaliserValeurExcel(ligne[index.Engagement]) || "Complet",
+            naissanceDate: normaliserDateExcel(ligne[index.DateNaissance]),
+            lieuNaissance: normaliserValeurExcel(ligne[index.LieuNaissance]).toUpperCase(),
+            entreeSdis: normaliserDateExcel(ligne[index.DateEntreeSDIS]),
+            datePL: normaliserDateExcel(ligne[index.DatePL]),
+            dateVMA: normaliserDateExcel(ligne[index.DateVMA]),
+            telephone: formaterTelephone(normaliserValeurExcel(ligne[index.Telephone])),
+            email: normaliserValeurExcel(ligne[index.Email]),
+            adresse: normaliserValeurExcel(ligne[index.Adresse]).toUpperCase(),
+            dispoSPV: normaliserValeurExcel(ligne[index.DispoSPV]),
+            commentaire: normaliserValeurExcel(ligne[index.Commentaire])
         });
     }
 
     return agents;
 }
 
-
-// Ouvre FMPA-RH.xlsx
 async function connecterFichierReseau() {
+    if (!verifierSheetJS()) return;
 
-    if (!verifierSheetJS()) {
-        return;
-    }
-
-    // File System Access API
-    // Compatible Edge / Chrome
     if (!window.showOpenFilePicker) {
-
         alert(
-            "❌ Votre navigateur ne prend pas en charge " +
-            "l'ouverture directe des fichiers Excel.\n\n" +
+            "❌ Votre navigateur ne prend pas en charge l'ouverture directe des fichiers Excel.\n\n" +
             "Utilisez Microsoft Edge ou Google Chrome."
         );
-
         return;
     }
 
     try {
+        const handles = await window.showOpenFilePicker({
+            types: [{
+                description: "Classeur Excel FMPA-RH",
+                accept: { "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"] }
+            }],
+            multiple: false
+        });
 
-        const handles =
-            await window.showOpenFilePicker({
+        window.fileHandleReseau = handles[0];
+        const file = await window.fileHandleReseau.getFile();
+        nomFichierXLSX = file.name || "FMPA-RH.xlsx";
 
-                types: [
-                    {
-                        description:
-                            "Classeur Excel FMPA-RH",
+        const buffer = await file.arrayBuffer();
+        classeurXLSX = XLSX.read(buffer, { type: "array", cellDates: true });
 
-                        accept: {
-                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-                                [".xlsx"]
-                        }
-                    }
-                ],
-
-                multiple: false
-            });
-
-        window.fileHandleReseau =
-            handles[0];
-
-        const file =
-            await window.fileHandleReseau.getFile();
-
-        nomFichierXLSX =
-            file.name || "FMPA-RH.xlsx";
-
-        const buffer =
-            await file.arrayBuffer();
-
-        classeurXLSX =
-            XLSX.read(
-                buffer,
-                {
-                    type: "array",
-                    cellDates: true
-                }
-            );
-
-
-        // Vérification de l'onglet
-        if (
-            !classeurXLSX.SheetNames.includes(
-                NOM_ONGLET_BASE_AGENTS
-            )
-        ) {
-
-            throw new Error(
-                `L'onglet "${NOM_ONGLET_BASE_AGENTS}" est introuvable dans ${nomFichierXLSX}.`
-            );
+        if (!classeurXLSX.SheetNames.includes(NOM_ONGLET_BASE_AGENTS)) {
+            throw new Error(`L'onglet "${NOM_ONGLET_BASE_AGENTS}" est introuvable dans ${nomFichierXLSX}.`);
         }
 
-
-        // Lecture de baseAgents
-        const feuilleBaseAgents =
-            classeurXLSX.Sheets[
-                NOM_ONGLET_BASE_AGENTS
-            ];
-
-        listeAgents =
-            lireAgentsDepuisFeuille(
-                feuilleBaseAgents
-            );
-
+        const feuilleBaseAgents = classeurXLSX.Sheets[NOM_ONGLET_BASE_AGENTS];
+        listeAgents = lireAgentsDepuisFeuille(feuilleBaseAgents);
 
         agentSelectionneId = null;
 
         actualiserTableauRH();
         viderFormulaireRH();
 
+        mettreAJourStatutExcel(`🟢 ${nomFichierXLSX} chargé — ${listeAgents.length} agent(s)`, "#16803c");
+        alert(`Chargement réussi : ${listeAgents.length} agent(s) importé(s) depuis l'onglet ${NOM_ONGLET_BASE_AGENTS}.`);
 
-        mettreAJourStatutExcel(
-            `🟢 ${nomFichierXLSX} chargé — ${listeAgents.length} agent(s)`,
-            "#16803c"
-        );
+    } catch (err) {
+        if (err && err.name === "AbortError") return;
 
-
-        alert(
-            `Chargement réussi : ${listeAgents.length} agent(s) importé(s) depuis l'onglet ${NOM_ONGLET_BASE_AGENTS}.`
-        );
-
-    }
-
-    catch (err) {
-
-        // Annulation de la fenêtre
-        if (
-            err &&
-            err.name === "AbortError"
-        ) {
-            return;
-        }
-
-        console.error(
-            "Erreur d'ouverture du classeur Excel :",
-            err
-        );
-
+        console.error("Erreur d'ouverture du classeur Excel :", err);
         window.fileHandleReseau = null;
         classeurXLSX = null;
 
-        mettreAJourStatutExcel(
-            "🔴 Erreur : fichier Excel non chargé",
-            "#c53030"
-        );
-
-        alert(
-            "❌ Impossible de charger FMPA-RH.xlsx.\n\n" +
-            (err.message || err)
-        );
+        mettreAJourStatutExcel("🔴 Erreur : fichier Excel non chargé", "#c53030");
+        alert("❌ Impossible de charger FMPA-RH.xlsx.\n\n" + (err.message || err));
     }
 }
 
-
-// Transforme un agent JS en ligne Excel
-function convertirAgentEnLigneExcel(
-    agent
-) {
-
+function convertirAgentEnLigneExcel(agent) {
     return [
-
         agent.matricule || "",
         agent.sexe || "Homme",
         agent.nom || "",
@@ -1226,7 +880,7 @@ function convertirAgentEnLigneExcel(
         agent.specialites || "",
         agent.competences || "",
         agent.regime || "",
-        agent.tempsPartiel || "",
+        agent.tempsPartiel !== undefined ? agent.tempsPartiel : "",
         agent.engagement || "",
         agent.naissanceDate || "",
         agent.lieuNaissance || "",
@@ -1241,158 +895,57 @@ function convertirAgentEnLigneExcel(
     ];
 }
 
-
-// Enregistre uniquement l'onglet baseAgents
 async function enregistrerFichierReseau() {
+    if (!verifierSheetJS()) return false;
 
-    if (!verifierSheetJS()) {
-        return false;
-    }
-
-    if (
-        !window.fileHandleReseau ||
-        !classeurXLSX
-    ) {
-
-        alert(
-            "⚠️ Aucun fichier Excel chargé.\n\n" +
-            "Cliquez d'abord sur « Ouvrir / Connecter »."
-        );
-
+    if (!window.fileHandleReseau || !classeurXLSX) {
+        alert("⚠️ Aucun fichier Excel chargé.\n\nCliquez d'abord sur « Ouvrir / Connecter ».");
         return false;
     }
 
     try {
+        const options = { mode: "readwrite" };
 
-        const options = {
-            mode: "readwrite"
-        };
-
-
-        // Vérification de l'autorisation
-        if (
-            await window.fileHandleReseau
-                .queryPermission(options)
-            !== "granted"
-        ) {
-
-            if (
-                await window.fileHandleReseau
-                    .requestPermission(options)
-                !== "granted"
-            ) {
-
-                alert(
-                    "❌ Autorisation refusée pour modifier le fichier Excel."
-                );
-
+        if (await window.fileHandleReseau.queryPermission(options) !== "granted") {
+            if (await window.fileHandleReseau.requestPermission(options) !== "granted") {
+                alert("❌ Autorisation refusée pour modifier le fichier Excel.");
                 return false;
             }
         }
 
+        const donneesBaseAgents = [HEADERS_BASE_AGENTS];
+        listeAgents.forEach(agent => {
+            donneesBaseAgents.push(convertirAgentEnLigneExcel(agent));
+        });
 
-        /*
-         * IMPORTANT :
-         *
-         * On remplace UNIQUEMENT la feuille baseAgents.
-         *
-         * Les onglets :
-         *   - catalogue
-         *   - historiqueSuivi
-         *
-         * restent dans le classeur.
-         */
+        const nouvelleFeuille = XLSX.utils.aoa_to_sheet(donneesBaseAgents);
+        classeurXLSX.Sheets[NOM_ONGLET_BASE_AGENTS] = nouvelleFeuille;
 
-        const donneesBaseAgents = [
-            HEADERS_BASE_AGENTS
-        ];
-
-        listeAgents.forEach(
-            agent => {
-
-                donneesBaseAgents.push(
-                    convertirAgentEnLigneExcel(
-                        agent
-                    )
-                );
-            }
-        );
-
-
-        const nouvelleFeuille =
-            XLSX.utils.aoa_to_sheet(
-                donneesBaseAgents
-            );
-
-
-        classeurXLSX.Sheets[
-            NOM_ONGLET_BASE_AGENTS
-        ] = nouvelleFeuille;
-
-
-        // Sécurité supplémentaire :
-        // on vérifie que l'onglet existe toujours.
-        if (
-            !classeurXLSX.SheetNames.includes(
-                NOM_ONGLET_BASE_AGENTS
-            )
-        ) {
-
-            classeurXLSX.SheetNames.push(
-                NOM_ONGLET_BASE_AGENTS
-            );
+        if (!classeurXLSX.SheetNames.includes(NOM_ONGLET_BASE_AGENTS)) {
+            classeurXLSX.SheetNames.push(NOM_ONGLET_BASE_AGENTS);
         }
 
+        const buffer = XLSX.write(classeurXLSX, {
+            bookType: "xlsx",
+            type: "array",
+            compression: true
+        });
 
-        // Génération du nouveau fichier XLSX
-        const buffer =
-            XLSX.write(
-                classeurXLSX,
-                {
-                    bookType: "xlsx",
-                    type: "array",
-                    compression: true
-                }
-            );
-
-
-        // Écriture dans le fichier sélectionné
-        const writable =
-            await window.fileHandleReseau
-                .createWritable();
-
+        const writable = await window.fileHandleReseau.createWritable();
         await writable.write(buffer);
         await writable.close();
 
-
         mettreAJourCompteurExcel();
-
-
-        alert(
-            `💾 ${nomFichierXLSX} sauvegardé avec succès.\n\n` +
-            `Onglet « ${NOM_ONGLET_BASE_AGENTS} » : ` +
-            `${listeAgents.length} agent(s).`
-        );
-
+        alert(`💾 ${nomFichierXLSX} sauvegardé avec succès.\n\nOnglet « ${NOM_ONGLET_BASE_AGENTS} » : ${listeAgents.length} agent(s).`);
         return true;
 
-    }
-
-    catch (err) {
-
-        console.error(
-            "Erreur lors de la sauvegarde du classeur Excel :",
-            err
-        );
-
-        alert(
-            "❌ Erreur de sauvegarde de FMPA-RH.xlsx :\n\n" +
-            (err.message || err)
-        );
-
+    } catch (err) {
+        console.error("Erreur lors de la sauvegarde du classeur Excel :", err);
+        alert("❌ Erreur de sauvegarde de FMPA-RH.xlsx :\n\n" + (err.message || err));
         return false;
     }
 }
+
 /* ==========================================================================
    6. ÉCOUTEURS D'ÉVÉNEMENTS & DOMCONTENTLOADED
    ========================================================================== */
@@ -1416,19 +969,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const elStatut = document.getElementById("agentStatut");
-    if (elStatut) {
-        elStatut.addEventListener('change', adapterFormulaireSelonStatut);
-    }
+    if (elStatut) elStatut.addEventListener('change', adapterFormulaireSelonStatut);
 
     const elRegime = document.getElementById("agentRegime");
-    if (elRegime) {
-        elRegime.addEventListener('change', gererChangementRegime);
-    }
+    if (elRegime) elRegime.addEventListener('change', gererChangementRegime);
 
     const elEquipe = document.getElementById("agentEquipe");
-    if (elEquipe) {
-        elEquipe.addEventListener('change', gererChangementEquipe);
-    }
+    if (elEquipe) elEquipe.addEventListener('change', gererChangementEquipe);
 
     adapterFormulaireSelonStatut();
     actualiserIndicateurGardes();
@@ -1439,8 +986,6 @@ window.onload = function() {
     actualiserTableauRH();
 };
 
-
-// Génère et affiche la liste des alertes Permis PL
 function afficherListeAlertesPL() {
     const aRenouveler = listeAgents.filter(agent => doitRenouvelerPL(agent.datePL));
 
@@ -1449,7 +994,6 @@ function afficherListeAlertesPL() {
         return;
     }
 
-    // Tri par date la plus ancienne en premier
     aRenouveler.sort((a, b) => {
         const dateA = new Date(formaterDatePourInput(a.datePL) || '9999-12-31');
         const dateB = new Date(formaterDatePourInput(b.datePL) || '9999-12-31');
@@ -1465,7 +1009,6 @@ function afficherListeAlertesPL() {
     alert(message);
 }
 
-// Génère et affiche la liste des alertes VMA
 function afficherListeAlertesVMA() {
     const aRenouveler = listeAgents.filter(agent => doitRenouvelerVMA(agent.dateVMA));
 
@@ -1474,7 +1017,6 @@ function afficherListeAlertesVMA() {
         return;
     }
 
-    // Tri par date la plus ancienne en premier
     aRenouveler.sort((a, b) => {
         const dateA = new Date(formaterDatePourInput(a.dateVMA) || '9999-12-31');
         const dateB = new Date(formaterDatePourInput(b.dateVMA) || '9999-12-31');
