@@ -904,3 +904,113 @@ function annulerSaisie() {
 function escapeJs(value) {
     return String(value ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
+
+
+
+
+
+// --- OUVERTURE ET FERMETURE DE LA MODALE ---
+function ouvrirModalHistorique() {
+    document.getElementById("modal-historique").style.display = "flex";
+    afficherHistorique();
+}
+
+function fermerModalHistorique() {
+    document.getElementById("modal-historique").style.display = "none";
+}
+
+// --- AFFICHAGE ET FILTRAGE ---
+function afficherHistorique() {
+    const tbody = document.getElementById("tbody-historique");
+    if (!tbody) return;
+
+    const filterNom = document.getElementById("hist-search-agent")?.value.toLowerCase().trim() || "";
+    const filterDate = document.getElementById("hist-search-date")?.value || "";
+
+    tbody.innerHTML = "";
+
+    // On parcourt l'historique dans l'ordre inverse (plus récent en haut)
+    historiqueSaisiesFMPA.slice().reverse().forEach((row, indexReversed) => {
+        // Retrouver l'index réel dans le tableau d'origine
+        const realIndex = historiqueSaisiesFMPA.length - 1 - indexReversed;
+        
+        // Retrouver l'agent d'après le matricule
+        const agent = tableauAgentsRH.find(a => a.matricule === row.matricule);
+        const nomAgent = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule}`;
+        const equipeAgent = agent ? agent.equipe : "-";
+
+        // Application des filtres
+        if (filterNom && !nomAgent.toLowerCase().includes(filterNom)) return;
+        if (filterDate && row.date !== filterDate) return;
+
+        const duree = calculerDureeEntreHeures(row.heureDebut, row.heureFin);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td><strong>${escapeHtml(nomAgent)}</strong></td>
+            <td>${escapeHtml(equipeAgent)}</td>
+            <td>${escapeHtml(row.date)}</td>
+            <td>${escapeHtml(row.dateSaisie || "-")}</td>
+            <td>${escapeHtml(row.formation)}</td>
+            <td>${escapeHtml(row.formateur || "-")}</td>
+            <td>${escapeHtml(row.heureDebut)}</td>
+            <td>${escapeHtml(row.heureFin)}</td>
+            <td><strong>${duree} h</strong></td>
+            <td>
+                <button type="button" class="btn-edit" onclick="editerLigneHistorique(${realIndex})">✏️</button>
+                <button type="button" class="btn-delete" onclick="supprimerLigneHistorique(${realIndex})">🗑️</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function filtrerHistorique() {
+    afficherHistorique();
+}
+
+function reinitialiserFiltresHistorique() {
+    if (document.getElementById("hist-search-agent")) document.getElementById("hist-search-agent").value = "";
+    if (document.getElementById("hist-search-date")) document.getElementById("hist-search-date").value = "";
+    afficherHistorique();
+}
+
+// --- EDITIONS ET SUPPRESSIONS ---
+async function supprimerLigneHistorique(index) {
+    if (!confirm("Voulez-vous vraiment supprimer cette ligne d'historique ?")) return;
+
+    // 1. Suppression dans le tableau JS
+    historiqueSaisiesFMPA.splice(index, 1);
+
+    // 2. Recalcul des heures et mise à jour de la grille principale
+    reconstruireCumulsDepuisHistorique();
+    filtrerEtAfficherTableau();
+    afficherHistorique();
+
+    // 3. Réécriture dans le fichier Excel
+    if (fichierHandleXLSX) {
+        await enregistrerFichierXLSX();
+    }
+}
+
+async function editerLigneHistorique(index) {
+    const item = historiqueSaisiesFMPA[index];
+    const nDebut = prompt("Nouvelle heure de début (HH:MM) :", item.heureDebut);
+    if (!nDebut) return;
+
+    const nFin = prompt("Nouvelle heure de fin (HH:MM) :", item.heureFin);
+    if (!nFin) return;
+
+    item.heureDebut = nDebut;
+    item.heureFin = nFin;
+    item.dateSaisie = obtenirDateSaisie();
+
+    // Recalcul et sauvegarde
+    reconstruireCumulsDepuisHistorique();
+    filtrerEtAfficherTableau();
+    afficherHistorique();
+
+    if (fichierHandleXLSX) {
+        await enregistrerFichierXLSX();
+    }
+}
