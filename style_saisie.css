@@ -391,9 +391,9 @@ body {
 
 /* --- BOUTON VALIDER (Spécifique) --- */
 .btn-primary {
-    flex: 1.2;               /* Donne plus de largeur (ex: 60% de l'espace) */
-    height: 45px;            /* Hauteur spécifique */
-    font-size: 0.9rem;       /* Taille de texte spécifique */
+    flex: 0.8;               /* Donne plus de largeur (ex: 60% de l'espace) */
+    height: 35px;            /* Hauteur spécifique */
+    font-size: 0.8rem;       /* Taille de texte spécifique */
     background-color: #2563eb;
     color: #ffffff;
 }
@@ -407,7 +407,7 @@ body {
 /* --- BOUTON ANNULER (Spécifique) --- */
 .btn-secondary {
     flex: 0.8;               /* Donne moins de largeur (ex: 40% de l'espace) */
-    height: 38px;            /* Hauteur plus petite si souhaitée */
+    height: 35px;            /* Hauteur plus petite si souhaitée */
     font-size: 0.8rem;       /* Texte un peu plus discret */
     background-color: #dc2626;
     color: #ffffff;
