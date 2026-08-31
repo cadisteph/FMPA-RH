@@ -112,8 +112,8 @@ html, body {
     gap: 5px !important;
     width: 100% !important;
     /* On calcule précisément la hauteur restante (100% écran moins le bandeau du haut) */
-    height: calc(100vh - 270px) !important;
-    max-height: calc(100vh - 270px) !important;
+    height: calc(100vh - 200px) !important;
+    max-height: calc(100vh - 200px) !important;
     overflow: hidden !important;
 }
 
