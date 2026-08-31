@@ -34,13 +34,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-reset-filters")?.addEventListener("click", reinitialiserFiltres);
 
     const hDebut = document.getElementById("saisie-heure-debut");
-const hFin = document.getElementById("saisie-heure-fin");
+    const hFin = document.getElementById("saisie-heure-fin");
 
-if (hDebut && hFin) {
-    // Calcule la durée uniquement quand la valeur change ou est modifiée
-    hDebut.addEventListener("input", calculerDuree);
-    hFin.addEventListener("input", calculerDuree);
-}
+    if (hDebut && hFin) {
+        hDebut.addEventListener("input", calculerDuree);
+        hFin.addEventListener("input", calculerDuree);
+    }
 
     document.getElementById("saisie-activite")?.addEventListener("change", majListeThemes);
     document.getElementById("select-all")?.addEventListener("change", basculerToutSelectionner);
@@ -54,7 +53,7 @@ function afficherMessageAccueil() {
     if (!tbody) return;
     tbody.innerHTML = `
         <tr>
-            <td colspan="6" style="text-align:left; padding:40px; color:#64748b;">
+            <td colspan="8" style="text-align:left; padding:40px; color:#64748b;">
                 <div style="font-size:1.1rem; color: #bd1e1e; margin-bottom:8px;"><strong>Aucun fichier Excel chargé</strong></div>
                 Cliquez sur <strong>📂 Ouvrir FMPA-RH.xlsx</strong>.
             </td>
@@ -344,7 +343,6 @@ function initialiserFiltresEtListes() {
     }
 }
 
-/* AFFICHAGE DE LA SÉQUENCE AU LIEU DE LA DURÉE */
 function majListeThemes() {
     const activite = document.getElementById("saisie-activite").value;
     const selectTheme = document.getElementById("saisie-theme");
@@ -397,7 +395,6 @@ function calculerDureeEntreHeures(debut, fin) {
     return min / 60;
 }
 
-/* CONTRÔLE DE CHEVAUCHEMENT D'HORAIRES */
 function verifierChevauchementHoraire(matricule, dateSaisie, heureDebutSaisie, heureFinSaisie) {
     const convertMin = (hStr) => {
         const [h, m] = hStr.split(":").map(Number);
@@ -415,7 +412,6 @@ function verifierChevauchementHoraire(matricule, dateSaisie, heureDebutSaisie, h
         let finExist = convertMin(row.heureFin);
         if (finExist <= debutExist) finExist += 24 * 60;
 
-        // Condition de chevauchement strict : (Début1 < Fin2) ET (Fin1 > Début2)
         return (debutSaisie < finExist) && (finSaisie > debutExist);
     });
 }
@@ -479,8 +475,8 @@ function afficherTableauAgents(listeAgents) {
             <td><span class="badge-tag badge-statut">${escapeHtml(agent.statut || "-")}</span></td>
             <td class="col-avancement">${resSocle.html}</td>
             <td class="col-avancement">${resSpec.html}</td>
-            <td class="col-total" style="color:#1e40af;">${resSocle.total} h</td>
-            <td class="col-total" style="color:#0f172a;">${resSpec.total} h</td>
+            <td class="col-total" style="color:#1e40af;">${resSocle.libelleTotal}</td>
+            <td class="col-total" style="color:#0f172a;">${resSpec.libelleTotal}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -494,7 +490,9 @@ function genererAvancementSocle(agent) {
     const heuresAgent = cumulHeuresParAgent[idAgent] || {};
     const socleFormations = catalogueInitial.filter(f => String(f.type).toUpperCase().includes("SOCLE"));
 
-    if (!socleFormations.length) return { html: `<span style="color:#64748b;">Catalogue non chargé</span>`, total: 0 };
+    if (!socleFormations.length) {
+        return { html: `<span style="color:#64748b;">Catalogue non chargé</span>`, totalUtile: 0, totalReel: 0, totalAFaire: 0, libelleTotal: "0 / 0 h" };
+    }
 
     const profilsAgent = new Set([
         ...extraireValeurs(agent.statut),
@@ -506,7 +504,9 @@ function genererAvancementSocle(agent) {
         ...extraireValeurs(agent.regime)
     ]);
 
-    let totalHeures = 0;
+    let totalUtile = 0;
+    let totalReel = 0;
+    let totalAFaire = 0;
 
     const itemsHtml = socleFormations.map(f => {
         let quotaRequis = Number(f.quota) || 0;
@@ -529,22 +529,38 @@ function genererAvancementSocle(agent) {
 
         if (estDispense || quotaRequis === 0) return null;
 
-        const fait = heuresAgent[f.id] || heuresAgent[f.libelle] || 0;
-        totalHeures += fait;
-        const styleClass = fait >= quotaRequis ? "fma-done" : (fait > 0 ? "fma-partial" : "fma-todo");
+        totalAFaire += quotaRequis;
 
-        return `<span class="fma-item"><span style="color:#0284c7; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${fait}/${quotaRequis}h</span></span>`;
+        const faitReel = heuresAgent[f.id] || heuresAgent[f.libelle] || 0;
+        const faitUtile = Math.min(faitReel, quotaRequis);
+
+        totalReel += faitReel;
+        totalUtile += faitUtile;
+
+        const styleClass = faitUtile >= quotaRequis ? "fma-done" : (faitUtile > 0 ? "fma-partial" : "fma-todo");
+
+        return `<span class="fma-item"><span style="color:#0284c7; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${faitUtile}/${quotaRequis}h</span></span>`;
     }).filter(Boolean);
+
+    let libelleTotal = `${totalUtile} / ${totalAFaire} h`;
+    if (totalReel > totalUtile) {
+        libelleTotal += ` <small style="color:#64748b; font-weight:normal; font-size:0.8em;">(réel : ${totalReel}h)</small>`;
+    }
 
     return {
         html: itemsHtml.join(" | ") || `<span style="color:#64748b;">Aucun socle requis</span>`,
-        total: totalHeures
+        totalUtile,
+        totalReel,
+        totalAFaire,
+        libelleTotal
     };
 }
 
 function genererAvancementSpecialites(agent) {
     const specAgentBrutes = (agent.specialites || []).map(s => s.trim().toUpperCase()).filter(Boolean);
-    if (!specAgentBrutes.length) return { html: `<span style="color:#94a3b8;">Aucune spé.</span>`, total: 0 };
+    if (!specAgentBrutes.length) {
+        return { html: `<span style="color:#94a3b8;">Aucune spé.</span>`, totalUtile: 0, totalReel: 0, totalAFaire: 0, libelleTotal: "0 / 0 h" };
+    }
 
     const specAgentBase = specAgentBrutes.map(s => s.replace(/\s*\d+$/, ""));
     const heuresAgent = cumulHeuresParAgent[agent.id] || {};
@@ -566,24 +582,42 @@ function genererAvancementSpecialites(agent) {
         return estTypeSpec || matchActivite || matchProfil;
     });
 
-    if (!formationsSpec.length) return { html: `<span style="color:#94a3b8;">Aucun suivi requis</span>`, total: 0 };
+    if (!formationsSpec.length) {
+        return { html: `<span style="color:#94a3b8;">Aucun suivi requis</span>`, totalUtile: 0, totalReel: 0, totalAFaire: 0, libelleTotal: "0 / 0 h" };
+    }
 
-    let totalHeures = 0;
+    let totalUtile = 0;
+    let totalReel = 0;
+    let totalAFaire = 0;
 
     const itemsHtml = formationsSpec.map(f => {
         const quotaRequis = Number(f.quota) || 0;
         if (!quotaRequis) return null;
 
-        const fait = heuresAgent[f.id] || heuresAgent[f.libelle] || 0;
-        totalHeures += fait;
-        const styleClass = fait >= quotaRequis ? "fma-done" : (fait > 0 ? "fma-partial" : "fma-todo");
+        totalAFaire += quotaRequis;
 
-        return `<span class="fma-item"><span style="color:#8b5cf6; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${fait}/${quotaRequis}h</span></span>`;
+        const faitReel = heuresAgent[f.id] || heuresAgent[f.libelle] || 0;
+        const faitUtile = Math.min(faitReel, quotaRequis);
+
+        totalReel += faitReel;
+        totalUtile += faitUtile;
+
+        const styleClass = faitUtile >= quotaRequis ? "fma-done" : (faitUtile > 0 ? "fma-partial" : "fma-todo");
+
+        return `<span class="fma-item"><span style="color:#8b5cf6; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${faitUtile}/${quotaRequis}h</span></span>`;
     }).filter(Boolean);
+
+    let libelleTotal = `${totalUtile} / ${totalAFaire} h`;
+    if (totalReel > totalUtile) {
+        libelleTotal += ` <small style="color:#64748b; font-weight:normal; font-size:0.8em;">(réel : ${totalReel}h)</small>`;
+    }
 
     return {
         html: itemsHtml.join(" | ") || `<span style="color:#64748b;">0/0h</span>`,
-        total: totalHeures
+        totalUtile,
+        totalReel,
+        totalAFaire,
+        libelleTotal
     };
 }
 
@@ -644,15 +678,12 @@ function majStatutSelection() {
     document.getElementById("btn-valider-groupe").disabled = count === 0 || !classeurXLSX;
 }
 
-/* REINITIALISATION COMPLÈTE DU FORMULAIRE */
 function reinitialiserFormulaire() {
     document.getElementById("form-saisie-groupee")?.reset();
     
-    // Remettre la date du jour
     const dateInput = document.getElementById("saisie-date");
     if (dateInput) dateInput.valueAsDate = new Date();
 
-    // Reinitialiser les listes déroulantes dépendantes
     const selectAct = document.getElementById("saisie-activite");
     if (selectAct) selectAct.value = "";
 
@@ -665,7 +696,6 @@ function reinitialiserFormulaire() {
     calculerDuree();
 }
 
-/* VALIDATION AVEC CONTRÔLE DE CHEVAUCHEMENT ET RAZ FORMULAIRE */
 async function validerSaisieGroupee(e) {
     e.preventDefault();
 
@@ -698,10 +728,8 @@ async function validerSaisieGroupee(e) {
         return;
     }
 
-    // --- VÉRIFICATION DES CHEVAUCHEMENTS D'HORAIRES ---
     const conflits = [];
 
-    // 1. Pour les agents bénéficiaires
     agentsSelectionnes.forEach(idAgent => {
         const agent = tableauAgentsRH.find(a => a.id === idAgent);
         if (!agent) return;
@@ -712,7 +740,6 @@ async function validerSaisieGroupee(e) {
         }
     });
 
-    // 2. Pour le formateur
     let agentFormateur = null;
     if (formateur) {
         agentFormateur = tableauAgentsRH.find(a => {
@@ -733,7 +760,6 @@ async function validerSaisieGroupee(e) {
         return;
     }
 
-    // --- ENREGISTREMENT DE LA SAISIE ---
     const dateSaisie = obtenirDateSaisie();
 
     agentsSelectionnes.forEach(idAgent => {
@@ -780,9 +806,7 @@ async function validerSaisieGroupee(e) {
     const selectAll = document.getElementById("select-all");
     if (selectAll) selectAll.checked = false;
 
-    // Vider le formulaire de droite
     reinitialiserFormulaire();
-
     filtrerEtAfficherTableau();
 
     if (fichierHandleXLSX) {
@@ -869,7 +893,6 @@ function escapeHtml(value) {
         .replace(/'/g, "&#039;");
 }
 
-// Fonction pour le bouton Annuler Saisie
 function annulerSaisie() {
     reinitialiserFormulaire();
     agentsSelectionnes.clear();
@@ -877,7 +900,6 @@ function annulerSaisie() {
     if (selectAll) selectAll.checked = false;
     filtrerEtAfficherTableau();
 }
-
 
 function escapeJs(value) {
     return String(value ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
