@@ -690,6 +690,33 @@ function supprimerAgent() {
     }
 }
 
+async function supprimerAgentEtSauvegarder() {
+    // 1. Suppression de l'agent dans la liste locale
+    const idVal = document.getElementById("agentId").value;
+    if (!idVal) return;
+
+    if (confirm("❓ Êtes-vous sûr de vouloir supprimer cet agent ?")) {
+        const id = parseInt(idVal, 10);
+        const index = listeAgents.findIndex(a => a.id === id);
+
+        if (index !== -1) {
+            listeAgents.splice(index, 1);
+        }
+
+        localStorage.setItem("baseAgents", JSON.stringify(listeAgents));
+        actualiserTableauRH();
+        viderFormulaireRH();
+
+        // 2. Sauvegarde automatique dans le fichier Excel connecté sur le réseau
+        if (window.fileHandleReseau && classeurXLSX) {
+            await enregistrerFichierReseau();
+        } else {
+            alert("⚠️ L'agent a été supprimé de l'affichage, mais aucun fichier Excel n'est connecté pour sauvegarder la modification sur le réseau.");
+        }
+    }
+}
+
+
 /* ==========================================================================
    5. LIEN AVEC FMPA-RH.xlsx — ONGLET baseAgents
    ========================================================================== */
