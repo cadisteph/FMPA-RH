@@ -104,9 +104,13 @@ function mettreAJourAffichageAge() {
 
 // Générateur de badges triés par ordre alphabétique
 function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#2d3748") {
-    if (!chaineTxt || chaineTxt.trim() === "") return "-";
+    if (chaineTxt === null || chaineTxt === undefined) return "-";
+    
+    // Force la conversion en chaîne de caractères (gère les nombres comme 1, 0.8, 100, etc.)
+    const txt = String(chaineTxt).trim();
+    if (txt === "") return "-";
 
-    let liste = chaineTxt.split(",")
+    let liste = txt.split(",")
         .map(item => item.trim())
         .filter(item => item.length > 0);
 
