@@ -104,23 +104,25 @@ html, body {
 }
 
 /* ==========================================================================
-   3. DISPOSITION EN 2 COLONNES (SECTION RH ADAPTATIVE)
+   3. DISPOSITION EN 2 COLONNES (SECTION RH)
    ========================================================================== */
 #sectionRH {
     display: flex !important;
     flex-direction: row !important;
     gap: 12px !important;
-    flex: 1 !important;              /* Occupe tout l'espace vertical disponible */
-    min-height: 0 !important;         /* Indispensable pour éviter tout débordement d'écran */
     width: 100% !important;
+    /* On calcule précisément la hauteur restante (100% écran moins le bandeau du haut) */
+    height: calc(100vh - 150px) !important;
+    max-height: calc(100vh - 150px) !important;
     overflow: hidden !important;
 }
 
 /* --- COLONNE GAUCHE : TABLEAU --- */
 .table-container {
     flex: 1 1 75% !important;
-    height: 100% !important;           /* S'étire sur toute la hauteur de #sectionRH */
-    overflow: auto !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
     background: #ffffff !important;
     border: 1px solid #cbd5e0 !important;
     border-radius: 6px !important;
@@ -153,13 +155,14 @@ html, body {
 .form-card {
     flex: 0 0 25% !important;
     max-width: 25% !important;
-    height: 100% !important;          /* S'étire sur toute la hauteur de #sectionRH */
+    height: 100% !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     background: #e9edee !important; 
     border: 1px solid #0056b3 !important;
     border-radius: 6px !important;
-    padding: 12px 12px 12px 12px !important;
+    padding: 12px !important;
+    box-sizing: border-box !important;
 }
 
 .form-grid-3 {
