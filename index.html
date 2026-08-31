@@ -12,12 +12,12 @@
   <header style="background: #1a202c; color: white; padding: 12px 20px;">
     <h1 style="margin: 0; font-size: 1.4em; color: white;">Cis Le Havre - Caucriauville : Gestion Effectifs RH 🗃️</h1>
     
-    <!-- BARRE CONNECTEUR RÉSEAU CSV -->
+    <!-- BARRE CONNECTEUR FMPA-RH.xlsx -->
     <div class="network-bar" style="margin-top: 5px; display: flex; align-items: center; gap: 12px;">
       <button type="button" class="btn-reseau" style="background: #46f108" onclick="connecterFichierReseau()">
-        🔗 Connecter (cliquer sur "baseAgents.csv")
+        📂 Ouvrir FMPA-RH.xlsx
       </button>
-      <span id="statusReseau" style="font-size: 0.75em; color: #ed1c1c; font-weight: normal;">🚨 Non connecté : enregistrement impossible</span>
+      <span id="statusReseau" style="font-size: 0.75em; color: #ed1c1c; font-weight: normal;">⚪ Aucun fichier Excel chargé</span>
       
     <!-- Boutons d'extraction des alertes RH -->
     <button onclick="afficherListeAlertesPL()" style="background: #cbd5e0; border: 1px solid #8a2be2; color: #8a2be2; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size : 0.85em; display: flex; align-items: center; gap: 6px;">🚒 Renouvellement Permis</button>
@@ -412,9 +412,9 @@
 
             <!-- BOUTONS D'ACTION -->
             <div style="display:flex; gap:5px; margin-top:10px;">
-              <button type="button" class="btn-reseau" style="flex:1; background:#3cac74; color:white; padding:5px; border:none; border-radius:3px; cursor:pointer" onclick="enregistrerAgent(); enregistrerFichierReseau()">💽 Edit.💾 Enreg.</button>
+              <button type="button" class="btn-reseau" style="flex:1; background:#3cac74; color:white; padding:5px; border:none; border-radius:3px; cursor:pointer" onclick="enregistrerAgentEtSauvegarder()">💽 Edit.💾 Enreg.</button>
               <button type="button" class="btn btn-secondary" onclick="viderFormulaireRH()" style="background:#3cac74; color:white; padding:5px; border:none; border-radius:3px; cursor:pointer;">📩 Réinitialiser</button>
-              <button type="button" id="btnSupprimerAgent" class="btn btn-danger" onclick="supprimerAgent(); enregistrerFichierReseau()" style="display:none; background:#e53e3e; color:white; padding:5px; border:none; border-radius:3px; cursor:pointer;">🗑️ Radier</button>
+              <button type="button" id="btnSupprimerAgent" class="btn btn-danger" onclick="supprimerAgentEtSauvegarder()" style="display:none; background:#e53e3e; color:white; padding:5px; border:none; border-radius:3px; cursor:pointer;">🗑️ Radier</button>
             </div>
 
           </div>
@@ -425,6 +425,7 @@
 
   </main>
 
-  <script src="script.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="script.js?v=2"></script>
 </body>
 </html>
