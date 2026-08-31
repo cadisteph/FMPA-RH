@@ -54,8 +54,8 @@ function afficherMessageAccueil() {
     if (!tbody) return;
     tbody.innerHTML = `
         <tr>
-            <td colspan="6" style="text-align:center; padding:40px; color:#64748b;">
-                <div style="font-size:1.1rem; margin-bottom:8px;"><strong>Aucun fichier Excel chargé</strong></div>
+            <td colspan="6" style="text-align:left; padding:40px; color:#64748b;">
+                <div style="font-size:1.1rem; color: #bd1e1e; margin-bottom:8px;"><strong>Aucun fichier Excel chargé</strong></div>
                 Cliquez sur <strong>📂 Ouvrir FMPA-RH.xlsx</strong>.
             </td>
         </tr>
@@ -128,7 +128,7 @@ async function chargerClasseur(file) {
     filtrerEtAfficherTableau();
 
     afficherStatut(
-        `🟢 ${nomFichierXLSX} chargé — ` +
+        `🌐 ${nomFichierXLSX} chargé — ` +
         `${tableauAgentsRH.length} agent(s), ` +
         `${catalogueInitial.length} formation(s), ` +
         `${historiqueSaisiesFMPA.length} ligne(s) d'historique`
