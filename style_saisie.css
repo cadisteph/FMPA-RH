@@ -456,3 +456,21 @@ body {
 .btn-delete { background: #dc2626; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
 .btn-close { background: #475569; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
 .btn-sec { background: #64748b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+
+.btn-hist {
+    background-color: #3b82f6;
+    color: #ffffff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.btn-hist:hover {
+    background-color: #2563eb;
+}
