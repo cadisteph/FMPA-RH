@@ -104,25 +104,22 @@ html, body {
 }
 
 /* ==========================================================================
-   3. DISPOSITION EN 2 COLONNES (SECTION RH)
+   3. DISPOSITION EN 2 COLONNES (SECTION RH ADAPTATIVE)
    ========================================================================== */
 #sectionRH {
     display: flex !important;
     flex-direction: row !important;
     gap: 12px !important;
-    flex: 1 !important;
-    min-height: 0 !important;
-    /* Reduit la hauteur globale pour que les bas de page soient visibles */
-    height: calc(100vh - 200px) !important;
-    max-height: calc(100vh - 200px) !important;
+    flex: 1 !important;              /* Occupe tout l'espace vertical disponible */
+    min-height: 0 !important;         /* Indispensable pour éviter tout débordement d'écran */
     width: 100% !important;
     overflow: hidden !important;
 }
 
 /* --- COLONNE GAUCHE : TABLEAU --- */
 .table-container {
-    flex: 1 1 100% !important;
-    height: 85% !important;
+    flex: 1 1 75% !important;
+    height: 100% !important;           /* S'étire sur toute la hauteur de #sectionRH */
     overflow: auto !important;
     background: #ffffff !important;
     border: 1px solid #cbd5e0 !important;
@@ -156,13 +153,13 @@ html, body {
 .form-card {
     flex: 0 0 25% !important;
     max-width: 25% !important;
-    height: 85% !important;
+    height: 100% !important;          /* S'étire sur toute la hauteur de #sectionRH */
     overflow-y: auto !important;
     overflow-x: hidden !important;
     background: #e9edee !important; 
     border: 1px solid #0056b3 !important;
     border-radius: 6px !important;
-    padding: 12px 12px 5px 12px !important; /* 5px d'espace de sécurité en bas */
+    padding: 12px 12px 12px 12px !important;
 }
 
 .form-grid-3 {
@@ -225,7 +222,6 @@ html, body {
     margin-top: 4px !important;
 }
 
-
 .card-gardes-valeur {
     background: #ffffff !important;
     border: 1px solid #bce1ec !important;
@@ -242,8 +238,7 @@ html, body {
     color: #0056b3 !important;
 }
 
-
-/* =======BOUTONS & STYLES DES ACTIONS========== */
+/* ======= BOUTONS & STYLES DES ACTIONS ========== */
 .btn, .btn-dark, .btn-success, .btn-primary, .btn-secondary, .btn-danger, .btn-warning, .btn-reseau {
     padding: 4px 10px !important;
     border: none !important;
@@ -289,16 +284,16 @@ button:hover { opacity: 0.9; }
     border-radius: 4px;
 }
 
-/* =====STYLE SPÉCIFIQUE : CASES À COCHER COMPÉTENCES (CIBLAGE AUTOMATIQUE)====== */
+/* ===== STYLE SPÉCIFIQUE : CASES À COCHER COMPÉTENCES ====== */
 #containerCompetencesForm label {
-    font-size: 0.7em !important;      /* Taille du texte */
-    font-weight: 600 !important;       /* Texte légèrement en gras */
-    color: #4a5568 !important;         /* Couleur gris foncé */
-    cursor: pointer !important;        /* Transforme le curseur en main au survol */
-    display: inline-flex !important;   /* Aligne proprement la case et le texte */
-    align-items: center !important;   /* Centre verticalement la case et le texte */
-    gap: 4px !important;               /* Espace entre la case et le texte */
-    user-select: none !important;      /* Empêche la sélection bleue du texte */
+    font-size: 0.7em !important;
+    font-weight: 600 !important;
+    color: #4a5568 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    user-select: none !important;
 }
 
 #containerCompetencesForm input[type="checkbox"] {
@@ -310,31 +305,28 @@ button:hover { opacity: 0.9; }
 
 /* 1. Le conteneur (alignement et masquage initial) */
 #groupDisponibilite {
-    display: none; /* Masqué par défaut (géré par JS) */
+    display: none;
     flex-direction: column;
     justify-content: flex-end;
     width: 100%;
 }
 
-/* 2. La case à cocher elle-même (sa taille) */
+/* 2. La case à cocher elle-même */
 #agentDisponibilite {
     width: 18px !important;
     height: 18px !important;
     cursor: pointer !important;
 }
 
-
-/* ======DISPOSITION 2x2 PLEINE LARGEUR POUR COD, IBNB, RAD, RCH====== */
-/* Force le conteneur des 4 spécialités à occuper 2 colonnes égales */
+/* ====== DISPOSITION 2x2 PLEINE LARGEUR POUR SPÉCIALITÉS ====== */
 #containerCompetencesForm .form-grid-2 {
     display: grid !important;
-    grid-template-columns: 1fr 1fr !important; /* 2 colonnes égales (50% / 50%) */
-    gap: 6px 10px !important;                 /* Espacement vertical et horizontal */
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px 10px !important;
     width: 100% !important;
     margin-bottom: 8px !important;
 }
 
-/* S'assure que chaque champ s'étale bien sur sa moitié de ligne */
 #containerCompetencesForm .form-grid-2 .form-group {
     display: flex !important;
     flex-direction: column !important;
@@ -349,15 +341,13 @@ button:hover { opacity: 0.9; }
 
 /* Style du titre (FICHE INDIVIDUELLE) du formulaire */
 .form-title {
-    font-size: 1.1em !important;         /* Taille du texte */
-    font-weight: bold !important;        /* Gras (ou 'normal' pour retirer le gras) */
-    font-family: Arial, sans-serif !important; /* Police de caractère */
-    color: #1a365d !important ;         /* Couleur du texte (bleu foncé) */
-    background-color: #bcc3ec !important;/* Surlignage (jaune doux) */
-    
-    /* Options de finition recommandées */
-    display: inline-block !important;    /* Ajuste le surlignage à la longueur du texte */
-    padding: 2px 6px !important;         /* Marge interne autour du texte surligné */
-    border-radius: 6px !important;       /* Arrondit légèrement les coins du surlignage */
-    text-transform: uppercase !important;/* Force tout en majuscules */
+    font-size: 1.1em !important;
+    font-weight: bold !important;
+    font-family: Arial, sans-serif !important;
+    color: #1a365d !important;
+    background-color: #bcc3ec !important;
+    display: inline-block !important;
+    padding: 2px 6px !important;
+    border-radius: 6px !important;
+    text-transform: uppercase !important;
 }
