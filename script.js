@@ -445,11 +445,7 @@ function actualiserTableauRH() {
         if (agent.statut === "SPV") {
             tpEngagement = agent.engagement || "Complet";
         } else if (agent.statut === "SPP") {
-            tpEngagement = agent.tempsPartiel !== undefined &&
-                           agent.tempsPartiel !== null &&
-                           agent.tempsPartiel !== ""
-                           ? agent.tempsPartiel
-                           : 1;
+            tpEngagement = agent.tempsPartiel || "100%";
                            }
 
         let coords = [];
