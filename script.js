@@ -735,8 +735,8 @@ function mettreAJourStatutExcel(message, couleur = "#475569") {
 function mettreAJourCompteurExcel() {
     const el = document.getElementById("statusReseau");
     if (!el || !window.fileHandleReseau) return;
-    el.innerText = `🟢 ${nomFichierXLSX || "FMPA-RH.xlsx"} chargé — ${listeAgents.length} agent(s)`;
-    el.style.color = "#16803c";
+    el.innerText = `🌐 ${nomFichierXLSX || "FMPA-RH.xlsx"} chargé — ${listeAgents.length} agent(s)`;
+    el.style.color = "#38bdf8";
 }
 
 function verifierSheetJS() {
