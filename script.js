@@ -872,7 +872,7 @@ async function connecterFichierReseau() {
         actualiserTableauRH();
         viderFormulaireRH();
 
-        mettreAJourStatutExcel(`🟢 ${nomFichierXLSX} chargé — ${listeAgents.length} agent(s)`, "#16803c");
+        mettreAJourStatutExcel(`🌐 ${nomFichierXLSX} chargé — ${listeAgents.length} agent(s)`, "#38bdf8");
         alert(`Chargement réussi : ${listeAgents.length} agent(s) importé(s) depuis l'onglet ${NOM_ONGLET_BASE_AGENTS}.`);
 
     } catch (err) {
