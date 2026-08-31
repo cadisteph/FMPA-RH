@@ -109,11 +109,11 @@ html, body {
 #sectionRH {
     display: flex !important;
     flex-direction: row !important;
-    gap: 12px !important;
+    gap: 5px !important;
     width: 100% !important;
     /* On calcule précisément la hauteur restante (100% écran moins le bandeau du haut) */
-    height: calc(100vh - 150px) !important;
-    max-height: calc(100vh - 150px) !important;
+    height: calc(100vh - 270px) !important;
+    max-height: calc(100vh - 270px) !important;
     overflow: hidden !important;
 }
 
