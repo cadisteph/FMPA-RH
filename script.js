@@ -38,6 +38,39 @@ const HEADERS_BASE_AGENTS = [
    1. UTILITAIRES DE FORMATAGE, DATES & BADGES
    ========================================================================== */
 
+// Convertit 1 -> "100%", 0.7 -> "70%" pour l'affichage (Tableau et Formulaire)
+function formaterPourcentageAffichage(valeur) {
+    if (valeur === null || valeur === undefined || valeur === "") return "100%";
+    
+    const str = String(valeur).trim();
+    if (str.endsWith("%")) return str;
+
+    const num = Number(str.replace(",", "."));
+    if (isNaN(num)) return str;
+
+    if (num <= 1 && num > 0) {
+        return Math.round(num * 100) + "%";
+    }
+
+    return Math.round(num) + "%";
+}
+
+// Convertit "70%", "70" ou "0.7" -> 0.7 pour l'enregistrement numérique dans Excel
+function convertirTempsPartielEnNombre(valeur) {
+    if (valeur === null || valeur === undefined || valeur === "") return 1;
+    
+    let str = String(valeur).replace("%", "").replace(",", ".").trim();
+    let num = Number(str);
+
+    if (isNaN(num)) return 1;
+
+    if (num > 1 && num <= 100) {
+        return num / 100;
+    }
+
+    return num;
+}
+
 function echapperHTML(str) {
     if (str === null || str === undefined) return "";
     return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -99,7 +132,7 @@ function mettreAJourAffichageAge() {
     if (dateInput && label) label.innerText = calculerAge(dateInput.value);
 }
 
-// Générateur de badges triés par ordre alphabétique (CORRIGÉ POUR GÉRER LES NOMBRES)
+// Générateur de badges triés par ordre alphabétique
 function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#2d3748") {
     if (chaineTxt === null || chaineTxt === undefined) return "-";
 
@@ -232,7 +265,6 @@ function calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction) 
     return { g24: baseG24, g12: baseG12 };
 }
 
-// CORRIGÉ POUR GÉRER TEMPS PARTIEL (STRING ET NUMBER)
 function obtenirDetailsGardes(agent) {
     if (!agent || agent.regime === "SHR" || agent.regime === "SPV" || agent.statut === "SPV" || agent.statut === "PATS") {
         return { total: "-", repartition: "-" };
@@ -240,21 +272,7 @@ function obtenirDetailsGardes(agent) {
 
     const bases = calculerBasesGardes(agent.naissanceDate, agent.entreeSdis, agent.regime, agent.fonction);
     
-    let ratio = 1;
-    if (agent.tempsPartiel !== undefined && agent.tempsPartiel !== null) {
-        if (typeof agent.tempsPartiel === "number") {
-            ratio = agent.tempsPartiel > 1 ? agent.tempsPartiel / 100 : agent.tempsPartiel;
-        } else {
-            const tpStr = String(agent.tempsPartiel);
-            if (tpStr.includes("%")) {
-                let val = parseInt(tpStr, 10);
-                if (!isNaN(val)) ratio = val / 100;
-            } else {
-                let val = parseFloat(tpStr);
-                if (!isNaN(val)) ratio = val > 1 ? val / 100 : val;
-            }
-        }
-    }
+    let ratio = convertirTempsPartielEnNombre(agent.tempsPartiel);
 
     let g24 = Math.round(bases.g24 * ratio);
     let g12 = Math.round(bases.g12 * ratio);
@@ -396,7 +414,7 @@ function actualiserTableauRH() {
         if (fRegime && agent.regime !== fRegime) return false;
 
         if (fEngagement) {
-            const valeurAgent = (agent.statut === "SPV") ? agent.engagement : String(agent.tempsPartiel);
+            const valeurAgent = (agent.statut === "SPV") ? agent.engagement : formaterPourcentageAffichage(agent.tempsPartiel);
             if (valeurAgent !== fEngagement) return false;
         }
 
@@ -440,7 +458,8 @@ function actualiserTableauRH() {
         if (agent.statut === "SPV") {
             tpEngagement = agent.engagement || "Complet";
         } else if (agent.statut === "SPP") {
-            tpEngagement = (agent.tempsPartiel !== undefined && agent.tempsPartiel !== null) ? agent.tempsPartiel : "100%";
+            // Conversion et affichage en %
+            tpEngagement = formaterPourcentageAffichage(agent.tempsPartiel);
         }
 
         let coords = [];
@@ -526,12 +545,10 @@ function editerAgent(id) {
     document.getElementById("agentStatut").value = agent.statut || "SPP";
     document.getElementById("agentGrade").value = agent.grade || "";
     document.getElementById("agentFonction").value = agent.fonction || "Equ";
-    document.getElementById("agentTempsPartiel").value =
-                agent.tempsPartiel !== undefined &&
-                agent.tempsPartiel !== null &&
-                agent.tempsPartiel !== ""
-                ? agent.tempsPartiel
-                : 1;
+    
+    // Formatting in % inside input
+    document.getElementById("agentTempsPartiel").value = formaterPourcentageAffichage(agent.tempsPartiel);
+    
     document.getElementById("agentEngagement").value = agent.engagement || "Complet";
     document.getElementById("agentDatePL").value = formaterDatePourInput(agent.datePL);
     document.getElementById("agentDateVMA").value = formaterDatePourInput(agent.dateVMA);
@@ -558,6 +575,7 @@ function viderFormulaireRH() {
     agentSelectionneId = null;
     document.getElementById("formRH").reset();
     document.getElementById("agentId").value = "";
+    document.getElementById("agentTempsPartiel").value = "100%";
     document.getElementById("btnSupprimerAgent").style.display = "none";
     adapterFormulaireSelonStatut();
     mettreAJourAffichageAge();
@@ -597,6 +615,10 @@ function enregistrerAgent() {
         return;
     }
 
+    // Extraction et conversion inverse en nombre pur (ex: "70%" -> 0.7)
+    const tempsPartielSaisi = document.getElementById("agentTempsPartiel").value;
+    const tempsPartielNum = convertirTempsPartielEnNombre(tempsPartielSaisi);
+
     let agentObj = {
         id: currentId || Date.now(),
         matricule: matricule,
@@ -608,7 +630,7 @@ function enregistrerAgent() {
         statut: document.getElementById("agentStatut").value,
         grade: document.getElementById("agentGrade").value,
         fonction: document.getElementById("agentFonction").value,
-        tempsPartiel: document.getElementById("agentTempsPartiel").value,
+        tempsPartiel: tempsPartielNum, // Stocké sous forme de nombre (1, 0.7, etc.)
         engagement: document.getElementById("agentEngagement").value,
         datePL: document.getElementById("agentDatePL").value,
         dateVMA: document.getElementById("agentDateVMA").value,
@@ -793,9 +815,7 @@ function lireAgentsDepuisFeuille(feuille) {
             specialites: normaliserValeurExcel(ligne[index.Specialites]),
             competences: normaliserValeurExcel(ligne[index.Competences]),
             regime: normaliserValeurExcel(ligne[index.Regime]) || "G24",
-            tempsPartiel: (ligne[index.TempsPartiel] !== "" && ligne[index.TempsPartiel] !== null && ligne[index.TempsPartiel] !== undefined)
-                ? (isNaN(ligne[index.TempsPartiel]) ? normaliserValeurExcel(ligne[index.TempsPartiel]) : Number(ligne[index.TempsPartiel]))
-                : 1,
+            tempsPartiel: convertirTempsPartielEnNombre(ligne[index.TempsPartiel]),
             engagement: normaliserValeurExcel(ligne[index.Engagement]) || "Complet",
             naissanceDate: normaliserDateExcel(ligne[index.DateNaissance]),
             lieuNaissance: normaliserValeurExcel(ligne[index.LieuNaissance]).toUpperCase(),
@@ -880,7 +900,7 @@ function convertirAgentEnLigneExcel(agent) {
         agent.specialites || "",
         agent.competences || "",
         agent.regime || "",
-        agent.tempsPartiel !== undefined ? agent.tempsPartiel : "",
+        convertirTempsPartielEnNombre(agent.tempsPartiel), // S'assure d'exporter un NOMBRE pur
         agent.engagement || "",
         agent.naissanceDate || "",
         agent.lieuNaissance || "",
