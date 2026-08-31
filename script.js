@@ -71,22 +71,6 @@ function mettreAJourAffichageAge() {
     if (dateInput && label) label.innerText = calculerAge(dateInput.value);
 }
 
-function parseCSVLine(str) {
-    let arr = [], quote = false, c = 0, col = '';
-    while (c < str.length) {
-        let cc = str[c];
-        if (cc === '"') {
-            if (quote && str[c+1] === '"') { col += '"'; c++; }
-            else { quote = !quote; }
-        } else if (cc === ';' && !quote) { // On garde SEULEMENT le point-virgule comme séparateur de colonnes !
-            arr.push(col); col = '';
-        } else { col += cc; }
-        c++;
-    }
-    arr.push(col);
-    return arr;
-}
-
 // Générateur de badges triés par ordre alphabétique
 function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#2d3748") {
     if (!chaineTxt || chaineTxt.trim() === "") return "-";
@@ -651,116 +635,704 @@ function supprimerAgent() {
 }
 
 /* ==========================================================================
-   5. LIEN AVEC LE FICHIER CSV RÉSEAU
+   5. LIEN AVEC FMPA-RH.xlsx — ONGLET baseAgents
    ========================================================================== */
 
-async function connecterFichierReseau() {
-    try {
-        [window.fileHandleReseau] = await window.showOpenFilePicker({
-            types: [{ description: 'Fichier CSV', accept: { 'text/csv': ['.csv'], 'text/plain': ['.txt'] } }],
-            multiple: false
-        });
+const NOM_ONGLET_BASE_AGENTS = "baseAgents";
 
-        const file = await window.fileHandleReseau.getFile();
-        const contenuTexte = await file.text();
-        const lignes = contenuTexte.split(/\r?\n/);
-        let agentsReseau = [];
+function normaliserValeurExcel(valeur) {
+    if (valeur === null || valeur === undefined) return "";
 
-        for (let i = 1; i < lignes.length; i++) {
-            const ligne = lignes[i].trim();
-            if (!ligne) continue;
-            
-            const cols = parseCSVLine(ligne);
-            if (cols.length >= 4) {
-                // Fonction de nettoyage pour enlever les guillemets automatiques d'Excel
-                const clean = (val) => val ? val.replace(/^"|"$/g, '').replace(/""/g, '"').trim() : "";
-
-                const mat = clean(cols[0]);
-                if (!mat) continue;
-
-                agentsReseau.push({
-                    id: Date.now() + i,
-                    matricule: mat,
-                    sexe: clean(cols[1]) || "Homme",
-                    nom: clean(cols[2]).toUpperCase(),
-                    prenom: formaterPrenom(clean(cols[3])),
-                    equipe: clean(cols[4]) || "Equipe A",
-                    statut: clean(cols[5]) || "SPP",
-                    grade: clean(cols[6]),
-                    fonction: clean(cols[7]) || "Equ",
-                    specialites: clean(cols[8]),
-                    competences: clean(cols[9]),
-                    regime: clean(cols[10]) || "G24",
-                    tempsPartiel: clean(cols[11]) || "100%",
-                    engagement: clean(cols[12]) || "Complet",
-                    naissanceDate: clean(cols[13]),
-                    lieuNaissance: clean(cols[14]).toUpperCase(),
-                    entreeSdis: clean(cols[15]),
-                    datePL: clean(cols[16]),
-                    dateVMA: clean(cols[17]),
-                    telephone: formaterTelephone(clean(cols[18])),
-                    email: clean(cols[19]),
-                    adresse: clean(cols[20]).toUpperCase(),
-                    dispoSPV: clean(cols[21]),
-                    commentaire: clean(cols[22])
-                });
-            }
-        }
-
-        listeAgents = agentsReseau;
-        
-        // 💾 SAUVEGARDE DANS LE LOCALSTORAGE POUR LA MIND MAP
-        localStorage.setItem("baseAgents", JSON.stringify(agentsReseau));
-
-        actualiserTableauRH();
-        document.getElementById("statusReseau").innerText = "🌐 Connecté : enregistrement possible";
-        document.getElementById("statusReseau").style.color = "#08e3f5";
-        alert(`Chargement réussi : ${agentsReseau.length} agents importés.`);
-
-    } catch (err) {
-        if (err.name !== 'AbortError') {
-            console.error("Erreur d'accès :", err);
-            alert("Erreur lors de la connexion au fichier réseau.");
-        }
+    if (typeof valeur === "string") {
+        return valeur.trim();
     }
+
+    return String(valeur).trim();
 }
 
-async function enregistrerFichierReseau() {
-    if (!window.fileHandleReseau) {
-        alert("⚠️ Aucun fichier connecté. Cliquez d'abord sur 'Connecter'.");
+
+// Convertit les dates Excel éventuelles en AAAA-MM-JJ
+function normaliserDateExcel(valeur) {
+    if (
+        valeur === null ||
+        valeur === undefined ||
+        valeur === ""
+    ) {
+        return "";
+    }
+
+    // Date JavaScript
+    if (
+        valeur instanceof Date &&
+        !isNaN(valeur.getTime())
+    ) {
+        const annee = valeur.getFullYear();
+        const mois = String(
+            valeur.getMonth() + 1
+        ).padStart(2, "0");
+
+        const jour = String(
+            valeur.getDate()
+        ).padStart(2, "0");
+
+        return `${annee}-${mois}-${jour}`;
+    }
+
+    // Numéro de série Excel
+    if (
+        typeof valeur === "number" &&
+        typeof XLSX !== "undefined" &&
+        XLSX.SSF
+    ) {
+        try {
+            const date =
+                XLSX.SSF.parse_date_code(valeur);
+
+            if (
+                date &&
+                date.y &&
+                date.m &&
+                date.d
+            ) {
+                return `${date.y}-${String(date.m).padStart(2, "0")}-${String(date.d).padStart(2, "0")}`;
+            }
+
+        } catch (e) {
+            console.warn(
+                "Date Excel non interprétable :",
+                valeur,
+                e
+            );
+        }
+    }
+
+    return formaterDatePourInput(
+        String(valeur)
+    );
+}
+
+
+// Affichage de l'état du fichier Excel
+function mettreAJourStatutExcel(
+    message,
+    couleur = "#475569"
+) {
+    const el =
+        document.getElementById("statusReseau");
+
+    if (!el) return;
+
+    el.innerText = message;
+    el.style.color = couleur;
+}
+
+
+// Affichage du nombre d'agents chargés
+function mettreAJourCompteurExcel() {
+
+    const el =
+        document.getElementById("statusReseau");
+
+    if (
+        !el ||
+        !window.fileHandleReseau
+    ) {
+        return;
+    }
+
+    el.innerText =
+        `🟢 ${nomFichierXLSX || "FMPA-RH.xlsx"} chargé — ${listeAgents.length} agent(s)`;
+
+    el.style.color = "#16803c";
+}
+
+
+// Vérifie que SheetJS est disponible
+function verifierSheetJS() {
+
+    if (typeof XLSX === "undefined") {
+
+        alert(
+            "❌ La bibliothèque SheetJS n'est pas chargée.\n\n" +
+            "Ajoutez SheetJS dans index.html avant script.js."
+        );
+
+        return false;
+    }
+
+    return true;
+}
+
+
+// Vérifie les 23 colonnes attendues
+function verifierColonnesBaseAgents(
+    ligneEntete
+) {
+
+    if (!Array.isArray(ligneEntete)) {
+        return false;
+    }
+
+    const entetes =
+        ligneEntete.map(
+            valeur => normaliserValeurExcel(valeur)
+        );
+
+    const manquantes =
+        HEADERS_BASE_AGENTS.filter(
+            header =>
+                !entetes.includes(header)
+        );
+
+    if (manquantes.length > 0) {
+
+        alert(
+            "❌ L'onglet baseAgents ne possède pas les colonnes attendues.\n\n" +
+            "Colonnes manquantes :\n" +
+            manquantes.join(", ")
+        );
+
+        return false;
+    }
+
+    return true;
+}
+
+
+// Recherche la position d'une colonne
+function trouverIndexEntete(
+    entetes,
+    nom
+) {
+
+    return entetes.findIndex(
+        header =>
+            normaliserValeurExcel(header) === nom
+    );
+}
+
+
+// Lit l'onglet baseAgents
+function lireAgentsDepuisFeuille(
+    feuille
+) {
+
+    const lignes =
+        XLSX.utils.sheet_to_json(
+            feuille,
+            {
+                header: 1,
+                defval: "",
+                raw: true,
+                blankrows: false
+            }
+        );
+
+    if (!lignes.length) {
+
+        throw new Error(
+            "L'onglet baseAgents est vide."
+        );
+    }
+
+    const entetes =
+        lignes[0].map(
+            valeur =>
+                normaliserValeurExcel(valeur)
+        );
+
+    if (
+        !verifierColonnesBaseAgents(
+            entetes
+        )
+    ) {
+        throw new Error(
+            "Colonnes de baseAgents invalides."
+        );
+    }
+
+    const index = {};
+
+    HEADERS_BASE_AGENTS.forEach(
+        nom => {
+            index[nom] =
+                trouverIndexEntete(
+                    entetes,
+                    nom
+                );
+        }
+    );
+
+    const agents = [];
+
+    for (
+        let i = 1;
+        i < lignes.length;
+        i++
+    ) {
+
+        const ligne =
+            lignes[i] || [];
+
+        const matricule =
+            normaliserValeurExcel(
+                ligne[index.Matricule]
+            );
+
+        // Ignore les lignes complètement vides
+        if (!matricule) {
+            continue;
+        }
+
+        agents.push({
+
+            // Identifiant interne à la page
+            // NON enregistré dans Excel
+            id: Date.now() + i,
+
+            matricule: matricule,
+
+            sexe:
+                normaliserValeurExcel(
+                    ligne[index.Sexe]
+                ) || "Homme",
+
+            nom:
+                normaliserValeurExcel(
+                    ligne[index.Nom]
+                ).toUpperCase(),
+
+            prenom:
+                formaterPrenom(
+                    normaliserValeurExcel(
+                        ligne[index.Prenom]
+                    )
+                ),
+
+            equipe:
+                normaliserValeurExcel(
+                    ligne[index.Equipe]
+                ) || "Equipe A",
+
+            statut:
+                normaliserValeurExcel(
+                    ligne[index.Statut]
+                ) || "SPP",
+
+            grade:
+                normaliserValeurExcel(
+                    ligne[index.Grade]
+                ),
+
+            fonction:
+                normaliserValeurExcel(
+                    ligne[index.Fonction]
+                ) || "Equ",
+
+            specialites:
+                normaliserValeurExcel(
+                    ligne[index.Specialites]
+                ),
+
+            competences:
+                normaliserValeurExcel(
+                    ligne[index.Competences]
+                ),
+
+            regime:
+                normaliserValeurExcel(
+                    ligne[index.Regime]
+                ) || "G24",
+
+            tempsPartiel:
+                normaliserValeurExcel(
+                    ligne[index.TempsPartiel]
+                ) || "100%",
+
+            engagement:
+                normaliserValeurExcel(
+                    ligne[index.Engagement]
+                ) || "Complet",
+
+            naissanceDate:
+                normaliserDateExcel(
+                    ligne[index.DateNaissance]
+                ),
+
+            lieuNaissance:
+                normaliserValeurExcel(
+                    ligne[index.LieuNaissance]
+                ).toUpperCase(),
+
+            entreeSdis:
+                normaliserDateExcel(
+                    ligne[index.DateEntreeSDIS]
+                ),
+
+            datePL:
+                normaliserDateExcel(
+                    ligne[index.DatePL]
+                ),
+
+            dateVMA:
+                normaliserDateExcel(
+                    ligne[index.DateVMA]
+                ),
+
+            telephone:
+                formaterTelephone(
+                    normaliserValeurExcel(
+                        ligne[index.Telephone]
+                    )
+                ),
+
+            email:
+                normaliserValeurExcel(
+                    ligne[index.Email]
+                ),
+
+            adresse:
+                normaliserValeurExcel(
+                    ligne[index.Adresse]
+                ).toUpperCase(),
+
+            dispoSPV:
+                normaliserValeurExcel(
+                    ligne[index.DispoSPV]
+                ),
+
+            commentaire:
+                normaliserValeurExcel(
+                    ligne[index.Commentaire]
+                )
+        });
+    }
+
+    return agents;
+}
+
+
+// Ouvre FMPA-RH.xlsx
+async function connecterFichierReseau() {
+
+    if (!verifierSheetJS()) {
+        return;
+    }
+
+    // File System Access API
+    // Compatible Edge / Chrome
+    if (!window.showOpenFilePicker) {
+
+        alert(
+            "❌ Votre navigateur ne prend pas en charge " +
+            "l'ouverture directe des fichiers Excel.\n\n" +
+            "Utilisez Microsoft Edge ou Google Chrome."
+        );
+
         return;
     }
 
     try {
-        const options = { mode: 'readwrite' };
-        if ((await window.fileHandleReseau.queryPermission(options)) !== 'granted') {
-            if ((await window.fileHandleReseau.requestPermission(options)) !== 'granted') {
-                alert("❌ Autorisation refusée pour la modification du fichier.");
-                return;
-            }
+
+        const handles =
+            await window.showOpenFilePicker({
+
+                types: [
+                    {
+                        description:
+                            "Classeur Excel FMPA-RH",
+
+                        accept: {
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+                                [".xlsx"]
+                        }
+                    }
+                ],
+
+                multiple: false
+            });
+
+        window.fileHandleReseau =
+            handles[0];
+
+        const file =
+            await window.fileHandleReseau.getFile();
+
+        nomFichierXLSX =
+            file.name || "FMPA-RH.xlsx";
+
+        const buffer =
+            await file.arrayBuffer();
+
+        classeurXLSX =
+            XLSX.read(
+                buffer,
+                {
+                    type: "array",
+                    cellDates: true
+                }
+            );
+
+
+        // Vérification de l'onglet
+        if (
+            !classeurXLSX.SheetNames.includes(
+                NOM_ONGLET_BASE_AGENTS
+            )
+        ) {
+
+            throw new Error(
+                `L'onglet "${NOM_ONGLET_BASE_AGENTS}" est introuvable dans ${nomFichierXLSX}.`
+            );
         }
 
-        let csvContent = "\uFEFFMatricule;Sexe;Nom;Prenom;Equipe;Statut;Grade;Fonction;Specialites;Competences;Regime;TempsPartiel;Engagement;DateNaissance;LieuNaissance;DateEntreeSDIS;DatePL;DateVMA;Telephone;Email;Adresse;DispoSPV;Commentaire\n";
-        
-        listeAgents.forEach(a => {
-            const comm = (a.commentaire || '').replace(/"/g, '""');
-            const spec = (a.specialites || '').replace(/"/g, '""');
-            const comp = (a.competences || '').replace(/"/g, '""');
-            csvContent += `"${a.matricule || ''}";"${a.sexe || 'Homme'}";"${a.nom || ''}";"${a.prenom || ''}";"${a.equipe || ''}";"${a.statut || ''}";"${a.grade || ''}";"${a.fonction || ''}";"${spec}";"${comp}";"${a.regime || ''}";"${a.tempsPartiel || '100%'}";"${a.engagement || 'Complet'}";"${a.naissanceDate || ''}";"${a.lieuNaissance || ''}";"${a.entreeSdis || ''}";"${a.datePL || ''}";"${a.dateVMA || ''}";"${a.telephone || ''}";"${a.email || ''}";"${a.adresse || ''}";"${a.dispoSPV || ''}";"${comm}"\n`;
-        });
 
-        const writable = await window.fileHandleReseau.createWritable();
-        await writable.write(csvContent);
-        await writable.close();
+        // Lecture de baseAgents
+        const feuilleBaseAgents =
+            classeurXLSX.Sheets[
+                NOM_ONGLET_BASE_AGENTS
+            ];
 
-        alert(`💾 Fichier sauvegardé avec succès (${listeAgents.length} agents).`);
+        listeAgents =
+            lireAgentsDepuisFeuille(
+                feuilleBaseAgents
+            );
 
-    } catch (err) {
-        console.error("Erreur lors de la sauvegarde :", err);
-        alert("❌ Erreur de sauvegarde : " + err.message);
+
+        agentSelectionneId = null;
+
+        actualiserTableauRH();
+        viderFormulaireRH();
+
+
+        mettreAJourStatutExcel(
+            `🟢 ${nomFichierXLSX} chargé — ${listeAgents.length} agent(s)`,
+            "#16803c"
+        );
+
+
+        alert(
+            `Chargement réussi : ${listeAgents.length} agent(s) importé(s) depuis l'onglet ${NOM_ONGLET_BASE_AGENTS}.`
+        );
+
+    }
+
+    catch (err) {
+
+        // Annulation de la fenêtre
+        if (
+            err &&
+            err.name === "AbortError"
+        ) {
+            return;
+        }
+
+        console.error(
+            "Erreur d'ouverture du classeur Excel :",
+            err
+        );
+
+        window.fileHandleReseau = null;
+        classeurXLSX = null;
+
+        mettreAJourStatutExcel(
+            "🔴 Erreur : fichier Excel non chargé",
+            "#c53030"
+        );
+
+        alert(
+            "❌ Impossible de charger FMPA-RH.xlsx.\n\n" +
+            (err.message || err)
+        );
     }
 }
 
+
+// Transforme un agent JS en ligne Excel
+function convertirAgentEnLigneExcel(
+    agent
+) {
+
+    return [
+
+        agent.matricule || "",
+        agent.sexe || "Homme",
+        agent.nom || "",
+        agent.prenom || "",
+        agent.equipe || "",
+        agent.statut || "",
+        agent.grade || "",
+        agent.fonction || "",
+        agent.specialites || "",
+        agent.competences || "",
+        agent.regime || "",
+        agent.tempsPartiel || "",
+        agent.engagement || "",
+        agent.naissanceDate || "",
+        agent.lieuNaissance || "",
+        agent.entreeSdis || "",
+        agent.datePL || "",
+        agent.dateVMA || "",
+        agent.telephone || "",
+        agent.email || "",
+        agent.adresse || "",
+        agent.dispoSPV || "",
+        agent.commentaire || ""
+    ];
+}
+
+
+// Enregistre uniquement l'onglet baseAgents
+async function enregistrerFichierReseau() {
+
+    if (!verifierSheetJS()) {
+        return false;
+    }
+
+    if (
+        !window.fileHandleReseau ||
+        !classeurXLSX
+    ) {
+
+        alert(
+            "⚠️ Aucun fichier Excel chargé.\n\n" +
+            "Cliquez d'abord sur « Ouvrir / Connecter »."
+        );
+
+        return false;
+    }
+
+    try {
+
+        const options = {
+            mode: "readwrite"
+        };
+
+
+        // Vérification de l'autorisation
+        if (
+            await window.fileHandleReseau
+                .queryPermission(options)
+            !== "granted"
+        ) {
+
+            if (
+                await window.fileHandleReseau
+                    .requestPermission(options)
+                !== "granted"
+            ) {
+
+                alert(
+                    "❌ Autorisation refusée pour modifier le fichier Excel."
+                );
+
+                return false;
+            }
+        }
+
+
+        /*
+         * IMPORTANT :
+         *
+         * On remplace UNIQUEMENT la feuille baseAgents.
+         *
+         * Les onglets :
+         *   - catalogue
+         *   - historiqueSuivi
+         *
+         * restent dans le classeur.
+         */
+
+        const donneesBaseAgents = [
+            HEADERS_BASE_AGENTS
+        ];
+
+        listeAgents.forEach(
+            agent => {
+
+                donneesBaseAgents.push(
+                    convertirAgentEnLigneExcel(
+                        agent
+                    )
+                );
+            }
+        );
+
+
+        const nouvelleFeuille =
+            XLSX.utils.aoa_to_sheet(
+                donneesBaseAgents
+            );
+
+
+        classeurXLSX.Sheets[
+            NOM_ONGLET_BASE_AGENTS
+        ] = nouvelleFeuille;
+
+
+        // Sécurité supplémentaire :
+        // on vérifie que l'onglet existe toujours.
+        if (
+            !classeurXLSX.SheetNames.includes(
+                NOM_ONGLET_BASE_AGENTS
+            )
+        ) {
+
+            classeurXLSX.SheetNames.push(
+                NOM_ONGLET_BASE_AGENTS
+            );
+        }
+
+
+        // Génération du nouveau fichier XLSX
+        const buffer =
+            XLSX.write(
+                classeurXLSX,
+                {
+                    bookType: "xlsx",
+                    type: "array",
+                    compression: true
+                }
+            );
+
+
+        // Écriture dans le fichier sélectionné
+        const writable =
+            await window.fileHandleReseau
+                .createWritable();
+
+        await writable.write(buffer);
+        await writable.close();
+
+
+        mettreAJourCompteurExcel();
+
+
+        alert(
+            `💾 ${nomFichierXLSX} sauvegardé avec succès.\n\n` +
+            `Onglet « ${NOM_ONGLET_BASE_AGENTS} » : ` +
+            `${listeAgents.length} agent(s).`
+        );
+
+        return true;
+
+    }
+
+    catch (err) {
+
+        console.error(
+            "Erreur lors de la sauvegarde du classeur Excel :",
+            err
+        );
+
+        alert(
+            "❌ Erreur de sauvegarde de FMPA-RH.xlsx :\n\n" +
+            (err.message || err)
+        );
+
+        return false;
+    }
+}
 /* ==========================================================================
    6. ÉCOUTEURS D'ÉVÉNEMENTS & DOMCONTENTLOADED
    ========================================================================== */
