@@ -144,5 +144,53 @@
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="script_saisie.js?v=6"></script>
+
+
+
+
+
+<!-- Fenêtre Modale Historique -->
+<div id="modal-historique" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>📜 Historique des Saisies</h2>
+            <div class="modal-filters">
+                <input type="text" id="hist-search-agent" placeholder="Rechercher nom..." oninput="filtrerHistorique()">
+                <input type="date" id="hist-search-date" onchange="filtrerHistorique()">
+                <button type="button" onclick="reinitialiserFiltresHistorique()" class="btn-sec">Réinitialiser</button>
+            </div>
+            <button type="button" class="btn-close" onclick="fermerModalHistorique()">Fermer ✖</button>
+        </div>
+
+        <div class="modal-body">
+            <table class="table-hist">
+                <thead>
+                    <tr>
+                        <th>Agent</th>
+                        <th>Équipe</th>
+                        <th>Date Formation</th>
+                        <th>Date Saisie</th>
+                        <th>Formation</th>
+                        <th>Formateur</th>
+                        <th>Début</th>
+                        <th>Fin</th>
+                        <th>Durée</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-historique">
+                    <!-- Rempli en JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
 </body>
 </html>
