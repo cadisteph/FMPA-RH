@@ -445,8 +445,12 @@ function actualiserTableauRH() {
         if (agent.statut === "SPV") {
             tpEngagement = agent.engagement || "Complet";
         } else if (agent.statut === "SPP") {
-            tpEngagement = agent.tempsPartiel || "100%";
-        }
+            tpEngagement = agent.tempsPartiel !== undefined &&
+                           agent.tempsPartiel !== null &&
+                           agent.tempsPartiel !== ""
+                           ? agent.tempsPartiel
+                           : 1;
+                           }
 
         let coords = [];
         if (agent.telephone) coords.push(echapperHTML(agent.telephone));
@@ -534,9 +538,13 @@ function editerAgent(id) {
     document.getElementById("agentStatut").value = agent.statut || "SPP";
     document.getElementById("agentGrade").value = agent.grade || "";
     document.getElementById("agentFonction").value = agent.fonction || "Equ";
-    document.getElementById("agentTempsPartiel").value = agent.tempsPartiel || "100%";
+    document.getElementById("agentTempsPartiel").value =
+                agent.tempsPartiel !== undefined &&
+                agent.tempsPartiel !== null &&
+                agent.tempsPartiel !== ""
+                ? agent.tempsPartiel
+                : 1;
     document.getElementById("agentEngagement").value = agent.engagement || "Complet";
-    
     document.getElementById("agentDatePL").value = formaterDatePourInput(agent.datePL);
     document.getElementById("agentDateVMA").value = formaterDatePourInput(agent.dateVMA);
     document.getElementById("agentEntreeSdis").value = formaterDatePourInput(agent.entreeSdis);
@@ -642,6 +650,25 @@ function enregistrerAgent() {
     actualiserTableauRH();
     viderFormulaireRH();
 }
+
+async function enregistrerAgentEtSauvegarder() {
+    // Enregistre d'abord les modifications dans listeAgents
+    enregistrerAgent();
+
+    // Si enregistrerAgent() a refusé la saisie, on ne sauvegarde pas
+    if (!window.fileHandleReseau || !classeurXLSX) {
+        alert(
+            "⚠️ Les données ont été modifiées dans la page, " +
+            "mais aucun fichier FMPA-RH.xlsx n'est chargé.\n\n" +
+            "Ouvrez d'abord le fichier Excel."
+        );
+        return;
+    }
+
+    // Sauvegarde dans FMPA-RH.xlsx
+    await enregistrerFichierReseau();
+}
+
 
 function supprimerAgent() {
     const idVal = document.getElementById("agentId").value;
@@ -976,9 +1003,11 @@ function lireAgentsDepuisFeuille(
                 ) || "G24",
 
             tempsPartiel:
-                normaliserValeurExcel(
-                    ligne[index.TempsPartiel]
-                ) || "100%",
+    ligne[index.TempsPartiel] !== "" &&
+    ligne[index.TempsPartiel] !== null &&
+    ligne[index.TempsPartiel] !== undefined
+        ? Number(ligne[index.TempsPartiel])
+        : 1,
 
             engagement:
                 normaliserValeurExcel(
