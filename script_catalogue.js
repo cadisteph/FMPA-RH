@@ -1,32 +1,28 @@
 let catalogue = [];
+let workbookGlobal = null; // Maintient la structure du fichier Excel en mémoire
 let fileHandle = null;
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Écouteur pour la soumission du formulaire
     const formFormation = document.getElementById("form-formation");
     if (formFormation) {
         formFormation.addEventListener("submit", sauvegarderFormation);
     }
 
-    // Écouteur pour le bouton Annuler
     const btnCancel = document.getElementById("btn-cancel");
     if (btnCancel) {
         btnCancel.addEventListener("click", reinitialiserFormulaire);
     }
 
-    // Bouton pour lier le fichier CSV réseau (File System Access API)
     const btnConnect = document.getElementById("btn-connect-file");
     if (btnConnect) {
         btnConnect.addEventListener("click", lierFichierReseau);
     }
 
-    // Écouteur pour l'ajout de ligne profil/quota
     const btnAjouterLigne = document.getElementById("btn-ajouter-ligne-profil");
     if (btnAjouterLigne) {
         btnAjouterLigne.addEventListener("click", () => ajouterLigneProfil());
     }
 
-    // Input d'import manuel de fichier CSV
     const fileInput = document.getElementById("file-input");
     if (fileInput) {
         fileInput.addEventListener("change", chargerFichierLocal);
@@ -34,51 +30,108 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /**
- * Lier le fichier CSV réseau
+ * Connexion au fichier FMPA-RH.xlsx via File System Access API
  */
 async function lierFichierReseau() {
     try {
         [fileHandle] = await window.showOpenFilePicker({
             types: [{
-                description: 'Fichier CSV Catalogue',
-                accept: { 'text/csv': ['.csv'] },
+                description: 'Fichier Excel FMPA-RH',
+                accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] },
             }],
             multiple: false
         });
 
-        // Lecture immédiate du fichier CSV directement depuis le disque/réseau
         const file = await fileHandle.getFile();
-        const text = await file.text();
-        traiterContenuCSV(text);
+        const data = await file.arrayBuffer();
+        traiterContenuXLSX(data);
 
         const btnConnect = document.getElementById("btn-connect-file");
         if (btnConnect) {
-            btnConnect.innerText = "🌐 CSV Réseau Connecté";
+            btnConnect.innerText = "🌐 XLSX Réseau Connecté";
             btnConnect.classList.add("connecte");
         }
     } catch (err) {
         if (err.name !== 'AbortError') {
             console.error("Erreur de sélection :", err);
-            alert("L'accès au fichier CSV a échoué.");
+            alert("L'accès au fichier Excel a échoué.");
         }
     }
 }
 
 /**
- * Écriture du catalogue dans le fichier CSV réseau lié
+ * Traitement du buffer ArrayBuffer du fichier .xlsx
+ */
+function traiterContenuXLSX(arrayBuffer) {
+    try {
+        workbookGlobal = XLSX.read(arrayBuffer, { type: 'array' });
+        
+        // Nom de l'onglet cible
+        const nomOnglet = "catalogue";
+        const sheetCatalogue = workbookGlobal.Sheets[nomOnglet] || workbookGlobal.Sheets[workbookGlobal.SheetNames[0]];
+
+        if (!sheetCatalogue) {
+            alert("Onglet 'catalogue' introuvable dans le fichier Excel.");
+            return;
+        }
+
+        const rawData = XLSX.utils.sheet_to_json(sheetCatalogue, { defval: "" });
+
+        catalogue = rawData.map((item, index) => {
+            const rawId = item.id || item.ID || item['\ufeffid'];
+
+            let modulations = [];
+            const rawMod = String(item.modulations || item.dispenses || "").trim();
+            
+            if (rawMod !== "" && rawMod !== "[object Object]") {
+                modulations = rawMod.split(';').map(mStr => {
+                    const parts = mStr.split(':');
+                    return {
+                        profil: parts[0] ? parts[0].trim().toUpperCase() : '',
+                        quota: parts[1] !== undefined ? parseFloat(parts[1]) : 0
+                    };
+                });
+            }
+
+            return {
+                id: rawId ? String(rawId) : "fmpa-" + (Date.now() + index),
+                type: item.type || item.Type || "Socle Commun",
+                fmpa: item.fmpa || item.activite || "",
+                activite: item.activite || item.Activité || "",
+                libelle: item.libelle || item['Thème'] || item.Libellé || "",
+                sequence: item.sequence || item['Séquence'] || "-",
+                quota: parseFloat(item.quota || item['Durée(h)'] || 0),
+                modulations: modulations
+            };
+        });
+
+        // Alimente le datalist si un onglet RH existe dans le même classeur
+        const sheetRH = workbookGlobal.Sheets["RH"] || workbookGlobal.Sheets["Agents"];
+        if (sheetRH) {
+            const agentsData = XLSX.utils.sheet_to_json(sheetRH, { defval: "" });
+            alimenterDatalistProfils(agentsData);
+        }
+
+        trierEtAfficherCatalogue();
+        reinitialiserFormulaire();
+    } catch (err) {
+        console.error("Erreur de lecture XLSX :", err);
+        alert("Fichier XLSX invalide ou corrompu.");
+    }
+}
+
+/**
+ * Écriture des données mises à jour dans l'onglet "catalogue" du fichier .xlsx
  */
 async function exporterFichierJSReseau() {
-    if (!fileHandle) return;
+    if (!workbookGlobal || !fileHandle) return;
 
-    const donneesPourCSV = catalogue.map(f => {
+    const donneesPourExcel = catalogue.map(f => {
         let modulationsStr = "";
-        
         if (f.modulations && Array.isArray(f.modulations) && f.modulations.length > 0) {
             modulationsStr = f.modulations
                 .map(m => `${m.profil}:${m.quota ?? 0}`)
                 .join(";");
-        } else if (f.dispenses && Array.isArray(f.dispenses) && f.dispenses.length > 0) {
-            modulationsStr = f.dispenses.map(p => `${p}:0`).join(";");
         }
 
         return {
@@ -87,82 +140,43 @@ async function exporterFichierJSReseau() {
             fmpa: f.fmpa || f.activite,
             activite: f.activite,
             libelle: f.libelle,
-            quota: f.quota,
             sequence: f.sequence || "-",
+            quota: f.quota,
             modulations: modulationsStr
         };
     });
 
-    const contenuCSV = Papa.unparse(donneesPourCSV, { delimiter: ";" });
+    // Conversion JSON vers feuille Excel
+    const newSheet = XLSX.utils.json_to_sheet(donneesPourExcel);
     
+    // Remplace l'onglet 'catalogue' dans le classeur global
+    workbookGlobal.Sheets["catalogue"] = newSheet;
+    if (!workbookGlobal.SheetNames.includes("catalogue")) {
+        workbookGlobal.SheetNames.push("catalogue");
+    }
+
+    // Export au format binaire .xlsx
+    const wbout = XLSX.write(workbookGlobal, { bookType: 'xlsx', type: 'array' });
+
     try {
         const writable = await fileHandle.createWritable();
-        await writable.write(contenuCSV);
+        await writable.write(wbout);
         await writable.close();
     } catch (err) {
-        console.error("Erreur d'écriture CSV sur le réseau :", err);
-        alert("L'écriture dans le fichier CSV réseau a échoué.");
+        console.error("Erreur d'écriture XLSX sur le réseau :", err);
+        alert("L'écriture dans le fichier Excel réseau a échoué.");
     }
 }
 
-/**
- * Parse et charge les données du CSV directement dans le tableau global
- */
-function traiterContenuCSV(texteCSV) {
-    Papa.parse(texteCSV, {
-        header: true,
-        skipEmptyLines: true,
-        dynamicTyping: true,
-        complete: function(results) {
-            catalogue = results.data.map((item, index) => {
-                const rawId = item.id || item['\ufeffid'] || item['ID'];
-
-                let modulations = [];
-                const rawMod = item.modulations || item.dispenses || "";
-                
-                if (typeof rawMod === 'string' && rawMod.trim() !== '' && rawMod !== '[object Object]') {
-                    modulations = rawMod.split(';').map(mStr => {
-                        const parts = mStr.split(':');
-                        return {
-                            profil: parts[0] ? parts[0].trim().toUpperCase() : '',
-                            quota: parts[1] !== undefined ? parseFloat(parts[1]) : 0
-                        };
-                    });
-                }
-
-                return {
-                    id: rawId ? String(rawId) : "fmpa-" + (Date.now() + index),
-                    type: item.type || item.Type || "Socle Commun",
-                    fmpa: item.fmpa || item.activite || "",
-                    activite: item.activite || item.Activité || "",
-                    libelle: item.libelle || item['Thème'] || item.Libellé || "",
-                    sequence: item.sequence || item['Séquence'] || "-",
-                    quota: parseFloat(item.quota || item['Durée(h)'] || 0),
-                    modulations: modulations
-                };
-            });
-
-            trierEtAfficherCatalogue();
-            reinitialiserFormulaire();
-        },
-        error: function(err) {
-            alert("Format CSV invalide ou illisible : " + err.message);
-        }
-    });
-}
-
-/**
- * Chargement manuel via un fichier CSV local
- */
 function chargerFichierLocal(e) {
     const file = e.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = function(evt) {
-        traiterContenuCSV(evt.target.result);
+        traiterContenuXLSX(evt.target.result);
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
 }
 
 function ajouterLigneProfil(profilNom = "", quotaValeur = "") {
@@ -219,8 +233,6 @@ function afficherCatalogue() {
             affichageDispenses = item.modulations.map(m => {
                 return m.quota === 0 ? `${m.profil} (0h)` : `${m.profil} (${m.quota}h)`;
             }).join(", ");
-        } else if (item.dispenses && item.dispenses.length > 0) {
-            affichageDispenses = item.dispenses.map(p => `${p} (0h)`).join(", ");
         }
 
         tr.innerHTML = `
@@ -310,8 +322,6 @@ function editerFormation(id) {
 
     if (item.modulations && Array.isArray(item.modulations) && item.modulations.length > 0) {
         item.modulations.forEach(m => ajouterLigneProfil(m.profil, m.quota));
-    } else if (item.dispenses && Array.isArray(item.dispenses) && item.dispenses.length > 0) {
-        item.dispenses.forEach(p => ajouterLigneProfil(p, 0));
     }
 
     document.getElementById("form-titre").innerText = "Modifier la Formation";
@@ -345,8 +355,9 @@ function alimenterDatalistProfils(tableauAgentsRH) {
     if (!datalist || !Array.isArray(tableauAgentsRH)) return;
 
     const tousLesProfils = tableauAgentsRH.flatMap(agent => {
-        if (Array.isArray(agent.profil)) return agent.profil;
-        if (typeof agent.profil === 'string') return agent.profil.split(',').map(p => p.trim());
+        const val = agent.profil || agent.Profil || agent.Fonction || "";
+        if (Array.isArray(val)) return val;
+        if (typeof val === 'string') return val.split(',').map(p => p.trim());
         return [];
     });
 
