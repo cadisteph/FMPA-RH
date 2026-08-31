@@ -212,11 +212,11 @@
           <div style="display: flex; flex-direction: column; gap: 5px;">
             <div style="display: flex; gap: 8px;">
               <div style="flex:1;">
-                <label style="font-size:0.8em; font-weight:bold;">Matricule *</label>
+                <label style="font-size:0.8em; font-weight:bold;">Matricule🔢*</label>
                 <input type="text" id="agentMatricule" required style="width:100%;">
               </div>
               <div style="flex:1;">
-                <label style="font-size:0.8em; font-weight:bold;">Sexe</label>
+                <label style="font-size:0.8em; font-weight:bold;">Sexe♂️♀️</label>
                 <select id="agentSexe" style="width:100%;">
                   <option value="Homme">Homme</option>
                   <option value="Femme">Femme</option>
@@ -225,17 +225,17 @@
             </div>
             <div style="display: flex; gap: 8px;">
               <div style="flex:1;">
-                <label style="font-size:0.8em; font-weight:bold;">Nom *</label>
+                <label style="font-size:0.8em; font-weight:bold;">Nom🪪*</label>
                 <input type="text" id="agentNom" required style="width:100%; text-transform:uppercase;">
               </div>
               <div style="flex:1;">
-                <label style="font-size:0.8em; font-weight:bold;">Prénom *</label>
+                <label style="font-size:0.8em; font-weight:bold;">Prénom🪪*</label>
                 <input type="text" id="agentPrenom" required style="width:100%;">
               </div>
             </div>
             <div style="display: flex; gap: 8px;">
               <div style="flex:1;">
-                <label style="font-size:0.8em; font-weight:bold;">Statut *</label>
+                <label style="font-size:0.8em; font-weight:bold;">Statut🏷️*</label>
                 <select id="agentStatut" onchange="adapterFormulaireSelonStatut()" style="width:100%;">
                   <option value="">- A définir -</option>
                   <option value="SPP">SPP</option>
@@ -244,7 +244,7 @@
                 </select>
               </div>
               <div style="flex:1;">
-                <label style="font-size:0.8em; font-weight:bold;">Équipe *</label>
+                <label style="font-size:0.8em; font-weight:bold;">Équipe👨‍👨*</label>
                 <select id="agentEquipe" onchange="gererChangementEquipe()" style="width:100%;">
                   <option value="">- Aucune -</option>
                   <option value="Equipe A">Equipe A</option>
@@ -258,7 +258,7 @@
             </div>
             <div style="display: flex; gap: 8px;">
               <div style="flex:1;">
-                <label style="font-size:0.8em; font-weight:bold;">Régime *</label>
+                <label style="font-size:0.8em; font-weight:bold;">Régime🕑*</label>
                 <select id="agentRegime" onchange="gererChangementRegime()" style="width:100%;">
                   <option value="">- Aucun -</option>
                   <option value="G24">G24</option>
@@ -269,7 +269,7 @@
                 </select>
               </div>
               <div style="flex:1;">
-                <label style="font-size:0.8em; font-weight:bold;">Grade</label>
+                <label style="font-size:0.8em; font-weight:bold;">Grade👮</label>
                 <select id="agentGrade" style="width:100%;">
                   <option value="">- Aucun -</option>
                   <option value="SAP">SAP</option>
@@ -288,7 +288,7 @@
             </div>
             <div style="display: flex; gap: 8px;">
               <div style="flex:1;">
-                <label style="font-size:0.8em; font-weight:bold;">Fonction</label>
+                <label style="font-size:0.8em; font-weight:bold;">Fonction🛠️</label>
                 <select id="agentFonction" style="width:100%;">
                             <option value="">- Aucun -</option>
                             <option value="Equ">Equipier</option>
@@ -310,7 +310,7 @@
               
               <!-- Champs commutables : Temps Partiel (SPP) vs Engagement (SPV) -->
               <div style="flex:1;" id="groupTempsPartiel">
-                <label style="font-size:0.8em; font-weight:bold;">Temps Partiel</label>
+                <label style="font-size:0.8em; font-weight:bold;">Temps Partiel⏳</label>
                 <select id="agentTempsPartiel" style="width:100%;">
                   <option value="100%">100 %</option>
                   <option value="90%">90 %</option>
@@ -321,7 +321,7 @@
                 </select>
               </div>
               <div style="flex:1; display:none;" id="groupEngagement">
-                <label style="font-size:0.8em; font-weight:bold;">Engagement</label>
+                <label style="font-size:0.8em; font-weight:bold;">Engagement⏳</label>
                 <select id="agentEngagement" style="width:100%;">
                   <option value="Complet">Complet</option>
                   <option value="SUAP/PPABE">SUAP/PPABE</option>
@@ -334,15 +334,15 @@
             <!-- Bloc 3 Champs Dates : PL, VMA, Entrée SDIS -->
             <div style="display: flex; gap: 8px;">
               <div style="flex:1;">
-                <label style="font-size:0.8em; font-weight:bold;">Date PL</label>
+                <label style="font-size:0.8em; font-weight:bold;">Date PL🚒</label>
                 <input type="date" id="agentDatePL" style="width:100%;">
               </div>
               <div style="flex:1;">
-                <label style="font-size:0.8em; font-weight:bold;">Date VMA</label>
+                <label style="font-size:0.8em; font-weight:bold;">Date VMA🩺</label>
                 <input type="date" id="agentDateVMA" style="width:100%;">
               </div>
               <div style="flex:1;">
-                <label style="font-size:0.8em; font-weight:bold;">Entrée SDIS</label>
+                <label style="font-size:0.8em; font-weight:bold;">Entrée SDIS🗓️</label>
                 <input type="date" id="agentEntreeSdis" style="width:100%;">
               </div>
             </div>
@@ -350,11 +350,11 @@
             <!-- Bloc Naissance & Lieu -->
             <div style="display: flex; gap: 8px;">
               <div style="flex:1;">
-                <label style="font-size:0.8em; font-weight:bold;">Date Naissance <span id="labelAge" style="color:#2b6cb0;"></span></label>
+                <label style="font-size:0.8em; font-weight:bold;">Date Naissance🚼<span id="labelAge" style="color:#2b6cb0;"></span></label>
                 <input type="date" id="agentNaissanceDate" onchange="mettreAJourAffichageAge()" style="width:100%;">
               </div>
               <div style="flex:1;">
-                <label style="font-size:0.8em; font-weight:bold;">Lieu (Ville/Dép.)</label>
+                <label style="font-size:0.8em; font-weight:bold;">Lieu (Ville/Dép.)📌</label>
                 <input type="text" id="agentLieuNaissance" placeholder="ex: ROUEN (76)" style="width:100%;">
               </div>
             </div>
