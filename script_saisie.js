@@ -127,10 +127,12 @@ async function chargerClasseur(file) {
     filtrerEtAfficherTableau();
 
     afficherStatut(
-        `🌐 ${nomFichierXLSX} chargé — ` +
-        `${tableauAgentsRH.length} agent(s), ` +
-        `${catalogueInitial.length} formation(s), ` +
-        `${historiqueSaisiesFMPA.length} ligne(s) d'historique`
+    `🌐 ${nomFichierXLSX} chargé — ` +
+    `${tableauAgentsRH.length} agent(s), ` +
+    `${catalogueInitial.length} formation(s), ` +
+    `${historiqueSaisiesFMPA.length} ligne(s) d'historique`,
+    false,
+    "#1d95d8"
     );
 }
 
@@ -876,12 +878,13 @@ function obtenirDateSaisie() {
     return `${maintenant.getFullYear()}-${pad(maintenant.getMonth() + 1)}-${pad(maintenant.getDate())} ${pad(maintenant.getHours())}:${pad(maintenant.getMinutes())}:${pad(maintenant.getSeconds())}`;
 }
 
-function afficherStatut(message, erreur = false) {
+function afficherStatut(message, erreur = false,) {
     const element = document.getElementById("xlsx-status");
     if (!element) return;
+
     element.textContent = message;
     element.style.background = erreur ? "#fee2e2" : "#f1f5f9";
-    element.style.color = erreur ? "#991b1b" : "#475569";
+    element.style.color = couleur || (erreur ? "#991b1b" : "#475569");
 }
 
 function escapeHtml(value) {
