@@ -12,6 +12,7 @@
     <div class="header-title-bar">
         <h1>📝 Saisie des FMPA</h1>
         <div id="xlsx-status" class="status-inline">🚨Aucun fichier Excel chargé</div>
+        <button id="btn-open-xlsx" class="btn-blue">📂 Ouvrir FMPA-RH.xlsx</button>
     </div>
     <p>Gestion des saisies de formations</p>
 </header>
@@ -35,7 +36,7 @@
         </div>
 
         <button id="btn-reset-filters" class="btn-sec">🔄Réinitialiser Filtres</button>
-        <button id="btn-open-xlsx" class="btn-blue">📂 Ouvrir FMPA-RH.xlsx</button>
+        
         <input type="file" id="file-input-xlsx" accept=".xlsx,.xls" style="display:none;">
         
         <button type="button" class="btn-hist" onclick="ouvrirModalHistorique()" 
