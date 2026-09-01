@@ -154,26 +154,39 @@
 <!-- Fenêtre Modale Historique -->
 <div id="modal-historique" class="modal-overlay" style="display: none;">
     <div class="modal-content">
-        <div class="modal-header">
-            <div class="header-left">
-                <h2>📜 Historique des Saisies</h2>
-            </div>
-            
-            <!-- Zone des filtres stylisée -->
-            <div class="filter-card">
-                <div class="filter-field">
-                    <label for="hist-search-agent">👤 Agent :</label>
-                    <input type="text" id="hist-search-agent" placeholder="Rechercher nom..." oninput="filtrerHistorique()">
-                </div>
-                <div class="filter-field">
-                    <label for="hist-search-date">📅 Date formation :</label>
-                    <input type="date" id="hist-search-date" onchange="filtrerHistorique()">
-                </div>
-                <button type="button" class="btn-reset-hist" onclick="reinitialiserFiltresHistorique()">Réinitialiser</button>
-            </div>
 
-            <button type="button" class="btn-close" onclick="fermerModalHistorique()" style="background: #1e293b; color: white; border: none; padding: 7px 14px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; margin-top: 14px">❌ Fermer</button>
+            <div class="modal-header">
+    <h2>📜 Historique des Saisies</h2>
+    <div class="filter-card">
+        <!-- Champ déverrouillé par défaut -->
+        <div class="filter-field">
+            <label for="hist-search-agent">👤 Agent</label>
+            <input type="text" id="hist-search-agent" placeholder="Nom..." oninput="filtrerHistorique()">
         </div>
+        <!-- Champ déverrouillé par défaut -->
+        <div class="filter-field">
+            <label for="hist-search-date">📅 Date formation</label>
+            <input type="date" id="hist-search-date" onchange="filtrerHistorique()">
+        </div>
+        
+        <!-- NOUVEAU : Date Réf. W@ct (Vérouillé par le code admin) -->
+        <div class="filter-field">
+            <label for="hist-ref-wact">🔒 Date Réf. W@ct</label>
+            <input type="date" id="hist-ref-wact" onchange="filtrerHistorique()" disabled>
+        </div>
+
+        <!-- NOUVEAU : Code Administration -->
+        <div class="filter-field">
+            <label for="hist-code-admin">🔑 Code Admin</label>
+            <input type="password" id="hist-code-admin" placeholder="Saisir le code..." oninput="verifierCodeAdmin()">
+        </div>
+
+        <button type="button" class="btn-reset-hist" onclick="reinitialiserFiltresHistorique()">Réinitialiser</button>
+        </div>
+    <!-- Bouton Fermer toujours actif -->
+        <button type="button" class="btn-close" onclick="fermerModalHistorique()" style="background: #1e293b; color: white; border: none; padding: 7px 14px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; margin-top: 14px">❌ Fermer</button>
+
+            </div>
 
         <div class="modal-body">
             <table class="table-hist">
