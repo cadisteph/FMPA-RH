@@ -472,7 +472,7 @@ body {
     opacity: 0.7;
 }
 .btn-reset-hist {
-    background: #334155; color: white; border: none; padding: 7px 14px;
+    background: #e0e7ff; color: #10b981; border: 1px solid #10b981; padding: 7px 14px;
     border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; margin-top: 14px;
 }
 .btn-reset-hist:hover { background: #1e293b; }
