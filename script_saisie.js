@@ -910,6 +910,7 @@ function escapeJs(value) {
 
 
 
+
 // --- OUVERTURE ET FERMETURE DE LA MODALE ---
 let indexEnEdition = null;
 let estAdminDeverrouille = false;
@@ -1133,3 +1134,57 @@ async function supprimerLigneHistorique(index) {
         await enregistrerFichierXLSX();
     }
 }
+
+function exporterHistoriquePDF() {
+    if (!historiqueSaisiesFMPA.length) {
+        alert("Aucune donnée à exporter.");
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+    // Titre du document
+    doc.setFontSize(16);
+    doc.text("Historique des Saisies FMPA-RH", 14, 15);
+
+    // Préparation des données du tableau
+    const colonnes = [
+        "Agent", "Équipe", "Date Formation", "Date Saisie", 
+        "Activité", "Thème / Module", "Début", "Fin", "Durée"
+    ];
+
+    const lignes = historiqueSaisiesFMPA.slice().reverse().map(row => {
+        const agent = tableauAgentsRH.find(a => a.matricule === row.matricule);
+        const nomAgent = agent ? `${agent.nom} ${agent.prenom}` : row.matricule;
+        const equipe = agent ? agent.equipe : "-";
+        const formationObj = catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation);
+        const activite = formationObj ? formationObj.activite : "-";
+        const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
+        const duree = calculerDureeEntreHeures(row.heureDebut, row.heureFin);
+
+        return [
+            nomAgent, equipe, row.date, dateSaisieSeule,
+            activite, row.formation, row.heureDebut, row.heureFin, `${duree} h`
+        ];
+    });
+
+    // Génération automatique de la table PDF
+    doc.autoTable({
+        startY: 22,
+        head: [colonnes],
+        body: lignes,
+        theme: "striped",
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [30, 41, 59] } // Couleur #1e293b
+    });
+
+    // Téléchargement du PDF
+    doc.save(`Historique_FMPA_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+
+
+
+
+
