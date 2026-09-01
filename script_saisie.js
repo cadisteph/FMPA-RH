@@ -911,10 +911,18 @@ function escapeJs(value) {
 
 // --- OUVERTURE ET FERMETURE DE LA MODALE ---
 let indexEnEdition = null;
+let estAdminDeverrouille = false;
 
 function ouvrirModalHistorique() {
     indexEnEdition = null;
+    estAdminDeverrouille = false;
+    
+    // Réinitialiser le code à l'ouverture
+    const inputCode = document.getElementById("hist-code-admin");
+    if (inputCode) inputCode.value = "";
+    
     document.getElementById("modal-historique").style.display = "flex";
+    verifierCodeAdmin();
     afficherHistorique();
 }
 
@@ -923,12 +931,27 @@ function fermerModalHistorique() {
     document.getElementById("modal-historique").style.display = "none";
 }
 
+// Vérification du code d'administration "cdcadmin"
+function verifierCodeAdmin() {
+    const inputCode = document.getElementById("hist-code-admin")?.value.trim().toLowerCase() || "";
+    estAdminDeverrouille = (inputCode === "cdcadmin");
+
+    const inputWact = document.getElementById("hist-ref-wact");
+    if (inputWact) {
+        inputWact.disabled = !estAdminDeverrouille;
+    }
+
+    // Réafficher pour ajuster l'état des boutons et des champs
+    afficherHistorique();
+}
+
 function afficherHistorique() {
     const tbody = document.getElementById("tbody-historique");
     if (!tbody) return;
 
     const filterNom = document.getElementById("hist-search-agent")?.value.toLowerCase().trim() || "";
     const filterDate = document.getElementById("hist-search-date")?.value || "";
+    const dateRefWact = document.getElementById("hist-ref-wact")?.value || "";
 
     tbody.innerHTML = "";
 
@@ -942,31 +965,31 @@ function afficherHistorique() {
         if (filterNom && !nomAgentComplet.toLowerCase().includes(filterNom)) return;
         if (filterDate && row.date !== filterDate) return;
 
-        // Détection si l'agent est formateur
         const estFormateur = row.commentaires?.includes("(Animation / Formateur)") || 
             (row.formateur && nomAgentComplet.toLowerCase().includes(row.formateur.toLowerCase()));
 
-        // Recherche de l'activité liée à la formation
         const formationObj = catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation);
         const activite = formationObj ? formationObj.activite : "-";
-
-        // Extraction unique de la date pour "Date Saisie" (sans l'heure)
         const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
+
+        // Détermination du verrouillage W@ct (Date Saisie <= Date Réf. W@ct)
+        const estCloture = dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact;
 
         const tr = document.createElement("tr");
 
-        let nomHtml = "";
-        if (estFormateur) {
-            nomHtml = `<span class="nom-agent-formateur">🎓 <strong>${escapeHtml(nomAgentComplet)}</strong></span> <span class="badge-formateur">Formateur</span>`;
-        } else {
-            nomHtml = `<strong>${escapeHtml(nomAgentComplet)}</strong>`;
+        let nomHtml = estFormateur 
+            ? `<span class="nom-agent-formateur">🎓 <strong>${escapeHtml(nomAgentComplet)}</strong></span> <span class="badge-formateur">Formateur</span>`
+            : `<strong>${escapeHtml(nomAgentComplet)}</strong>`;
+
+        // Style si la ligne est clôturée W@ct
+        if (estCloture) {
+            tr.classList.add("tr-cloture");
         }
 
         // --- CAS 1 : LIGNE EN COURS D'ÉDITION ---
-        if (indexEnEdition === realIndex) {
+        if (indexEnEdition === realIndex && estAdminDeverrouille && !estCloture) {
             tr.classList.add("tr-editing");
 
-            // Liste des options pour le menu déroulant des formations
             let optionsFormations = catalogueInitial.map(f => {
                 const isSelected = (f.libelle === row.formation || f.id === row.formation) ? "selected" : "";
                 return `<option value="${escapeHtml(f.libelle)}" ${isSelected}>${escapeHtml(f.libelle)}</option>`;
@@ -992,9 +1015,22 @@ function afficherHistorique() {
                 </td>
             `;
         } 
-        // --- CAS 2 : LIGNE EN MODE LECTURE ---
+        // --- CAS 2 : MODE LECTURE ---
         else {
             const duree = calculerDureeEntreHeures(row.heureDebut, row.heureFin);
+
+            // Rendu de la colonne Action en fonction des droits admin et de la clôture W@ct
+            let colActions = "";
+            if (estCloture) {
+                colActions = `<span class="badge-cloture">🔒 Clôturé</span>`;
+            } else if (!estAdminDeverrouille) {
+                colActions = `<span class="badge-verrouille">🔒 Verrouillé</span>`;
+            } else {
+                colActions = `
+                    <button type="button" class="btn-act-mod" onclick="activerEditionHistorique(${realIndex})">✏️ Modifier</button>
+                    <button type="button" class="btn-act-del" onclick="supprimerLigneHistorique(${realIndex})">Annuler 🗑️</button>
+                `;
+            }
 
             tr.innerHTML = `
                 <td>${nomHtml}</td>
@@ -1006,10 +1042,7 @@ function afficherHistorique() {
                 <td>${escapeHtml(row.heureDebut)}</td>
                 <td>${escapeHtml(row.heureFin)}</td>
                 <td><strong>${duree} h</strong></td>
-                <td>
-                    <button type="button" class="btn-act-mod" onclick="activerEditionHistorique(${realIndex})">✏️ Modifier</button>
-                    <button type="button" class="btn-act-del" onclick="supprimerLigneHistorique(${realIndex})">Annuler 🗑️</button>
-                </td>
+                <td>${colActions}</td>
             `;
         }
 
@@ -1024,12 +1057,12 @@ function filtrerHistorique() {
 function reinitialiserFiltresHistorique() {
     if (document.getElementById("hist-search-agent")) document.getElementById("hist-search-agent").value = "";
     if (document.getElementById("hist-search-date")) document.getElementById("hist-search-date").value = "";
+    if (document.getElementById("hist-ref-wact")) document.getElementById("hist-ref-wact").value = "";
     afficherHistorique();
 }
 
-// --- FONCTIONS D'ÉDITION EN LIGNE ---
-
 function activerEditionHistorique(index) {
+    if (!estAdminDeverrouille) return;
     indexEnEdition = index;
     afficherHistorique();
 }
@@ -1085,6 +1118,7 @@ async function sauvegarderLigneHistorique(index) {
 }
 
 async function supprimerLigneHistorique(index) {
+    if (!estAdminDeverrouille) return;
     if (!confirm("Voulez-vous vraiment annuler cette saisie ?")) return;
 
     historiqueSaisiesFMPA.splice(index, 1);
