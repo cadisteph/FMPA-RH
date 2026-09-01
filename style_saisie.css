@@ -486,7 +486,7 @@ body {
 }
 .nom-agent-formateur { color: #15803d; }
 
-/* Boutons d'action Modifier / Annuler */
+/* Boutons d'action Mode Lecteur (Modifier / Annuler) */
 .btn-act-mod {
     background-color: #1e3a8a; color: white; border: none; padding: 5px 10px;
     border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
@@ -500,3 +500,34 @@ body {
     display: inline-flex; align-items: center; gap: 4px;
 }
 .btn-act-del:hover { background-color: #dc2626; }
+
+/* --- ÉDITION EN LIGNE --- */
+.tr-editing {
+    background-color: #fffbeb !important; /* Fond beige/jaune très clair */
+}
+.input-inline {
+    padding: 4px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    background-color: #ffffff;
+    outline: none;
+}
+.input-inline:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.btn-act-save {
+    background-color: #16a34a; color: white; border: none; padding: 5px 10px;
+    border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 4px; margin-right: 4px;
+}
+.btn-act-save:hover { background-color: #15803d; }
+
+.btn-act-cancel {
+    background-color: #334155; color: white; border: none; padding: 5px 10px;
+    border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 4px;
+}
+.btn-act-cancel:hover { background-color: #1e293b; }
