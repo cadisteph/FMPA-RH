@@ -439,10 +439,10 @@ body {
     overflow: hidden;
 }
 .modal-header {
-    padding: 16px 24px;
+    padding: 10px 10px;
     background: #ffffff;
     border-bottom: 2px solid #ef4444;
-    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    display: flex; align-items: center; justify-content: normal; gap: 10px;
     flex-wrap: wrap;
 }
 .modal-header h2 {
