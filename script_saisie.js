@@ -878,7 +878,7 @@ function obtenirDateSaisie() {
     return `${maintenant.getFullYear()}-${pad(maintenant.getMonth() + 1)}-${pad(maintenant.getDate())} ${pad(maintenant.getHours())}:${pad(maintenant.getMinutes())}:${pad(maintenant.getSeconds())}`;
 }
 
-function afficherStatut(message, erreur = false,) {
+function afficherStatut(message, erreur = false, couleur = null) {
     const element = document.getElementById("xlsx-status");
     if (!element) return;
 
