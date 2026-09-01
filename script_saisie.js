@@ -910,12 +910,16 @@ function escapeJs(value) {
 
 
 // --- OUVERTURE ET FERMETURE DE LA MODALE ---
+let indexEnEdition = null;
+
 function ouvrirModalHistorique() {
+    indexEnEdition = null;
     document.getElementById("modal-historique").style.display = "flex";
     afficherHistorique();
 }
 
 function fermerModalHistorique() {
+    indexEnEdition = null;
     document.getElementById("modal-historique").style.display = "none";
 }
 
@@ -949,9 +953,8 @@ function afficherHistorique() {
         // Extraction unique de la date pour "Date Saisie" (sans l'heure)
         const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
 
-        const duree = calculerDureeEntreHeures(row.heureDebut, row.heureFin);
+        const tr = document.createElement("tr");
 
-        // Rendu du nom de l'agent + badge
         let nomHtml = "";
         if (estFormateur) {
             nomHtml = `<span class="nom-agent-formateur">🎓 <strong>${escapeHtml(nomAgentComplet)}</strong></span> <span class="badge-formateur">Formateur</span>`;
@@ -959,22 +962,57 @@ function afficherHistorique() {
             nomHtml = `<strong>${escapeHtml(nomAgentComplet)}</strong>`;
         }
 
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${nomHtml}</td>
-            <td>${escapeHtml(equipeAgent)}</td>
-            <td>${escapeHtml(row.date)}</td>
-            <td>${escapeHtml(dateSaisieSeule)}</td>
-            <td><strong>${escapeHtml(activite)}</strong></td>
-            <td>${escapeHtml(row.formation)}</td>
-            <td>${escapeHtml(row.heureDebut)}</td>
-            <td>${escapeHtml(row.heureFin)}</td>
-            <td><strong>${duree} h</strong></td>
-            <td>
-                <button type="button" class="btn-act-mod" onclick="editerLigneHistorique(${realIndex})">✏️ Modifier</button>
-                <button type="button" class="btn-act-del" onclick="supprimerLigneHistorique(${realIndex})">Annuler 🗑️</button>
-            </td>
-        `;
+        // --- CAS 1 : LIGNE EN COURS D'ÉDITION ---
+        if (indexEnEdition === realIndex) {
+            tr.classList.add("tr-editing");
+
+            // Liste des options pour le menu déroulant des formations
+            let optionsFormations = catalogueInitial.map(f => {
+                const isSelected = (f.libelle === row.formation || f.id === row.formation) ? "selected" : "";
+                return `<option value="${escapeHtml(f.libelle)}" ${isSelected}>${escapeHtml(f.libelle)}</option>`;
+            }).join("");
+
+            tr.innerHTML = `
+                <td>${nomHtml}</td>
+                <td>${escapeHtml(equipeAgent)}</td>
+                <td>${escapeHtml(row.date)}</td>
+                <td>${escapeHtml(dateSaisieSeule)}</td>
+                <td id="edit-activite-${realIndex}"><strong>${escapeHtml(activite)}</strong></td>
+                <td>
+                    <select id="edit-formation-${realIndex}" class="input-inline" onchange="majActiviteEdition(${realIndex})">
+                        ${optionsFormations}
+                    </select>
+                </td>
+                <td><input type="time" id="edit-hdebut-${realIndex}" class="input-inline" value="${row.heureDebut}" oninput="calculerDureeEdition(${realIndex})"></td>
+                <td><input type="time" id="edit-hfin-${realIndex}" class="input-inline" value="${row.heureFin}" oninput="calculerDureeEdition(${realIndex})"></td>
+                <td><strong id="edit-duree-${realIndex}">${calculerDureeEntreHeures(row.heureDebut, row.heureFin)} h</strong></td>
+                <td>
+                    <button type="button" class="btn-act-save" onclick="sauvegarderLigneHistorique(${realIndex})">💾 Enregistrer</button>
+                    <button type="button" class="btn-act-cancel" onclick="annulerEditionHistorique()">✖ Fermer</button>
+                </td>
+            `;
+        } 
+        // --- CAS 2 : LIGNE EN MODE LECTURE ---
+        else {
+            const duree = calculerDureeEntreHeures(row.heureDebut, row.heureFin);
+
+            tr.innerHTML = `
+                <td>${nomHtml}</td>
+                <td>${escapeHtml(equipeAgent)}</td>
+                <td>${escapeHtml(row.date)}</td>
+                <td>${escapeHtml(dateSaisieSeule)}</td>
+                <td><strong>${escapeHtml(activite)}</strong></td>
+                <td>${escapeHtml(row.formation)}</td>
+                <td>${escapeHtml(row.heureDebut)}</td>
+                <td>${escapeHtml(row.heureFin)}</td>
+                <td><strong>${duree} h</strong></td>
+                <td>
+                    <button type="button" class="btn-act-mod" onclick="activerEditionHistorique(${realIndex})">✏️ Modifier</button>
+                    <button type="button" class="btn-act-del" onclick="supprimerLigneHistorique(${realIndex})">Annuler 🗑️</button>
+                </td>
+            `;
+        }
+
         tbody.appendChild(tr);
     });
 }
@@ -989,26 +1027,54 @@ function reinitialiserFiltresHistorique() {
     afficherHistorique();
 }
 
-async function editerLigneHistorique(index) {
+// --- FONCTIONS D'ÉDITION EN LIGNE ---
+
+function activerEditionHistorique(index) {
+    indexEnEdition = index;
+    afficherHistorique();
+}
+
+function annulerEditionHistorique() {
+    indexEnEdition = null;
+    afficherHistorique();
+}
+
+function majActiviteEdition(index) {
+    const valForm = document.getElementById(`edit-formation-${index}`)?.value;
+    const fObj = catalogueInitial.find(f => f.libelle === valForm || f.id === valForm);
+    const cellAct = document.getElementById(`edit-activite-${index}`);
+    if (cellAct) {
+        cellAct.innerHTML = `<strong>${escapeHtml(fObj ? fObj.activite : "-")}</strong>`;
+    }
+}
+
+function calculerDureeEdition(index) {
+    const hD = document.getElementById(`edit-hdebut-${index}`)?.value;
+    const hF = document.getElementById(`edit-hfin-${index}`)?.value;
+    const dureeEl = document.getElementById(`edit-duree-${index}`);
+    if (dureeEl && hD && hF) {
+        dureeEl.textContent = `${calculerDureeEntreHeures(hD, hF)} h`;
+    }
+}
+
+async function sauvegarderLigneHistorique(index) {
+    const nFormation = document.getElementById(`edit-formation-${index}`)?.value;
+    const nDebut = document.getElementById(`edit-hdebut-${index}`)?.value;
+    const nFin = document.getElementById(`edit-hfin-${index}`)?.value;
+
+    if (!nFormation || !nDebut || !nFin) {
+        alert("Veuillez renseigner tous les champs.");
+        return;
+    }
+
     const item = historiqueSaisiesFMPA[index];
-    
-    // 1. Modification du libellé de formation
-    const nFormation = prompt("Nouvelle formation / module :", item.formation);
-    if (nFormation === null) return;
-
-    // 2. Modification des plages horaires
-    const nDebut = prompt("Nouvelle heure de début (HH:MM) :", item.heureDebut);
-    if (nDebut === null) return;
-
-    const nFin = prompt("Nouvelle heure de fin (HH:MM) :", item.heureFin);
-    if (nFin === null) return;
-
-    item.formation = nFormation.trim() || item.formation;
-    item.heureDebut = nDebut.trim() || item.heureDebut;
-    item.heureFin = nFin.trim() || item.heureFin;
+    item.formation = nFormation;
+    item.heureDebut = nDebut;
+    item.heureFin = nFin;
     item.dateSaisie = obtenirDateSaisie();
 
-    // Mise à jour de la mémoire et réécriture Excel
+    indexEnEdition = null;
+
     reconstruireCumulsDepuisHistorique();
     filtrerEtAfficherTableau();
     afficherHistorique();
@@ -1022,6 +1088,7 @@ async function supprimerLigneHistorique(index) {
     if (!confirm("Voulez-vous vraiment annuler cette saisie ?")) return;
 
     historiqueSaisiesFMPA.splice(index, 1);
+    indexEnEdition = null;
 
     reconstruireCumulsDepuisHistorique();
     filtrerEtAfficherTableau();
