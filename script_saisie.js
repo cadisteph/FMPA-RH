@@ -1148,41 +1148,70 @@ function exporterHistoriquePDF() {
     doc.setFontSize(16);
     doc.text("Historique des Saisies FMPA-RH", 14, 15);
 
-    // Préparation des données du tableau
+    // 1. On ajuste les entêtes pour inclure "Rôle" et "Statut"
     const colonnes = [
-        "Agent", "Équipe", "Date Formation", "Date Saisie", 
-        "Activité", "Thème / Module", "Début", "Fin", "Durée"
+        "Agent", "Rôle", "Équipe", "Date Formation", "Date Saisie", 
+        "Activité", "Thème / Module", "Début", "Fin", "Durée", "Statut"
     ];
 
+    // 2. On enrichit la génération des lignes
     const lignes = historiqueSaisiesFMPA.slice().reverse().map(row => {
         const agent = tableauAgentsRH.find(a => a.matricule === row.matricule);
+        
+        // Nom de l'agent
         const nomAgent = agent ? `${agent.nom} ${agent.prenom}` : row.matricule;
+        
+        // Détection Formateur (si row.isFormateur ou row.role vaut true / 'formateur')
+        const isFormateur = row.isFormateur || row.role === "formateur" || row.statutAgent === "formateur";
+        const roleTexte = isFormateur ? "🎓 Formateur" : "Stagiaire";
+
         const equipe = agent ? agent.equipe : "-";
         const formationObj = catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation);
         const activite = formationObj ? formationObj.activite : "-";
         const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
         const duree = calculerDureeEntreHeures(row.heureDebut, row.heureFin);
 
+        // Détection Clôturé (si la date de clôture est renseignée)
+        const estCloture = row.dateCloture || row.cloturePar || row.statut === "clôturé";
+        const statutTexte = estCloture ? "Clôturé" : "En cours";
+
         return [
-            nomAgent, equipe, row.date, dateSaisieSeule,
-            activite, row.formation, row.heureDebut, row.heureFin, `${duree} h`
+            nomAgent,
+            roleTexte,
+            equipe,
+            row.date,
+            dateSaisieSeule,
+            activite,
+            row.formation,
+            row.heureDebut,
+            row.heureFin,
+            `${duree} h`,
+            statutTexte
         ];
     });
 
-    // Génération automatique de la table PDF
+    // 3. Génération avec styles conditionnels (couleur pour 'Clôturé')
     doc.autoTable({
         startY: 22,
         head: [colonnes],
         body: lignes,
         theme: "striped",
         styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [30, 41, 59] } // Couleur #1e293b
+        headStyles: { fillColor: [30, 41, 59] }, // Couleur #1e293b
+        didParseCell: function(data) {
+            // Surligne ou met en vert la cellule si c'est 'Clôturé'
+            if (data.section === 'body' && data.column.index === 10) {
+                if (data.cell.raw === "Clôturé") {
+                    data.cell.styles.textColor = [22, 101, 52]; // Vert foncé
+                    data.cell.styles.fontStyle = 'bold';
+                }
+            }
+        }
     });
 
-    // Téléchargement du PDF
+    // Téléchargement du fichier
     doc.save(`Historique_FMPA_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
-
 
 
 
