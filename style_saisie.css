@@ -530,4 +530,8 @@ body {
     border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
     display: inline-flex; align-items: center; gap: 4px;
 }
-.btn-act-cancel:hover { background-color: #1e293b; }
+.btn-act-cancel:hover {
+    background-color: #1e293b; color: white; border: none; padding: 5px 10px;
+    border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 4px;
+}
