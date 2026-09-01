@@ -160,31 +160,31 @@
     <div class="filter-card">
         <!-- Champ déverrouillé par défaut -->
         <div class="filter-field">
-            <label for="hist-search-agent">👤 Agent</label>
+            <label for="hist-search-agent">👤Agent</label>
             <input type="text" id="hist-search-agent" placeholder="Nom..." oninput="filtrerHistorique()">
         </div>
         <!-- Champ déverrouillé par défaut -->
         <div class="filter-field">
-            <label for="hist-search-date">📅 Date formation</label>
+            <label for="hist-search-date">📅Date formation</label>
             <input type="date" id="hist-search-date" onchange="filtrerHistorique()">
         </div>
         
         <!-- NOUVEAU : Date Réf. W@ct (Vérouillé par le code admin) -->
         <div class="filter-field">
-            <label for="hist-ref-wact">🔒 Date Réf. W@ct</label>
+            <label for="hist-ref-wact">📧Date Réf. W@ct</label>
             <input type="date" id="hist-ref-wact" onchange="filtrerHistorique()" disabled>
         </div>
 
         <!-- NOUVEAU : Code Administration -->
         <div class="filter-field">
-            <label for="hist-code-admin">🔑 Code Admin</label>
+            <label for="hist-code-admin">🔑Code Admin</label>
             <input type="password" id="hist-code-admin" placeholder="Saisir le code..." oninput="verifierCodeAdmin()">
         </div>
 
-        <button type="button" class="btn-reset-hist" onclick="reinitialiserFiltresHistorique()">Réinitialiser</button>
+        <button type="button" class="btn-reset-hist" onclick="reinitialiserFiltresHistorique()">♻️Réinitialiser</button>
         </div>
     <!-- Bouton Fermer toujours actif -->
-        <button type="button" class="btn-close" onclick="fermerModalHistorique()" style="background: #1e293b; color: white; border: none; padding: 7px 14px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; margin-top: 14px">❌ Fermer</button>
+        <button type="button" class="btn-close" onclick="fermerModalHistorique()" style="background: #1e293b; color: #ffffff; border: 2px solid #f30505; padding: 7px 7px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; margin-top: 14px">❌ Fermer</button>
 
             </div>
 
