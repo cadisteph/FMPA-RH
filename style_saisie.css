@@ -466,11 +466,30 @@ body {
 .filter-field input {
     padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; outline: none;
 }
+.filter-field input:disabled {
+    background-color: #e2e8f0;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
 .btn-reset-hist {
     background: #334155; color: white; border: none; padding: 7px 14px;
     border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; margin-top: 14px;
 }
 .btn-reset-hist:hover { background: #1e293b; }
+
+/* Bouton Fermer dans l'en-tête */
+.btn-close-modal {
+    background-color: #334155;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.btn-close-modal:hover {
+    background-color: #1e293b;
+}
 
 /* Tableau */
 .modal-body { padding: 16px; overflow-y: auto; flex: 1; }
@@ -479,12 +498,41 @@ body {
 .table-hist td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
 .table-hist tr:hover { background: #f8fafc; }
 
+/* Ligne clôturée W@ct (Grisée) */
+.tr-cloture {
+    background-color: #f1f5f9 !important;
+    color: #64748b;
+}
+.tr-cloture td {
+    opacity: 0.75;
+}
+
 /* Badges & Textes */
 .badge-formateur {
     background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0;
     font-size: 0.75rem; padding: 2px 6px; border-radius: 6px; font-weight: 600; margin-left: 6px;
 }
 .nom-agent-formateur { color: #15803d; }
+
+.badge-cloture {
+    background-color: #e2e8f0;
+    color: #475569;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.badge-verrouille {
+    background-color: #fee2e2;
+    color: #991b1b;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+}
 
 /* Boutons d'action Mode Lecteur (Modifier / Annuler) */
 .btn-act-mod {
@@ -530,8 +578,4 @@ body {
     border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
     display: inline-flex; align-items: center; gap: 4px;
 }
-.btn-act-cancel:hover {
-    background-color: #1e293b; color: white; border: none; padding: 5px 10px;
-    border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 4px;
-}
+.btn-act-cancel:hover { background-color: #1e293b; }
