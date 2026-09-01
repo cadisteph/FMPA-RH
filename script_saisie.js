@@ -919,7 +919,6 @@ function fermerModalHistorique() {
     document.getElementById("modal-historique").style.display = "none";
 }
 
-// --- AFFICHAGE ET FILTRAGE ---
 function afficherHistorique() {
     const tbody = document.getElementById("tbody-historique");
     if (!tbody) return;
@@ -929,36 +928,51 @@ function afficherHistorique() {
 
     tbody.innerHTML = "";
 
-    // On parcourt l'historique dans l'ordre inverse (plus récent en haut)
     historiqueSaisiesFMPA.slice().reverse().forEach((row, indexReversed) => {
-        // Retrouver l'index réel dans le tableau d'origine
         const realIndex = historiqueSaisiesFMPA.length - 1 - indexReversed;
         
-        // Retrouver l'agent d'après le matricule
         const agent = tableauAgentsRH.find(a => a.matricule === row.matricule);
-        const nomAgent = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule}`;
+        const nomAgentComplet = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule}`;
         const equipeAgent = agent ? agent.equipe : "-";
 
-        // Application des filtres
-        if (filterNom && !nomAgent.toLowerCase().includes(filterNom)) return;
+        if (filterNom && !nomAgentComplet.toLowerCase().includes(filterNom)) return;
         if (filterDate && row.date !== filterDate) return;
+
+        // Détection si l'agent est formateur
+        const estFormateur = row.commentaires?.includes("(Animation / Formateur)") || 
+            (row.formateur && nomAgentComplet.toLowerCase().includes(row.formateur.toLowerCase()));
+
+        // Recherche de l'activité liée à la formation
+        const formationObj = catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation);
+        const activite = formationObj ? formationObj.activite : "-";
+
+        // Extraction unique de la date pour "Date Saisie" (sans l'heure)
+        const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
 
         const duree = calculerDureeEntreHeures(row.heureDebut, row.heureFin);
 
+        // Rendu du nom de l'agent + badge
+        let nomHtml = "";
+        if (estFormateur) {
+            nomHtml = `<span class="nom-agent-formateur">🎓 <strong>${escapeHtml(nomAgentComplet)}</strong></span> <span class="badge-formateur">Formateur</span>`;
+        } else {
+            nomHtml = `<strong>${escapeHtml(nomAgentComplet)}</strong>`;
+        }
+
         const tr = document.createElement("tr");
         tr.innerHTML = `
-            <td><strong>${escapeHtml(nomAgent)}</strong></td>
+            <td>${nomHtml}</td>
             <td>${escapeHtml(equipeAgent)}</td>
             <td>${escapeHtml(row.date)}</td>
-            <td>${escapeHtml(row.dateSaisie || "-")}</td>
+            <td>${escapeHtml(dateSaisieSeule)}</td>
+            <td><strong>${escapeHtml(activite)}</strong></td>
             <td>${escapeHtml(row.formation)}</td>
-            <td>${escapeHtml(row.formateur || "-")}</td>
             <td>${escapeHtml(row.heureDebut)}</td>
             <td>${escapeHtml(row.heureFin)}</td>
             <td><strong>${duree} h</strong></td>
             <td>
-                <button type="button" class="btn-edit" onclick="editerLigneHistorique(${realIndex})">✏️</button>
-                <button type="button" class="btn-delete" onclick="supprimerLigneHistorique(${realIndex})">🗑️</button>
+                <button type="button" class="btn-act-mod" onclick="editerLigneHistorique(${realIndex})">✏️ Modifier</button>
+                <button type="button" class="btn-act-del" onclick="supprimerLigneHistorique(${realIndex})">Annuler 🗑️</button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -975,37 +989,40 @@ function reinitialiserFiltresHistorique() {
     afficherHistorique();
 }
 
-// --- EDITIONS ET SUPPRESSIONS ---
-async function supprimerLigneHistorique(index) {
-    if (!confirm("Voulez-vous vraiment supprimer cette ligne d'historique ?")) return;
+async function editerLigneHistorique(index) {
+    const item = historiqueSaisiesFMPA[index];
+    
+    // 1. Modification du libellé de formation
+    const nFormation = prompt("Nouvelle formation / module :", item.formation);
+    if (nFormation === null) return;
 
-    // 1. Suppression dans le tableau JS
-    historiqueSaisiesFMPA.splice(index, 1);
+    // 2. Modification des plages horaires
+    const nDebut = prompt("Nouvelle heure de début (HH:MM) :", item.heureDebut);
+    if (nDebut === null) return;
 
-    // 2. Recalcul des heures et mise à jour de la grille principale
+    const nFin = prompt("Nouvelle heure de fin (HH:MM) :", item.heureFin);
+    if (nFin === null) return;
+
+    item.formation = nFormation.trim() || item.formation;
+    item.heureDebut = nDebut.trim() || item.heureDebut;
+    item.heureFin = nFin.trim() || item.heureFin;
+    item.dateSaisie = obtenirDateSaisie();
+
+    // Mise à jour de la mémoire et réécriture Excel
     reconstruireCumulsDepuisHistorique();
     filtrerEtAfficherTableau();
     afficherHistorique();
 
-    // 3. Réécriture dans le fichier Excel
     if (fichierHandleXLSX) {
         await enregistrerFichierXLSX();
     }
 }
 
-async function editerLigneHistorique(index) {
-    const item = historiqueSaisiesFMPA[index];
-    const nDebut = prompt("Nouvelle heure de début (HH:MM) :", item.heureDebut);
-    if (!nDebut) return;
+async function supprimerLigneHistorique(index) {
+    if (!confirm("Voulez-vous vraiment annuler cette saisie ?")) return;
 
-    const nFin = prompt("Nouvelle heure de fin (HH:MM) :", item.heureFin);
-    if (!nFin) return;
+    historiqueSaisiesFMPA.splice(index, 1);
 
-    item.heureDebut = nDebut;
-    item.heureFin = nFin;
-    item.dateSaisie = obtenirDateSaisie();
-
-    // Recalcul et sauvegarde
     reconstruireCumulsDepuisHistorique();
     filtrerEtAfficherTableau();
     afficherHistorique();
