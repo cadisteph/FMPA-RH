@@ -119,6 +119,19 @@ async function chargerClasseur(file) {
     catalogueInitial = convertirCatalogue(classeurXLSX.Sheets.catalogue);
     historiqueSaisiesFMPA = convertirHistorique(classeurXLSX.Sheets.historiqueSuivi);
 
+    // --- LECTURE DE LA DATE RÉF W@CT DEPUIS L'ONGLET PARAMETRES ---
+    if (classeurXLSX.Sheets["Parametres"] && classeurXLSX.Sheets["Parametres"]["B1"]) {
+        const valWact = classeurXLSX.Sheets["Parametres"]["B1"].v;
+        const inputWact = document.getElementById("hist-ref-wact");
+        if (inputWact && valWact) {
+            // Formate la date au format YYYY-MM-DD si c'est un objet Date Excel
+            const dateStr = valWact instanceof Date 
+                ? valWact.toISOString().slice(0, 10) 
+                : String(valWact);
+            inputWact.value = dateStr;
+        }
+    }
+
     reconstruireCumulsDepuisHistorique();
     agentsSelectionnes.clear();
 
@@ -127,10 +140,10 @@ async function chargerClasseur(file) {
     filtrerEtAfficherTableau();
 
     afficherStatut(
-    `🌐 ${nomFichierXLSX} chargé — ` +
-    `${tableauAgentsRH.length} agent(s), ` +
-    `${catalogueInitial.length} formation(s), ` +
-    `${historiqueSaisiesFMPA.length} ligne(s) d'historique`
+        `🌐 ${nomFichierXLSX} chargé — ` +
+        `${tableauAgentsRH.length} agent(s), ` +
+        `${catalogueInitial.length} formation(s), ` +
+        `${historiqueSaisiesFMPA.length} ligne(s) d'historique`
     );
 }
 
@@ -974,8 +987,10 @@ function afficherHistorique() {
         const activite = formationObj ? formationObj.activite : "-";
         const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
 
-        // Détermination du verrouillage W@ct (Date Saisie <= Date Réf. W@ct)
-        const estCloture = dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact;
+        // Détermination du verrouillage : prend en compte la Date Réf. W@ct globale OU la colonne "Cloture" individuelle
+        const estClotureLigne = row.cloture || row.dateCloture || row.statut === "clôturé";
+        const estClotureWact = dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact;
+        const estCloture = estClotureLigne || estClotureWact;
 
         const tr = document.createElement("tr");
 
@@ -983,7 +998,7 @@ function afficherHistorique() {
             ? `<span class="nom-agent-formateur">🎓 <strong>${escapeHtml(nomAgentComplet)}</strong></span> <span class="badge-formateur">Formateur</span>`
             : `<strong>${escapeHtml(nomAgentComplet)}</strong>`;
 
-        // Style si la ligne est clôturée W@ct
+        // Style si la ligne est clôturée
         if (estCloture) {
             tr.classList.add("tr-cloture");
         }
@@ -1021,7 +1036,7 @@ function afficherHistorique() {
         else {
             const duree = calculerDureeEntreHeures(row.heureDebut, row.heureFin);
 
-            // Rendu de la colonne Action en fonction des droits admin et de la clôture W@ct
+            // Rendu de la colonne Action en fonction des droits admin et de la clôture
             let colActions = "";
             if (estCloture) {
                 colActions = `<span class="badge-cloture">🔒 Clôturé</span>`;
@@ -1135,50 +1150,63 @@ async function supprimerLigneHistorique(index) {
     }
 }
 
+// --- ÉCOUTEUR ET SAUVEGARDE DE LA DATE RÉF W@CT DANS L'ONGLET PARAMETRES ---
+document.getElementById("hist-ref-wact")?.addEventListener("change", async (e) => {
+    const nouvelleDate = e.target.value;
+    afficherHistorique();
+
+    if (typeof workbook !== "undefined" && workbook.Sheets["Parametres"]) {
+        // Écrit en B1 (cellule 1, 0)
+        XLSX.utils.sheet_add_aoa(workbook.Sheets["Parametres"], [[nouvelleDate]], { origin: "B1" });
+        if (fichierHandleXLSX) {
+            await enregistrerFichierXLSX();
+        }
+    }
+});
+
+// --- EXPORT PDF CORRIGÉ ---
 function exporterHistoriquePDF() {
     if (!historiqueSaisiesFMPA.length) {
         alert("Aucune donnée à exporter.");
         return;
     }
 
+    const dateRefWact = document.getElementById("hist-ref-wact")?.value || "";
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
-    // Titre du document
     doc.setFontSize(16);
     doc.text("Historique des Saisies FMPA-RH", 14, 15);
 
-    // 1. On ajuste les entêtes pour inclure "Rôle" et "Statut"
     const colonnes = [
-        "Agent", "Rôle", "Équipe", "Date Formation", "Date Saisie", 
+        "Agent", "Équipe", "Date Formation", "Date Saisie", 
         "Activité", "Thème / Module", "Début", "Fin", "Durée", "Statut"
     ];
 
-    // 2. On enrichit la génération des lignes
     const lignes = historiqueSaisiesFMPA.slice().reverse().map(row => {
         const agent = tableauAgentsRH.find(a => a.matricule === row.matricule);
-        
-        // Nom de l'agent
-        const nomAgent = agent ? `${agent.nom} ${agent.prenom}` : row.matricule;
-        
-        // Détection Formateur (si row.isFormateur ou row.role vaut true / 'formateur')
-        const isFormateur = row.isFormateur || row.role === "formateur" || row.statutAgent === "formateur";
-        const roleTexte = isFormateur ? "🎓 Formateur" : "Stagiaire";
+        const nomAgentComplet = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule}`;
+        const equipeAgent = agent ? agent.equipe : "-";
 
-        const equipe = agent ? agent.equipe : "-";
+        const estFormateur = row.commentaires?.includes("(Animation / Formateur)") || 
+            (row.formateur && nomAgentComplet.toLowerCase().includes(row.formateur.toLowerCase()));
+
+        const nomAffichage = estFormateur ? `🎓 ${nomAgentComplet} (Formateur)` : nomAgentComplet;
+
         const formationObj = catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation);
         const activite = formationObj ? formationObj.activite : "-";
         const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
         const duree = calculerDureeEntreHeures(row.heureDebut, row.heureFin);
 
-        // Détection Clôturé (si la date de clôture est renseignée)
-        const estCloture = row.dateCloture || row.cloturePar || row.statut === "clôturé";
-        const statutTexte = estCloture ? "Clôturé" : "En cours";
+        const estClotureLigne = row.cloture || row.dateCloture || row.statut === "clôturé";
+        const estClotureWact = dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact;
+        const estCloture = estClotureLigne || estClotureWact;
+
+        const statutTexte = estCloture ? "🔒 Clôturé" : "Actif";
 
         return [
-            nomAgent,
-            roleTexte,
-            equipe,
+            nomAffichage,
+            equipeAgent,
             row.date,
             dateSaisieSeule,
             activite,
@@ -1190,30 +1218,22 @@ function exporterHistoriquePDF() {
         ];
     });
 
-    // 3. Génération avec styles conditionnels (couleur pour 'Clôturé')
     doc.autoTable({
         startY: 22,
         head: [colonnes],
         body: lignes,
         theme: "striped",
         styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [30, 41, 59] }, // Couleur #1e293b
+        headStyles: { fillColor: [30, 41, 59] },
         didParseCell: function(data) {
-            // Surligne ou met en vert la cellule si c'est 'Clôturé'
-            if (data.section === 'body' && data.column.index === 10) {
-                if (data.cell.raw === "Clôturé") {
-                    data.cell.styles.textColor = [22, 101, 52]; // Vert foncé
+            if (data.section === 'body' && data.column.index === 9) {
+                if (data.cell.raw === "🔒 Clôturé") {
+                    data.cell.styles.textColor = [185, 28, 28];
                     data.cell.styles.fontStyle = 'bold';
                 }
             }
         }
     });
 
-    // Téléchargement du fichier
     doc.save(`Historique_FMPA_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
-
-
-
-
-
