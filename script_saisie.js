@@ -941,23 +941,30 @@ function ouvrirModalHistorique() {
     afficherHistorique();
 }
 
-function fermerModalHistorique() {
+async function fermerModalHistorique() {
     indexEnEdition = null;
+    
+    // 1. Masquer la modale
     document.getElementById("modal-historique").style.display = "none";
-}
 
-// Vérification du code d'administration "cdcadmin"
-function verifierCodeAdmin() {
-    const inputCode = document.getElementById("hist-code-admin")?.value.trim().toLowerCase() || "";
-    estAdminDeverrouille = (inputCode === "cdcadmin");
+    // 2. Récupérer la date actuellement saisie dans le champ
+    const dateRefWact = document.getElementById("hist-ref-wact")?.value || "";
 
-    const inputWact = document.getElementById("hist-ref-wact");
-    if (inputWact) {
-        inputWact.disabled = !estAdminDeverrouille;
+    // 3. Enregistrer dans l'onglet Paramètres d'Excel s'il existe
+    if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
+        if (!classeurXLSX.Sheets["Parametres"]) {
+            // Crée la feuille si elle n'existait pas
+            XLSX.utils.book_append_sheet(classeurXLSX, XLSX.utils.aoa_to_sheet([["DateRefWact", ""]]), "Parametres");
+        }
+
+        // Écrit la date en B1
+        XLSX.utils.sheet_add_aoa(classeurXLSX.Sheets["Parametres"], [[dateRefWact]], { origin: "B1" });
+
+        // Sauvegarde physique dans le fichier .xlsx
+        if (fichierHandleXLSX) {
+            await enregistrerFichierXLSX();
+        }
     }
-
-    // Réafficher pour ajuster l'état des boutons et des champs
-    afficherHistorique();
 }
 
 function afficherHistorique() {
@@ -1191,7 +1198,8 @@ function exporterHistoriquePDF() {
         const estFormateur = row.commentaires?.includes("(Animation / Formateur)") || 
             (row.formateur && nomAgentComplet.toLowerCase().includes(row.formateur.toLowerCase()));
 
-        const nomAffichage = estFormateur ? `🎓 ${nomAgentComplet} (Formateur)` : nomAgentComplet;
+        // Remplacement de 🎓 par [Formateur] sans emoji
+        const nomAffichage = estFormateur ? `${nomAgentComplet} [Formateur]` : nomAgentComplet;
 
         const formationObj = catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation);
         const activite = formationObj ? formationObj.activite : "-";
@@ -1202,7 +1210,8 @@ function exporterHistoriquePDF() {
         const estClotureWact = dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact;
         const estCloture = estClotureLigne || estClotureWact;
 
-        const statutTexte = estCloture ? "🔒 Clôturé" : "Actif";
+        // Remplacement de 🔒 par du texte brut
+        const statutTexte = estCloture ? "Clôturé" : "Actif";
 
         return [
             nomAffichage,
@@ -1227,8 +1236,8 @@ function exporterHistoriquePDF() {
         headStyles: { fillColor: [30, 41, 59] },
         didParseCell: function(data) {
             if (data.section === 'body' && data.column.index === 9) {
-                if (data.cell.raw === "🔒 Clôturé") {
-                    data.cell.styles.textColor = [185, 28, 28];
+                if (data.cell.raw === "Clôturé") {
+                    data.cell.styles.textColor = [185, 28, 28]; // Rouge
                     data.cell.styles.fontStyle = 'bold';
                 }
             }
