@@ -953,15 +953,20 @@ async function fermerModalHistorique() {
     // 3. Enregistrer dans l'onglet Paramètres d'Excel s'il existe
     if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
         if (!classeurXLSX.Sheets["Parametres"]) {
-            // Crée la feuille si elle n'existait pas
-            XLSX.utils.book_append_sheet(classeurXLSX, XLSX.utils.aoa_to_sheet([["DateRefWact", ""]]), "Parametres");
+            // Crée la feuille avec l'entête en A1 et la date en B1
+            const newSheet = XLSX.utils.aoa_to_sheet([["DateRefWact", dateRefWact]]);
+            XLSX.utils.book_append_sheet(classeurXLSX, newSheet, "Parametres");
+        } else {
+            // Écrit l'entête en A1 et la date en B1 dans la feuille existante
+            XLSX.utils.sheet_add_aoa(
+                classeurXLSX.Sheets["Parametres"], 
+                [["DateRefWact", dateRefWact]], 
+                { origin: "A1" }
+            );
         }
 
-        // Écrit la date en B1
-        XLSX.utils.sheet_add_aoa(classeurXLSX.Sheets["Parametres"], [[dateRefWact]], { origin: "B1" });
-
         // Sauvegarde physique dans le fichier .xlsx
-        if (fichierHandleXLSX) {
+        if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
             await enregistrerFichierXLSX();
         }
     }
@@ -977,10 +982,12 @@ function afficherHistorique() {
 
     tbody.innerHTML = "";
 
+    if (!Array.isArray(historiqueSaisiesFMPA)) return;
+
     historiqueSaisiesFMPA.slice().reverse().forEach((row, indexReversed) => {
         const realIndex = historiqueSaisiesFMPA.length - 1 - indexReversed;
         
-        const agent = tableauAgentsRH.find(a => a.matricule === row.matricule);
+        const agent = Array.isArray(tableauAgentsRH) ? tableauAgentsRH.find(a => a.matricule === row.matricule) : null;
         const nomAgentComplet = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule}`;
         const equipeAgent = agent ? agent.equipe : "-";
 
@@ -990,14 +997,14 @@ function afficherHistorique() {
         const estFormateur = row.commentaires?.includes("(Animation / Formateur)") || 
             (row.formateur && nomAgentComplet.toLowerCase().includes(row.formateur.toLowerCase()));
 
-        const formationObj = catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation);
+        const formationObj = Array.isArray(catalogueInitial) ? catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation) : null;
         const activite = formationObj ? formationObj.activite : "-";
         const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
 
         // Détermination du verrouillage : prend en compte la Date Réf. W@ct globale OU la colonne "Cloture" individuelle
         const estClotureLigne = row.cloture || row.dateCloture || row.statut === "clôturé";
         const estClotureWact = dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact;
-        const estCloture = estClotureLigne || estClotureWact;
+        const estCloture = Boolean(estClotureLigne || estClotureWact);
 
         const tr = document.createElement("tr");
 
@@ -1014,7 +1021,7 @@ function afficherHistorique() {
         if (indexEnEdition === realIndex && estAdminDeverrouille && !estCloture) {
             tr.classList.add("tr-editing");
 
-            let optionsFormations = catalogueInitial.map(f => {
+            let optionsFormations = (catalogueInitial || []).map(f => {
                 const isSelected = (f.libelle === row.formation || f.id === row.formation) ? "selected" : "";
                 return `<option value="${escapeHtml(f.libelle)}" ${isSelected}>${escapeHtml(f.libelle)}</option>`;
             }).join("");
@@ -1030,8 +1037,8 @@ function afficherHistorique() {
                         ${optionsFormations}
                     </select>
                 </td>
-                <td><input type="time" id="edit-hdebut-${realIndex}" class="input-inline" value="${row.heureDebut}" oninput="calculerDureeEdition(${realIndex})"></td>
-                <td><input type="time" id="edit-hfin-${realIndex}" class="input-inline" value="${row.heureFin}" oninput="calculerDureeEdition(${realIndex})"></td>
+                <td><input type="time" id="edit-hdebut-${realIndex}" class="input-inline" value="${row.heureDebut || ''}" oninput="calculerDureeEdition(${realIndex})"></td>
+                <td><input type="time" id="edit-hfin-${realIndex}" class="input-inline" value="${row.heureFin || ''}" oninput="calculerDureeEdition(${realIndex})"></td>
                 <td><strong id="edit-duree-${realIndex}">${calculerDureeEntreHeures(row.heureDebut, row.heureFin)} h</strong></td>
                 <td>
                     <button type="button" class="btn-act-save" onclick="sauvegarderLigneHistorique(${realIndex})">💾 Enregistrer</button>
@@ -1098,7 +1105,7 @@ function annulerEditionHistorique() {
 
 function majActiviteEdition(index) {
     const valForm = document.getElementById(`edit-formation-${index}`)?.value;
-    const fObj = catalogueInitial.find(f => f.libelle === valForm || f.id === valForm);
+    const fObj = (catalogueInitial || []).find(f => f.libelle === valForm || f.id === valForm);
     const cellAct = document.getElementById(`edit-activite-${index}`);
     if (cellAct) {
         cellAct.innerHTML = `<strong>${escapeHtml(fObj ? fObj.activite : "-")}</strong>`;
@@ -1136,7 +1143,7 @@ async function sauvegarderLigneHistorique(index) {
     filtrerEtAfficherTableau();
     afficherHistorique();
 
-    if (fichierHandleXLSX) {
+    if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
         await enregistrerFichierXLSX();
     }
 }
@@ -1152,7 +1159,7 @@ async function supprimerLigneHistorique(index) {
     filtrerEtAfficherTableau();
     afficherHistorique();
 
-    if (fichierHandleXLSX) {
+    if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
         await enregistrerFichierXLSX();
     }
 }
@@ -1162,10 +1169,20 @@ document.getElementById("hist-ref-wact")?.addEventListener("change", async (e) =
     const nouvelleDate = e.target.value;
     afficherHistorique();
 
-    if (typeof workbook !== "undefined" && workbook.Sheets["Parametres"]) {
-        // Écrit en B1 (cellule 1, 0)
-        XLSX.utils.sheet_add_aoa(workbook.Sheets["Parametres"], [[nouvelleDate]], { origin: "B1" });
-        if (fichierHandleXLSX) {
+    if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
+        if (!classeurXLSX.Sheets["Parametres"]) {
+            const newSheet = XLSX.utils.aoa_to_sheet([["DateRefWact", nouvelleDate]]);
+            XLSX.utils.book_append_sheet(classeurXLSX, newSheet, "Parametres");
+        } else {
+            // Écrit l'entête en A1 et la date en B1
+            XLSX.utils.sheet_add_aoa(
+                classeurXLSX.Sheets["Parametres"], 
+                [["DateRefWact", nouvelleDate]], 
+                { origin: "A1" }
+            );
+        }
+
+        if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
             await enregistrerFichierXLSX();
         }
     }
@@ -1191,17 +1208,16 @@ function exporterHistoriquePDF() {
     ];
 
     const lignes = historiqueSaisiesFMPA.slice().reverse().map(row => {
-        const agent = tableauAgentsRH.find(a => a.matricule === row.matricule);
+        const agent = Array.isArray(tableauAgentsRH) ? tableauAgentsRH.find(a => a.matricule === row.matricule) : null;
         const nomAgentComplet = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule}`;
         const equipeAgent = agent ? agent.equipe : "-";
 
         const estFormateur = row.commentaires?.includes("(Animation / Formateur)") || 
             (row.formateur && nomAgentComplet.toLowerCase().includes(row.formateur.toLowerCase()));
 
-        // Remplacement de 🎓 par [Formateur] sans emoji
         const nomAffichage = estFormateur ? `${nomAgentComplet} [Formateur]` : nomAgentComplet;
 
-        const formationObj = catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation);
+        const formationObj = Array.isArray(catalogueInitial) ? catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation) : null;
         const activite = formationObj ? formationObj.activite : "-";
         const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
         const duree = calculerDureeEntreHeures(row.heureDebut, row.heureFin);
@@ -1210,7 +1226,6 @@ function exporterHistoriquePDF() {
         const estClotureWact = dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact;
         const estCloture = estClotureLigne || estClotureWact;
 
-        // Remplacement de 🔒 par du texte brut
         const statutTexte = estCloture ? "Clôturé" : "Actif";
 
         return [
