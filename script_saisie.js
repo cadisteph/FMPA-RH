@@ -928,13 +928,42 @@ function escapeJs(value) {
 let indexEnEdition = null;
 let estAdminDeverrouille = false;
 
+// --- VÉRIFICATION DU CODE ADMIN ---
+function verifierCodeAdmin() {
+    const inputCode = document.getElementById("hist-code-admin");
+    if (!inputCode) return;
+
+    // Remplace "1234" par ton code secret réel si nécessaire
+    const CODE_VALIDE = "1234"; 
+
+    if (inputCode.value.trim() === CODE_VALIDE) {
+        estAdminDeverrouille = true;
+        inputCode.style.border = "2px solid #16a34a"; // Visuel vert (déverrouillé)
+        inputCode.style.backgroundColor = "#dcfce7";
+    } else {
+        estAdminDeverrouille = false;
+        inputCode.style.border = "";
+        inputCode.style.backgroundColor = "";
+    }
+
+    // Rafraîchit l'affichage du tableau pour libérer les boutons Modifier / Annuler
+    afficherHistorique();
+}
+
+// Écouteur en direct sur la saisie du mot de passe
+document.getElementById("hist-code-admin")?.addEventListener("input", verifierCodeAdmin);
+
 function ouvrirModalHistorique() {
     indexEnEdition = null;
-    estAdminDeverrouille = false;
     
-    // Réinitialisation du champ code admin
+    // Réinitialisation du champ code admin et du statut
     const inputCode = document.getElementById("hist-code-admin");
-    if (inputCode) inputCode.value = "";
+    if (inputCode) {
+        inputCode.value = "";
+        inputCode.style.border = "";
+        inputCode.style.backgroundColor = "";
+    }
+    estAdminDeverrouille = false;
     
     // Affichage de la modale
     const modal = document.getElementById("modal-historique");
@@ -1023,34 +1052,67 @@ function afficherHistorique() {
 
         const duree = typeof calculerDureeEntreHeures === "function" ? calculerDureeEntreHeures(row.heureDebut, row.heureFin) : "0";
 
-        let colActions = "";
-        if (estCloture) {
-            colActions = `<span class="badge-cloture">🔒 Clôturé</span>`;
-        } else if (!estAdminDeverrouille) {
-            colActions = `<span class="badge-verrouille">🔒 Verrouillé</span>`;
-        } else {
-            colActions = `
-                <button type="button" class="btn-act-mod" onclick="activerEditionHistorique(${realIndex})">✏️ Modifier</button>
-                <button type="button" class="btn-act-del" onclick="supprimerLigneHistorique(${realIndex})">Annuler 🗑️</button>
+        // --- CAS 1 : MODE ÉDITION ---
+        if (indexEnEdition === realIndex && estAdminDeverrouille && !estCloture) {
+            tr.classList.add("tr-editing");
+
+            let optionsFormations = (catalogueInitial || []).map(f => {
+                const isSelected = (f.libelle === row.formation || f.id === row.formation) ? "selected" : "";
+                return `<option value="${escapeHtml(f.libelle)}" ${isSelected}>${escapeHtml(f.libelle)}</option>`;
+            }).join("");
+
+            tr.innerHTML = `
+                <td>${nomHtml}</td>
+                <td>${escapeHtml(equipeAgent)}</td>
+                <td>${escapeHtml(row.date)}</td>
+                <td>${escapeHtml(dateSaisieSeule)}</td>
+                <td id="edit-activite-${realIndex}"><strong>${escapeHtml(activite)}</strong></td>
+                <td>
+                    <select id="edit-formation-${realIndex}" class="input-inline" onchange="majActiviteEdition(${realIndex})">
+                        ${optionsFormations}
+                    </select>
+                </td>
+                <td><input type="time" id="edit-hdebut-${realIndex}" class="input-inline" value="${row.heureDebut || ''}" oninput="calculerDureeEdition(${realIndex})"></td>
+                <td><input type="time" id="edit-hfin-${realIndex}" class="input-inline" value="${row.heureFin || ''}" oninput="calculerDureeEdition(${realIndex})"></td>
+                <td><strong id="edit-duree-${realIndex}">${duree} h</strong></td>
+                <td>
+                    <button type="button" class="btn-act-save" onclick="sauvegarderLigneHistorique(${realIndex})">💾 Enregistrer</button>
+                    <button type="button" class="btn-act-cancel" onclick="annulerEditionHistorique()">✖ Fermer</button>
+                </td>
+            `;
+        } 
+        // --- CAS 2 : MODE LECTURE ---
+        else {
+            let colActions = "";
+            if (estCloture) {
+                colActions = `<span class="badge-cloture">🔒 Clôturé</span>`;
+            } else if (!estAdminDeverrouille) {
+                colActions = `<span class="badge-verrouille">🔒 Verrouillé</span>`;
+            } else {
+                colActions = `
+                    <button type="button" class="btn-act-mod" onclick="activerEditionHistorique(${realIndex})">✏️ Modifier</button>
+                    <button type="button" class="btn-act-del" onclick="supprimerLigneHistorique(${realIndex})">Annuler 🗑️</button>
+                `;
+            }
+
+            tr.innerHTML = `
+                <td>${nomHtml}</td>
+                <td>${escapeHtml(equipeAgent)}</td>
+                <td>${escapeHtml(row.date)}</td>
+                <td>${escapeHtml(dateSaisieSeule)}</td>
+                <td><strong>${escapeHtml(activite)}</strong></td>
+                <td>${escapeHtml(row.formation)}</td>
+                <td>${escapeHtml(row.heureDebut)}</td>
+                <td>${escapeHtml(row.heureFin)}</td>
+                <td><strong>${duree} h</strong></td>
+                <td>${colActions}</td>
             `;
         }
-
-        tr.innerHTML = `
-            <td>${nomHtml}</td>
-            <td>${escapeHtml(equipeAgent)}</td>
-            <td>${escapeHtml(row.date)}</td>
-            <td>${escapeHtml(dateSaisieSeule)}</td>
-            <td><strong>${escapeHtml(activite)}</strong></td>
-            <td>${escapeHtml(row.formation)}</td>
-            <td>${escapeHtml(row.heureDebut)}</td>
-            <td>${escapeHtml(row.heureFin)}</td>
-            <td><strong>${duree} h</strong></td>
-            <td>${colActions}</td>
-        `;
 
         tbody.appendChild(tr);
     });
 }
+
 function filtrerHistorique() {
     afficherHistorique();
 }
@@ -1059,6 +1121,16 @@ function reinitialiserFiltresHistorique() {
     if (document.getElementById("hist-search-agent")) document.getElementById("hist-search-agent").value = "";
     if (document.getElementById("hist-search-date")) document.getElementById("hist-search-date").value = "";
     if (document.getElementById("hist-ref-wact")) document.getElementById("hist-ref-wact").value = "";
+    
+    // Réinitialise aussi le code admin
+    const inputCode = document.getElementById("hist-code-admin");
+    if (inputCode) {
+        inputCode.value = "";
+        inputCode.style.border = "";
+        inputCode.style.backgroundColor = "";
+    }
+    estAdminDeverrouille = false;
+
     afficherHistorique();
 }
 
@@ -1086,7 +1158,7 @@ function calculerDureeEdition(index) {
     const hD = document.getElementById(`edit-hdebut-${index}`)?.value;
     const hF = document.getElementById(`edit-hfin-${index}`)?.value;
     const dureeEl = document.getElementById(`edit-duree-${index}`);
-    if (dureeEl && hD && hF) {
+    if (dureeEl && hD && hF && typeof calculerDureeEntreHeures === "function") {
         dureeEl.textContent = `${calculerDureeEntreHeures(hD, hF)} h`;
     }
 }
@@ -1105,12 +1177,12 @@ async function sauvegarderLigneHistorique(index) {
     item.formation = nFormation;
     item.heureDebut = nDebut;
     item.heureFin = nFin;
-    item.dateSaisie = obtenirDateSaisie();
+    item.dateSaisie = typeof obtenirDateSaisie === "function" ? obtenirDateSaisie() : item.dateSaisie;
 
     indexEnEdition = null;
 
-    reconstruireCumulsDepuisHistorique();
-    filtrerEtAfficherTableau();
+    if (typeof reconstruireCumulsDepuisHistorique === "function") reconstruireCumulsDepuisHistorique();
+    if (typeof filtrerEtAfficherTableau === "function") filtrerEtAfficherTableau();
     afficherHistorique();
 
     if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
@@ -1125,8 +1197,8 @@ async function supprimerLigneHistorique(index) {
     historiqueSaisiesFMPA.splice(index, 1);
     indexEnEdition = null;
 
-    reconstruireCumulsDepuisHistorique();
-    filtrerEtAfficherTableau();
+    if (typeof reconstruireCumulsDepuisHistorique === "function") reconstruireCumulsDepuisHistorique();
+    if (typeof filtrerEtAfficherTableau === "function") filtrerEtAfficherTableau();
     afficherHistorique();
 
     if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
@@ -1190,7 +1262,7 @@ function exporterHistoriquePDF() {
         const formationObj = Array.isArray(catalogueInitial) ? catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation) : null;
         const activite = formationObj ? formationObj.activite : "-";
         const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
-        const duree = calculerDureeEntreHeures(row.heureDebut, row.heureFin);
+        const duree = typeof calculerDureeEntreHeures === "function" ? calculerDureeEntreHeures(row.heureDebut, row.heureFin) : "0";
 
         const estClotureLigne = row.cloture || row.dateCloture || row.statut === "clôturé";
         const estClotureWact = dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact;
