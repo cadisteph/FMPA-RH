@@ -932,12 +932,15 @@ function ouvrirModalHistorique() {
     indexEnEdition = null;
     estAdminDeverrouille = false;
     
-    // Réinitialiser le code à l'ouverture
+    // Réinitialisation du champ code admin
     const inputCode = document.getElementById("hist-code-admin");
     if (inputCode) inputCode.value = "";
     
-    document.getElementById("modal-historique").style.display = "flex";
-    verifierCodeAdmin();
+    // Affichage de la modale
+    const modal = document.getElementById("modal-historique");
+    if (modal) modal.style.display = "flex";
+    
+    // Rendu du tableau
     afficherHistorique();
 }
 
@@ -982,15 +985,20 @@ function afficherHistorique() {
 
     tbody.innerHTML = "";
 
-    if (!Array.isArray(historiqueSaisiesFMPA)) return;
+    // Sécurité si la variable n'est pas un tableau
+    if (!Array.isArray(historiqueSaisiesFMPA) || historiqueSaisiesFMPA.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:20px;">Aucune donnée d'historique disponible.</td></tr>`;
+        return;
+    }
 
     historiqueSaisiesFMPA.slice().reverse().forEach((row, indexReversed) => {
         const realIndex = historiqueSaisiesFMPA.length - 1 - indexReversed;
         
-        const agent = Array.isArray(tableauAgentsRH) ? tableauAgentsRH.find(a => a.matricule === row.matricule) : null;
-        const nomAgentComplet = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule}`;
+        const agent = Array.isArray(tableauAgentsRH) ? tableauAgentsRH.find(a => String(a.matricule) === String(row.matricule)) : null;
+        const nomAgentComplet = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule || "-"}`;
         const equipeAgent = agent ? agent.equipe : "-";
 
+        // Filtres utilisateur
         if (filterNom && !nomAgentComplet.toLowerCase().includes(filterNom)) return;
         if (filterDate && row.date !== filterDate) return;
 
@@ -1001,86 +1009,48 @@ function afficherHistorique() {
         const activite = formationObj ? formationObj.activite : "-";
         const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
 
-        // Détermination du verrouillage : prend en compte la Date Réf. W@ct globale OU la colonne "Cloture" individuelle
-        const estClotureLigne = row.cloture || row.dateCloture || row.statut === "clôturé";
-        const estClotureWact = dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact;
-        const estCloture = Boolean(estClotureLigne || estClotureWact);
+        // Détermination de la clôture
+        const estClotureLigne = Boolean(row.cloture || row.dateCloture || row.statut === "clôturé");
+        const estClotureWact = Boolean(dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact);
+        const estCloture = estClotureLigne || estClotureWact;
 
         const tr = document.createElement("tr");
+        if (estCloture) tr.classList.add("tr-cloture");
 
         let nomHtml = estFormateur 
             ? `<span class="nom-agent-formateur">🎓 <strong>${escapeHtml(nomAgentComplet)}</strong></span> <span class="badge-formateur">Formateur</span>`
             : `<strong>${escapeHtml(nomAgentComplet)}</strong>`;
 
-        // Style si la ligne est clôturée
+        const duree = typeof calculerDureeEntreHeures === "function" ? calculerDureeEntreHeures(row.heureDebut, row.heureFin) : "0";
+
+        let colActions = "";
         if (estCloture) {
-            tr.classList.add("tr-cloture");
-        }
-
-        // --- CAS 1 : LIGNE EN COURS D'ÉDITION ---
-        if (indexEnEdition === realIndex && estAdminDeverrouille && !estCloture) {
-            tr.classList.add("tr-editing");
-
-            let optionsFormations = (catalogueInitial || []).map(f => {
-                const isSelected = (f.libelle === row.formation || f.id === row.formation) ? "selected" : "";
-                return `<option value="${escapeHtml(f.libelle)}" ${isSelected}>${escapeHtml(f.libelle)}</option>`;
-            }).join("");
-
-            tr.innerHTML = `
-                <td>${nomHtml}</td>
-                <td>${escapeHtml(equipeAgent)}</td>
-                <td>${escapeHtml(row.date)}</td>
-                <td>${escapeHtml(dateSaisieSeule)}</td>
-                <td id="edit-activite-${realIndex}"><strong>${escapeHtml(activite)}</strong></td>
-                <td>
-                    <select id="edit-formation-${realIndex}" class="input-inline" onchange="majActiviteEdition(${realIndex})">
-                        ${optionsFormations}
-                    </select>
-                </td>
-                <td><input type="time" id="edit-hdebut-${realIndex}" class="input-inline" value="${row.heureDebut || ''}" oninput="calculerDureeEdition(${realIndex})"></td>
-                <td><input type="time" id="edit-hfin-${realIndex}" class="input-inline" value="${row.heureFin || ''}" oninput="calculerDureeEdition(${realIndex})"></td>
-                <td><strong id="edit-duree-${realIndex}">${calculerDureeEntreHeures(row.heureDebut, row.heureFin)} h</strong></td>
-                <td>
-                    <button type="button" class="btn-act-save" onclick="sauvegarderLigneHistorique(${realIndex})">💾 Enregistrer</button>
-                    <button type="button" class="btn-act-cancel" onclick="annulerEditionHistorique()">✖ Fermer</button>
-                </td>
-            `;
-        } 
-        // --- CAS 2 : MODE LECTURE ---
-        else {
-            const duree = calculerDureeEntreHeures(row.heureDebut, row.heureFin);
-
-            // Rendu de la colonne Action en fonction des droits admin et de la clôture
-            let colActions = "";
-            if (estCloture) {
-                colActions = `<span class="badge-cloture">🔒 Clôturé</span>`;
-            } else if (!estAdminDeverrouille) {
-                colActions = `<span class="badge-verrouille">🔒 Verrouillé</span>`;
-            } else {
-                colActions = `
-                    <button type="button" class="btn-act-mod" onclick="activerEditionHistorique(${realIndex})">✏️ Modifier</button>
-                    <button type="button" class="btn-act-del" onclick="supprimerLigneHistorique(${realIndex})">Annuler 🗑️</button>
-                `;
-            }
-
-            tr.innerHTML = `
-                <td>${nomHtml}</td>
-                <td>${escapeHtml(equipeAgent)}</td>
-                <td>${escapeHtml(row.date)}</td>
-                <td>${escapeHtml(dateSaisieSeule)}</td>
-                <td><strong>${escapeHtml(activite)}</strong></td>
-                <td>${escapeHtml(row.formation)}</td>
-                <td>${escapeHtml(row.heureDebut)}</td>
-                <td>${escapeHtml(row.heureFin)}</td>
-                <td><strong>${duree} h</strong></td>
-                <td>${colActions}</td>
+            colActions = `<span class="badge-cloture">🔒 Clôturé</span>`;
+        } else if (!estAdminDeverrouille) {
+            colActions = `<span class="badge-verrouille">🔒 Verrouillé</span>`;
+        } else {
+            colActions = `
+                <button type="button" class="btn-act-mod" onclick="activerEditionHistorique(${realIndex})">✏️ Modifier</button>
+                <button type="button" class="btn-act-del" onclick="supprimerLigneHistorique(${realIndex})">Annuler 🗑️</button>
             `;
         }
+
+        tr.innerHTML = `
+            <td>${nomHtml}</td>
+            <td>${escapeHtml(equipeAgent)}</td>
+            <td>${escapeHtml(row.date)}</td>
+            <td>${escapeHtml(dateSaisieSeule)}</td>
+            <td><strong>${escapeHtml(activite)}</strong></td>
+            <td>${escapeHtml(row.formation)}</td>
+            <td>${escapeHtml(row.heureDebut)}</td>
+            <td>${escapeHtml(row.heureFin)}</td>
+            <td><strong>${duree} h</strong></td>
+            <td>${colActions}</td>
+        `;
 
         tbody.appendChild(tr);
     });
 }
-
 function filtrerHistorique() {
     afficherHistorique();
 }
