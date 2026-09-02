@@ -1278,7 +1278,7 @@ function exporterHistoriquePDF() {
         const estClotureWact = dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact;
         const estCloture = estClotureLigne || estClotureWact;
 
-        const statutTexte = estCloture ? "Clôturé" : "Actif";
+        const statutTexte = estCloture ? "Clôturé W@ct" : "A traiter";
 
         return [
             nomAffichage,
