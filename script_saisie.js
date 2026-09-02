@@ -931,6 +931,7 @@ let estAdminDeverrouille = false;
 // --- VÉRIFICATION DU CODE ADMIN ---
 function verifierCodeAdmin() {
     const inputCode = document.getElementById("hist-code-admin");
+    const inputWact = document.getElementById("hist-ref-wact");
     if (!inputCode) return;
 
     // Remplace "1234" par ton code secret réel si nécessaire
@@ -938,15 +939,29 @@ function verifierCodeAdmin() {
 
     if (inputCode.value.trim() === CODE_VALIDE) {
         estAdminDeverrouille = true;
-        inputCode.style.border = "2px solid #16a34a"; // Visuel vert (déverrouillé)
+        inputCode.style.border = "2px solid #16a34a"; // Visuel vert
         inputCode.style.backgroundColor = "#dcfce7";
+        
+        // Déverrouillage du champ Date Réf. W@ct
+        if (inputWact) {
+            inputWact.disabled = false;
+            inputWact.style.backgroundColor = "#ffffff";
+            inputWact.style.cursor = "pointer";
+        }
     } else {
         estAdminDeverrouille = false;
         inputCode.style.border = "";
         inputCode.style.backgroundColor = "";
+        
+        // Verrouillage du champ Date Réf. W@ct
+        if (inputWact) {
+            inputWact.disabled = true;
+            inputWact.style.backgroundColor = "#e2e8f0";
+            inputWact.style.cursor = "not-allowed";
+        }
     }
 
-    // Rafraîchit l'affichage du tableau pour libérer les boutons Modifier / Annuler
+    // Rafraîchit l'affichage du tableau
     afficherHistorique();
 }
 
@@ -956,13 +971,22 @@ document.getElementById("hist-code-admin")?.addEventListener("input", verifierCo
 function ouvrirModalHistorique() {
     indexEnEdition = null;
     
-    // Réinitialisation du champ code admin et du statut
+    // Réinitialisation du champ code admin et verrouillage initial de W@ct
     const inputCode = document.getElementById("hist-code-admin");
+    const inputWact = document.getElementById("hist-ref-wact");
+
     if (inputCode) {
         inputCode.value = "";
         inputCode.style.border = "";
         inputCode.style.backgroundColor = "";
     }
+
+    if (inputWact) {
+        inputWact.disabled = true;
+        inputWact.style.backgroundColor = "#e2e8f0";
+        inputWact.style.cursor = "not-allowed";
+    }
+
     estAdminDeverrouille = false;
     
     // Affichage de la modale
@@ -976,20 +1000,18 @@ function ouvrirModalHistorique() {
 async function fermerModalHistorique() {
     indexEnEdition = null;
     
-    // 1. Masquer la modale
+    // Masquer la modale
     document.getElementById("modal-historique").style.display = "none";
 
-    // 2. Récupérer la date actuellement saisie dans le champ
+    // Récupérer la date actuellement saisie dans le champ
     const dateRefWact = document.getElementById("hist-ref-wact")?.value || "";
 
-    // 3. Enregistrer dans l'onglet Paramètres d'Excel s'il existe
+    // Enregistrer dans l'onglet Paramètres d'Excel s'il existe
     if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
         if (!classeurXLSX.Sheets["Parametres"]) {
-            // Crée la feuille avec l'entête en A1 et la date en B1
             const newSheet = XLSX.utils.aoa_to_sheet([["DateRefWact", dateRefWact]]);
             XLSX.utils.book_append_sheet(classeurXLSX, newSheet, "Parametres");
         } else {
-            // Écrit l'entête en A1 et la date en B1 dans la feuille existante
             XLSX.utils.sheet_add_aoa(
                 classeurXLSX.Sheets["Parametres"], 
                 [["DateRefWact", dateRefWact]], 
@@ -997,7 +1019,6 @@ async function fermerModalHistorique() {
             );
         }
 
-        // Sauvegarde physique dans le fichier .xlsx
         if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
             await enregistrerFichierXLSX();
         }
@@ -1014,7 +1035,6 @@ function afficherHistorique() {
 
     tbody.innerHTML = "";
 
-    // Sécurité si la variable n'est pas un tableau
     if (!Array.isArray(historiqueSaisiesFMPA) || historiqueSaisiesFMPA.length === 0) {
         tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:20px;">Aucune donnée d'historique disponible.</td></tr>`;
         return;
@@ -1027,7 +1047,6 @@ function afficherHistorique() {
         const nomAgentComplet = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule || "-"}`;
         const equipeAgent = agent ? agent.equipe : "-";
 
-        // Filtres utilisateur
         if (filterNom && !nomAgentComplet.toLowerCase().includes(filterNom)) return;
         if (filterDate && row.date !== filterDate) return;
 
@@ -1038,7 +1057,6 @@ function afficherHistorique() {
         const activite = formationObj ? formationObj.activite : "-";
         const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
 
-        // Détermination de la clôture
         const estClotureLigne = Boolean(row.cloture || row.dateCloture || row.statut === "clôturé");
         const estClotureWact = Boolean(dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact);
         const estCloture = estClotureLigne || estClotureWact;
@@ -1052,7 +1070,6 @@ function afficherHistorique() {
 
         const duree = typeof calculerDureeEntreHeures === "function" ? calculerDureeEntreHeures(row.heureDebut, row.heureFin) : "0";
 
-        // --- CAS 1 : MODE ÉDITION ---
         if (indexEnEdition === realIndex && estAdminDeverrouille && !estCloture) {
             tr.classList.add("tr-editing");
 
@@ -1080,9 +1097,7 @@ function afficherHistorique() {
                     <button type="button" class="btn-act-cancel" onclick="annulerEditionHistorique()">✖ Fermer</button>
                 </td>
             `;
-        } 
-        // --- CAS 2 : MODE LECTURE ---
-        else {
+        } else {
             let colActions = "";
             if (estCloture) {
                 colActions = `<span class="badge-cloture">🔒 Clôturé</span>`;
@@ -1122,16 +1137,14 @@ function reinitialiserFiltresHistorique() {
     if (document.getElementById("hist-search-date")) document.getElementById("hist-search-date").value = "";
     if (document.getElementById("hist-ref-wact")) document.getElementById("hist-ref-wact").value = "";
     
-    // Réinitialise aussi le code admin
     const inputCode = document.getElementById("hist-code-admin");
     if (inputCode) {
         inputCode.value = "";
         inputCode.style.border = "";
         inputCode.style.backgroundColor = "";
     }
-    estAdminDeverrouille = false;
-
-    afficherHistorique();
+    
+    verifierCodeAdmin();
 }
 
 function activerEditionHistorique(index) {
@@ -1206,7 +1219,6 @@ async function supprimerLigneHistorique(index) {
     }
 }
 
-// --- ÉCOUTEUR ET SAUVEGARDE DE LA DATE RÉF W@CT DANS L'ONGLET PARAMETRES ---
 document.getElementById("hist-ref-wact")?.addEventListener("change", async (e) => {
     const nouvelleDate = e.target.value;
     afficherHistorique();
@@ -1216,7 +1228,6 @@ document.getElementById("hist-ref-wact")?.addEventListener("change", async (e) =
             const newSheet = XLSX.utils.aoa_to_sheet([["DateRefWact", nouvelleDate]]);
             XLSX.utils.book_append_sheet(classeurXLSX, newSheet, "Parametres");
         } else {
-            // Écrit l'entête en A1 et la date en B1
             XLSX.utils.sheet_add_aoa(
                 classeurXLSX.Sheets["Parametres"], 
                 [["DateRefWact", nouvelleDate]], 
@@ -1230,7 +1241,6 @@ document.getElementById("hist-ref-wact")?.addEventListener("change", async (e) =
     }
 });
 
-// --- EXPORT PDF CORRIGÉ ---
 function exporterHistoriquePDF() {
     if (!historiqueSaisiesFMPA.length) {
         alert("Aucune donnée à exporter.");
@@ -1294,7 +1304,7 @@ function exporterHistoriquePDF() {
         didParseCell: function(data) {
             if (data.section === 'body' && data.column.index === 9) {
                 if (data.cell.raw === "Clôturé") {
-                    data.cell.styles.textColor = [185, 28, 28]; // Rouge
+                    data.cell.styles.textColor = [185, 28, 28];
                     data.cell.styles.fontStyle = 'bold';
                 }
             }
