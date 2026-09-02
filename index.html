@@ -14,17 +14,19 @@
     
     <!-- BARRE CONNECTEUR FMPA-RH.xlsx -->
     <div class="network-bar" style="margin-top: 5px; display: flex; align-items: center; gap: 12px;">
-      <button type="button" class="btn-reseau" style="background: #46f108" onclick="connecterFichierReseau()">
-        📂Ouvrir FMPA-RH.xlsx
-      </button>
       <span id="statusReseau" style="font-size: 0.75em; color: #ed1c1c; font-weight: normal;">🚨cliquer sur 📂Ouvrir FMPA-RH.xlsx</span>
+      <button type="button" class="btn-reseau" style="background: #46f108" onclick="connecterFichierReseau()">📂Ouvrir FMPA-RH.xlsx</button>
       
     <!-- Boutons d'extraction des alertes RH -->
     <button onclick="afficherListeAlertesPL()" style="background: #222e3b; border: 1px solid #8a2be2; color: #8a2be2; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size : 0.85em; display: flex; align-items: center; gap: 6px;">🚒 Renouvellement Permis</button>
     <button onclick="afficherListeAlertesVMA()" style="background: #222e3b; border: 1px solid #ff1493; color: #ff1493; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size : 0.85em; display: flex; align-items: center; gap: 6px;">🩺 VMA à prévoir</button>
+    <button type="button" onclick="window.open('organigramme.html', '_blank')" style="background: #222e3b; border: 1px solid #46f108; color: #309f08; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size: 0.85em; display: flex; align-items: center; gap: 6px">🏢Structure Cis / ⚖️Equilibrage</button>
+    <button type="button" onclick="window.open('catalogue.html', '_blank')" style="background: #222e3b; border: 1px solid #06dbf5; color: #0f4df5; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size: 0.85em; display: flex; align-items: center; gap: 6px">📚 Catalogue des formations</button>
+    <button type="button" onclick="window.open('saisie_fmpa.html', '_blank')" style="background: #222e3b; border: 1px solid #f1d008; color: #c3a807; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size: 0.85em; display: flex; align-items: center; gap: 6px">👨‍🎓 Saisie FMPA</button>
+
+    
     <a href="organigramme.html" target="_blank" style="background: #222e3b; border: 1px solid #46f108; color: #309f08; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size : 0.85em; display: flex; align-items: center; gap: 6px; text-decoration : none">🏢Structure Cis / ⚖️Equilibrage</a>
     <a href="catalogue.html" target="_blank" style="background: #222e3b; border: 1px solid #06dbf5; color: #0f4df5; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size : 0.85em; display: flex; align-items: center; gap: 6px; text-decoration : none">📚 Catalogue des formations</a>
-
     <a href="saisie_fmpa.html" target="_blank" style="background: #222e3b; border: 1px solid #f1d008; color: #c3a807; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size : 0.85em; display: flex; align-items: center; gap: 6px; text-decoration : none">👨‍🎓 Saisie FMPA</a>
       
     </div>
