@@ -1022,32 +1022,32 @@ async function modifierMotDePasseAdmin() {
     // Calcul de l'empreinte sécurisée du nouveau code
     const nouveauHash = await hacherTexte(nouveauCode.trim());
 
-    // Enregistrement dans le fichier Excel
-    if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
-        if (!classeurXLSX.Sheets["Parametres"]) {
-            const newSheet = XLSX.utils.aoa_to_sheet([
-                ["DateRefWact", ""],
-                ["CodeAdminHash", nouveauHash]
-            ]);
-            XLSX.utils.book_append_sheet(classeurXLSX, newSheet, "Parametres");
-        } else {
-            XLSX.utils.sheet_add_aoa(
-                classeurXLSX.Sheets["Parametres"], 
-                [["CodeAdminHash", nouveauHash]], 
-                { origin: "B2" }
-            );
-        }
-
-        if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
-            await enregistrerFichierXLSX();
-            alert("🔑 Nouveau mot de passe enregistré avec succès dans le fichier Excel !");
-            
-            // Re-vérification automatique
-            verifierCodeAdmin();
-        } else {
-            alert("⚠️ Nouveau mot de passe pris en compte pour la session, mais le fichier Excel n'a pas pu être sauvegardé sur le disque.");
-        }
+// Enregistrement dans le fichier Excel (A2 = Intitulé, B2 = Hash)
+if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
+    if (!classeurXLSX.Sheets["Parametres"]) {
+        const newSheet = XLSX.utils.aoa_to_sheet([
+            ["DateRefWact", ""],
+            ["CodeAdminHash", nouveauHash]
+        ]);
+        XLSX.utils.book_append_sheet(classeurXLSX, newSheet, "Parametres");
+    } else {
+        XLSX.utils.sheet_add_aoa(
+            classeurXLSX.Sheets["Parametres"], 
+            [["CodeAdminHash", nouveauHash]], 
+            { origin: "A2" } // <-- Changé de B2 à A2
+        );
     }
+
+    if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
+        await enregistrerFichierXLSX();
+        alert("🔑 Nouveau mot de passe enregistré avec succès dans le fichier Excel !");
+        
+        // Re-vérification automatique
+        verifierCodeAdmin();
+    } else {
+        alert("⚠️ Nouveau mot de passe pris en compte pour la session, mais le fichier Excel n'a pas pu être sauvegardé sur le disque.");
+    }
+}
 }
 
 // Écouteur en direct sur la saisie du mot de passe
