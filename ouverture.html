@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -8,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --navy-950:#0a0f1a;
@@ -328,12 +328,14 @@
     </div>
   </main>
 
+  <input type="file" id="xlsx-input" accept=".xlsx" style="display:none">
+
   <div class="overlay" id="overlay">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <h2 id="modal-title">Accès Gestion RH</h2>
-      <p>Cet espace est réservé. Saisissez le code d'accès pour continuer.</p>
+      <p id="modal-desc">Fichier vérifié. Saisissez le mot de passe administrateur RH pour continuer.</p>
       <form id="code-form" novalidate>
-        <input type="password" inputmode="numeric" id="code-input" autocomplete="off" aria-label="Code d'accès">
+        <input type="password" id="code-input" autocomplete="off" aria-label="Mot de passe administrateur RH">
         <p class="error-msg" id="error-msg" aria-live="polite"></p>
         <div class="modal-actions">
           <button type="button" class="btn-cancel" id="btn-cancel">Annuler</button>
@@ -343,85 +345,13 @@
     </div>
   </div>
 
-
-
-  <div class="stage">
-    <button class="btn-rh" onclick="connexionRH()">🔑 Accès Gestion RH</button>
-  </div>
-
-
-  
 <script>
-
-
- const HASH_DEFAUT = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4"; // Hash de "1234"
-
-    // Fonction de hachage SHA-256 identique à mdp.html
-    async function hacherTexte(texte) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(texte);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    async function connexionRH() {
-      try {
-        if (!('showOpenFilePicker' in window)) {
-          alert("Votre navigateur ne supporte pas l'ouverture de fichier directe.");
-          return;
-        }
-
-        // 1. Sélection du fichier Excel de référence
-        const [handle] = await window.showOpenFilePicker({
-          types: [{
-            description: 'Fichier Excel RH',
-            accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] }
-          }]
-        });
-
-        const file = await handle.getFile();
-        const arrayBuffer = await file.arrayBuffer();
-        const classeur = XLSX.read(arrayBuffer, { type: 'array' });
-
-        // 2. Extraire le Hash stocké en B2 de la feuille "Parametres"
-        let hashAttendu = HASH_DEFAUT;
-        if (classeur.Sheets && classeur.Sheets["Parametres"]) {
-          const sheet = classeur.Sheets["Parametres"];
-          if (sheet["B2"] && sheet["B2"].v) {
-            hashAttendu = String(sheet["B2"].v).trim();
-          }
-        }
-
-        // 3. Demander le mot de passe
-        const mdpSaisi = prompt("Saisissez le mot de passe Administrateur RH :");
-        if (mdpSaisi === null) return;
-
-        const hashSaisi = await hacherTexte(mdpSaisi.trim());
-
-        // 4. Validation
-        if (hashSaisi === hashAttendu) {
-          window.location.href = "saisie_fmpa.html";
-        } else {
-          alert("Accès refusé : Mot de passe incorrect !");
-        }
-
-      } catch (e) {
-        if (e.name !== 'AbortError') {
-          alert("Erreur lors de la lecture du fichier : " + e.message);
-        }
-      }
-    }
-
-
-
-
-
-  
-  // Code d'accès Gestion RH — à modifier ici.
-  // Rappel : ce code est visible dans le code source de la page,
-  // ce n'est qu'un frein léger, pas une vraie protection.
-  const RH_CODE = '1788';
+  // Destination après authentification réussie.
   const RH_URL = 'https://cadisteph.github.io/FMPA-RH/';
+
+  // Hash de secours si le fichier ne contient pas de mot de passe configuré
+  // (feuille "Parametres", cellule B2). Correspond au mot de passe "1234".
+  const HASH_DEFAUT = '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4';
 
   const overlay = document.getElementById('overlay');
   const btnRh = document.getElementById('btn-rh');
@@ -429,6 +359,16 @@
   const form = document.getElementById('code-form');
   const input = document.getElementById('code-input');
   const errorMsg = document.getElementById('error-msg');
+  const fileInput = document.getElementById('xlsx-input');
+
+  let hashAttendu = null;
+
+  async function hacherTexte(texte){
+    const encoder = new TextEncoder();
+    const data = encoder.encode(texte);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
 
   function openModal(){
     overlay.classList.add('is-open');
@@ -443,7 +383,38 @@
     btnRh.focus();
   }
 
-  btnRh.addEventListener('click', openModal);
+  // Étape 1 : demander le fichier Excel de référence.
+  btnRh.addEventListener('click', () => {
+    if (typeof XLSX === 'undefined'){
+      alert("La lecture du fichier Excel n'a pas pu être chargée (pas de connexion internet ?). Réessayez.");
+      return;
+    }
+    fileInput.value = '';
+    fileInput.click();
+  });
+
+  // Étape 2 : lire le fichier, extraire le hash, puis ouvrir la modale du mot de passe.
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    try{
+      const arrayBuffer = await file.arrayBuffer();
+      const classeur = XLSX.read(arrayBuffer, { type: 'array' });
+
+      hashAttendu = HASH_DEFAUT;
+      if (classeur.Sheets && classeur.Sheets['Parametres']){
+        const sheet = classeur.Sheets['Parametres'];
+        if (sheet['B2'] && sheet['B2'].v){
+          hashAttendu = String(sheet['B2'].v).trim();
+        }
+      }
+      openModal();
+    } catch(e){
+      alert('Erreur lors de la lecture du fichier : ' + e.message);
+    }
+  });
+
   btnCancel.addEventListener('click', closeModal);
 
   overlay.addEventListener('click', (e) => {
@@ -454,13 +425,18 @@
     if (e.key === 'Escape' && overlay.classList.contains('is-open')) closeModal();
   });
 
-  form.addEventListener('submit', (e) => {
+  // Étape 3 : vérifier le mot de passe saisi contre le hash du fichier.
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (input.value.trim() === RH_CODE){
+    if (!hashAttendu) return;
+
+    const hashSaisi = await hacherTexte(input.value.trim());
+
+    if (hashSaisi === hashAttendu){
       window.open(RH_URL, '_blank', 'noopener');
       closeModal();
     } else {
-      errorMsg.textContent = 'Code incorrect. Réessayez.';
+      errorMsg.textContent = 'Mot de passe incorrect. Réessayez.';
       input.classList.remove('is-error');
       void input.offsetWidth;
       input.classList.add('is-error');
