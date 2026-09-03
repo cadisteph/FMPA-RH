@@ -948,14 +948,14 @@ function obtenirHashAdminDepuisExcel() {
         if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets && classeurXLSX.Sheets["Parametres"]) {
             const sheetParam = classeurXLSX.Sheets["Parametres"];
             
-            // Méthode 1 : Lecture directe de la cellule B2
-            if (sheetParam["B2"] && sheetParam["B2"].v !== undefined) {
+            // Méthode 1 : Lecture directe de la cellule B2 (Valeur associée à CodeAdminHash en A2)
+            if (sheetParam["B2"] && sheetParam["B2"].v !== undefined && String(sheetParam["B2"].v).trim() !== "") {
                 return String(sheetParam["B2"].v).trim();
             }
             
             // Méthode 2 : Conversion en tableau AOA si la cellule directe échoue
             const data = XLSX.utils.sheet_to_json(sheetParam, { header: 1 });
-            if (data && data[1] && data[1][1] !== undefined) {
+            if (data && data[1] && data[1][1] !== undefined && String(data[1][1]).trim() !== "") {
                 return String(data[1][1]).trim();
             }
         }
@@ -1035,32 +1035,35 @@ async function modifierMotDePasseAdmin() {
     // Calcul de l'empreinte sécurisée du nouveau code
     const nouveauHash = await hacherTexte(nouveauCode.trim());
 
-// Enregistrement dans le fichier Excel (A2 = Intitulé, B2 = Hash)
-if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
-    if (!classeurXLSX.Sheets["Parametres"]) {
-        const newSheet = XLSX.utils.aoa_to_sheet([
-            ["DateRefWact", ""],
-            ["CodeAdminHash", nouveauHash]
-        ]);
-        XLSX.utils.book_append_sheet(classeurXLSX, newSheet, "Parametres");
-    } else {
-        XLSX.utils.sheet_add_aoa(
-            classeurXLSX.Sheets["Parametres"], 
-            [["CodeAdminHash", nouveauHash]], 
-            { origin: "A2" } // <-- Changé de B2 à A2
-        );
-    }
+    // Enregistrement dans le fichier Excel (A2 = Intitulé, B2 = Hash)
+    if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
+        const dateRefExistante = document.getElementById("hist-ref-wact")?.value || "";
 
-    if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
-        await enregistrerFichierXLSX();
-        alert("🔑 Nouveau mot de passe enregistré avec succès dans le fichier Excel !");
-        
-        // Re-vérification automatique
-        verifierCodeAdmin();
-    } else {
-        alert("⚠️ Nouveau mot de passe pris en compte pour la session, mais le fichier Excel n'a pas pu être sauvegardé sur le disque.");
+        if (!classeurXLSX.Sheets["Parametres"]) {
+            const newSheet = XLSX.utils.aoa_to_sheet([
+                ["DateRefWact", dateRefExistante],
+                ["CodeAdminHash", nouveauHash]
+            ]);
+            XLSX.utils.book_append_sheet(classeurXLSX, newSheet, "Parametres");
+        } else {
+            // Mise à jour de la ligne 2 : A2 = Intitulé, B2 = Valeur du Hash
+            XLSX.utils.sheet_add_aoa(
+                classeurXLSX.Sheets["Parametres"], 
+                [["CodeAdminHash", nouveauHash]], 
+                { origin: "A2" }
+            );
+        }
+
+        if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
+            await enregistrerFichierXLSX();
+            alert("🔑 Nouveau mot de passe enregistré avec succès dans le fichier Excel !");
+            
+            // Re-vérification automatique
+            verifierCodeAdmin();
+        } else {
+            alert("⚠️ Nouveau mot de passe pris en compte pour la session, mais le fichier Excel n'a pas pu être sauvegardé sur le disque.");
+        }
     }
-}
 }
 
 // Écouteur en direct sur la saisie du mot de passe
@@ -1110,7 +1113,11 @@ async function fermerModalHistorique() {
     // Enregistrer dans l'onglet Paramètres d'Excel s'il existe
     if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
         if (!classeurXLSX.Sheets["Parametres"]) {
-            const newSheet = XLSX.utils.aoa_to_sheet([["DateRefWact", dateRefWact]]);
+            const hashActuel = obtenirHashAdminDepuisExcel();
+            const newSheet = XLSX.utils.aoa_to_sheet([
+                ["DateRefWact", dateRefWact],
+                ["CodeAdminHash", hashActuel]
+            ]);
             XLSX.utils.book_append_sheet(classeurXLSX, newSheet, "Parametres");
         } else {
             XLSX.utils.sheet_add_aoa(
@@ -1326,7 +1333,11 @@ document.getElementById("hist-ref-wact")?.addEventListener("change", async (e) =
 
     if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
         if (!classeurXLSX.Sheets["Parametres"]) {
-            const newSheet = XLSX.utils.aoa_to_sheet([["DateRefWact", nouvelleDate]]);
+            const hashActuel = obtenirHashAdminDepuisExcel();
+            const newSheet = XLSX.utils.aoa_to_sheet([
+                ["DateRefWact", nouvelleDate],
+                ["CodeAdminHash", hashActuel]
+            ]);
             XLSX.utils.book_append_sheet(classeurXLSX, newSheet, "Parametres");
         } else {
             XLSX.utils.sheet_add_aoa(
