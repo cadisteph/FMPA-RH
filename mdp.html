@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion du Mot de Passe Administrateur</title>
+    <!-- Chargement de la bibliothèque SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background: #ffffff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            width: 100%;
+            max-width: 420px;
+        }
+        h2 { margin-top: 0; font-size: 1.25rem; color: #1e293b; }
+        .group { margin-bottom: 1.25rem; }
+        label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.375rem; }
+        input[type="file"], input[type="password"] {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 0.875rem;
+        }
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: #1d4ed8; }
+        button:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        .status {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            display: none;
+        }
+        .status.success { background-color: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+        .status.error { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🔑 Modification du Mot de Passe</h2>
+
+    <div class="group">
+        <label>1. Sélectionner le fichier Excel (.xlsx)</label>
+        <button type="button" id="btn-ouvrir" style="background-color: #475569;">📁 Choisir le fichier</button>
+        <small id="nom-fichier" style="display:block; margin-top:0.25rem; color:#64748b;"></small>
+    </div>
+
+    <div id="form-mdp" style="display: none;">
+        <div class="group">
+            <label for="ancien-pass">Ancien mot de passe</label>
+            <input type="password" id="ancien-pass" placeholder="Saisir l'ancien mot de passe">
+        </div>
+
+        <div class="group">
+            <label for="nouveau-pass">Nouveau mot de passe</label>
+            <input type="password" id="nouveau-pass" placeholder="Saisir le nouveau mot de passe">
+        </div>
+
+        <div class="group">
+            <label for="confirm-pass">Confirmer le nouveau mot de passe</label>
+            <input type="password" id="confirm-pass" placeholder="Confirmer le mot de passe">
+        </div>
+
+        <button type="button" id="btn-enregistrer">💾 Enregistrer dans le fichier</button>
+    </div>
+
+    <div id="status-box" class="status"></div>
+</div>
+
+<script>
+let fichierHandle = null;
+let classeurXLSX = null;
+
+const HASH_DEFAUT_SECOURS = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4"; // Hash de "1234"
+
+// Utilitaires UI
+function afficherMessage(texte, estErreur = false) {
+    const box = document.getElementById("status-box");
+    box.style.display = "block";
+    box.className = `status ${estErreur ? 'error' : 'success'}`;
+    box.textContent = texte;
+}
+
+// Fonction de hachage SHA-256
+async function hacherTexte(texte) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(texte);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Sélection du fichier Excel avec droit d'écriture
+document.getElementById("btn-ouvrir").addEventListener("click", async () => {
+    try {
+        if ('showOpenFilePicker' in window) {
+            [fichierHandle] = await window.showOpenFilePicker({
+                types: [{
+                    description: 'Fichiers Excel',
+                    accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] }
+                }]
+            });
+            const file = await fichierHandle.getFile();
+            const arrayBuffer = await file.arrayBuffer();
+            classeurXLSX = XLSX.read(arrayBuffer, { type: 'array' });
+            
+            document.getElementById("nom-fichier").textContent = `Fichier chargé : ${file.name}`;
+            document.getElementById("form-mdp").style.display = "block";
+            afficherMessage("Fichier chargé avec succès.");
+        } else {
+            alert("Votre navigateur ne supporte pas la sauvegarde directe sur le fichier (utilisez Chrome, Edge ou Opera).");
+        }
+    } catch (e) {
+        if (e.name !== 'AbortError') {
+            afficherMessage("Erreur lors de la lecture du fichier : " + e.message, true);
+        }
+    }
+});
+
+// Récupération du Hash existant dans la feuille Parametres
+function obtenirHashAdminDepuisExcel() {
+    try {
+        if (classeurXLSX && classeurXLSX.Sheets && classeurXLSX.Sheets["Parametres"]) {
+            const sheetParam = classeurXLSX.Sheets["Parametres"];
+            if (sheetParam["B2"] && sheetParam["B2"].v !== undefined && String(sheetParam["B2"].v).trim() !== "") {
+                return String(sheetParam["B2"].v).trim();
+            }
+        }
+    } catch (e) {
+        console.error("Erreur de lecture :", e);
+    }
+    return HASH_DEFAUT_SECOURS;
+}
+
+// Enregistrement du nouveau mot de passe
+document.getElementById("btn-enregistrer").addEventListener("click", async () => {
+    const ancienPass = document.getElementById("ancien-pass").value.trim();
+    const nouveauPass = document.getElementById("nouveau-pass").value.trim();
+    const confirmPass = document.getElementById("confirm-pass").value.trim();
+
+    if (!ancienPass || !nouveauPass || !confirmPass) {
+        afficherMessage("Veuillez remplir tous les champs.", true);
+        return;
+    }
+
+    if (nouveauPass !== confirmPass) {
+        afficherMessage("Le nouveau mot de passe et sa confirmation ne correspondent pas.", true);
+        return;
+    }
+
+    // 1. Vérification de l'ancien mot de passe
+    const hashStocke = obtenirHashAdminDepuisExcel();
+    const hashAncienSaisi = await hacherTexte(ancienPass);
+
+    if (hashAncienSaisi !== hashStocke) {
+        afficherMessage("L'ancien mot de passe est incorrect !", true);
+        return;
+    }
+
+    // 2. Mise à jour dans l'objet XLSX
+    const nouveauHash = await hacherTexte(nouveauPass);
+
+    if (!classeurXLSX.Sheets["Parametres"]) {
+        const newSheet = XLSX.utils.aoa_to_sheet([
+            ["DateRefWact", ""],
+            ["CodeAdminHash", nouveauHash]
+        ]);
+        XLSX.utils.book_append_sheet(classeurXLSX, newSheet, "Parametres");
+    } else {
+        XLSX.utils.sheet_add_aoa(
+            classeurXLSX.Sheets["Parametres"], 
+            [["CodeAdminHash", nouveauHash]], 
+            { origin: "A2" }
+        );
+    }
+
+    // 3. Réécriture sur le fichier physique
+    try {
+        const wbout = XLSX.write(classeurXLSX, { bookType: 'xlsx', type: 'array' });
+        const writable = await fichierHandle.createWritable();
+        await writable.write(wbout);
+        await writable.close();
+
+        afficherMessage("🔑 Mot de passe mis à jour et enregistré dans le fichier Excel !");
+        
+        // Réinitialisation des champs
+        document.getElementById("ancien-pass").value = "";
+        document.getElementById("nouveau-pass").value = "";
+        document.getElementById("confirm-pass").value = "";
+    } catch (e) {
+        afficherMessage("Impossible d'écrire dans le fichier : " + e.message, true);
+    }
+});
+</script>
+
+</body>
+</html>
