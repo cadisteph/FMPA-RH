@@ -343,7 +343,80 @@
     </div>
   </div>
 
+
+
+  <div class="stage">
+    <button class="btn-rh" onclick="connexionRH()">🔑 Accès Gestion RH</button>
+  </div>
+
+
+  
 <script>
+
+
+ const HASH_DEFAUT = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4"; // Hash de "1234"
+
+    // Fonction de hachage SHA-256 identique à mdp.html
+    async function hacherTexte(texte) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(texte);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function connexionRH() {
+      try {
+        if (!('showOpenFilePicker' in window)) {
+          alert("Votre navigateur ne supporte pas l'ouverture de fichier directe.");
+          return;
+        }
+
+        // 1. Sélection du fichier Excel de référence
+        const [handle] = await window.showOpenFilePicker({
+          types: [{
+            description: 'Fichier Excel RH',
+            accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] }
+          }]
+        });
+
+        const file = await handle.getFile();
+        const arrayBuffer = await file.arrayBuffer();
+        const classeur = XLSX.read(arrayBuffer, { type: 'array' });
+
+        // 2. Extraire le Hash stocké en B2 de la feuille "Parametres"
+        let hashAttendu = HASH_DEFAUT;
+        if (classeur.Sheets && classeur.Sheets["Parametres"]) {
+          const sheet = classeur.Sheets["Parametres"];
+          if (sheet["B2"] && sheet["B2"].v) {
+            hashAttendu = String(sheet["B2"].v).trim();
+          }
+        }
+
+        // 3. Demander le mot de passe
+        const mdpSaisi = prompt("Saisissez le mot de passe Administrateur RH :");
+        if (mdpSaisi === null) return;
+
+        const hashSaisi = await hacherTexte(mdpSaisi.trim());
+
+        // 4. Validation
+        if (hashSaisi === hashAttendu) {
+          window.location.href = "saisie_fmpa.html";
+        } else {
+          alert("Accès refusé : Mot de passe incorrect !");
+        }
+
+      } catch (e) {
+        if (e.name !== 'AbortError') {
+          alert("Erreur lors de la lecture du fichier : " + e.message);
+        }
+      }
+    }
+
+
+
+
+
+  
   // Code d'accès Gestion RH — à modifier ici.
   // Rappel : ce code est visible dans le code source de la page,
   // ce n'est qu'un frein léger, pas une vraie protection.
