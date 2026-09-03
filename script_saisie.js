@@ -944,13 +944,26 @@ async function hacherTexte(texte) {
 
 // --- RÉCUPÉRATION DU HASH DEPUIS EXCEL ---
 function obtenirHashAdminDepuisExcel() {
-    if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets && classeurXLSX.Sheets["Parametres"]) {
-        const sheetParam = classeurXLSX.Sheets["Parametres"];
-        // L'empreinte est stockée en B1 (à côté de DateRefWact en A1/B1 ou sur la 2ème ligne)
-        if (sheetParam["B2"] && sheetParam["B2"].v) {
-            return String(sheetParam["B2"].v).trim();
+    try {
+        if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets && classeurXLSX.Sheets["Parametres"]) {
+            const sheetParam = classeurXLSX.Sheets["Parametres"];
+            
+            // Méthode 1 : Lecture directe de la cellule B2
+            if (sheetParam["B2"] && sheetParam["B2"].v !== undefined) {
+                return String(sheetParam["B2"].v).trim();
+            }
+            
+            // Méthode 2 : Conversion en tableau AOA si la cellule directe échoue
+            const data = XLSX.utils.sheet_to_json(sheetParam, { header: 1 });
+            if (data && data[1] && data[1][1] !== undefined) {
+                return String(data[1][1]).trim();
+            }
         }
+    } catch (e) {
+        console.error("Erreur lors de la lecture du Hash Excel :", e);
     }
+    
+    // Valeur de secours si la cellule est vide ou introuvable
     return HASH_DEFAUT_SECOURS;
 }
 
