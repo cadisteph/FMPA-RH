@@ -929,24 +929,11 @@ function escapeJs(value) {
 // --- OUVERTURE ET FERMETURE DE LA MODALE ---
 let indexEnEdition = null;
 let estAdminDeverrouille = false;
-let codeAdminHashSecret = null; // Stockera l'empreinte chargée depuis config.json
 
-// --- 1. CHARGEMENT AUTOMATIQUE DE CONFIG.JSON AU DÉMARRAGE ---
-async function chargerCodeAdmin() {
-    try {
-        const response = await fetch("config.json", { cache: "no-store" });
-        if (response.ok) {
-            const data = await response.json();
-            codeAdminHashSecret = data.codeAdminHash;
-        }
-    } catch (error) {
-        console.warn("Fichier config.json introuvable, utilisation de l'empreinte de secours.");
-    }
-}
+// Empreinte par défaut de secours si rien n'est encore défini dans Excel (empreinte de "1234")
+const HASH_DEFAUT_SECOURS = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
 
-document.addEventListener("DOMContentLoaded", chargerCodeAdmin);
-
-// --- 2. FONCTION UTILITAIRE DE HACHAGE SHA-256 ---
+// --- FONCTION UTILITAIRE DE HACHAGE SHA-256 ---
 async function hacherTexte(texte) {
     const encoder = new TextEncoder();
     const data = encoder.encode(texte);
@@ -955,18 +942,27 @@ async function hacherTexte(texte) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// --- 3. VÉRIFICATION DU CODE ADMIN (MODIFIÉE) ---
+// --- RÉCUPÉRATION DU HASH DEPUIS EXCEL ---
+function obtenirHashAdminDepuisExcel() {
+    if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets && classeurXLSX.Sheets["Parametres"]) {
+        const sheetParam = classeurXLSX.Sheets["Parametres"];
+        // L'empreinte est stockée en B1 (à côté de DateRefWact en A1/B1 ou sur la 2ème ligne)
+        if (sheetParam["B2"] && sheetParam["B2"].v) {
+            return String(sheetParam["B2"].v).trim();
+        }
+    }
+    return HASH_DEFAUT_SECOURS;
+}
+
+// --- VÉRIFICATION DU CODE ADMIN ---
 async function verifierCodeAdmin() {
     const inputCode = document.getElementById("hist-code-admin");
     const inputWact = document.getElementById("hist-ref-wact");
+    const btnChangerCode = document.getElementById("btn-changer-code-admin");
     if (!inputCode) return;
 
     const saisie = inputCode.value.trim();
-
-    // Empreinte du code par défaut "1234" si config.json est introuvable
-    const hashValide = codeAdminHashSecret || "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4"; 
-
-    // Calcul de l'empreinte du mot de passe saisi en direct
+    const hashValide = obtenirHashAdminDepuisExcel();
     const saisieHash = await hacherTexte(saisie);
 
     if (saisieHash === hashValide) {
@@ -980,6 +976,10 @@ async function verifierCodeAdmin() {
             inputWact.style.backgroundColor = "#ffffff";
             inputWact.style.cursor = "pointer";
         }
+
+        // Afficher le bouton de changement de mot de passe s'il existe
+        if (btnChangerCode) btnChangerCode.style.display = "inline-block";
+
     } else {
         estAdminDeverrouille = false;
         inputCode.style.border = "";
@@ -991,10 +991,63 @@ async function verifierCodeAdmin() {
             inputWact.style.backgroundColor = "#e2e8f0";
             inputWact.style.cursor = "not-allowed";
         }
+
+        // Masquer le bouton de changement de mot de passe
+        if (btnChangerCode) btnChangerCode.style.display = "none";
     }
 
     // Rafraîchit l'affichage du tableau
     afficherHistorique();
+}
+
+// --- MODIFICATION DU CODE ADMIN DEPUIS L'INTERFACE ---
+async function modifierMotDePasseAdmin() {
+    if (!estAdminDeverrouille) {
+        alert("Veuillez d'abord déverrouiller l'accès administrateur.");
+        return;
+    }
+
+    const nouveauCode = prompt("Saisissez le NOUVEAU mot de passe administrateur :");
+    if (!nouveauCode || !nouveauCode.trim()) {
+        alert("Changement annulé (mot de passe vide).");
+        return;
+    }
+
+    const confirmation = prompt("Confirmez le nouveau mot de passe :");
+    if (nouveauCode.trim() !== confirmation?.trim()) {
+        alert("Les deux mots de passe ne correspondent pas !");
+        return;
+    }
+
+    // Calcul de l'empreinte sécurisée du nouveau code
+    const nouveauHash = await hacherTexte(nouveauCode.trim());
+
+    // Enregistrement dans le fichier Excel
+    if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
+        if (!classeurXLSX.Sheets["Parametres"]) {
+            const newSheet = XLSX.utils.aoa_to_sheet([
+                ["DateRefWact", ""],
+                ["CodeAdminHash", nouveauHash]
+            ]);
+            XLSX.utils.book_append_sheet(classeurXLSX, newSheet, "Parametres");
+        } else {
+            XLSX.utils.sheet_add_aoa(
+                classeurXLSX.Sheets["Parametres"], 
+                [["CodeAdminHash", nouveauHash]], 
+                { origin: "B2" }
+            );
+        }
+
+        if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
+            await enregistrerFichierXLSX();
+            alert("🔑 Nouveau mot de passe enregistré avec succès dans le fichier Excel !");
+            
+            // Re-vérification automatique
+            verifierCodeAdmin();
+        } else {
+            alert("⚠️ Nouveau mot de passe pris en compte pour la session, mais le fichier Excel n'a pas pu être sauvegardé sur le disque.");
+        }
+    }
 }
 
 // Écouteur en direct sur la saisie du mot de passe
@@ -1006,6 +1059,7 @@ function ouvrirModalHistorique() {
     // Réinitialisation du champ code admin et verrouillage initial de W@ct
     const inputCode = document.getElementById("hist-code-admin");
     const inputWact = document.getElementById("hist-ref-wact");
+    const btnChangerCode = document.getElementById("btn-changer-code-admin");
 
     if (inputCode) {
         inputCode.value = "";
@@ -1018,6 +1072,8 @@ function ouvrirModalHistorique() {
         inputWact.style.backgroundColor = "#e2e8f0";
         inputWact.style.cursor = "not-allowed";
     }
+
+    if (btnChangerCode) btnChangerCode.style.display = "none";
 
     estAdminDeverrouille = false;
     
