@@ -318,9 +318,9 @@
       </div>
 
       <nav class="actions" aria-label="Accès rapide">
-        <div class="stage">
-    <button class="btn-rh" onclick="connexionRH()">🔑 Accès Gestion RH</button>
-  </div>
+        <button type="button" class="plate plate--rh" id="btn-rh">
+          <span class="icon" aria-hidden="true">🔒</span> Gestion RH
+        </button>
         <a class="plate plate--fmpa" href="https://cadisteph.github.io/FMPA-RH/saisie_fmpa.html" target="_blank" rel="noopener">
           <span class="icon" aria-hidden="true">📝</span> Saisie FMPA
         </a>
@@ -343,68 +343,59 @@
     </div>
   </div>
 
+<script>
+  // Code d'accès Gestion RH — à modifier ici.
+  // Rappel : ce code est visible dans le code source de la page,
+  // ce n'est qu'un frein léger, pas une vraie protection.
+  const RH_CODE = '1788';
+  const RH_URL = 'https://cadisteph.github.io/FMPA-RH/';
 
+  const overlay = document.getElementById('overlay');
+  const btnRh = document.getElementById('btn-rh');
+  const btnCancel = document.getElementById('btn-cancel');
+  const form = document.getElementById('code-form');
+  const input = document.getElementById('code-input');
+  const errorMsg = document.getElementById('error-msg');
 
-  
-  <script>
-    const HASH_DEFAUT = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4"; // Hash de "1234"
+  function openModal(){
+    overlay.classList.add('is-open');
+    errorMsg.textContent = '';
+    input.value = '';
+    input.classList.remove('is-error');
+    setTimeout(() => input.focus(), 50);
+  }
 
-    // Fonction de hachage SHA-256 identique à mdp.html
-    async function hacherTexte(texte) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(texte);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+  function closeModal(){
+    overlay.classList.remove('is-open');
+    btnRh.focus();
+  }
+
+  btnRh.addEventListener('click', openModal);
+  btnCancel.addEventListener('click', closeModal);
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeModal();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay.classList.contains('is-open')) closeModal();
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (input.value.trim() === RH_CODE){
+      window.open(RH_URL, '_blank', 'noopener');
+      closeModal();
+    } else {
+      errorMsg.textContent = 'Code incorrect. Réessayez.';
+      input.classList.remove('is-error');
+      void input.offsetWidth;
+      input.classList.add('is-error');
+      input.value = '';
+      input.focus();
     }
-
-    async function connexionRH() {
-      try {
-        if (!('showOpenFilePicker' in window)) {
-          alert("Votre navigateur ne supporte pas l'ouverture de fichier directe.");
-          return;
-        }
-
-        // 1. Sélection du fichier Excel de référence
-        const [handle] = await window.showOpenFilePicker({
-          types: [{
-            description: 'Fichier Excel RH',
-            accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] }
-          }]
-        });
-
-        const file = await handle.getFile();
-        const arrayBuffer = await file.arrayBuffer();
-        const classeur = XLSX.read(arrayBuffer, { type: 'array' });
-
-        // 2. Extraire le Hash stocké en B2 de la feuille "Parametres"
-        let hashAttendu = HASH_DEFAUT;
-        if (classeur.Sheets && classeur.Sheets["Parametres"]) {
-          const sheet = classeur.Sheets["Parametres"];
-          if (sheet["B2"] && sheet["B2"].v) {
-            hashAttendu = String(sheet["B2"].v).trim();
-          }
-        }
-
-        // 3. Demander le mot de passe
-        const mdpSaisi = prompt("Saisissez le mot de passe Administrateur RH :");
-        if (mdpSaisi === null) return;
-
-        const hashSaisi = await hacherTexte(mdpSaisi.trim());
-
-        // 4. Validation
-        if (hashSaisi === hashAttendu) {
-          window.location.href = "saisie_fmpa.html";
-        } else {
-          alert("Accès refusé : Mot de passe incorrect !");
-        }
-
-      } catch (e) {
-        if (e.name !== 'AbortError') {
-          alert("Erreur lors de la lecture du fichier : " + e.message);
-        }
-      }
-    }
-  </script>
+  });
+</script>
 
 </body>
 </html>
