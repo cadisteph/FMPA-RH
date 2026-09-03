@@ -49,6 +49,19 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
+function afficherMessageAccueil() {
+    const tbody = document.getElementById("tbody-agents");
+    if (!tbody) return;
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="8" style="text-align:left; padding:40px; color:#64748b;">
+                <div style="font-size:1.1rem; color: #bd1e1e; margin-bottom:8px;"><strong>Aucun fichier Excel chargé</strong></div>
+                Cliquez sur <strong>📂 Ouvrir FMPA-RH.xlsx</strong>.
+            </td>
+        </tr>
+    `;
+}
+
 
 async function ouvrirFichierXLSX() {
     try {
