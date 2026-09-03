@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Administration - Gestion du Mot de Passe FMPA</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 30px; background-color: #f8fafc; }
+        .card { max-width: 450px; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 10px; margin: 10px 0 20px; box-sizing: border-box; font-size: 16px; }
+        button { background-color: #2563eb; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        button:hover { background-color: #1d4ed8; }
+        .status { margin-top: 15px; font-weight: bold; color: #16a34a; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🔑 Modifier le mot de passe Admin</h2>
+    <label for="new-pass">Nouveau mot de passe secret :</label>
+    <input type="text" id="new-pass" placeholder="Saisir le nouveau mot de passe...">
+
+    <button onclick="genererEtTelechargerConfig()">💾 Générer & Enregistrer la configuration</button>
+
+    <div id="status" class="status"></div>
+</div>
+
+<script>
+// Fonction de hachage SHA-256
+async function hacherTexte(texte) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(texte);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function genererEtTelechargerConfig() {
+    const code = document.getElementById("new-pass").value.trim();
+    if (!code) {
+        alert("Veuillez saisir un mot de passe !");
+        return;
+    }
+
+    // Calcul de l'empreinte sécurisée
+    const hash = await hacherTexte(code);
+
+    // Création du contenu du fichier config.json
+    const contenuJson = JSON.stringify({ codeAdminHash: hash }, null, 2);
+
+    // Téléchargement automatique du fichier config.json
+    const blob = new Blob([contenuJson], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "config.json";
+    link.click();
+
+    document.getElementById("status").textContent = "✅ Fichier config.json généré ! Remplacez l'ancien fichier config.json sur le réseau.";
+}
+</script>
+
+</body>
+</html>
