@@ -318,9 +318,9 @@
       </div>
 
       <nav class="actions" aria-label="Accès rapide">
-        <button type="button" class="plate plate--rh" id="btn-rh">
-          <span class="icon" aria-hidden="true">🔒</span> Gestion RH
-        </button>
+        <div class="stage">
+    <button class="btn-rh" onclick="connexionRH()">🔑 Accès Gestion RH</button>
+  </div>
         <a class="plate plate--fmpa" href="https://cadisteph.github.io/FMPA-RH/saisie_fmpa.html" target="_blank" rel="noopener">
           <span class="icon" aria-hidden="true">📝</span> Saisie FMPA
         </a>
@@ -343,10 +343,9 @@
     </div>
   </div>
 
-<div class="stage">
-    <button class="btn-rh" onclick="connexionRH()">🔑 Accès Gestion RH</button>
-  </div>
 
+
+  
   <script>
     const HASH_DEFAUT = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4"; // Hash de "1234"
 
