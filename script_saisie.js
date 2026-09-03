@@ -929,17 +929,47 @@ function escapeJs(value) {
 // --- OUVERTURE ET FERMETURE DE LA MODALE ---
 let indexEnEdition = null;
 let estAdminDeverrouille = false;
+let codeAdminHashSecret = null; // Stockera l'empreinte chargée depuis config.json
 
-// --- VÉRIFICATION DU CODE ADMIN ---
-function verifierCodeAdmin() {
+// --- 1. CHARGEMENT AUTOMATIQUE DE CONFIG.JSON AU DÉMARRAGE ---
+async function chargerCodeAdmin() {
+    try {
+        const response = await fetch("config.json", { cache: "no-store" });
+        if (response.ok) {
+            const data = await response.json();
+            codeAdminHashSecret = data.codeAdminHash;
+        }
+    } catch (error) {
+        console.warn("Fichier config.json introuvable, utilisation de l'empreinte de secours.");
+    }
+}
+
+document.addEventListener("DOMContentLoaded", chargerCodeAdmin);
+
+// --- 2. FONCTION UTILITAIRE DE HACHAGE SHA-256 ---
+async function hacherTexte(texte) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(texte);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// --- 3. VÉRIFICATION DU CODE ADMIN (MODIFIÉE) ---
+async function verifierCodeAdmin() {
     const inputCode = document.getElementById("hist-code-admin");
     const inputWact = document.getElementById("hist-ref-wact");
     if (!inputCode) return;
 
-    // Remplace "1234" par ton code secret réel si nécessaire
-    const CODE_VALIDE = "1234"; 
+    const saisie = inputCode.value.trim();
 
-    if (inputCode.value.trim() === CODE_VALIDE) {
+    // Empreinte du code par défaut "1234" si config.json est introuvable
+    const hashValide = codeAdminHashSecret || "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4"; 
+
+    // Calcul de l'empreinte du mot de passe saisi en direct
+    const saisieHash = await hacherTexte(saisie);
+
+    if (saisieHash === hashValide) {
         estAdminDeverrouille = true;
         inputCode.style.border = "2px solid #16a34a"; // Visuel vert
         inputCode.style.backgroundColor = "#dcfce7";
@@ -1305,7 +1335,7 @@ function exporterHistoriquePDF() {
         headStyles: { fillColor: [30, 41, 59] },
         didParseCell: function(data) {
             if (data.section === 'body' && data.column.index === 9) {
-                if (data.cell.raw === "Clôturé") {
+                if (data.cell.raw === "Clôturé W@ct") {
                     data.cell.styles.textColor = [185, 28, 28];
                     data.cell.styles.fontStyle = 'bold';
                 }
