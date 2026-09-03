@@ -187,6 +187,7 @@
         <div class="filter-field">
             <label for="hist-code-admin">🔑Code Admin</label>
             <input type="password" id="hist-code-admin" placeholder="Saisir le code..." oninput="verifierCodeAdmin()">
+            <button type="button" id="btn-changer-code-admin" onclick="modifierMotDePasseAdmin()" style="display: none; margin-left: 8px; padding: 6px 12px; background-color: #0284c7; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">🔑 Modifier MDP</button>
         </div>
 
         <button type="button" class="btn-reset-hist" onclick="reinitialiserFiltresHistorique()">♻️Réinitialiser</button>
