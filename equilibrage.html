@@ -28,6 +28,12 @@
             border-bottom: 1px solid #334155;
         }
 
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
         .layout-grid {
             display: grid;
             grid-template-columns: 310px 1fr;
@@ -153,14 +159,6 @@
             max-height: 50px;
             overflow-y: auto;
         }
-        .tag-detail {
-            font-size: 0.62rem;
-            padding: 1px 4px;
-            border-radius: 3px;
-            border: 1px solid;
-            background: #0f172a;
-            white-space: nowrap;
-        }
 
         /* Liste des cartes d'agents */
         .liste-agents {
@@ -222,119 +220,114 @@
             border: 1px solid #334155;
         }
 
-/* Style du bouton */
-.btn-imprimer {
-    background: #334155;
-    color: #f8fafc;
-    border: 1px solid #475569;
-    padding: 6px 12px;
-    border-radius: 5px;
-    font-size: 0.8rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.2s;
-}
-.btn-imprimer:hover {
-    background: #475569;
-}
+        .btn-action {
+            background: #2563eb;
+            color: #f8fafc;
+            border: 1px solid #3b82f6;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-action:hover { background: #1d4ed8; }
 
-/* Ajustements automatiques lors de l'impression */
-@media print {
-    /* 1. Force le format A4 Paysage et reduit les marges de la page */
-    @page {
-        size: A4 landscape;
-        margin: 5mm;
-    }
+        /* Ajustements automatiques lors de l'impression */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 5mm;
+            }
 
-    /* 2. Masque les elements d'interface inutiles a l'impression */
-    .panneau-reglages, 
-    .btn-imprimer, 
-    .header-bar,
-    .select-equipe-deplacement, 
-    .modal-suggestions,
-    input[type="checkbox"] {
-        display: none !important;
-    }
+            .panneau-reglages, 
+            .btn-action, 
+            .header-bar,
+            .select-equipe-deplacement, 
+            .modal-suggestions,
+            input[type="checkbox"] {
+                display: none !important;
+            }
 
-    /* 3. Reinitialise le conteneur principal */
-    body, html {
-        background: white !important;
-        color: black !important;
-        height: auto !important;
-        overflow: visible !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
+            body, html {
+                background: white !important;
+                color: black !important;
+                height: auto !important;
+                overflow: visible !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
 
-    .layout-grid {
-        display: block !important;
-    }
+            .layout-grid {
+                display: block !important;
+            }
 
-    .grille-equipes {
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 6px !important;
-        width: 100% !important;
-    }
+            .grille-equipes {
+                display: grid !important;
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 6px !important;
+                width: 100% !important;
+            }
 
-    /* 4. Libere la hauteur pour afficher TOUS les agents sans coupure */
-    .colonne-equipe {
-        background: white !important;
-        border: 1px solid #64748b !important;
-        max-height: none !important;
-        height: auto !important;
-        overflow: visible !important;
-        padding: 4px !important;
-    }
+            .colonne-equipe {
+                background: white !important;
+                border: 1px solid #64748b !important;
+                max-height: none !important;
+                height: auto !important;
+                overflow: visible !important;
+                padding: 4px !important;
+            }
 
-    .liste-agents {
-        max-height: none !important;
-        height: auto !important;
-        overflow: visible !important;
-    }
+            .liste-agents {
+                max-height: none !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
 
-    /* 5. Optimisation compacte des cartes et stats pour le papier */
-    .dashboard-stats {
-        background: #f8fafc !important;
-        border: 1px solid #cbd5e1 !important;
-        padding: 3px !important;
-        font-size: 0.62rem !important;
-    }
+            .dashboard-stats {
+                background: #f8fafc !important;
+                border: 1px solid #cbd5e1 !important;
+                padding: 3px !important;
+                font-size: 0.62rem !important;
+            }
 
-    .stat-badge {
-        background: #ffffff !important;
-        border-color: #cbd5e1 !important;
-        color: black !important;
-    }
+            .stat-badge {
+                background: #ffffff !important;
+                border-color: #cbd5e1 !important;
+                color: black !important;
+            }
 
-    .stat-badge-container {
-        max-height: none !important; /* Affiche tous les badges de spés sans scroll */
-    }
+            .stat-badge-container {
+                max-height: none !important;
+            }
 
-    .carte-agent-simu {
-        background: white !important;
-        border: 1px solid #cbd5e1 !important;
-        padding: 3px 5px !important;
-        margin-bottom: 2px !important;
-        page-break-inside: avoid; /* Empeche une carte d'etre coupee en deux */
-    }
+            .carte-agent-simu {
+                background: white !important;
+                border: 1px solid #cbd5e1 !important;
+                padding: 3px 5px !important;
+                margin-bottom: 2px !important;
+                page-break-inside: avoid;
+            }
 
-    .agent-nom, .stat-value {
-        color: black !important;
-    }
-
-    .agent-details, .stat-label {
-        color: #334155 !important;
-    }
-}        
+            .agent-nom, .stat-value { color: black !important; }
+            .agent-details, .stat-label { color: #334155 !important; }
+        }        
     </style>
 </head>
 <body>
 
     <div class="header-bar">
         <h2 style="margin: 0; font-size: 1.2rem;">⚖️ Optimisation & Équilibrage des Équipes</h2>
-        <button onclick="window.print()" class="btn-imprimer">🖨️ Imprimer la simulation</button>
-</div>
+        <div class="header-actions">
+            <label class="btn-action" style="cursor: pointer;">
+                📂 Charger Excel (Réseau)
+                <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
+            </label>
+            <button onclick="window.print()" class="btn-action" style="background: #334155; border-color: #475569;">🖨️ Imprimer la simulation</button>
+        </div>
     </div>
 
     <div class="layout-grid">
@@ -404,21 +397,22 @@
 
         <!-- Grille des 3 Équipes -->
         <main class="grille-equipes">
-            <!-- Équipe A -->
             <div class="colonne-equipe">
                 <div class="titre-equipe">Équipe A <span id="count-A" style="font-size: 0.85rem; color: white; background: #334155; padding: 1px 7px; border-radius: 8px;">0</span></div>
                 <div class="dashboard-stats" id="stats-A"></div>
-                <div class="liste-agents" id="container-A"></div>
+                <div class="liste-agents" id="container-A">
+                    <div style="padding: 10px; color: #cbd5e1; font-style: italic; font-size: 0.8rem;">
+                        Veuillez charger le fichier Excel.
+                    </div>
+                </div>
             </div>
 
-            <!-- Équipe B -->
             <div class="colonne-equipe">
                 <div class="titre-equipe">Équipe B <span id="count-B" style="font-size: 0.85rem; color: white; background: #334155; padding: 1px 7px; border-radius: 8px;">0</span></div>
                 <div class="dashboard-stats" id="stats-B"></div>
                 <div class="liste-agents" id="container-B"></div>
             </div>
 
-            <!-- Équipe C -->
             <div class="colonne-equipe">
                 <div class="titre-equipe">Équipe C <span id="count-C" style="font-size: 0.85rem; color: white; background: #334155; padding: 1px 7px; border-radius: 8px;">0</span></div>
                 <div class="dashboard-stats" id="stats-C"></div>
@@ -440,6 +434,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="script_equilibrage.js"></script>
 </body>
 </html>
