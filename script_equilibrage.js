@@ -37,6 +37,9 @@ function obtenirValeurChamp(item, clesPossibles) {
 /**
  * Traitement Excel
  */
+/**
+ * Traitement Excel avec détection complète des entêtes
+ */
 function traiterDonneesExcel(arrayBuffer) {
     try {
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
@@ -56,6 +59,12 @@ function traiterDonneesExcel(arrayBuffer) {
                 "FOR_COMPETENCE", "FOR_COMPETENCES", "COMP", "COMPS"
             ]);
 
+            // Prise en charge exacte de "DateNaissance"
+            const dateNaiss = obtenirValeurChamp(item, [
+                "DATENAISSANCE", "DATE NAISSANCE", "DATE_NAISSANCE", "DATE_NAISS", 
+                "DATE NAISS", "DATENAISS", "NAISSANCE", "DT_NAISS", "DDN", "BIRTHDATE"
+            ]);
+
             return {
                 matricule: String(obtenirValeurChamp(item, ["MATRICULE", "MATRICULES"])),
                 nom: String(obtenirValeurChamp(item, ["NOM"])),
@@ -65,7 +74,7 @@ function traiterDonneesExcel(arrayBuffer) {
                 equipe: String(obtenirValeurChamp(item, ["EQUIPE", "ÉQUIPE"])),
                 statut: String(obtenirValeurChamp(item, ["STATUT"])),
                 sexe: String(obtenirValeurChamp(item, ["SEXE", "GENRE"])),
-                dateNaissance: obtenirValeurChamp(item, ["DATE_NAISSANCE", "DATE NAISSANCE", "NAISSANCE"]),
+                dateNaissance: dateNaiss,
                 regime: String(obtenirValeurChamp(item, ["REGIME", "RÉGIME", "REGIME_TRAVAIL"])),
                 codePostal: String(obtenirValeurChamp(item, ["CP", "CODE POSTAL"])),
                 commune: String(obtenirValeurChamp(item, ["COMMUNE"])),
@@ -98,7 +107,6 @@ function traiterDonneesExcel(arrayBuffer) {
         console.error(err);
     }
 }
-
 function estFemme(agent) {
     if (!agent || !agent.sexe) return false;
     const val = String(agent.sexe).trim().toLowerCase();
