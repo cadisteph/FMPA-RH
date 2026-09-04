@@ -428,7 +428,7 @@ function suggererReequilibrage() {
     const chkNiveaux = document.getElementById("chk-conserver-niveaux");
     const conserverNiveaux = chkNiveaux ? chkNiveaux.checked : true;
 
-    // Simulation de l'état des équipes pour enchaîner plusieurs mouvements
+    // Simulation basée sur l'état ACTUEL des agents
     let etatSimule = JSON.parse(JSON.stringify(agentsLocaux));
 
     const lettres = ['A', 'B', 'C'];
@@ -461,7 +461,7 @@ function suggererReequilibrage() {
 
                         const testScore = calculerScorePenalite([testA, testB, testC], conserverNiveaux);
 
-                        if (testScore < meilleurScore) {
+                        if (testScore < meilleurScore - 0.05) { // Seuil minimal d'amélioration
                             meilleurScore = testScore;
                             meilleurMouvement = {
                                 type: 'TRANSFERT',
@@ -476,7 +476,7 @@ function suggererReequilibrage() {
             });
         });
 
-        // 2. TESTER LES ÉCHANGES 1 CONTRE 1 (Si aucun transfert améliorant le score)
+        // 2. TESTER LES ÉCHANGES 1 CONTRE 1
         if (!meilleurMouvement) {
             const testerPaireEchange = (eq1, eq2, nom1, nom2) => {
                 const mob1 = eq1.filter(a => !a.verrouille);
@@ -490,7 +490,7 @@ function suggererReequilibrage() {
 
                         const testScore = calculerScorePenalite([simA, simB, simC], conserverNiveaux);
 
-                        if (testScore < meilleurScore) {
+                        if (testScore < meilleurScore - 0.05) {
                             meilleurScore = testScore;
                             meilleurMouvement = {
                                 type: 'ECHANGE',
@@ -510,8 +510,8 @@ function suggererReequilibrage() {
             testerPaireEchange(eqA, eqC, 'A', 'C');
         }
 
-        // Application du mouvement retenu dans la boucle
-        if (meilleurMouvement && meilleurMouvement.gain > 0.01) {
+        // Enregistrement et application de la simulation
+        if (meilleurMouvement) {
             if (meilleurMouvement.type === 'TRANSFERT') {
                 const target = etatSimule.find(a => a.idUnique === meilleurMouvement.agent.idUnique);
                 if (target) target.equipe = `Équipe ${meilleurMouvement.eqCible}`;
@@ -520,7 +520,7 @@ function suggererReequilibrage() {
                     type: 'TRANSFERT',
                     a1: meilleurMouvement.agent,
                     eqCible: meilleurMouvement.eqCible,
-                    motif: `Transfert de l'Équipe ${meilleurMouvement.eqSource} vers l'Équipe ${meilleurMouvement.eqCible}`
+                    motif: `Transfert Équipe ${meilleurMouvement.eqSource} ➡️ Équipe ${meilleurMouvement.eqCible}`
                 });
             } else if (meilleurMouvement.type === 'ECHANGE') {
                 const target1 = etatSimule.find(a => a.idUnique === meilleurMouvement.a1.idUnique);
@@ -535,7 +535,7 @@ function suggererReequilibrage() {
                     type: 'ECHANGE',
                     a1: meilleurMouvement.a1,
                     a2: meilleurMouvement.a2,
-                    motif: `Échange entre Équipe ${meilleurMouvement.eq1} et Équipe ${meilleurMouvement.eq2}`
+                    motif: `Échange Équipe ${meilleurMouvement.eq1} 🔄 Équipe ${meilleurMouvement.eq2}`
                 });
             }
         } else {
@@ -548,7 +548,7 @@ function suggererReequilibrage() {
 
 function afficherPropositions() {
     if (propositionsEnAttente.length === 0) {
-        alert("✅ Aucun mouvement nécessaire : l'équilibre maximal est déjà atteint selon tes critères.");
+        alert("✅ Équilibre maximal atteint ! Aucun autre mouvement pertinent à proposer.");
         return;
     }
 
@@ -557,9 +557,9 @@ function afficherPropositions() {
 
     listeUI.innerHTML = propositionsEnAttente.map((p, index) => {
         if (p.type === 'TRANSFERT') {
-            return `<li style="margin-bottom:10px;"><b>#${index + 1}</b> ➡️ Transférer <b>${p.a1.nom} ${p.a1.prenom}</b> vers l'<b>Équipe ${p.eqCible}</b><br><span style="font-size:0.75rem; color:#94a3b8;">Motif: ${p.motif}</span></li>`;
+            return `<li style="margin-bottom:10px;"><b>#${index + 1}</b> ➡️ Transférer <b>${p.a1.nom} ${p.a1.prenom}</b> vers l'<b>Équipe ${p.eqCible}</b><br><span style="font-size:0.75rem; color:#94a3b8;">${p.motif}</span></li>`;
         } else {
-            return `<li style="margin-bottom:10px;"><b>#${index + 1}</b> 🔄 Échanger <b>${p.a1.nom} ${p.a1.prenom}</b> (${extraireLettreEquipe(p.a1.equipe)}) <br>&nbsp;&nbsp;&nbsp;&nbsp;avec <b>${p.a2.nom} ${p.a2.prenom}</b> (${extraireLettreEquipe(p.a2.equipe)})<br><span style="font-size:0.75rem; color:#94a3b8;">Motif: ${p.motif}</span></li>`;
+            return `<li style="margin-bottom:10px;"><b>#${index + 1}</b> 🔄 Échanger <b>${p.a1.nom} ${p.a1.prenom}</b> avec <b>${p.a2.nom} ${p.a2.prenom}</b><br><span style="font-size:0.75rem; color:#94a3b8;">${p.motif}</span></li>`;
         }
     }).join("");
 
@@ -570,18 +570,25 @@ function afficherPropositions() {
 function fermerModal() { document.getElementById("modal-transferts").style.display = "none"; }
 
 function appliquerPropositions() {
+    // Met à jour la VRAIE liste agentsLocaux
     propositionsEnAttente.forEach(p => {
         if (p.type === 'TRANSFERT') {
-            agentsLocaux.find(a => a.idUnique === p.a1.idUnique).equipe = `Équipe ${p.eqCible}`;
+            const ag = agentsLocaux.find(a => a.idUnique === p.a1.idUnique);
+            if (ag) ag.equipe = `Équipe ${p.eqCible}`;
         } else if (p.type === 'ECHANGE') {
-            const eq1 = p.a1.equipe;
-            agentsLocaux.find(a => a.idUnique === p.a1.idUnique).equipe = p.a2.equipe;
-            agentsLocaux.find(a => a.idUnique === p.a2.idUnique).equipe = eq1;
+            const ag1 = agentsLocaux.find(a => a.idUnique === p.a1.idUnique);
+            const ag2 = agentsLocaux.find(a => a.idUnique === p.a2.idUnique);
+            if (ag1 && ag2) {
+                const eqTemp = ag1.equipe;
+                ag1.equipe = ag2.equipe;
+                ag2.equipe = eqTemp;
+            }
         }
     });
 
+    propositionsEnAttente = [];
     fermerModal();
-    rendreEquipes();
+    rendreEquipes(); // Réaffiche la grille avec les nouveaux effectifs réels
 }
 
 function basculerVerrou(idUnique) {
