@@ -13,16 +13,49 @@ const ORDRE_GRADES = [
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
-    const donneesAgents = localStorage.getItem("baseAgents");
-
-    if (!donneesAgents) {
-        alert("⚠️ Aucune donnée d'agent trouvée. Ouvrez d'abord la page RH principale (index.html).");
-        return;
-    }
-
-    tousLesAgents = JSON.parse(donneesAgents);
-    afficherColonnes();
+    chargerFichierExcel();
 });
+
+/**
+ * Charge directement le fichier FMPA-RH.xlsx à la racine sans passer par localStorage
+ */
+async function chargerFichierExcel() {
+    const cheminFichier = "FMPA-RH.xlsx";
+
+    try {
+        const response = await fetch(cheminFichier);
+        if (!response.ok) {
+            throw new Error(`Statut HTTP : ${response.status}`);
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+
+        const premierNomFeuille = workbook.SheetNames[0];
+        const feuille = workbook.Sheets[premierNomFeuille];
+
+        const donneesBrutes = XLSX.utils.sheet_to_json(feuille, { defval: "" });
+
+        // Normalisation et correspondance des en-têtes Excel vers la structure agent
+        tousLesAgents = donneesBrutes.map(item => ({
+            nom: item["NOM"] || item["Nom"] || "",
+            prenom: item["PRENOM"] || item["Prénom"] || item["Prenom"] || "",
+            grade: item["GRADE"] || item["Grade"] || "",
+            fonction: item["FONCTION"] || item["Fonction"] || "",
+            equipe: item["EQUIPE"] || item["Équipe"] || item["Equipe"] || "",
+            statut: item["STATUT"] || item["Statut"] || "",
+            departement: item["DEPARTEMENT"] || item["Département"] || item["Departement"] || "",
+            specialites: item["SPECIALITE"] || item["Spécialité"] || item["SPECIALITES"] || item["Spécialités"] || "",
+            competences: item["COMPETENCE"] || item["Compétence"] || item["COMPETENCES"] || item["Compétences"] || ""
+        }));
+
+        afficherColonnes();
+
+    } catch (erreur) {
+        console.error("Erreur lors de la lecture du fichier Excel :", erreur);
+        alert("⚠️ Impossible de charger l'organigramme depuis FMPA-RH.xlsx. Vérifiez la présence du fichier Excel.");
+    }
+}
 
 function filtrerEffectifs(filtre, bouton) {
     filtreActuel = filtre;
@@ -232,14 +265,3 @@ function afficherColonnes() {
         conteneur.appendChild(col);
     });
 }
-
-// Synchronisation automatique en temps réel entre onglets/pages
-window.addEventListener("storage", (event) => {
-    if (event.key === "baseAgents") {
-        const data = event.newValue;
-        if (data) {
-            tousLesAgents = JSON.parse(data);
-            afficherColonnes();
-        }
-    }
-});
