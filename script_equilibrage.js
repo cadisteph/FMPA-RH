@@ -4,18 +4,52 @@ let propositionsEnAttente = [];
 // ORDRE HIÉRARCHIQUE DES FONCTIONS EXACT : CDG -> ACDG1 -> ACDG2 -> CATE -> CA1E -> CEQU -> EQU
 const ORDRE_FONCTIONS = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
 
-document.addEventListener("DOMContentLoaded", () => {
-    const data = localStorage.getItem("baseAgents");
-    
-    if (!data) {
-        console.warn("⚠️ Aucune donnée 'baseAgents' trouvée dans le localStorage.");
-        alert("Attention : Aucune donnée d'agent n'a été trouvée. Veuille réimporter ton fichier CSV depuis la page principale.");
-        return;
-    }
+/**
+ * Gestion de l'importation manuelle via le bouton Excel
+ */
+function importerFichierExcelManuel(event) {
+    const file = event.target.files[0];
+    if (!file) return;
 
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const arrayBuffer = e.target.result;
+        traiterDonneesExcel(arrayBuffer);
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+/**
+ * Traitement du fichier Excel uniquement en mémoire vive
+ */
+function traiterDonneesExcel(arrayBuffer) {
     try {
-        const tousLesAgents = JSON.parse(data);
-        
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const premierNomFeuille = workbook.SheetNames[0];
+        const feuille = workbook.Sheets[premierNomFeuille];
+
+        const donneesBrutes = XLSX.utils.sheet_to_json(feuille, { defval: "" });
+
+        const tousLesAgents = donneesBrutes.map(item => ({
+            matricule: item["MATRICULE"] || item["Matricule"] || "",
+            nom: item["NOM"] || item["Nom"] || "",
+            prenom: item["PRENOM"] || item["Prénom"] || item["Prenom"] || "",
+            grade: item["GRADE"] || item["Grade"] || "",
+            fonction: item["FONCTION"] || item["Fonction"] || "",
+            equipe: item["EQUIPE"] || item["Équipe"] || item["Equipe"] || "",
+            statut: item["STATUT"] || item["Statut"] || "",
+            sexe: item["SEXE"] || item["Sexe"] || item["GENRE"] || item["Genre"] || "",
+            dateNaissance: item["DATE_NAISSANCE"] || item["Date Naissance"] || item["DATE NAISSANCE"] || "",
+            regime: item["REGIME"] || item["Régime"] || item["REGIME_TRAVAIL"] || "",
+            codePostal: item["CP"] || item["Code Postal"] || "",
+            commune: item["COMMUNE"] || item["Commune"] || "",
+            domiciliation: item["DOMICILIATION"] || item["Domiciliation"] || "",
+            adresse: item["ADRESSE"] || item["Adresse"] || "",
+            departement: item["DEPARTEMENT"] || item["Département"] || item["Departement"] || "",
+            specialites: item["SPECIALITE"] || item["Spécialité"] || item["SPECIALITES"] || item["Spécialités"] || "",
+            competences: item["COMPETENCE"] || item["Compétence"] || item["COMPETENCES"] || item["Compétences"] || ""
+        }));
+
         agentsLocaux = tousLesAgents.filter(a => {
             if (!a) return false;
             const eq = normaliserTexte(a.equipe);
@@ -32,11 +66,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         genererControlesDynamiques();
         rendreEquipes();
-    } catch (e) {
-        console.error("Erreur de lecture des données :", e);
-        alert("Erreur lors de la lecture des données d'agents. Réimportation du CSV requise.");
+    } catch (err) {
+        alert("⚠️ Erreur lors de la lecture du fichier Excel.");
+        console.error(err);
     }
-});
+}
 
 function estFemme(agent) {
     if (!agent || !agent.sexe) return false;
@@ -124,13 +158,11 @@ function genererControlesDynamiques() {
 }
 
 function trierAgentsHierarchie(a, b) {
-    // 1. Ordre d'importance des Fonctions
     const ordreFonctions = {
         'CDG': 1, 'ACDG1': 2, 'ACDG2': 3, 
         'CATE': 4, 'CA1E': 5, 'CEQU': 6, 'EQU': 7
     };
 
-    // 2. Ordre d'importance des Grades (mis à jour selon tes sigles)
     const ordreGrades = {
         'CDT': 1, 'CNE': 2, 'LTN': 3, 'ADC': 4, 'ADJ': 5, 'SCH': 6, 'SGT': 7,
         'CCH': 8, 'CPL': 9, 'SAP': 10
@@ -142,12 +174,10 @@ function trierAgentsHierarchie(a, b) {
     const rankFnA = ordreFonctions[fA] || 99;
     const rankFnB = ordreFonctions[fB] || 99;
 
-    // A. Tri par Fonction
     if (rankFnA !== rankFnB) {
         return rankFnA - rankFnB; 
     }
 
-    // B. Tri par Grade (si la fonction est identique)
     const gA = String(a?.grade || '').trim().toUpperCase();
     const gB = String(b?.grade || '').trim().toUpperCase();
 
@@ -158,16 +188,15 @@ function trierAgentsHierarchie(a, b) {
         return rankGdaA - rankGdaB;
     }
 
-    // C. Tri alphabétique par Nom puis Prénom (si fonction et grade sont identiques)
     const nomA = String(a?.nom || '').localeCompare(String(b?.nom || ''));
     if (nomA !== 0) return nomA;
 
     return String(a?.prenom || '').localeCompare(String(b?.prenom || ''));
 }
+
 function calculerStatsEquipe(membres, conserverNiveaux = true) {
     const nb = membres.length;
     
-    // 1. Détection des Femmes
     const nbF = membres.filter(a => {
         const val = String(a?.sexe || a?.genre || '').trim().toLowerCase();
         return val.startsWith('f');
@@ -175,13 +204,11 @@ function calculerStatsEquipe(membres, conserverNiveaux = true) {
 
     const pctF = nb > 0 ? Math.round((nbF / nb) * 100) : 0;
     
-    // 2. Calcul de l'âge moyen
     const ageMoy = nb > 0 ? Math.round(membres.reduce((s, a) => {
         const dateN = a.dateNaissance || a.naissanceDate;
         return s + (dateN ? calculerAge(dateN) : 0);
     }, 0) / nb) : 0;
     
-    // 3. Comptage strict des fonctions
     const compteFnStricte = (fn) => membres.filter(a => String(a?.fonction || '').trim().toUpperCase() === fn.toUpperCase()).length;
 
     const cdg = compteFnStricte('CDG');
@@ -191,12 +218,10 @@ function calculerStatsEquipe(membres, conserverNiveaux = true) {
     const cequ = compteFnStricte('CEqu');
     const equ = compteFnStricte('Equ');
 
-    // 4. Régimes de travail
     const getRegime = (a) => String(a?.regime || a?.regimeTravail || '').toLowerCase();
     const nbG24 = membres.filter(a => getRegime(a).includes('g24')).length;
     const nbMixte = membres.filter(a => getRegime(a).includes('mixte')).length;
 
-    // 5. Dictionnaires (Spécialités, Compétences, Départements)
     const dicSpecs = {};
     const dicComps = {};
     const dicDept = {};
@@ -375,6 +400,11 @@ function calculerScorePenalite(equipes, conserverNiveaux = true) {
 }
 
 function suggererReequilibrage() {
+    if (agentsLocaux.length === 0) {
+        alert("⚠️ Veuillez d'abord charger votre fichier Excel.");
+        return;
+    }
+
     propositionsEnAttente = [];
 
     const chkNiveaux = document.getElementById("chk-conserver-niveaux");
@@ -459,13 +489,6 @@ function appliquerPropositions() {
             agentsLocaux.find(a => a.idUnique === p.a2.idUnique).equipe = eq1;
         }
     });
-    
-    const baseComplete = JSON.parse(localStorage.getItem("baseAgents") || "[]");
-    agentsLocaux.forEach(modifie => {
-        const idxBase = baseComplete.findIndex(a => a.matricule === modifie.matricule || (a.nom === modifie.nom && a.prenom === modifie.prenom));
-        if (idxBase !== -1) baseComplete[idxBase].equipe = modifie.equipe;
-    });
-    localStorage.setItem("baseAgents", JSON.stringify(baseComplete));
 
     fermerModal();
     rendreEquipes();
@@ -483,22 +506,3 @@ function deplacerAgent(idUnique, nouvelleEquipe) {
     if (ag) ag.equipe = nouvelleEquipe;
     rendreEquipes();
 }
-
-window.addEventListener("storage", (event) => {
-    if (event.key === "baseAgents") {
-        const data = event.newValue;
-        if (data) {
-            agentsLocaux = JSON.parse(data).filter(a => {
-                if (!a) return false;
-                const eq = normaliserTexte(a.equipe);
-                const fn = normaliserTexte(a.fonction);
-                const st = normaliserTexte(a.statut);
-                const estCadre = ['CDC', 'ACDC', 'OFPAO', 'OFTECH', 'ADMINISTRATIF'].includes(fn) || eq.includes('ENCADREMENT');
-                return st.includes('SPP') && !estCadre;
-            });
-
-            genererControlesDynamiques();
-            rendreEquipes();
-        }
-    }
-});
