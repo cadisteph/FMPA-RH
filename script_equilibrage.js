@@ -428,11 +428,11 @@ function suggererReequilibrage() {
     const chkNiveaux = document.getElementById("chk-conserver-niveaux");
     const conserverNiveaux = chkNiveaux ? chkNiveaux.checked : true;
 
-    // Simulation de l'état des équipes pour enchainer plusieurs mouvements
+    // Simulation de l'état des équipes pour enchaîner plusieurs mouvements
     let etatSimule = JSON.parse(JSON.stringify(agentsLocaux));
 
     const lettres = ['A', 'B', 'C'];
-    const maxIterations = 15; // Limite la boucle pour éviter tout blocage
+    const maxIterations = 20;
 
     for (let iter = 0; iter < maxIterations; iter++) {
         let eqA = etatSimule.filter(a => extraireLettreEquipe(a.equipe) === 'A');
@@ -445,18 +445,16 @@ function suggererReequilibrage() {
 
         const dics = { 'A': eqA, 'B': eqB, 'C': eqC };
 
-        // 1. TESTER LES TRANSFERTS DIRECTS (1 agent d'une équipe vers une autre)
+        // 1. TESTER LES TRANSFERTS DIRECTS
         lettres.forEach(source => {
             lettres.forEach(cible => {
                 if (source !== cible) {
                     const candidats = dics[source].filter(a => !a.verrouille);
                     candidats.forEach(agent => {
-                        // Simulation du transfert
                         const simA = eqA.map(a => a.idUnique === agent.idUnique ? { ...a, equipe: `Équipe ${cible}` } : a);
                         const simB = eqB.map(a => a.idUnique === agent.idUnique ? { ...a, equipe: `Équipe ${cible}` } : a);
                         const simC = eqC.map(a => a.idUnique === agent.idUnique ? { ...a, equipe: `Équipe ${cible}` } : a);
 
-                        // Ajustement des tableaux selon l'origine/destination
                         const testA = source === 'A' ? simA.filter(a => a.idUnique !== agent.idUnique) : (cible === 'A' ? [...simA, { ...agent, equipe: 'Équipe A' }] : simA);
                         const testB = source === 'B' ? simB.filter(a => a.idUnique !== agent.idUnique) : (cible === 'B' ? [...simB, { ...agent, equipe: 'Équipe B' }] : simB);
                         const testC = source === 'C' ? simC.filter(a => a.idUnique !== agent.idUnique) : (cible === 'C' ? [...simC, { ...agent, equipe: 'Équipe C' }] : simC);
@@ -478,7 +476,7 @@ function suggererReequilibrage() {
             });
         });
 
-        // 2. TESTER LES ÉCHANGES 1 CONTRE 1 (Si aucun transfert direct n'améliore le score)
+        // 2. TESTER LES ÉCHANGES 1 CONTRE 1 (Si aucun transfert améliorant le score)
         if (!meilleurMouvement) {
             const testerPaireEchange = (eq1, eq2, nom1, nom2) => {
                 const mob1 = eq1.filter(a => !a.verrouille);
@@ -512,7 +510,7 @@ function suggererReequilibrage() {
             testerPaireEchange(eqA, eqC, 'A', 'C');
         }
 
-        // Si une amélioration a été trouvée, on l'enregistre et on re-boucle
+        // Application du mouvement retenu dans la boucle
         if (meilleurMouvement && meilleurMouvement.gain > 0.01) {
             if (meilleurMouvement.type === 'TRANSFERT') {
                 const target = etatSimule.find(a => a.idUnique === meilleurMouvement.agent.idUnique);
@@ -522,7 +520,7 @@ function suggererReequilibrage() {
                     type: 'TRANSFERT',
                     a1: meilleurMouvement.agent,
                     eqCible: meilleurMouvement.eqCible,
-                    motif: `Rééquilibrage d'effectif et de profil (vers Équipe ${meilleurMouvement.eqCible})`
+                    motif: `Transfert de l'Équipe ${meilleurMouvement.eqSource} vers l'Équipe ${meilleurMouvement.eqCible}`
                 });
             } else if (meilleurMouvement.type === 'ECHANGE') {
                 const target1 = etatSimule.find(a => a.idUnique === meilleurMouvement.a1.idUnique);
@@ -537,31 +535,36 @@ function suggererReequilibrage() {
                     type: 'ECHANGE',
                     a1: meilleurMouvement.a1,
                     a2: meilleurMouvement.a2,
-                    motif: `Optimisation des spécialités et compétences (Équipe ${meilleurMouvement.eq1} ↔ Équipe ${meilleurMouvement.eq2})`
+                    motif: `Échange entre Équipe ${meilleurMouvement.eq1} et Équipe ${meilleurMouvement.eq2}`
                 });
             }
         } else {
-            // Plus aucune amélioration possible
             break;
         }
     }
 
     afficherPropositions();
 }
+
 function afficherPropositions() {
     if (propositionsEnAttente.length === 0) {
-        alert("✅ Aucun mouvement nécessaire selon les critères et pondérations actuels.");
+        alert("✅ Aucun mouvement nécessaire : l'équilibre maximal est déjà atteint selon tes critères.");
         return;
     }
+
     const listeUI = document.getElementById("liste-propositions");
-    listeUI.innerHTML = propositionsEnAttente.map(p => {
+    if (!listeUI) return;
+
+    listeUI.innerHTML = propositionsEnAttente.map((p, index) => {
         if (p.type === 'TRANSFERT') {
-            return `<li style="margin-bottom:10px;">➡️ Transférer <b>${p.a1.nom}</b> vers l'<b>Équipe ${p.eqCible}</b><br><span style="font-size:0.75rem; color:#94a3b8;">Motif: ${p.motif}</span></li>`;
+            return `<li style="margin-bottom:10px;"><b>#${index + 1}</b> ➡️ Transférer <b>${p.a1.nom} ${p.a1.prenom}</b> vers l'<b>Équipe ${p.eqCible}</b><br><span style="font-size:0.75rem; color:#94a3b8;">Motif: ${p.motif}</span></li>`;
         } else {
-            return `<li style="margin-bottom:10px;">🔄 Échanger <b>${p.a1.nom}</b> (${extraireLettreEquipe(p.a1.equipe)}) <br>&nbsp;&nbsp;&nbsp;&nbsp;avec <b>${p.a2.nom}</b> (${extraireLettreEquipe(p.a2.equipe)})<br><span style="font-size:0.75rem; color:#94a3b8;">Motif: ${p.motif}</span></li>`;
+            return `<li style="margin-bottom:10px;"><b>#${index + 1}</b> 🔄 Échanger <b>${p.a1.nom} ${p.a1.prenom}</b> (${extraireLettreEquipe(p.a1.equipe)}) <br>&nbsp;&nbsp;&nbsp;&nbsp;avec <b>${p.a2.nom} ${p.a2.prenom}</b> (${extraireLettreEquipe(p.a2.equipe)})<br><span style="font-size:0.75rem; color:#94a3b8;">Motif: ${p.motif}</span></li>`;
         }
     }).join("");
-    document.getElementById("modal-transferts").style.display = "flex";
+
+    const modal = document.getElementById("modal-transferts");
+    if (modal) modal.style.display = "flex";
 }
 
 function fermerModal() { document.getElementById("modal-transferts").style.display = "none"; }
