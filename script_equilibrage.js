@@ -1,11 +1,10 @@
 let agentsLocaux = [];
 let propositionsEnAttente = [];
 
-// ORDRE HIÉRARCHIQUE DES FONCTIONS EXACT : CDG -> ACDG1 -> ACDG2 -> CATE -> CA1E -> CEQU -> EQU
 const ORDRE_FONCTIONS = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
 
 /**
- * Gestion de l'importation manuelle via le bouton Excel
+ * Importation manuelle Excel
  */
 function importerFichierExcelManuel(event) {
     const file = event.target.files[0];
@@ -20,7 +19,23 @@ function importerFichierExcelManuel(event) {
 }
 
 /**
- * Traitement du fichier Excel uniquement en mémoire vive
+ * Recherche dynamique d'une clé dans un objet (tolérant à la casse et aux espaces)
+ */
+function obtenirValeurChamp(item, clesPossibles) {
+    const clesObjet = Object.keys(item);
+    for (const cle of clesObjet) {
+        const cleNormalisee = normaliserTexte(cle);
+        for (const possible of clesPossibles) {
+            if (cleNormalisee === normaliserTexte(possible)) {
+                return item[cle];
+            }
+        }
+    }
+    return "";
+}
+
+/**
+ * Traitement Excel
  */
 function traiterDonneesExcel(arrayBuffer) {
     try {
@@ -30,25 +45,37 @@ function traiterDonneesExcel(arrayBuffer) {
 
         const donneesBrutes = XLSX.utils.sheet_to_json(feuille, { defval: "" });
 
-        const tousLesAgents = donneesBrutes.map(item => ({
-            matricule: item["MATRICULE"] || item["Matricule"] || "",
-            nom: item["NOM"] || item["Nom"] || "",
-            prenom: item["PRENOM"] || item["Prénom"] || item["Prenom"] || "",
-            grade: item["GRADE"] || item["Grade"] || "",
-            fonction: item["FONCTION"] || item["Fonction"] || "",
-            equipe: item["EQUIPE"] || item["Équipe"] || item["Equipe"] || "",
-            statut: item["STATUT"] || item["Statut"] || "",
-            sexe: item["SEXE"] || item["Sexe"] || item["GENRE"] || item["Genre"] || "",
-            dateNaissance: item["DATE_NAISSANCE"] || item["Date Naissance"] || item["DATE NAISSANCE"] || "",
-            regime: item["REGIME"] || item["Régime"] || item["REGIME_TRAVAIL"] || "",
-            codePostal: item["CP"] || item["Code Postal"] || "",
-            commune: item["COMMUNE"] || item["Commune"] || "",
-            domiciliation: item["DOMICILIATION"] || item["Domiciliation"] || "",
-            adresse: item["ADRESSE"] || item["Adresse"] || "",
-            departement: item["DEPARTEMENT"] || item["Département"] || item["Departement"] || "",
-            specialites: item["SPECIALITE"] || item["Spécialité"] || item["SPECIALITES"] || item["Spécialités"] || "",
-            competences: item["COMPETENCE"] || item["Compétence"] || item["COMPETENCES"] || item["Compétences"] || ""
-        }));
+        const tousLesAgents = donneesBrutes.map(item => {
+            const spec = obtenirValeurChamp(item, [
+                "SPECIALITE", "SPECIALITES", "SPÉCIALITÉ", "SPÉCIALITÉS", 
+                "FOR_SPECIALITE", "FOR_SPECIALITES", "SPEC", "SPECS"
+            ]);
+
+            const comp = obtenirValeurChamp(item, [
+                "COMPETENCE", "COMPETENCES", "COMPÉTENCE", "COMPÉTENCES", 
+                "FOR_COMPETENCE", "FOR_COMPETENCES", "COMP", "COMPS"
+            ]);
+
+            return {
+                matricule: String(obtenirValeurChamp(item, ["MATRICULE", "MATRICULES"])),
+                nom: String(obtenirValeurChamp(item, ["NOM"])),
+                prenom: String(obtenirValeurChamp(item, ["PRENOM", "PRÉNOM"])),
+                grade: String(obtenirValeurChamp(item, ["GRADE"])),
+                fonction: String(obtenirValeurChamp(item, ["FONCTION"])),
+                equipe: String(obtenirValeurChamp(item, ["EQUIPE", "ÉQUIPE"])),
+                statut: String(obtenirValeurChamp(item, ["STATUT"])),
+                sexe: String(obtenirValeurChamp(item, ["SEXE", "GENRE"])),
+                dateNaissance: obtenirValeurChamp(item, ["DATE_NAISSANCE", "DATE NAISSANCE", "NAISSANCE"]),
+                regime: String(obtenirValeurChamp(item, ["REGIME", "RÉGIME", "REGIME_TRAVAIL"])),
+                codePostal: String(obtenirValeurChamp(item, ["CP", "CODE POSTAL"])),
+                commune: String(obtenirValeurChamp(item, ["COMMUNE"])),
+                domiciliation: String(obtenirValeurChamp(item, ["DOMICILIATION"])),
+                adresse: String(obtenirValeurChamp(item, ["ADRESSE"])),
+                departement: String(obtenirValeurChamp(item, ["DEPARTEMENT", "DÉPARTEMENT"])),
+                specialites: String(spec || ""),
+                competences: String(comp || "")
+            };
+        });
 
         agentsLocaux = tousLesAgents.filter(a => {
             if (!a) return false;
@@ -115,7 +142,7 @@ function extraireDepartement(agent) {
 
 function extraireItems(chaine) {
     if (!chaine) return [];
-    return chaine.split(/[,;\/-]+/).map(s => normaliserTexte(s)).filter(s => s.length > 1);
+    return chaine.split(/[,;\/-]+/).map(s => normaliserTexte(s)).filter(s => s.length > 0);
 }
 
 function genererControlesDynamiques() {
@@ -174,9 +201,7 @@ function trierAgentsHierarchie(a, b) {
     const rankFnA = ordreFonctions[fA] || 99;
     const rankFnB = ordreFonctions[fB] || 99;
 
-    if (rankFnA !== rankFnB) {
-        return rankFnA - rankFnB; 
-    }
+    if (rankFnA !== rankFnB) return rankFnA - rankFnB;
 
     const gA = String(a?.grade || '').trim().toUpperCase();
     const gB = String(b?.grade || '').trim().toUpperCase();
@@ -184,9 +209,7 @@ function trierAgentsHierarchie(a, b) {
     const rankGdaA = ordreGrades[gA] || 99;
     const rankGdaB = ordreGrades[gB] || 99;
 
-    if (rankGdaA !== rankGdaB) {
-        return rankGdaA - rankGdaB;
-    }
+    if (rankGdaA !== rankGdaB) return rankGdaA - rankGdaB;
 
     const nomA = String(a?.nom || '').localeCompare(String(b?.nom || ''));
     if (nomA !== 0) return nomA;
@@ -197,16 +220,11 @@ function trierAgentsHierarchie(a, b) {
 function calculerStatsEquipe(membres, conserverNiveaux = true) {
     const nb = membres.length;
     
-    const nbF = membres.filter(a => {
-        const val = String(a?.sexe || a?.genre || '').trim().toLowerCase();
-        return val.startsWith('f');
-    }).length;
-
+    const nbF = membres.filter(a => estFemme(a)).length;
     const pctF = nb > 0 ? Math.round((nbF / nb) * 100) : 0;
     
     const ageMoy = nb > 0 ? Math.round(membres.reduce((s, a) => {
-        const dateN = a.dateNaissance || a.naissanceDate;
-        return s + (dateN ? calculerAge(dateN) : 0);
+        return s + (a.dateNaissance ? calculerAge(a.dateNaissance) : 0);
     }, 0) / nb) : 0;
     
     const compteFnStricte = (fn) => membres.filter(a => String(a?.fonction || '').trim().toUpperCase() === fn.toUpperCase()).length;
@@ -215,10 +233,10 @@ function calculerStatsEquipe(membres, conserverNiveaux = true) {
     const acdg = compteFnStricte('ACDG1') + compteFnStricte('ACDG2');
     const cate = compteFnStricte('CATE');
     const ca1e = compteFnStricte('CA1E');
-    const cequ = compteFnStricte('CEqu');
-    const equ = compteFnStricte('Equ');
+    const cequ = compteFnStricte('CEQU');
+    const equ = compteFnStricte('EQU');
 
-    const getRegime = (a) => String(a?.regime || a?.regimeTravail || '').toLowerCase();
+    const getRegime = (a) => String(a?.regime || '').toLowerCase();
     const nbG24 = membres.filter(a => getRegime(a).includes('g24')).length;
     const nbMixte = membres.filter(a => getRegime(a).includes('mixte')).length;
 
