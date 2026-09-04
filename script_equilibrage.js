@@ -125,11 +125,107 @@ function extraireLettreEquipe(nomEquipe) {
     return '';
 }
 
+/**
+ * Convertit n'importe quel format de date Excel (Nombre série Excel, String DD/MM/YYYY, ISO) en objet Date JS
+ */
+function parserDateExcel(valeur) {
+    if (!valeur) return null;
+
+    // 1. Si la date est au format numérique Excel (ex: 32450)
+    if (typeof valeur === 'number') {
+        return new Date(Math.round((valeur - 25569) * 86400 * 1000));
+    }
+
+    // 2. Si c'est du texte
+    const str = String(valeur).trim();
+
+    // Format JJ/MM/AAAA ou JJ-MM-AAAA
+    const matchFR = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (matchFR) {
+        const jour = parseInt(matchFR[1], 10);
+        const mois = parseInt(matchFR[2], 10) - 1; // Les mois commencent à 0 en JS
+        const annee = parseInt(matchFR[3], 10);
+        return new Date(annee, mois, jour);
+    }
+
+    // Tente le constructeur standard
+    const d = new Date(str);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * Calcul précis de l'âge en années
+ */
 function calculerAge(dateNaissance) {
-    if (!dateNaissance) return 35;
-    const d = new Date(dateNaissance);
-    if (isNaN(d.getTime())) return 35;
-    return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+    const d = parserDateExcel(dateNaissance);
+    if (!d) return 0;
+
+    const aujourdhui = new Date();
+    let age = aujourdhui.getFullYear() - d.getFullYear();
+    const m = aujourdhui.getMonth() - d.getMonth();
+
+    if (m < 0 || (m === 0 && aujourdhui.getDate() < d.getDate())) {
+        age--;
+    }
+
+    return age > 0 ? age : 0;
+}
+
+/**
+ * Calcul des statistiques d'équipe
+ */
+function calculerStatsEquipe(membres, conserverNiveaux = true) {
+    const nb = membres.length;
+    
+    const nbF = membres.filter(a => estFemme(a)).length;
+    const pctF = nb > 0 ? Math.round((nbF / nb) * 100) : 0;
+    
+    // Calcul de l'âge moyen corrigé (en ignorant les agents sans date valide)
+    const agentsAvecAge = membres.map(a => calculerAge(a.dateNaissance)).filter(age => age > 0);
+    const ageMoy = agentsAvecAge.length > 0 
+        ? Math.round(agentsAvecAge.reduce((sum, age) => sum + age, 0) / agentsAvecAge.length) 
+        : 0;
+    
+    const compteFnStricte = (fn) => membres.filter(a => String(a?.fonction || '').trim().toUpperCase() === fn.toUpperCase()).length;
+
+    const cdg = compteFnStricte('CDG');
+    const acdg = compteFnStricte('ACDG1') + compteFnStricte('ACDG2');
+    const cate = compteFnStricte('CATE');
+    const ca1e = compteFnStricte('CA1E');
+    const cequ = compteFnStricte('CEQU');
+    const equ = compteFnStricte('EQU');
+
+    const getRegime = (a) => String(a?.regime || '').toLowerCase();
+    const nbG24 = membres.filter(a => getRegime(a).includes('g24')).length;
+    const nbMixte = membres.filter(a => getRegime(a).includes('mixte')).length;
+
+    const dicSpecs = {};
+    const dicComps = {};
+    const dicDept = {};
+
+    membres.forEach(a => {
+        extraireItems(a.specialites).forEach(s => {
+            const cle = traiterNomItem(s, conserverNiveaux);
+            if (cle) dicSpecs[cle] = (dicSpecs[cle] || 0) + 1;
+        });
+        
+        extraireItems(a.competences).forEach(c => {
+            const cle = traiterNomItem(c, conserverNiveaux);
+            if (cle) dicComps[cle] = (dicComps[cle] || 0) + 1;
+        });
+        
+        const dep = extraireDepartement(a);
+        if (dep) dicDept[dep] = (dicDept[dep] || 0) + 1;
+    });
+
+    return { 
+        nb, nbF, pctF, ageMoy,
+        nbG24, nbMixte,
+        cdg,
+        acdgCate: acdg + cate,
+        ca1e, cequ, equ,
+        dicSpecs, dicComps, dicDept
+    };
 }
 
 function extraireDepartement(agent) {
