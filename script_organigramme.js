@@ -12,31 +12,32 @@ const ORDRE_GRADES = [
     'CDT', 'CNE', 'LTN', 'ADC', 'ADJ', 'SCH', 'SGT', 'CCH', 'CPL', 'SAP'
 ];
 
-document.addEventListener("DOMContentLoaded", () => {
-    chargerFichierExcel();
-});
+/**
+ * Fonction appelée uniquement quand l'utilisateur choisit son fichier Excel
+ */
+function importerFichierExcelManuel(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const arrayBuffer = e.target.result;
+        traiterDonneesExcel(arrayBuffer);
+    };
+    reader.readAsArrayBuffer(file);
+}
 
 /**
- * Charge directement le fichier FMPA-RH.xlsx à la racine sans passer par localStorage
+ * Traitement du fichier Excel en mémoire vive (RAM uniquement)
  */
-async function chargerFichierExcel() {
-    const cheminFichier = "FMPA-RH.xlsx";
-
+function traiterDonneesExcel(arrayBuffer) {
     try {
-        const response = await fetch(cheminFichier);
-        if (!response.ok) {
-            throw new Error(`Statut HTTP : ${response.status}`);
-        }
-
-        const arrayBuffer = await response.arrayBuffer();
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-
         const premierNomFeuille = workbook.SheetNames[0];
         const feuille = workbook.Sheets[premierNomFeuille];
 
         const donneesBrutes = XLSX.utils.sheet_to_json(feuille, { defval: "" });
 
-        // Normalisation et correspondance des en-têtes Excel vers la structure agent
         tousLesAgents = donneesBrutes.map(item => ({
             nom: item["NOM"] || item["Nom"] || "",
             prenom: item["PRENOM"] || item["Prénom"] || item["Prenom"] || "",
@@ -50,10 +51,9 @@ async function chargerFichierExcel() {
         }));
 
         afficherColonnes();
-
-    } catch (erreur) {
-        console.error("Erreur lors de la lecture du fichier Excel :", erreur);
-        alert("⚠️ Impossible de charger l'organigramme depuis FMPA-RH.xlsx. Vérifiez la présence du fichier Excel.");
+    } catch (err) {
+        alert("⚠️ Erreur lors de la lecture du fichier Excel.");
+        console.error(err);
     }
 }
 
@@ -66,22 +66,19 @@ function filtrerEffectifs(filtre, bouton) {
     afficherColonnes();
 }
 
-// Nettoyage complet pour la comparaison
 function normaliserTexte(txt) {
     if (!txt) return "";
     return txt.toString()
-              .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Supprime les accents
+              .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
               .toUpperCase()
               .trim();
 }
 
-// Vérifie si un agent appartient à l'encadrement
 function estAgentEncadrement(agent) {
     const fn = normaliserTexte(agent.fonction);
     const eq = normaliserTexte(agent.equipe);
     const statut = normaliserTexte(agent.statut);
 
-    // EXCEPTION : Les SPV restent rattachés à leur équipe/statut, pas à la colonne Encadrement générale
     if (statut.includes('SPV')) {
         return false;
     }
@@ -94,7 +91,6 @@ function estAgentEncadrement(agent) {
            eq.includes('ENCADREMENT');
 }
 
-// Algorithme de tri hiérarchique : Fonction -> Grade -> Nom -> Prénom
 function trierAgentsHierarchie(a, b) {
     const fA = normaliserTexte(a.fonction);
     const fB = normaliserTexte(b.fonction);
@@ -106,7 +102,6 @@ function trierAgentsHierarchie(a, b) {
 
     if (idxFA !== idxFB) return idxFA - idxFB;
 
-    // Égalité de fonction -> Tri par Grade
     const gA = normaliserTexte(a.grade);
     const gB = normaliserTexte(b.grade);
 
@@ -117,7 +112,6 @@ function trierAgentsHierarchie(a, b) {
 
     if (idxGA !== idxGB) return idxGA - idxGB;
 
-    // Égalité de grade -> Ordre alphabétique Nom puis Prénom
     const nomA = normaliserTexte(a.nom);
     const nomB = normaliserTexte(b.nom);
     if (nomA !== nomB) return nomA.localeCompare(nomB);
@@ -129,12 +123,14 @@ function afficherColonnes() {
     const conteneur = document.getElementById("grille-equipes");
     conteneur.innerHTML = "";
 
-    const filtreNorm = normaliserTexte(filtreActuel);
+    if (tousLesAgents.length === 0) {
+        conteneur.innerHTML = `<div style="padding: 20px; color: #cbd5e1; font-style: italic;">Veuillez charger le fichier Excel FMPA-RH.xlsx à l'aide du bouton ci-dessus.</div>`;
+        return;
+    }
 
-    // Détermine si on est sur le filtre SPP Garde
+    const filtreNorm = normaliserTexte(filtreActuel);
     const estFiltreSPPGarde = (filtreNorm === 'SPP_GARDE' || filtreNorm === 'SPP GARDE' || filtreNorm === 'SPP');
 
-    // 1. Filtrage des agents selon le bouton actif
     let agentsFiltres = tousLesAgents.filter(agent => {
         const statut = normaliserTexte(agent.statut);
         const equipe = normaliserTexte(agent.equipe);
@@ -159,7 +155,6 @@ function afficherColonnes() {
         return equipe === filtreNorm || termeEquipe === termeFiltre;
     });
 
-    // 2. Organisation unique des colonnes
     let listeColonnes = [];
 
     if (filtreNorm === 'ENCADREMENT') {
@@ -185,7 +180,6 @@ function afficherColonnes() {
         });
     }
 
-    // 3. Rendu HTML ULTRA-COMPACT
     listeColonnes.forEach(colInfo => {
         let membres = [];
 
@@ -230,12 +224,10 @@ function afficherColonnes() {
                 classeStatut = 'pats';
             }
 
-            // Éléments de la Ligne 1
             const grade = agent.grade ? `<span class="grade-tag">${agent.grade}</span>` : '';
             const fonction = agent.fonction ? `<span class="fonction-tag">${agent.fonction}</span>` : '';
             const nomPrenom = `<strong>${(agent.nom || '').toUpperCase()}</strong> ${agent.prenom || ''}`;
 
-            // Éléments de la Ligne 2 (Département + Compétences/Spécialités)
             const dep = agent.departement ? `<span class="dep-tag">Dép:${agent.departement}</span>` : '';
             
             let compList = [];
@@ -245,7 +237,6 @@ function afficherColonnes() {
             let listeTexte = compList.join(', ').split(',').map(s => s.trim()).filter(s => s.length > 0);
             const spes = listeTexte.length > 0 ? `<span class="spes-tag">[${listeTexte.join(', ')}]</span>` : '';
 
-            // Rendu : Ligne 1 (Grade Nom Prénom Fonction) / Ligne 2 (Spécialités)
             html += `
                 <div class="carte-agent ${classeStatut}">
                     <div class="carte-nom">
