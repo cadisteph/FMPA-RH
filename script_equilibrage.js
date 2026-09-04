@@ -428,57 +428,126 @@ function suggererReequilibrage() {
     const chkNiveaux = document.getElementById("chk-conserver-niveaux");
     const conserverNiveaux = chkNiveaux ? chkNiveaux.checked : true;
 
-    let eqA = agentsLocaux.filter(a => extraireLettreEquipe(a.equipe) === 'A');
-    let eqB = agentsLocaux.filter(a => extraireLettreEquipe(a.equipe) === 'B');
-    let eqC = agentsLocaux.filter(a => extraireLettreEquipe(a.equipe) === 'C');
+    // Simulation de l'état des équipes pour enchainer plusieurs mouvements
+    let etatSimule = JSON.parse(JSON.stringify(agentsLocaux));
 
-    const scoreInitial = calculerScorePenalite([eqA, eqB, eqC], conserverNiveaux);
-    let meilleurScore = scoreInitial;
-    let meilleureProp = null;
+    const lettres = ['A', 'B', 'C'];
+    const maxIterations = 15; // Limite la boucle pour éviter tout blocage
 
-    const mobA = eqA.filter(a => !a.verrouille);
-    const mobB = eqB.filter(a => !a.verrouille);
-    const mobC = eqC.filter(a => !a.verrouille);
+    for (let iter = 0; iter < maxIterations; iter++) {
+        let eqA = etatSimule.filter(a => extraireLettreEquipe(a.equipe) === 'A');
+        let eqB = etatSimule.filter(a => extraireLettreEquipe(a.equipe) === 'B');
+        let eqC = etatSimule.filter(a => extraireLettreEquipe(a.equipe) === 'C');
 
-    const testerEchange = (list1, list2, nomEq1, nomEq2) => {
-        list1.forEach(a1 => {
-            list2.forEach(a2 => {
-                const simA = eqA.map(a => a.idUnique === a1.idUnique ? a2 : (a.idUnique === a2.idUnique ? a1 : a));
-                const simB = eqB.map(a => a.idUnique === a1.idUnique ? a2 : (a.idUnique === a2.idUnique ? a1 : a));
-                const simC = eqC.map(a => a.idUnique === a1.idUnique ? a2 : (a.idUnique === a2.idUnique ? a1 : a));
+        let scoreActuel = calculerScorePenalite([eqA, eqB, eqC], conserverNiveaux);
+        let meilleurScore = scoreActuel;
+        let meilleurMouvement = null;
 
-                const testScore = calculerScorePenalite([simA, simB, simC], conserverNiveaux);
+        const dics = { 'A': eqA, 'B': eqB, 'C': eqC };
 
-                if (testScore < meilleurScore) {
-                    meilleurScore = testScore;
-                    meilleureProp = {
-                        a1: a1,
-                        eq1: nomEq1,
-                        a2: a2,
-                        eq2: nomEq2,
-                        gainPct: Math.round(((scoreInitial - testScore) / scoreInitial) * 100)
-                    };
+        // 1. TESTER LES TRANSFERTS DIRECTS (1 agent d'une équipe vers une autre)
+        lettres.forEach(source => {
+            lettres.forEach(cible => {
+                if (source !== cible) {
+                    const candidats = dics[source].filter(a => !a.verrouille);
+                    candidats.forEach(agent => {
+                        // Simulation du transfert
+                        const simA = eqA.map(a => a.idUnique === agent.idUnique ? { ...a, equipe: `Équipe ${cible}` } : a);
+                        const simB = eqB.map(a => a.idUnique === agent.idUnique ? { ...a, equipe: `Équipe ${cible}` } : a);
+                        const simC = eqC.map(a => a.idUnique === agent.idUnique ? { ...a, equipe: `Équipe ${cible}` } : a);
+
+                        // Ajustement des tableaux selon l'origine/destination
+                        const testA = source === 'A' ? simA.filter(a => a.idUnique !== agent.idUnique) : (cible === 'A' ? [...simA, { ...agent, equipe: 'Équipe A' }] : simA);
+                        const testB = source === 'B' ? simB.filter(a => a.idUnique !== agent.idUnique) : (cible === 'B' ? [...simB, { ...agent, equipe: 'Équipe B' }] : simB);
+                        const testC = source === 'C' ? simC.filter(a => a.idUnique !== agent.idUnique) : (cible === 'C' ? [...simC, { ...agent, equipe: 'Équipe C' }] : simC);
+
+                        const testScore = calculerScorePenalite([testA, testB, testC], conserverNiveaux);
+
+                        if (testScore < meilleurScore) {
+                            meilleurScore = testScore;
+                            meilleurMouvement = {
+                                type: 'TRANSFERT',
+                                agent: agent,
+                                eqSource: source,
+                                eqCible: cible,
+                                gain: scoreActuel - testScore
+                            };
+                        }
+                    });
                 }
             });
         });
-    };
 
-    testerEchange(mobA, mobB, 'A', 'B');
-    testerEchange(mobB, mobC, 'B', 'C');
-    testerEchange(mobA, mobC, 'A', 'C');
+        // 2. TESTER LES ÉCHANGES 1 CONTRE 1 (Si aucun transfert direct n'améliore le score)
+        if (!meilleurMouvement) {
+            const testerPaireEchange = (eq1, eq2, nom1, nom2) => {
+                const mob1 = eq1.filter(a => !a.verrouille);
+                const mob2 = eq2.filter(a => !a.verrouille);
 
-    if (meilleureProp && meilleureProp.gainPct > 0) {
-        propositionsEnAttente.push({
-            type: 'ECHANGE',
-            a1: meilleureProp.a1,
-            a2: meilleureProp.a2,
-            motif: `Amélioration de l'équilibre général de +${meilleureProp.gainPct}% (Échange entre Équipe ${meilleureProp.eq1} et Équipe ${meilleureProp.eq2})`
-        });
+                mob1.forEach(a1 => {
+                    mob2.forEach(a2 => {
+                        const simA = eqA.map(a => a.idUnique === a1.idUnique ? a2 : (a.idUnique === a2.idUnique ? a1 : a));
+                        const simB = eqB.map(a => a.idUnique === a1.idUnique ? a2 : (a.idUnique === a2.idUnique ? a1 : a));
+                        const simC = eqC.map(a => a.idUnique === a1.idUnique ? a2 : (a.idUnique === a2.idUnique ? a1 : a));
+
+                        const testScore = calculerScorePenalite([simA, simB, simC], conserverNiveaux);
+
+                        if (testScore < meilleurScore) {
+                            meilleurScore = testScore;
+                            meilleurMouvement = {
+                                type: 'ECHANGE',
+                                a1: a1,
+                                a2: a2,
+                                eq1: nom1,
+                                eq2: nom2,
+                                gain: scoreActuel - testScore
+                            };
+                        }
+                    });
+                });
+            };
+
+            testerPaireEchange(eqA, eqB, 'A', 'B');
+            testerPaireEchange(eqB, eqC, 'B', 'C');
+            testerPaireEchange(eqA, eqC, 'A', 'C');
+        }
+
+        // Si une amélioration a été trouvée, on l'enregistre et on re-boucle
+        if (meilleurMouvement && meilleurMouvement.gain > 0.01) {
+            if (meilleurMouvement.type === 'TRANSFERT') {
+                const target = etatSimule.find(a => a.idUnique === meilleurMouvement.agent.idUnique);
+                if (target) target.equipe = `Équipe ${meilleurMouvement.eqCible}`;
+
+                propositionsEnAttente.push({
+                    type: 'TRANSFERT',
+                    a1: meilleurMouvement.agent,
+                    eqCible: meilleurMouvement.eqCible,
+                    motif: `Rééquilibrage d'effectif et de profil (vers Équipe ${meilleurMouvement.eqCible})`
+                });
+            } else if (meilleurMouvement.type === 'ECHANGE') {
+                const target1 = etatSimule.find(a => a.idUnique === meilleurMouvement.a1.idUnique);
+                const target2 = etatSimule.find(a => a.idUnique === meilleurMouvement.a2.idUnique);
+                if (target1 && target2) {
+                    const temp = target1.equipe;
+                    target1.equipe = target2.equipe;
+                    target2.equipe = temp;
+                }
+
+                propositionsEnAttente.push({
+                    type: 'ECHANGE',
+                    a1: meilleurMouvement.a1,
+                    a2: meilleurMouvement.a2,
+                    motif: `Optimisation des spécialités et compétences (Équipe ${meilleurMouvement.eq1} ↔ Équipe ${meilleurMouvement.eq2})`
+                });
+            }
+        } else {
+            // Plus aucune amélioration possible
+            break;
+        }
     }
 
     afficherPropositions();
 }
-
 function afficherPropositions() {
     if (propositionsEnAttente.length === 0) {
         alert("✅ Aucun mouvement nécessaire selon les critères et pondérations actuels.");
