@@ -540,8 +540,8 @@ function editerAgent(id) {
     document.getElementById("agentSexe").value = agent.sexe || "Homme";
     document.getElementById("agentNom").value = agent.nom || "";
     document.getElementById("agentPrenom").value = agent.prenom || "";
-    document.getElementById("agentRegime").value = agent.regime || "G24";
-    document.getElementById("agentEquipe").value = agent.equipe || "Equipe A";
+    document.getElementById("agentRegime").value = agent.regime || "";
+    document.getElementById("agentEquipe").value = agent.equipe || "";
     document.getElementById("agentStatut").value = agent.statut || "SPP";
     document.getElementById("agentGrade").value = agent.grade || "";
     document.getElementById("agentFonction").value = agent.fonction || "Equ";
@@ -835,13 +835,13 @@ function lireAgentsDepuisFeuille(feuille) {
             sexe: normaliserValeurExcel(ligne[index.Sexe]) || "Homme",
             nom: normaliserValeurExcel(ligne[index.Nom]).toUpperCase(),
             prenom: formaterPrenom(normaliserValeurExcel(ligne[index.Prenom])),
-            equipe: normaliserValeurExcel(ligne[index.Equipe]) || "Equipe A",
+            equipe: normaliserValeurExcel(ligne[index.Equipe]) || "",
             statut: normaliserValeurExcel(ligne[index.Statut]) || "SPP",
             grade: normaliserValeurExcel(ligne[index.Grade]),
             fonction: normaliserValeurExcel(ligne[index.Fonction]) || "Equ",
             specialites: normaliserValeurExcel(ligne[index.Specialites]),
             competences: normaliserValeurExcel(ligne[index.Competences]),
-            regime: normaliserValeurExcel(ligne[index.Regime]) || "G24",
+            regime: normaliserValeurExcel(ligne[index.Regime]) || "",
             tempsPartiel: convertirTempsPartielEnNombre(ligne[index.TempsPartiel]),
             engagement: normaliserValeurExcel(ligne[index.Engagement]) || "Complet",
             naissanceDate: normaliserDateExcel(ligne[index.DateNaissance]),
