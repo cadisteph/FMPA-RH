@@ -99,19 +99,20 @@
     <header>
         <h1>🏢 Organigramme des Effectifs</h1>
         <div class="header-actions">
-         
+
+            
 <style>
     /* Animation de clignotement pour le bouton d'import */    
     @keyframes clignoterAlerte {
-        0% {
-            background-color: #ea580c;
-            box-shadow: 0 0 4px #ea580c;
-        }
-        100% {
-            background-color: #dc2626;
-            box-shadow: 0 0 10px #dc2626;
-        }
+    0% {
+        background-color: #eac40c;
+        box-shadow: 0 0 4px #ea580c;
     }
+    100% {
+        background-color: #f80404;
+        box-shadow: 0 0 10px #dc2626;
+    }
+}
     .btn-clignotant {
         display: inline-block;
         background-color: #f9d016;
@@ -123,12 +124,13 @@
         cursor: pointer;
         user-select: none;
         animation: clignoterAlerte 0.35s infinite alternate;
-    }
+    }    
 </style>
 <label class="btn-action btn-clignotant">🔗 Charger le fichier FMPA-RH.xlsx
     <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
 </label>
 
+            
             <button onclick="window.print()" class="btn-action" style="background: #334155; border-color: #475569;">🖨️ Imprimer</button>
         </div>
     </header>
