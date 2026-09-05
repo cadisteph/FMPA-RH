@@ -48,7 +48,7 @@ async function lierFichierReseau() {
 
         const btnConnect = document.getElementById("btn-connect-file");
         if (btnConnect) {
-            btnConnect.innerText = "🌐 XLSX Réseau Connecté";
+            btnConnect.innerText = "🌐 Réseau Connecté";
             btnConnect.classList.add("connecte");
         }
     } catch (err) {
