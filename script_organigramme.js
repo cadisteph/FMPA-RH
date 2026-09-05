@@ -22,7 +22,7 @@ function importerFichierExcelManuel(event) {
     const reader = new FileReader();
     reader.onload = (e) => {
         const arrayBuffer = e.target.result;
-        DonneesExcel(arrayBuffer);
+        traiterDonneesExcel(arrayBuffer);
     };
     reader.readAsArrayBuffer(file);
 }
@@ -38,10 +38,12 @@ function traiterDonneesExcel(arrayBuffer) {
 
         const donneesBrutes = XLSX.utils.sheet_to_json(feuille, { defval: "" });
 
-        // Arrêter le clignotement du bouton
+        // Passage du bouton en style bleu fixe après le chargement réussi
         const btnExcel = document.getElementById("btn-reseau-clignotant");
-        if (btnExcel) btnExcel.classList.remove("btn-reseau-clignotant");
-        
+        if (btnExcel) {
+            btnExcel.classList.add("connecte");
+        }
+
         tousLesAgents = donneesBrutes.map(item => ({
             nom: item["NOM"] || item["Nom"] || "",
             prenom: item["PRENOM"] || item["Prénom"] || item["Prenom"] || "",
@@ -218,7 +220,7 @@ function afficherColonnes() {
             <div class="cartes-container">
         `;
 
-       membres.forEach(agent => {
+        membres.forEach(agent => {
             const statutNorm = normaliserTexte(agent.statut);
             
             let classeStatut = 'spp';
