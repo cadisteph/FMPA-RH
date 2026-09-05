@@ -77,38 +77,37 @@
         }
         .btn-action:hover { background: #1d4ed8; }
 
-        /* Animation de clignotement rouge / jaune à 0.35s */
-        @keyframes clignoterAlerte {
-            0% {
-                background-color: #dc2626;
-                color: #ffffff;
-                box-shadow: 0 0 6px #dc2626;
-            }
-            100% {
-                background-color: #facc15;
-                color: #1e293b;
-                box-shadow: 0 0 6px #facc15;
-            }
-        }
+        /* Bouton réseau */
+#btn-connect-file {
+    background-color: #f9d016;
+    color: #1e293b;
+    font-weight: bold;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    animation: clignoterAlerte 0.35s infinite alternate;
+}
 
-        /* Style initial clignotant */
-        .btn-reseau-clignotant {
-            font-weight: bold;
-            padding: 8px 14px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            animation: clignoterAlerte 0.35s infinite alternate;
-            transition: background-color 0.3s, color 0.3s;
-        }
+@keyframes clignoterAlerte {
+    0% {
+        background-color: #eac40c;
+        box-shadow: 0 0 4px #ea580c;
+    }
+    100% {
+        background-color: #f80404;
+        box-shadow: 0 0 10px #dc2626;
+    }
+}
 
-        /* Style bleu fixe après connexion */
-        .btn-reseau-clignotant.connecte {
-            animation: none !important;
-            background-color: #2563eb !important;
-            color: #ffffff !important;
-            box-shadow: none !important;
-        }
+#btn-connect-file.connecte {
+    animation: none !important;
+    background-color: #334155 !important;
+    color: #4ac1f5;
+    border: 1.5px solid #4ac1f5;
+    font-weight: bold;
+    box-shadow: none !important;
+}
 
         @media print {
             @page { size: A4 landscape; margin: 5mm; }
