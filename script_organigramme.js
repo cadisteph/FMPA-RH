@@ -42,6 +42,14 @@ function traiterDonneesExcel(arrayBuffer) {
         const btnExcel = document.getElementById("btn-reseau-clignotant");
         if (btnExcel) {
             btnExcel.classList.add("connecte");
+
+        const btn = document.getElementById("btn-connect-file");
+        if (btn) {
+            btn.classList.add("connecte");
+            btn.innerHTML = "🌐 Réseau connecté";
+
+
+            
         }
 
         tousLesAgents = donneesBrutes.map(item => ({
