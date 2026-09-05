@@ -14,41 +14,8 @@
     
     <!-- BARRE CONNECTEUR FMPA-RH.xlsx -->
     <div class="network-bar" style="margin-top: 5px; display: flex; align-items: center; gap: 12px;">
-
-
-      <style>
-    /* Animation de clignotement pour le bouton d'import */    
-    @keyframes clignoterAlerte {
-    0% {
-        background-color: #eac40c;
-        box-shadow: 0 0 4px #ea580c;
-    }
-    100% {
-        background-color: #f80404;
-        box-shadow: 0 0 10px #dc2626;
-    }
-}
-    .btn-clignotant {
-        display: inline-block;
-        background-color: #f9d016;
-        color: #1e293b;
-        font-weight: bold;
-        padding: 6px 10px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        user-select: none;
-        animation: clignoterAlerte 0.35s infinite alternate;
-    }    
-</style>
-<label class="btn-action btn-clignotant">🔗 Charger le fichier FMPA-RH.xlsx
-    <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
-</label>
-
-
-      
-      <span id="statusReseau" style="font-size: 0.75em; color: #ed1c1c; font-weight: normal; display: none">🚨cliquer sur 📂Ouvrir FMPA-RH.xlsx</span>
-      <button type="button" class="btn-reseau" style="background: #46f108; display: none" onclick="connecterFichierReseau()">📂Ouvrir FMPA-RH.xlsx</button>
+      <span id="statusReseau" style="font-size: 0.75em; color: #ed1c1c; font-weight: normal;">🚨cliquer sur 📂Ouvrir FMPA-RH.xlsx</span>
+      <button type="button" class="btn-reseau" style="background: #46f108" onclick="connecterFichierReseau()">📂Ouvrir FMPA-RH.xlsx</button>
       
     <!-- Boutons d'extraction des alertes RH -->
     <button onclick="afficherListeAlertesPL()" style="background: #222e3b; border: 1px solid #8a2be2; color: #8a2be2; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size : 0.85em; display: flex; align-items: center; gap: 6px;">🚒 Renouvellement Permis</button>
