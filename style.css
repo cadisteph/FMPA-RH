@@ -18,39 +18,6 @@ html, body {
     box-sizing: border-box;
 }
 
-
-
-
-/* Bouton réseau */
-#btn-connect-file {
-    background-color: #f9d016;
-    color: #1e293b;
-    font-weight: bold;
-    padding: 6px 10px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    animation: clignoterAlerte 0.35s infinite alternate;
-}
-
-@keyframes clignoterAlerte {
-    0% {
-        background-color: #eac40c;
-        box-shadow: 0 0 4px #ea580c;
-    }
-    100% {
-        background-color: #f80404;
-        box-shadow: 0 0 10px #dc2626;
-    }
-}
-
-
-
-
-
-
-
-
 /* ==========================================================================
    2. BANDEAU DE NAVIGATION & FILTRES
    ========================================================================== */
