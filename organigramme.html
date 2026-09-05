@@ -78,17 +78,6 @@
         .btn-action:hover { background: #1d4ed8; }
 
         /* Bouton réseau */
-#btn-connect-file {
-    background-color: #f9d016;
-    color: #1e293b;
-    font-weight: bold;
-    padding: 6px 10px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    animation: clignoterAlerte 0.35s infinite alternate;
-}
-
 @keyframes clignoterAlerte {
     0% {
         background-color: #eac40c;
@@ -100,6 +89,18 @@
     }
 }
 
+#btn-connect-file {
+    background-color: #f9d016;
+    color: #1e293b;
+    font-weight: bold;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    animation: clignoterAlerte 0.35s infinite alternate;
+}
+
+        
 #btn-connect-file.connecte {
     animation: none !important;
     background-color: #334155 !important;
