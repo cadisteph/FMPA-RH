@@ -903,7 +903,7 @@ async function connecterFichierReseau() {
         const btn = document.getElementById("btn-connect-file");
         if (btn) {
             btn.classList.add("connecte");
-            btn.innerHTML = "🌐 Connecté réseau";
+            btn.innerHTML = "🌐 Réseau connecté";
         }
 
         mettreAJourStatutExcel(`🌐 ${nomFichierXLSX} chargé — ${listeAgents.length} agent(s)`, "#38bdf8");
