@@ -236,6 +236,61 @@
         }
         .btn-action:hover { background: #1d4ed8; }
 
+
+
+
+
+
+
+
+
+
+
+
+        /* Bouton réseau */
+@keyframes clignoterAlerte {
+    0% {
+        background-color: #eac40c;
+        box-shadow: 0 0 4px #ea580c;
+    }
+    100% {
+        background-color: #f80404;
+        box-shadow: 0 0 10px #dc2626;
+    }
+}
+
+#btn-reseau-clignotant {
+    background-color: #f9d016;
+    color: #1e293b;
+    font-weight: bold;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    animation: clignoterAlerte 0.35s infinite alternate;
+}
+
+        
+#btn-reseau-clignotant.connecte {
+    animation: none !important;
+    background-color: #334155 !important;
+    color: #4ac1f5;
+    border: 1.5px solid #4ac1f5;
+    font-weight: bold;
+    box-shadow: none !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+        
         /* Ajustements automatiques lors de l'impression */
         @media print {
             @page {
