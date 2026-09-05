@@ -41,15 +41,7 @@ function traiterDonneesExcel(arrayBuffer) {
         // Passage du bouton en style bleu fixe après le chargement réussi
         const btnExcel = document.getElementById("btn-reseau-clignotant");
         if (btnExcel) {
-            btnExcel.classList.add("connecte");
-
-        const btn = document.getElementById("btn-connect-file");
-        if (btn) {
-            btn.classList.add("connecte");
-            btn.innerHTML = "🌐 Réseau connecté";
-
-
-            
+            btnExcel.classList.add("connecte");            
         }
 
         tousLesAgents = donneesBrutes.map(item => ({
