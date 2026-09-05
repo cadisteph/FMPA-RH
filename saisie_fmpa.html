@@ -18,8 +18,42 @@
 <header class="app-header">
     <div class="header-title-bar">
         <h1>📝 Saisie des FMPA</h1>
-        <div id="xlsx-status" class="status-inline">🚨cliquer sur 📂Ouvrir FMPA-RH.xlsx</div>
-        <button id="btn-open-xlsx" class="btn-blue">📂 Ouvrir FMPA-RH.xlsx</button>
+
+
+
+<style>
+    /* Animation de clignotement pour le bouton d'import */    
+    @keyframes clignoterAlerte {
+    0% {
+        background-color: #eac40c;
+        box-shadow: 0 0 4px #ea580c;
+    }
+    100% {
+        background-color: #f80404;
+        box-shadow: 0 0 10px #dc2626;
+    }
+}
+    .btn-clignotant {
+        display: inline-block;
+        background-color: #f9d016;
+        color: #1e293b;
+        font-weight: bold;
+        padding: 6px 10px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        user-select: none;
+        animation: clignoterAlerte 0.35s infinite alternate;
+    }    
+</style>
+<label class="btn-action btn-clignotant">🔗 Charger le fichier FMPA-RH.xlsx
+    <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
+</label>
+
+
+        
+        <div id="xlsx-status" class="status-inline" stlye="display: none">🚨cliquer sur 📂Ouvrir FMPA-RH.xlsx</div>
+        <button id="btn-open-xlsx" class="btn-blue" style ="display: none">📂 Ouvrir FMPA-RH.xlsx</button>
     </div>
     <p>App AI - © Copyright S. Cadinot</p>
 </header>
