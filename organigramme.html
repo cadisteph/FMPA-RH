@@ -129,16 +129,15 @@
 </head>
 <body>
 
-    <header>
-        <h1>🏢 Organigramme des Effectifs</h1>
-        <div class="header-actions">
-            <label id="btn-reseau-clignotant" class="btn-action btn-reseau-clignotant" style="cursor: pointer;">
-                📂 Charger FMPA-RH.xlsx
-                <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
-            </label>
-            <button onclick="window.print()" class="btn-action" style="background: #334155; border-color: #475569;">🖨️ Imprimer</button>
-        </div>
-    </header>
+<header>
+    <h1>🏢 Organigramme des Effectifs</h1>
+    <div class="header-actions">
+        <button id="btn-reseau-clignotant" class="btn-action btn-reseau-clignotant" onclick="lierFichierReseau()">
+            📲 Charger FMPA-RH.xlsx
+        </button>
+        <button onclick="window.print()" class="btn-action" style="background: #334155; border-color: #475569;">🖨️ Imprimer</button>
+    </div>
+</header>
 
     <div class="filtres-container">
         <span style="font-weight:normal; color:#94a3b8; margin-right:10px;">Filtrer par :</span>
