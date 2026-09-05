@@ -12,19 +12,31 @@ const ORDRE_GRADES = [
     'CDT', 'CNE', 'LTN', 'ADC', 'ADJ', 'SCH', 'SGT', 'CCH', 'CPL', 'SAP'
 ];
 
-/**
- * Fonction appelée uniquement quand l'utilisateur choisit son fichier Excel
- */
-function importerFichierExcelManuel(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+let fileHandle = null;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const arrayBuffer = e.target.result;
+/**
+ * Sélection du fichier via l'API File System Access
+ */
+async function lierFichierReseau() {
+    try {
+        [fileHandle] = await window.showOpenFilePicker({
+            types: [{
+                description: 'Fichier Excel FMPA-RH',
+                accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] },
+            }],
+            multiple: false
+        });
+
+        const file = await fileHandle.getFile();
+        const arrayBuffer = await file.arrayBuffer();
         traiterDonneesExcel(arrayBuffer);
-    };
-    reader.readAsArrayBuffer(file);
+
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            console.error("Erreur de sélection :", err);
+            alert("L'accès au fichier Excel a échoué.");
+        }
+    }
 }
 
 /**
@@ -38,10 +50,11 @@ function traiterDonneesExcel(arrayBuffer) {
 
         const donneesBrutes = XLSX.utils.sheet_to_json(feuille, { defval: "" });
 
-        // Passage du bouton en style bleu fixe après le chargement réussi
+        // Modification du texte et passage du bouton en bleu fixe
         const btnExcel = document.getElementById("btn-reseau-clignotant");
         if (btnExcel) {
-            btnExcel.classList.add("connecte");            
+            btnExcel.innerText = "🌐 Réseau Connecté";
+            btnExcel.classList.add("connecte");          
         }
 
         tousLesAgents = donneesBrutes.map(item => ({
