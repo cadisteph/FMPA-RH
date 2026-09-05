@@ -167,16 +167,16 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #38bdf8
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    animation: clignoterAlerte 0.75s infinite alternate;
+    animation: clignoterAlerte 0.35s infinite alternate;
 }
 
 @keyframes clignoterAlerte {
     0% {
-        background-color: #ea580c;
+        background-color: #eac40c;
         box-shadow: 0 0 4px #ea580c;
     }
     100% {
-        background-color: #dc2626;
+        background-color: #f80404;
         box-shadow: 0 0 10px #dc2626;
     }
 }
