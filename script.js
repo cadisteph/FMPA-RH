@@ -899,6 +899,13 @@ async function connecterFichierReseau() {
         actualiserTableauRH();
         viderFormulaireRH();
 
+        // Passation du bouton au style bleu fixe "Connecté"
+        const btn = document.getElementById("btn-connect-file");
+        if (btn) {
+            btn.classList.add("connecte");
+            btn.innerHTML = "🌐 Connecté réseau";
+        }
+
         mettreAJourStatutExcel(`🌐 ${nomFichierXLSX} chargé — ${listeAgents.length} agent(s)`, "#38bdf8");
         alert(`Chargement réussi : ${listeAgents.length} agent(s) importé(s) depuis l'onglet ${NOM_ONGLET_BASE_AGENTS}.`);
 
@@ -908,6 +915,13 @@ async function connecterFichierReseau() {
         console.error("Erreur d'ouverture du classeur Excel :", err);
         window.fileHandleReseau = null;
         classeurXLSX = null;
+
+        // Réinitialisation du bouton en cas d'échec
+        const btn = document.getElementById("btn-connect-file");
+        if (btn) {
+            btn.classList.remove("connecte");
+            btn.innerHTML = "📂 Ouvrir FMPA-RH.xlsx";
+        }
 
         mettreAJourStatutExcel("🔴 Erreur : fichier Excel non chargé", "#c53030");
         alert("❌ Impossible de charger FMPA-RH.xlsx.\n\n" + (err.message || err));
