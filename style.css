@@ -360,28 +360,21 @@ button:hover { opacity: 0.9; }
 /* Animation de clignotement rouge / jaune à 0.35s */
 @keyframes clignoterAlerte {
     0% {
-        background-color: #dc2626; /* Rouge */
-        color: #ffffff;
-        box-shadow: 0 0 6px #dc2626;
+        background-color: #eac40c; /* jaune */
+        color: #1e293b;
+        box-shadow: 0 0 4px #ea580c;
     }
     100% {
-        background-color: #facc15; /* Jaune */
+        background-color: #f80404; /* rouge */
         color: #1e293b;
-        box-shadow: 0 0 6px #facc15;
+        box-shadow: 0 0 10px #dc2626;
     }
 }
-
-
-
-
-
-
-
 
 /* Style initial clignotant */
 .btn-reseau-clignotant {
     font-weight: bold;
-    padding: 8px 14px;
+    padding: 6px 10px;
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -392,8 +385,9 @@ button:hover { opacity: 0.9; }
 /* Style bleu fixe après connexion */
 .btn-reseau-clignotant.connecte {
     animation: none !important;
-    background-color: #2563eb !important; /* Bleu */
-    color: #ffffff !important;
+    background-color: #334155 !important; /* Bleu */
+    color: #4ac1f5 !important;
+    border: 1.5px solid #4ac1f5
     box-shadow: none !important;
 }
 
