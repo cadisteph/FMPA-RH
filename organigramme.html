@@ -99,19 +99,9 @@
     <header>
         <h1>🏢 Organigramme des Effectifs</h1>
         <div class="header-actions">
-            <label class="btn-action" style="cursor: pointer;">
-                📂 Charger le fichier Excel
-                <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
-            </label>
-
-
-
-
-
-            
-
+         
 <style>
-    /* Animation de clignotement pour le bouton d'import */
+    /* Animation de clignotement pour le bouton d'import */    
     @keyframes clignoterAlerte {
         0% {
             background-color: #ea580c;
@@ -125,9 +115,10 @@
     .btn-clignotant {
         display: inline-block;
         background-color: #f9d016;
-        color: #ffffff;
+        color: #1e293b;
         font-weight: bold;
-        padding: 6px 12px;
+        padding: 6px 10px;
+        border: none;
         border-radius: 6px;
         cursor: pointer;
         user-select: none;
@@ -138,15 +129,6 @@
     <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
 </label>
 
-
-
-
-
-
-
-
-
-            
             <button onclick="window.print()" class="btn-action" style="background: #334155; border-color: #475569;">🖨️ Imprimer</button>
         </div>
     </header>
