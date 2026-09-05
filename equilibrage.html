@@ -322,38 +322,10 @@
     <div class="header-bar">
         <h2 style="margin: 0; font-size: 1.2rem;">⚖️ Optimisation & Équilibrage des Équipes</h2>
         <div class="header-actions">
-
-
-<style>
-    /* Animation de clignotement pour le bouton d'import */    
-    @keyframes clignoterAlerte {
-    0% {
-        background-color: #eac40c;
-        box-shadow: 0 0 4px #ea580c;
-    }
-    100% {
-        background-color: #f80404;
-        box-shadow: 0 0 10px #dc2626;
-    }
-}
-    .btn-clignotant {
-        display: inline-block;
-        background-color: #f9d016;
-        color: #1e293b;
-        font-weight: bold;
-        padding: 6px 10px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        user-select: none;
-        animation: clignoterAlerte 0.35s infinite alternate;
-    }    
-</style>
-<label class="btn-action btn-clignotant">🔗 Charger le fichier FMPA-RH.xlsx
-    <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
-</label>
-            
-            
+            <label class="btn-action" style="cursor: pointer;">
+                📂 Charger Excel (Réseau)
+                <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
+            </label>
             <button onclick="window.print()" class="btn-action" style="background: #334155; border-color: #475569;">🖨️ Imprimer la simulation</button>
         </div>
     </div>
@@ -429,7 +401,7 @@
                 <div class="titre-equipe">Équipe A <span id="count-A" style="font-size: 0.85rem; color: white; background: #334155; padding: 1px 7px; border-radius: 8px;">0</span></div>
                 <div class="dashboard-stats" id="stats-A"></div>
                 <div class="liste-agents" id="container-A">
-                    <div style="padding: 10px; color: #cbd5e1; font-style: italic; font-size: 0.8rem; display: none">
+                    <div style="padding: 10px; color: #cbd5e1; font-style: italic; font-size: 0.8rem;">
                         Veuillez charger le fichier Excel.
                     </div>
                 </div>
