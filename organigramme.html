@@ -99,38 +99,10 @@
     <header>
         <h1>🏢 Organigramme des Effectifs</h1>
         <div class="header-actions">
-
-            
-<style>
-    /* Animation de clignotement pour le bouton d'import */    
-    @keyframes clignoterAlerte {
-    0% {
-        background-color: #eac40c;
-        box-shadow: 0 0 4px #ea580c;
-    }
-    100% {
-        background-color: #f80404;
-        box-shadow: 0 0 10px #dc2626;
-    }
-}
-    .btn-clignotant {
-        display: inline-block;
-        background-color: #f9d016;
-        color: #1e293b;
-        font-weight: bold;
-        padding: 6px 10px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        user-select: none;
-        animation: clignoterAlerte 0.35s infinite alternate;
-    }    
-</style>
-<label class="btn-action btn-clignotant">🔗 Charger le fichier FMPA-RH.xlsx
-    <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
-</label>
-
-            
+            <label class="btn-action" style="cursor: pointer;">
+                📂 Charger le fichier Excel
+                <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
+            </label>
             <button onclick="window.print()" class="btn-action" style="background: #334155; border-color: #475569;">🖨️ Imprimer</button>
         </div>
     </header>
@@ -150,7 +122,7 @@
     </div>
 
     <div id="grille-equipes" class="grille-equipes">
-        <div style="padding: 20px; color: #cbd5e1; font-style: italic; display: none">
+        <div style="padding: 20px; color: #cbd5e1; font-style: italic;">
             Veuillez cliquer sur le bouton <strong>« 📂 Charger le fichier Excel »</strong> ci-dessus pour afficher l'organigramme.
         </div>
     </div>
