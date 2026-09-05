@@ -183,8 +183,9 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #38bdf8
 
 #btn-connect-file.connecte {
     animation: none !important;
-    background-color: #22c55e !important;
-    color: #ffffff;
+    background-color: #334155 !important;
+    color: #4ac1f5;
+    border: 1.5px solid #4ac1f5;
     font-weight: bold;
     box-shadow: none !important;
 }
