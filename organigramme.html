@@ -77,6 +77,60 @@
         }
         .btn-action:hover { background: #1d4ed8; }
 
+
+
+
+
+
+
+/* Animation de clignotement rouge / jaune à 0.35s */
+@keyframes clignoterAlerte {
+    0% {
+        background-color: #dc2626; /* Rouge */
+        color: #ffffff;
+        box-shadow: 0 0 6px #dc2626;
+    }
+    100% {
+        background-color: #facc15; /* Jaune */
+        color: #1e293b;
+        box-shadow: 0 0 6px #facc15;
+    }
+}
+
+/* Style initial clignotant */
+.btn-reseau-clignotant {
+    font-weight: bold;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    animation: clignoterAlerte 0.35s infinite alternate;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Style bleu fixe après connexion */
+.btn-reseau-clignotant.connecte {
+    animation: none !important;
+    background-color: #2563eb !important; /* Bleu */
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
         @media print {
             @page { size: A4 landscape; margin: 5mm; }
             header, .filtres-container, button, label, .no-print { display: none !important; }
@@ -99,10 +153,15 @@
     <header>
         <h1>🏢 Organigramme des Effectifs</h1>
         <div class="header-actions">
-            <label class="btn-action" style="cursor: pointer;">
-                📂 Charger le fichier Excel
-                <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
+
+
+            
+            <label id="btn-resea-clignotant" class="btn-action btn-reseau-clignotant" style="cursor: pointer;">📂 Charger FMPA-RH.xlsx
+            <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
             </label>
+
+
+            
             <button onclick="window.print()" class="btn-action" style="background: #334155; border-color: #475569;">🖨️ Imprimer</button>
         </div>
     </header>
