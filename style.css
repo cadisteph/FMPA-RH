@@ -373,7 +373,7 @@ button:hover { opacity: 0.9; }
 
 /* Style initial clignotant */
 .btn-reseau-clignotant {
-    font-weight: normal;
+    font-weight: bold;
     padding: 6px 10px;
     border: none;
     border-radius: 6px;
