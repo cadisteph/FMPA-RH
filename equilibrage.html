@@ -541,11 +541,18 @@
             <h3 style="margin-top:0; font-size:1.1rem;">⚡ Recommandations d'Ajustements Multi-Mouvements</h3>
             <p style="font-size: 0.78rem; color: #cbd5e1;">L'algorithme suggère les ajustements suivants :</p>
             <ul id="liste-propositions" style="font-size: 0.82rem; line-height: 1.4; color: #60a5fa; max-height: 200px; overflow-y: auto; padding-left: 18px; margin-bottom: 12px;"></ul>
-            <div style="display: flex; gap: 8px;">
-                <button onclick="appliquerPropositions()" style="flex: 1; padding: 8px; background: #22c55e; border: none; color: white; border-radius: 5px; font-weight: bold; cursor: pointer;">Valider les changements</button>
-                <button type="button" class="btn-imprimer-modale" onclick="imprimerRecommandations()">📑 Export PDF</button>
-                <button onclick="fermerModal()" style="padding: 8px 12px; background: #64748b; border: none; color: white; border-radius: 5px; cursor: pointer;">Annuler</button>
-            </div>
+
+<div style="display: flex; gap: 8px; margin-top: 15px;">
+    <button onclick="window.print()" style="padding: 8px 12px; background: #475569; border: none; color: white; border-radius: 5px; cursor: pointer; font-weight: bold;">
+        🖨️ Imprimer / PDF
+    </button>
+    <button onclick="appliquerPropositions()" style="flex: 1; padding: 8px; background: #22c55e; border: none; color: white; border-radius: 5px; font-weight: bold; cursor: pointer;">
+        Valider les changements
+    </button>
+    <button onclick="fermerModal()" style="padding: 8px 12px; background: #64748b; border: none; color: white; border-radius: 5px; cursor: pointer;">
+        Annuler
+    </button>
+</div>
         </div>
     </div>
 
