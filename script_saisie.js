@@ -1525,24 +1525,27 @@ function genererFicheEquipe() {
         return;
     }
 
-    // 2. Regroupement du catalogue par Activité / Domaine
+    const normaliser = (str) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    // 2. Regroupement du catalogue par Domaine / Activité
     const activitesMap = {};
 
     catalogue.forEach(item => {
-        const nomActivite = item.Activite || item.activite || item.Domaine || item.domaine || item.DomaineActivite || "Général";
-        const nomTheme = item.Theme || item.theme || item.Thème || item.thème || item.Code || item.code || "Module";
+        const nomActivite = item.Activite || item.activite || item.Domaine || item.domaine || "Général";
+        // Prise en compte directe de la colonne "Formation"
+        const nomFormation = item.Formation || item.formation || item.Theme || item.theme || item.Thème || item.Code || "Formation";
         const heuresCibleAgent = parseFloat(item.Heures || item.heures || item.Quota || item.quota || item.Duree || item.duree || 0);
 
         if (!activitesMap[nomActivite]) {
             activitesMap[nomActivite] = {
                 nom: nomActivite,
-                themes: [],
+                formations: [],
                 type: String(item.Type || item.type || item.Domaine || '').toLowerCase()
             };
         }
 
-        activitesMap[nomActivite].themes.push({
-            nom: nomTheme,
+        activitesMap[nomActivite].formations.push({
+            nom: nomFormation,
             heuresCibleAgent: heuresCibleAgent
         });
     });
@@ -1554,86 +1557,89 @@ function genererFicheEquipe() {
 
     let htmlContenu = '';
 
-    const normaliser = (str) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-
-    // 3. Calcul par Activité puis par Thème
+    // 3. Traitement par Activité et par Formation
     Object.values(activitesMap).forEach(act => {
         let activiteHeuresFaites = 0;
         let activiteHeuresCible = 0;
-        let htmlThemes = '';
+        let htmlFormations = '';
 
         const estSpe = act.type.includes('spe') || act.type.includes('spé');
 
-        act.themes.forEach(th => {
-            const cibleTotaleThemeEquipe = th.heuresCibleAgent * effectif;
-            activiteHeuresCible += cibleTotaleThemeEquipe;
+        act.formations.forEach(f => {
+            const cibleTotaleEquipe = f.heuresCibleAgent * effectif;
+            activiteHeuresCible += cibleTotaleEquipe;
 
-            let themeHeuresFaites = 0;
+            let formationHeuresFaites = 0;
             let agentsAFormer = [];
+            const fNorm = normaliser(f.nom);
 
             agentsEquipe.forEach(agent => {
                 const mat = String(agent.Matricule || agent.matricule || agent.MATRICULE || '');
                 const nomPrenom = `${agent.Nom || agent.nom || ''} ${agent.Prenom || agent.prenom || ''}`.trim() || `Agent ${mat}`;
 
-                // Recherche dans l'historique des saisies
-                let hAgent = (historiqueSaisiesFMPA || [])
-                    .filter(h => {
-                        const hMat = String(h.Matricule || h.matricule || h.MATRICULE || '');
-                        const hTheme = normaliser(h.Theme || h.theme || h.Thème || h.Code || h.code || '');
-                        const hAct = normaliser(h.Activité || h.activite || h.Domaine || '');
+                let hAgent = 0;
 
-                        const matchAgent = (hMat === mat);
-                        const matchTheme = hTheme.includes(normaliser(th.nom)) || normaliser(th.nom).includes(hTheme);
-                        const matchAct = !hAct || hAct.includes(normaliser(act.nom)) || normaliser(act.nom).includes(hAct);
-
-                        return matchAgent && matchTheme && matchAct;
-                    })
-                    .reduce((sum, h) => sum + parseFloat(h.Duree || h.duree || h.Heures || h.heures || 0), 0);
-
-                // Fallback si cumulHeuresParAgent existe
-                if (hAgent === 0 && cumulHeuresParAgent && cumulHeuresParAgent[mat]) {
-                    const clesAgent = Object.keys(cumulHeuresParAgent[mat]);
-                    const cleTrouvee = clesAgent.find(k => normaliser(k).includes(normaliser(th.nom)));
-                    if (cleTrouvee) hAgent = parseFloat(cumulHeuresParAgent[mat][cleTrouvee]) || 0;
+                // Extraction des heures depuis la chaîne d'avancement de l'agent (ex: "GOC 1 : 1/1h")
+                for (const prop in agent) {
+                    const val = String(agent[prop] || '');
+                    if (val.includes(':') && val.includes('/')) {
+                        const combinaisonNorm = normaliser(prop + ' ' + val);
+                        if (combinaisonNorm.includes(fNorm) || fNorm.includes(normaliser(prop))) {
+                            const match = val.match(/:\s*([\d\.]+)\s*\//);
+                            if (match) {
+                                hAgent = parseFloat(match[1]) || 0;
+                                break;
+                            }
+                        }
+                    }
                 }
 
-                themeHeuresFaites += hAgent;
+                // Fallback sur l'historique des saisies directes
+                if (hAgent === 0 && Array.isArray(historiqueSaisiesFMPA)) {
+                    hAgent = historiqueSaisiesFMPA
+                        .filter(h => {
+                            const hMat = String(h.Matricule || h.matricule || '');
+                            const hForm = normaliser(h.Formation || h.formation || h.Theme || h.theme || '');
+                            return (hMat === mat) && (hForm.includes(fNorm) || fNorm.includes(hForm));
+                        })
+                        .reduce((sum, h) => sum + parseFloat(h.Duree || h.duree || h.Heures || 0), 0);
+                }
 
-                if (hAgent < th.heuresCibleAgent) {
+                formationHeuresFaites += hAgent;
+
+                if (hAgent < f.heuresCibleAgent) {
                     agentsAFormer.push({
                         nom: nomPrenom,
                         fait: hAgent,
-                        reste: th.heuresCibleAgent - hAgent,
-                        objectif: th.heuresCibleAgent
+                        reste: f.heuresCibleAgent - hAgent,
+                        objectif: f.heuresCibleAgent
                     });
                 }
             });
 
-            activiteHeuresFaites += themeHeuresFaites;
-
+            activiteHeuresFaites += formationHeuresFaites;
             agentsAFormer.sort((a, b) => b.reste - a.reste);
 
-            const pctTheme = cibleTotaleThemeEquipe > 0 ? Math.min(100, Math.round((themeHeuresFaites / cibleTotaleThemeEquipe) * 100)) : 100;
-            const themeEstAJour = (pctTheme >= 100) || (th.heuresCibleAgent > 0 && agentsAFormer.length === 0);
+            const pctFormation = cibleTotaleEquipe > 0 ? Math.min(100, Math.round((formationHeuresFaites / cibleTotaleEquipe) * 100)) : 100;
+            const formationEstAJour = (pctFormation >= 100) || (f.heuresCibleAgent > 0 && agentsAFormer.length === 0);
 
-            // HTML pour un thème
-            htmlThemes += `
-                <div style="background: ${themeEstAJour ? '#f0fdf4' : '#ffffff'}; border: 1px solid ${themeEstAJour ? '#bbf7d0' : '#cbd5e1'}; border-radius: 6px; padding: 10px 14px; margin-top: 8px;">
+            htmlFormations += `
+                <div style="background: ${formationEstAJour ? '#f0fdf4' : '#ffffff'}; border: 1px solid ${formationEstAJour ? '#bbf7d0' : '#cbd5e1'}; border-radius: 6px; padding: 10px 14px; margin-top: 8px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <div>
-                            <strong style="color: #1e293b; font-size: 0.95rem;">${th.nom}</strong>
-                            <span style="font-size: 0.8rem; color: #64748b; margin-left: 6px;">(Objectif : ${th.heuresCibleAgent}h/agent)</span>
+                            <strong style="color: #1e293b; font-size: 0.95rem;">${f.nom}</strong>
+                            <span style="font-size: 0.8rem; color: #64748b; margin-left: 6px;">(Objectif : ${f.heuresCibleAgent}h/agent)</span>
                         </div>
-                        <div style="font-weight: bold; color: ${themeEstAJour ? '#16a34a' : '#d97706'}; font-size: 0.95rem;">
-                            ${pctTheme}% <span style="font-size: 0.8rem; color: #64748b; font-weight: normal;">(${themeHeuresFaites}h / ${cibleTotaleThemeEquipe}h)</span>
+                        <div style="font-weight: bold; color: ${formationEstAJour ? '#16a34a' : '#d97706'}; font-size: 0.95rem;">
+                            ${pctFormation}% <span style="font-size: 0.8rem; color: #64748b; font-weight: normal;">(${formationHeuresFaites}h / ${cibleTotaleEquipe}h)</span>
                         </div>
                     </div>
 
                     <div style="width: 100%; background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
-                        <div style="width: ${pctTheme}%; background: ${themeEstAJour ? '#16a34a' : '#d97706'}; height: 100%;"></div>
+                        <div style="width: ${pctFormation}%; background: ${formationEstAJour ? '#16a34a' : '#d97706'}; height: 100%;"></div>
                     </div>
 
-                    ${themeEstAJour ? `
+                    ${formationEstAJour ? `
                         <div style="color: #16a34a; font-weight: bold; font-size: 0.82rem;">✅ Module 100% à jour pour toute l'équipe</div>
                     ` : `
                         <div style="font-size: 0.82rem; color: #334155;">
@@ -1658,7 +1664,6 @@ function genererFicheEquipe() {
 
         const pctActivite = activiteHeuresCible > 0 ? Math.min(100, Math.round((activiteHeuresFaites / activiteHeuresCible) * 100)) : 0;
 
-        // Block HTML d'une Activité avec sa jauge globale
         htmlContenu += `
             <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
@@ -1671,7 +1676,7 @@ function genererFicheEquipe() {
                 </div>
 
                 <div style="padding-left: 8px;">
-                    ${htmlThemes}
+                    ${htmlFormations}
                 </div>
             </div>
         `;
@@ -1682,7 +1687,6 @@ function genererFicheEquipe() {
         totalSocleFait = totalHeuresFaitesGlobal;
     }
 
-    // Mise à jour des jauges en-tête
     mettreAJourJauge('barre-global', 'txt-pct-global', 'txt-heures-global', totalHeuresFaitesGlobal, totalHeuresCibleGlobal);
     mettreAJourJauge('barre-socle', 'txt-pct-socle', null, totalSocleFait, totalSocleCible);
     mettreAJourJauge('barre-spe', 'txt-pct-spe', null, totalSpeFait, totalSpeCible);
