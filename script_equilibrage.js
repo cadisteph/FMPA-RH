@@ -4,23 +4,6 @@ let propositionsEnAttente = [];
 const ORDRE_FONCTIONS = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
 
 /**
- * Chargement automatique direct du fichier FMPA-RH.xlsx depuis le serveur
- */
-function chargerFMPARHAutomatique() {
-    fetch('FMPA-RH.xlsx')
-        .then(response => {
-            if (!response.ok) throw new Error("Fichier FMPA-RH.xlsx introuvable sur le serveur.");
-            return response.arrayBuffer();
-        })
-        .then(buffer => {
-            traiterDonneesExcel(buffer);
-        })
-        .catch(err => {
-            alert("⚠️ " + err.message);
-        });
-}
-
-/**
  * Importation manuelle Excel via sélection utilisateur
  */
 function importerFichierExcelManuel(event) {
@@ -30,7 +13,7 @@ function importerFichierExcelManuel(event) {
     const reader = new FileReader();
     reader.onload = (e) => {
         const arrayBuffer = e.target.result;
-        traiterDonneesExcel(arrayBuffer);
+        traiterDonneesExcel(arrayBuffer, file.name);
     };
     reader.readAsArrayBuffer(file);
     event.target.value = null;
@@ -55,7 +38,7 @@ function obtenirValeurChamp(item, clesPossibles) {
 /**
  * Traitement Excel avec détection complète des entêtes
  */
-function traiterDonneesExcel(arrayBuffer) {
+function traiterDonneesExcel(arrayBuffer, nomFichier = "") {
     try {
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
         const premierNomFeuille = workbook.SheetNames[0];
@@ -113,6 +96,17 @@ function traiterDonneesExcel(arrayBuffer) {
             if (!a.idUnique) a.idUnique = a.matricule || `agent_${index}`;
             if (a.verrouille === undefined) a.verrouille = false;
         });
+
+        // Mise à jour de l'état du bouton si le fichier FMPA-RH.xlsx est détecté
+        const nomNormalise = normaliserTexte(nomFichier);
+        if (nomNormalise.includes("FMPA-RH") || nomNormalise.includes("FMPA_RH")) {
+            const btn = document.getElementById("btn-reseau");
+            if (btn) {
+                btn.classList.remove("btn-clignotant");
+                btn.classList.add("btn-connecte");
+                btn.innerHTML = "🌐 Connecté Réseau";
+            }
+        }
 
         genererControlesDynamiques();
         rendreEquipes();
