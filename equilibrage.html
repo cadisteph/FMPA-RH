@@ -221,6 +221,7 @@
         }
 
         .btn-action {
+            background: #2563eb;
             color: #f8fafc;
             border: 1px solid #3b82f6;
             padding: 6px 12px;
@@ -228,41 +229,12 @@
             font-size: 0.8rem;
             font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
+            transition: 0.2s;
             display: inline-flex;
             align-items: center;
             gap: 6px;
         }
-
-        /* Style et Animation Rouge/Jaune pour le bouton non connecté */
-        .btn-clignotant {
-            animation: clignoterRougeJaune 1s infinite alternate;
-            border-color: #ef4444;
-            color: #ffffff;
-        }
-
-        @keyframes clignoterRougeJaune {
-            0% {
-                background-color: #dc2626;
-                border-color: #b91c1c;
-            }
-            100% {
-                background-color: #eab308;
-                border-color: #ca8a04;
-                color: #0f172a;
-            }
-        }
-
-        /* Style Bleu après connexion */
-        .btn-connecte {
-            animation: none !important;
-            background-color: #2563eb !important;
-            border-color: #3b82f6 !important;
-            color: #ffffff !important;
-        }
-        .btn-connecte:hover {
-            background-color: #1d4ed8 !important;
-        }
+        .btn-action:hover { background: #1d4ed8; }
 
         /* Ajustements automatiques lors de l'impression */
         @media print {
@@ -350,14 +322,11 @@
     <div class="header-bar">
         <h2 style="margin: 0; font-size: 1.2rem;">⚖️ Optimisation & Équilibrage des Équipes</h2>
         <div class="header-actions">
-            <button id="btn-reseau" onclick="document.getElementById('input-excel').click()" class="btn-action btn-clignotant">
+            <label class="btn-action" style="cursor: pointer;">
                 📂 Charger Excel (Réseau)
-            </button>
-            <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
-
-            <button onclick="window.print()" class="btn-action" style="background: #334155; border-color: #475569;">
-                🖨️ Imprimer la simulation
-            </button>
+                <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
+            </label>
+            <button onclick="window.print()" class="btn-action" style="background: #334155; border-color: #475569;">🖨️ Imprimer la simulation</button>
         </div>
     </div>
 
@@ -465,6 +434,7 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="script_equilibrage.js?v=1.0.0"></script></body>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="script_equilibrage.js"></script>
+</body>
 </html>
