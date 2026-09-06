@@ -47,7 +47,7 @@ body {
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 12px; /* Espace entre le bouton et l'indication de statut */
+    gap: 2px; /* Espace entre le bouton et l'indication de statut */
 }
 
 
@@ -57,17 +57,18 @@ body {
 }
 
 .status-inline {
-    font-size: 0.85rem;
+    font-size: 0.6rem;
+    font-style: italic;
     color: #ef4444;
     background: #f1f5f9;
-    padding: 4px 10px;
-    border-radius: 6px;
+    padding: 2px 2px;
+    border-radius: 2px;
     display: inline-block;
 }
 
 .app-header p {
     color: #64748b;
-    font-size: 0.85rem;
+    font-size: 0.5rem;
 }
 
 .main-container {
