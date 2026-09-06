@@ -579,3 +579,37 @@ body {
     display: inline-flex; align-items: center; gap: 4px;
 }
 .btn-act-cancel:hover { background-color: #1e293b; }
+
+
+
+
+
+
+
+
+/* Animation de clignotement rouge / jaune pour le bouton d'ouverture */
+@keyframes clignotement-alerte {
+    0% {
+        background-color: #dc2626; /* Rouge */
+        color: #ffffff;
+    }
+    50% {
+        background-color: #f59e0b; /* Jaune / Orange */
+        color: #000000;
+    }
+    100% {
+        background-color: #dc2626; /* Rouge */
+        color: #ffffff;
+    }
+}
+
+.btn-clignotant {
+    animation: clignotement-alerte 0.8s infinite !important;
+}
+
+/* Classe pour l'état connecté (bleu) */
+.btn-connecte {
+    background-color: #0284c7 !important; /* Bleu */
+    color: #ffffff !important;
+}
+
