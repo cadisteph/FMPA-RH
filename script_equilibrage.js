@@ -104,7 +104,7 @@ function traiterDonneesExcel(arrayBuffer, nomFichier = "") {
         if (btnExcel) {
             btnExcel.classList.remove("btn-reseau-deconnecte");
             btnExcel.classList.add("btn-reseau-connecte");
-            btnExcel.innerHTML = `🌐 Connecté Réseau <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">`;
+            btnExcel.innerHTML = `🌐 Réseau connecté<input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">`;
         }
 
     } catch (err) {
