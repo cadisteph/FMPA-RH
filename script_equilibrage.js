@@ -13,7 +13,7 @@ function importerFichierExcelManuel(event) {
     const reader = new FileReader();
     reader.onload = (e) => {
         const arrayBuffer = e.target.result;
-        traiterDonneesExcel(arrayBuffer);
+        traiterDonneesExcel(arrayBuffer, file.name);
     };
     reader.readAsArrayBuffer(file);
 }
@@ -37,7 +37,7 @@ function obtenirValeurChamp(item, clesPossibles) {
 /**
  * Traitement Excel avec détection complète des entêtes
  */
-function traiterDonneesExcel(arrayBuffer) {
+function traiterDonneesExcel(arrayBuffer, nomFichier = "") {
     try {
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
         const premierNomFeuille = workbook.SheetNames[0];
@@ -98,6 +98,15 @@ function traiterDonneesExcel(arrayBuffer) {
 
         genererControlesDynamiques();
         rendreEquipes();
+
+        // Mettre à jour l'état du bouton une fois le fichier chargé
+        const btnExcel = document.getElementById("btn-charger-excel");
+        if (btnExcel) {
+            btnExcel.classList.remove("btn-reseau-deconnecte");
+            btnExcel.classList.add("btn-reseau-connecte");
+            btnExcel.innerHTML = `🌐 Connecté Réseau <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">`;
+        }
+
     } catch (err) {
         alert("⚠️ Erreur lors de la lecture du fichier Excel.");
         console.error(err);
