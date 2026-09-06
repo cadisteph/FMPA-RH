@@ -1432,3 +1432,106 @@ function exporterHistoriquePDF() {
 
     doc.save(`Historique_FMPA_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
+
+
+
+
+
+// ==========================================
+// GESTION DE LA MODAL ÉQUIPE
+// ==========================================
+
+function ouvrirModalEquipe() {
+    const modal = document.getElementById('modal-equipe');
+    if (!modal) return;
+
+    // 1. Affiche la modale
+    modal.style.display = 'flex';
+
+    // 2. Remplit le sélecteur d'équipes de la modale
+    alimenterSelectEquipeModal();
+
+    // 3. Calcule et affiche les données
+    filtrerDonneesModalEquipe();
+}
+
+function fermerModalEquipe() {
+    const modal = document.getElementById('modal-equipe');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function alimenterSelectEquipeModal() {
+    const select = document.getElementById('modal-select-equipe');
+    if (!select) return;
+
+    // Récupère la liste unique des équipes depuis la variable globale des agents (ex: window.donneesAgents ou agents)
+    const listeAgents = window.donneesAgents || [];
+    const equipes = [...new Set(listeAgents.map(a => a.Equipe || a.equipe).filter(Boolean))].sort();
+
+    select.innerHTML = '<option value="">Toutes les équipes</option>';
+    equipes.forEach(eq => {
+        const opt = document.createElement('option');
+        opt.value = eq;
+        opt.textContent = eq;
+        select.appendChild(opt);
+    });
+}
+
+function filtrerDonneesModalEquipe() {
+    const selectEquipe = document.getElementById('modal-select-equipe');
+    const tbody = document.getElementById('tbody-modal-equipe');
+    if (!tbody) return;
+
+    const equipeFiltre = selectEquipe ? selectEquipe.value : '';
+    const listeAgents = window.donneesAgents || [];
+
+    // Filtrage
+    const agentsFiltres = equipeFiltre 
+        ? listeAgents.filter(a => (a.Equipe || a.equipe) === equipeFiltre)
+        : listeAgents;
+
+    // Calculs pour les cartes de synthèse
+    const totalAgents = agentsFiltres.length;
+    let totalSocle = 0;
+    let totalSpe = 0;
+
+    agentsFiltres.forEach(a => {
+        totalSocle += parseFloat(a.HeuresSocle || a.heuresSocle || 0);
+        totalSpe += parseFloat(a.HeuresSpe || a.heuresSpe || 0);
+    });
+
+    const moySocle = totalAgents > 0 ? (totalSocle / totalAgents).toFixed(1) : '0.0';
+    const moySpe = totalAgents > 0 ? (totalSpe / totalAgents).toFixed(1) : '0.0';
+
+    // Mise à jour des badges
+    document.getElementById('equipe-stat-total').textContent = totalAgents;
+    document.getElementById('equipe-stat-socle').textContent = `${moySocle} h`;
+    document.getElementById('equipe-stat-spe').textContent = `${moySpe} h`;
+
+    // Remplissage du tableau
+    if (agentsFiltres.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">Aucune donnée d'agent disponible. Chargez d'abord FMPA-RH.xlsx.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = agentsFiltres.map(a => `
+        <tr>
+            <td><strong>${a.Equipe || a.equipe || '-'}</strong></td>
+            <td>${a.Matricule || a.matricule || '-'}</td>
+            <td>${a.Nom || a.nom || ''} ${a.Prenom || a.prenom || ''}</td>
+            <td>${a.Statut || a.statut || '-'}</td>
+            <td>${a.HeuresSocle || a.heuresSocle || 0} h</td>
+            <td>${a.HeuresSpe || a.heuresSpe || 0} h</td>
+        </tr>
+    `).join('');
+}
+
+// Fermeture de la modale en cliquant à l'extérieur
+window.addEventListener('click', function(event) {
+    const modalHist = document.getElementById('modal-historique');
+    const modalEq = document.getElementById('modal-equipe');
+    if (event.target === modalHist) fermerModalHistorique();
+    if (event.target === modalEq) fermerModalEquipe();
+});
