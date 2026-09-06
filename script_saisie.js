@@ -587,12 +587,20 @@ function genererAvancementSpecialites(agent) {
     const specAgentBase = specAgentBrutes.map(s => s.replace(/\s*\d+$/, ""));
     const heuresAgent = cumulHeuresParAgent[agent.id] || {};
 
+    // Filtrage rigoureux :
+    // 1. On exclut TOUS les modules appartenant au Socle Commun
+    // 2. On s'assure que le module correspond spécifiquement aux spécialités de l'agent
     const formationsSpec = catalogueInitial.filter(f => {
-        const typeF = (f.type || "").toUpperCase();
-        const activiteF = (f.activite || "").trim().toUpperCase();
+        const typeF = (f.type || "").trim().toUpperCase();
+        
+        // Exclusion explicite des formations Socle / Commun
+        const estSocle = typeF.includes("SOCLE") || typeF.includes("COMMUN");
+        if (estSocle) return false;
 
+        const activiteF = (f.activite || "").trim().toUpperCase();
         const estTypeSpec = typeF.includes("SPEC") || typeF.includes("SPÉCIALITÉ");
-        const matchActivite = activiteF && specAgentBase.includes(activiteF);
+
+        const matchActivite = activiteF && specAgentBase.some(s => s === activiteF || activiteF.includes(s) || s.includes(activiteF));
 
         const profils = [
             ...(Array.isArray(f.profils) ? f.profils : []),
@@ -601,7 +609,8 @@ function genererAvancementSpecialites(agent) {
 
         const matchProfil = profils.some(p => specAgentBrutes.includes(p) || specAgentBase.includes(p));
 
-        return estTypeSpec || matchActivite || matchProfil;
+        // La formation doit être typée spécialité ET correspondre à une spécialité attribuée à l'agent
+        return (estTypeSpec || matchActivite || matchProfil) && (matchActivite || matchProfil);
     });
 
     if (!formationsSpec.length) {
@@ -928,11 +937,6 @@ function escapeJs(value) {
     return String(value ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
 
-
-
-
-
-
 // --- OUVERTURE ET FERMETURE DE LA MODALE ---
 let indexEnEdition = null;
 let estAdminDeverrouille = false;
@@ -955,12 +959,10 @@ function obtenirHashAdminDepuisExcel() {
         if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets && classeurXLSX.Sheets["Parametres"]) {
             const sheetParam = classeurXLSX.Sheets["Parametres"];
             
-            // Méthode 1 : Lecture directe de la cellule B2 (Valeur associée à CodeAdminHash en A2)
             if (sheetParam["B2"] && sheetParam["B2"].v !== undefined && String(sheetParam["B2"].v).trim() !== "") {
                 return String(sheetParam["B2"].v).trim();
             }
             
-            // Méthode 2 : Conversion en tableau AOA si la cellule directe échoue
             const data = XLSX.utils.sheet_to_json(sheetParam, { header: 1 });
             if (data && data[1] && data[1][1] !== undefined && String(data[1][1]).trim() !== "") {
                 return String(data[1][1]).trim();
@@ -970,7 +972,6 @@ function obtenirHashAdminDepuisExcel() {
         console.error("Erreur lors de la lecture du Hash Excel :", e);
     }
     
-    // Valeur de secours si la cellule est vide ou introuvable
     return HASH_DEFAUT_SECOURS;
 }
 
@@ -987,17 +988,15 @@ async function verifierCodeAdmin() {
 
     if (saisieHash === hashValide) {
         estAdminDeverrouille = true;
-        inputCode.style.border = "2px solid #16a34a"; // Visuel vert
+        inputCode.style.border = "2px solid #16a34a";
         inputCode.style.backgroundColor = "#dcfce7";
         
-        // Déverrouillage du champ Date Réf. W@ct
         if (inputWact) {
             inputWact.disabled = false;
             inputWact.style.backgroundColor = "#ffffff";
             inputWact.style.cursor = "pointer";
         }
 
-        // Afficher le bouton de changement de mot de passe s'il existe
         if (btnChangerCode) btnChangerCode.style.display = "inline-block";
 
     } else {
@@ -1005,18 +1004,15 @@ async function verifierCodeAdmin() {
         inputCode.style.border = "";
         inputCode.style.backgroundColor = "";
         
-        // Verrouillage du champ Date Réf. W@ct
         if (inputWact) {
             inputWact.disabled = true;
             inputWact.style.backgroundColor = "#e2e8f0";
             inputWact.style.cursor = "not-allowed";
         }
 
-        // Masquer le bouton de changement de mot de passe
         if (btnChangerCode) btnChangerCode.style.display = "none";
     }
 
-    // Rafraîchit l'affichage du tableau
     afficherHistorique();
 }
 
@@ -1039,10 +1035,8 @@ async function modifierMotDePasseAdmin() {
         return;
     }
 
-    // Calcul de l'empreinte sécurisée du nouveau code
     const nouveauHash = await hacherTexte(nouveauCode.trim());
 
-    // Enregistrement dans le fichier Excel (A2 = Intitulé, B2 = Hash)
     if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
         const dateRefExistante = document.getElementById("hist-ref-wact")?.value || "";
 
@@ -1053,7 +1047,6 @@ async function modifierMotDePasseAdmin() {
             ]);
             XLSX.utils.book_append_sheet(classeurXLSX, newSheet, "Parametres");
         } else {
-            // Mise à jour de la ligne 2 : A2 = Intitulé, B2 = Valeur du Hash
             XLSX.utils.sheet_add_aoa(
                 classeurXLSX.Sheets["Parametres"], 
                 [["CodeAdminHash", nouveauHash]], 
@@ -1065,7 +1058,6 @@ async function modifierMotDePasseAdmin() {
             await enregistrerFichierXLSX();
             alert("🔑 Nouveau mot de passe enregistré avec succès dans le fichier Excel !");
             
-            // Re-vérification automatique
             verifierCodeAdmin();
         } else {
             alert("⚠️ Nouveau mot de passe pris en compte pour la session, mais le fichier Excel n'a pas pu être sauvegardé sur le disque.");
@@ -1073,13 +1065,11 @@ async function modifierMotDePasseAdmin() {
     }
 }
 
-// Écouteur en direct sur la saisie du mot de passe
 document.getElementById("hist-code-admin")?.addEventListener("input", verifierCodeAdmin);
 
 function ouvrirModalHistorique() {
     indexEnEdition = null;
     
-    // Réinitialisation du champ code admin et verrouillage initial de W@ct
     const inputCode = document.getElementById("hist-code-admin");
     const inputWact = document.getElementById("hist-ref-wact");
     const btnChangerCode = document.getElementById("btn-changer-code-admin");
@@ -1100,24 +1090,19 @@ function ouvrirModalHistorique() {
 
     estAdminDeverrouille = false;
     
-    // Affichage de la modale
     const modal = document.getElementById("modal-historique");
     if (modal) modal.style.display = "flex";
     
-    // Rendu du tableau
     afficherHistorique();
 }
 
 async function fermerModalHistorique() {
     indexEnEdition = null;
     
-    // Masquer la modale
     document.getElementById("modal-historique").style.display = "none";
 
-    // Récupérer la date actuellement saisie dans le champ
     const dateRefWact = document.getElementById("hist-ref-wact")?.value || "";
 
-    // Enregistrer dans l'onglet Paramètres d'Excel s'il existe
     if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
         if (!classeurXLSX.Sheets["Parametres"]) {
             const hashActuel = obtenirHashAdminDepuisExcel();
@@ -1433,15 +1418,6 @@ function exporterHistoriquePDF() {
     doc.save(`Historique_FMPA_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
-
-
-
-
-
-
-
-
-
 // ==========================================
 // GESTION DU BILAN & FICHE ÉQUIPE
 // ==========================================
@@ -1453,7 +1429,6 @@ function ouvrirModalEquipe() {
     modal.style.display = 'flex';
     alimenterSelectEquipeModal();
 
-    // Si une équipe est déjà sélectionnée dans le filtre principal, on la pré-sélectionne
     const filtrePrincipal = document.getElementById('filter-equipe');
     const selectModal = document.getElementById('modal-select-equipe');
     if (filtrePrincipal && filtrePrincipal.value && selectModal) {
@@ -1487,8 +1462,6 @@ function alimenterSelectEquipeModal() {
     if (valeurActuelle) select.value = valeurActuelle;
 }
 
-
-
 function genererFicheEquipe() {
     const selectEquipe = document.getElementById('modal-select-equipe');
     const conteneurModules = document.getElementById('conteneur-modules-equipe');
@@ -1506,7 +1479,6 @@ function genererFicheEquipe() {
         return;
     }
 
-    // 1. Filtrer les agents de l'équipe
     const agentsEquipe = (tableauAgentsRH || []).filter(a => {
         const eq = a.Equipe || a.equipe || a.EQUIPE || a['Équipe'];
         return eq === nomEquipe;
@@ -1527,10 +1499,8 @@ function genererFicheEquipe() {
         return;
     }
 
-    // Fonction de nettoyage pour comparer facilement les noms de modules
     const epurer = (str) => String(str || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
 
-    // Fonction pour calculer la durée d'une saisie (en heures)
     const calculerDureesSaisie = (saisie) => {
         if (saisie.duree || saisie.Duree || saisie.heures || saisie.Heures) {
             return parseFloat(saisie.duree || saisie.Duree || saisie.heures || saisie.Heures || 0);
@@ -1547,7 +1517,6 @@ function genererFicheEquipe() {
         return 0;
     };
 
-    // 2. Regroupement du catalogue par Activité / Domaine
     const activitesMap = {};
 
     catalogue.forEach(item => {
@@ -1577,7 +1546,6 @@ function genererFicheEquipe() {
 
     let htmlContenu = '';
 
-    // 3. Calcul par Activité et par Module
     Object.values(activitesMap).forEach(act => {
         let activiteHeuresFaites = 0;
         let activiteHeuresCible = 0;
@@ -1600,7 +1568,6 @@ function genererFicheEquipe() {
 
                 let hAgent = 0;
 
-                // Extraction des heures depuis historiqueSaisiesFMPA
                 if (Array.isArray(historiqueSaisiesFMPA)) {
                     hAgent = historiqueSaisiesFMPA
                         .filter(s => {
@@ -1700,9 +1667,6 @@ function genererFicheEquipe() {
     conteneurModules.innerHTML = htmlContenu;
 }
 
-
-
-// Fonction utilitaire de mise à jour des jauges
 function mettreAJourJauge(idBarre, idTxtPct, idTxtHeures, fait, total) {
     const pct = total > 0 ? Math.min(100, Math.round((fait / total) * 100)) : 0;
     
@@ -1715,7 +1679,6 @@ function mettreAJourJauge(idBarre, idTxtPct, idTxtHeures, fait, total) {
     if (txtHeures) txtHeures.textContent = `${fait}h / ${total}h`;
 }
 
-// Fermeture au clic à l'extérieur
 window.addEventListener('click', function(event) {
     const modalHist = document.getElementById('modal-historique');
     const modalEq = document.getElementById('modal-equipe');
