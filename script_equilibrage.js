@@ -4,7 +4,24 @@ let propositionsEnAttente = [];
 const ORDRE_FONCTIONS = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
 
 /**
- * Importation manuelle Excel
+ * Chargement automatique direct du fichier FMPA-RH.xlsx depuis le serveur
+ */
+function chargerFMPARHAutomatique() {
+    fetch('FMPA-RH.xlsx')
+        .then(response => {
+            if (!response.ok) throw new Error("Fichier FMPA-RH.xlsx introuvable sur le serveur.");
+            return response.arrayBuffer();
+        })
+        .then(buffer => {
+            traiterDonneesExcel(buffer);
+        })
+        .catch(err => {
+            alert("⚠️ " + err.message);
+        });
+}
+
+/**
+ * Importation manuelle Excel via sélection utilisateur
  */
 function importerFichierExcelManuel(event) {
     const file = event.target.files[0];
@@ -16,10 +33,11 @@ function importerFichierExcelManuel(event) {
         traiterDonneesExcel(arrayBuffer);
     };
     reader.readAsArrayBuffer(file);
+    event.target.value = null;
 }
 
 /**
- * Recherche dynamique d'une clé dans un objet
+ * Recherche dynamique d'une clé dans un objet (tolérant à la casse et aux espaces)
  */
 function obtenirValeurChamp(item, clesPossibles) {
     const clesObjet = Object.keys(item);
@@ -35,7 +53,7 @@ function obtenirValeurChamp(item, clesPossibles) {
 }
 
 /**
- * Traitement Excel avec détection des entêtes
+ * Traitement Excel avec détection complète des entêtes
  */
 function traiterDonneesExcel(arrayBuffer) {
     try {
@@ -131,7 +149,7 @@ function extraireLettreEquipe(nomEquipe) {
 }
 
 /**
- * Parsing de date Excel (Nombre série, String FR, ISO)
+ * Convertit tout format de date Excel (Nombre série, String DD/MM/YYYY, ISO) en Date JS
  */
 function parserDateExcel(valeur) {
     if (!valeur) return null;
@@ -141,6 +159,7 @@ function parserDateExcel(valeur) {
     }
 
     const str = String(valeur).trim();
+
     const matchFR = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
     if (matchFR) {
         const jour = parseInt(matchFR[1], 10);
@@ -154,7 +173,7 @@ function parserDateExcel(valeur) {
 }
 
 /**
- * Calcul précis de l'âge
+ * Calcul précis de l'âge en années
  */
 function calculerAge(dateNaissance) {
     const d = parserDateExcel(dateNaissance);
@@ -178,7 +197,6 @@ function calculerStatsEquipe(membres, conserverNiveaux = true) {
     const nb = membres.length;
     
     const nbF = membres.filter(a => estFemme(a)).length;
-    const pctF = nb > 0 ? Math.round((nbF / nb) * 100) : 0;
     
     const agentsAvecAge = membres.map(a => calculerAge(a.dateNaissance)).filter(age => age > 0);
     const ageMoy = agentsAvecAge.length > 0 
@@ -218,7 +236,7 @@ function calculerStatsEquipe(membres, conserverNiveaux = true) {
     });
 
     return { 
-        nb, nbF, pctF, ageMoy,
+        nb, nbF, ageMoy,
         nbG24, nbMixte,
         cdg,
         acdgCate: acdg + cate,
