@@ -621,7 +621,10 @@ function afficherPropositions() {
     }).join("");
 
     const modal = document.getElementById("modal-transferts");
-    if (modal) modal.style.display = "flex";
+    if (modal) {
+        modal.style.display = "flex";
+        document.body.classList.add("modal-ouverte"); // Active le mode impression modale
+    }
 }
 
 function imprimerRecommandations() {
@@ -630,7 +633,11 @@ function imprimerRecommandations() {
 }
 
 
-function fermerModal() { document.getElementById("modal-transferts").style.display = "none"; }
+function fermerModal() {
+    const modal = document.getElementById("modal-transferts");
+    if (modal) modal.style.display = "none";
+    document.body.classList.remove("modal-ouverte"); // Réactive le mode impression simulation
+}
 
 function appliquerPropositions() {
     propositionsEnAttente.forEach(p => {
@@ -649,7 +656,7 @@ function appliquerPropositions() {
     });
 
     propositionsEnAttente = [];
-    fermerModal();
+    fermerModal(); // Ferme et retire la classe
     rendreEquipes();
 }
 
