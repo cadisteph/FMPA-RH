@@ -65,9 +65,6 @@
 }
 
 
-
-
-
 /* Style du bouton imprimer */
 .btn-imprimer-modale {
     background-color: #4b5563;
@@ -88,32 +85,38 @@
 }
 
 /* Règle CSS pour l'impression / export PDF */
+/* Ajustements automatiques lors de l'impression */
 @media print {
-    /* 1. Masquer tout le corps de la page */
-    body {
+    @page {
+        size: A4 landscape;
+        margin: 5mm;
+    }
+
+    /* -------------------------------------------------------------
+       MODE 1 : IMPRESSION DE LA MODALE (Propositions uniquement)
+       ------------------------------------------------------------- */
+    body.modal-ouverte {
         background: #ffffff !important;
         color: #000000 !important;
     }
 
-    body * {
+    body.modal-ouverte * {
         visibility: hidden !important;
     }
 
-    /* 2. Rendre uniquement la modale et son contenu visibles */
-    #modal-transferts, 
-    #modal-transferts * {
+    body.modal-ouverte #modal-transferts,
+    body.modal-ouverte #modal-transferts * {
         visibility: visible !important;
     }
 
-    /* 3. Repositionner la modale pour l'impression A4 */
-    #modal-transferts {
+    body.modal-ouverte #modal-transferts {
         position: absolute !important;
         inset: 0 !important;
         background: #ffffff !important;
         display: block !important;
     }
 
-    .modal-content {
+    body.modal-ouverte .modal-content {
         background: #ffffff !important;
         color: #000000 !important;
         border: none !important;
@@ -123,32 +126,105 @@
         box-shadow: none !important;
     }
 
-    /* 4. Déplier complètement la liste pour tout afficher (suppression du scroll) */
-    #liste-propositions {
+    body.modal-ouverte #liste-propositions {
         max-height: none !important;
         overflow: visible !important;
         color: #000000 !important;
     }
 
-    #liste-propositions li {
+    body.modal-ouverte #liste-propositions li {
         color: #000000 !important;
         page-break-inside: avoid;
         margin-bottom: 8px !important;
     }
 
-    #liste-propositions span {
+    body.modal-ouverte #liste-propositions span {
         color: #475569 !important;
     }
 
-    /* 5. Masquer les boutons d'action lors de l'impression */
-    .modal-content button, 
-    .modal-content .btn-action {
+    body.modal-ouverte .modal-content button,
+    body.modal-ouverte .modal-content .btn-action {
         display: none !important;
     }
+
+    /* -------------------------------------------------------------
+       MODE 2 : IMPRESSION DE LA SIMULATION (Les 3 équipes)
+       ------------------------------------------------------------- */
+    body:not(.modal-ouverte) {
+        background: white !important;
+        color: black !important;
+        height: auto !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    body:not(.modal-ouverte) .panneau-reglages, 
+    body:not(.modal-ouverte) .btn-action, 
+    body:not(.modal-ouverte) .header-bar,
+    body:not(.modal-ouverte) .select-equipe-deplacement, 
+    body:not(.modal-ouverte) #modal-transferts,
+    body:not(.modal-ouverte) input[type="checkbox"] {
+        display: none !important;
+    }
+
+    body:not(.modal-ouverte) .layout-grid {
+        display: block !important;
+    }
+
+    body:not(.modal-ouverte) .grille-equipes {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 6px !important;
+        width: 100% !important;
+    }
+
+    body:not(.modal-ouverte) .colonne-equipe {
+        background: white !important;
+        border: 1px solid #64748b !important;
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+        padding: 4px !important;
+    }
+
+    body:not(.modal-ouverte) .liste-agents {
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    body:not(.modal-ouverte) .dashboard-stats {
+        background: #f8fafc !important;
+        border: 1px solid #cbd5e1 !important;
+        padding: 3px !important;
+        font-size: 0.62rem !important;
+    }
+
+    body:not(.modal-ouverte) .stat-badge {
+        background: #ffffff !important;
+        border-color: #cbd5e1 !important;
+        color: black !important;
+    }
+
+    body:not(.modal-ouverte) .stat-badge-container {
+        max-height: none !important;
+    }
+
+    body:not(.modal-ouverte) .carte-agent-simu {
+        background: white !important;
+        border: 1px solid #cbd5e1 !important;
+        padding: 3px 5px !important;
+        margin-bottom: 2px !important;
+        page-break-inside: avoid;
+    }
+
+    body:not(.modal-ouverte) .agent-nom, 
+    body:not(.modal-ouverte) .stat-value { color: black !important; }
+
+    body:not(.modal-ouverte) .agent-details, 
+    body:not(.modal-ouverte) .stat-label { color: #334155 !important; }
 }
-
-
-
 
 
 
@@ -351,85 +427,7 @@
         }
         .btn-action:hover { background: #1d4ed8; }
 
-        /* Ajustements automatiques lors de l'impression */
-        @media print {
-            @page {
-                size: A4 landscape;
-                margin: 5mm;
-            }
-
-            .panneau-reglages, 
-            .btn-action, 
-            .header-bar,
-            .select-equipe-deplacement, 
-            .modal-suggestions,
-            input[type="checkbox"] {
-                display: none !important;
-            }
-
-            body, html {
-                background: white !important;
-                color: black !important;
-                height: auto !important;
-                overflow: visible !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-
-            .layout-grid {
-                display: block !important;
-            }
-
-            .grille-equipes {
-                display: grid !important;
-                grid-template-columns: repeat(3, 1fr) !important;
-                gap: 6px !important;
-                width: 100% !important;
-            }
-
-            .colonne-equipe {
-                background: white !important;
-                border: 1px solid #64748b !important;
-                max-height: none !important;
-                height: auto !important;
-                overflow: visible !important;
-                padding: 4px !important;
-            }
-
-            .liste-agents {
-                max-height: none !important;
-                height: auto !important;
-                overflow: visible !important;
-            }
-
-            .dashboard-stats {
-                background: #f8fafc !important;
-                border: 1px solid #cbd5e1 !important;
-                padding: 3px !important;
-                font-size: 0.62rem !important;
-            }
-
-            .stat-badge {
-                background: #ffffff !important;
-                border-color: #cbd5e1 !important;
-                color: black !important;
-            }
-
-            .stat-badge-container {
-                max-height: none !important;
-            }
-
-            .carte-agent-simu {
-                background: white !important;
-                border: 1px solid #cbd5e1 !important;
-                padding: 3px 5px !important;
-                margin-bottom: 2px !important;
-                page-break-inside: avoid;
-            }
-
-            .agent-nom, .stat-value { color: black !important; }
-            .agent-details, .stat-label { color: #334155 !important; }
-        }        
+             
     </style>
 </head>
 <body>
