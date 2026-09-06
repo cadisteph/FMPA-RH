@@ -1500,15 +1500,17 @@ function genererFicheEquipe() {
         document.getElementById('fiche-effectif').textContent = "0 agent(s)";
         conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Veuillez sélectionner une équipe dans la liste ci-dessus.</div>`;
         
-        // Remise à zéro des jauges
-        mettreAJourJauge('barre-global', 'txt-pct-global', 'txt-heures-global', 0, 0, 0);
-        mettreAJourJauge('barre-socle', 'txt-pct-socle', null, 0, 0, 0);
-        mettreAJourJauge('barre-spe', 'txt-pct-spe', null, 0, 0, 0);
+        mettreAJourJauge('barre-global', 'txt-pct-global', 'txt-heures-global', 0, 0);
+        mettreAJourJauge('barre-socle', 'txt-pct-socle', null, 0, 0);
+        mettreAJourJauge('barre-spe', 'txt-pct-spe', null, 0, 0);
         return;
     }
 
     // 1. Filtrer les agents de l'équipe
-    const agentsEquipe = tableauAgentsRH.filter(a => (a.Equipe || a.equipe) === nomEquipe);
+    const agentsEquipe = (tableauAgentsRH || []).filter(a => {
+        const eq = a.Equipe || a.equipe || a.EQUIPE || a['Équipe'] || a['EQUIPE'];
+        return eq === nomEquipe;
+    });
     const effectif = agentsEquipe.length;
 
     document.getElementById('fiche-titre-equipe').textContent = `BILAN FMA - Équipe ${nomEquipe}`;
@@ -1519,90 +1521,104 @@ function genererFicheEquipe() {
         return;
     }
 
-    // 2. Calcul des heures globales, socle et spé pour l'équipe
-    let totalSocleFait = 0, totalSocleCible = 0;
-    let totalSpeFait = 0, totalSpeCible = 0;
-
-    agentsEquipe.forEach(a => {
-        totalSocleFait += parseFloat(a.HeuresSocle || a.heuresSocle || 0);
-        totalSocleCible += parseFloat(a.ObjectifSocle || a.objectifSocle || 16); // Valeur par défaut si non définie
-
-        totalSpeFait += parseFloat(a.HeuresSpe || a.heuresSpe || 0);
-        totalSpeCible += parseFloat(a.ObjectifSpe || a.objectifSpe || 8);
-    });
-
-    const totalFait = totalSocleFait + totalSpeFait;
-    const totalCible = totalSocleCible + totalSpeCible;
-
-    // Mise à jour des jauges d'en-tête
-    mettreAJourJauge('barre-global', 'txt-pct-global', 'txt-heures-global', totalFait, totalCible);
-    mettreAJourJauge('barre-socle', 'txt-pct-socle', null, totalSocleFait, totalSocleCible);
-    mettreAJourJauge('barre-spe', 'txt-pct-spe', null, totalSpeFait, totalSpeCible);
-
-    // 3. Traitement par Module / Thème à partir du catalogue
+    // 2. Traitement des modules du catalogue (avec gestion robuste des noms de champs)
     const catalogue = catalogueInitial || [];
     if (catalogue.length === 0) {
         conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Catalogue vide. Chargez d'abord FMPA-RH.xlsx.</div>`;
         return;
     }
 
+    let totalHeuresFaitesEquipe = 0;
+    let totalHeuresCibleEquipe = 0;
+
+    let totalSocleFait = 0, totalSocleCible = 0;
+    let totalSpeFait = 0, totalSpeCible = 0;
+
     let htmlModules = '';
 
     catalogue.forEach(mod => {
-        const codeModule = mod.Code || mod.Theme || mod.theme;
-        const objectifParAgent = parseFloat(mod.Heures || mod.heures || 0);
-        const objectifTotalEquipe = objectifParAgent * effectif;
+        // Détection automatique des clés pour le titre du module
+        const nomModule = mod.Theme || mod.theme || mod.Thème || mod.thème || mod.Code || mod.code || mod.MODULE || mod.Module || mod.Activité || mod.Activite || mod.activite || "Module sans nom";
+        
+        // Détection automatique des clés pour le quota/objectif d'heures
+        const objectifParAgent = parseFloat(mod.Heures || mod.heures || mod.HEURES || mod.Quota || mod.quota || mod.Duree || mod.duree || mod['Objectif (h)'] || 0);
+        const objectifTotalModuleEquipe = objectifParAgent * effectif;
+        
+        totalHeuresCibleEquipe += objectifTotalModuleEquipe;
 
-        let heuresRealiseesEquipe = 0;
+        // Détection du type (Socle ou Spécialité)
+        const typeModule = String(mod.Type || mod.type || mod.Domaine || mod.domaine || '').toLowerCase();
+        if (typeModule.includes('spe') || typeModule.includes('spé')) {
+            totalSpeCible += objectifTotalModuleEquipe;
+        } else {
+            totalSocleCible += objectifTotalModuleEquipe;
+        }
+
+        let heuresRealiseesModule = 0;
         let agentsAFormer = [];
 
         agentsEquipe.forEach(agent => {
-            const matricule = agent.Matricule || agent.matricule;
-            const nomPrenom = `${agent.Nom || agent.nom} ${agent.Prenom || agent.prenom}`;
+            const matricule = String(agent.Matricule || agent.matricule || agent.MATRICULE || agent.Id || agent.id || '');
+            const nom = agent.Nom || agent.nom || agent.NOM || '';
+            const prenom = agent.Prenom || agent.prenom || agent.PRENOM || '';
+            const nomPrenom = `${nom} ${prenom}`.trim() || `Agent ${matricule}`;
 
-            // Calcul des heures faites par l'agent sur ce module précis dans l'historique
+            // Recherche des heures dans l'historique pour cet agent et ce module
             const heuresAgent = (historiqueSaisiesFMPA || [])
-                .filter(h => (h.Matricule === matricule || h.matricule === matricule) && (h.Code === codeModule || h.Theme === codeModule))
-                .reduce((sum, h) => sum + parseFloat(h.Duree || h.duree || 0), 0);
+                .filter(h => {
+                    const hMat = String(h.Matricule || h.matricule || h.MATRICULE || '');
+                    const hMod = h.Theme || h.theme || h.Thème || h.thème || h.Code || h.code || h.Activité || h.activite || '';
+                    return (hMat === matricule) && (hMod === nomModule);
+                })
+                .reduce((sum, h) => sum + parseFloat(h.Duree || h.duree || h.DURÉE || h.Heures || h.heures || 0), 0);
 
-            heuresRealiseesEquipe += heuresAgent;
+            heuresRealiseesModule += heuresAgent;
 
             if (heuresAgent < objectifParAgent) {
-                const resteAValider = objectifParAgent - heuresAgent;
+                const reste = objectifParAgent - heuresAgent;
                 agentsAFormer.push({
                     nom: nomPrenom,
                     fait: heuresAgent,
-                    reste: resteAValider,
+                    reste: reste,
                     objectif: objectifParAgent
                 });
             }
         });
 
-        // Tri des agents prioritaires (ceux à qui il reste le plus d'heures)
+        totalHeuresFaitesEquipe += heuresRealiseesModule;
+
+        if (typeModule.includes('spe') || typeModule.includes('spé')) {
+            totalSpeFait += heuresRealiseesModule;
+        } else {
+            totalSocleFait += heuresRealiseesModule;
+        }
+
+        // Tri des agents par retard décroissant
         agentsAFormer.sort((a, b) => b.reste - a.reste);
 
-        const pctModule = objectifTotalEquipe > 0 ? Math.min(100, Math.round((heuresRealiseesEquipe / objectifTotalEquipe) * 100)) : 100;
-        const estAJour = pctModule >= 100 || agentsAFormer.length === 0;
+        const pctModule = objectifTotalModuleEquipe > 0 
+            ? Math.min(100, Math.round((heuresRealiseesModule / objectifTotalModuleEquipe) * 100)) 
+            : 100;
+            
+        const estAJour = (pctModule >= 100) || (objectifParAgent > 0 && agentsAFormer.length === 0);
 
-        // Rendu de la carte du module
+        // HTML de chaque module
         htmlModules += `
             <div style="background: ${estAJour ? '#f0fdf4' : '#fff'}; border: 1px solid ${estAJour ? '#bbf7d0' : '#e2e8f0'}; border-radius: 8px; padding: 12px 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <div>
-                        <strong style="font-size: 1.05rem; color: #0f172a;">${codeModule}</strong>
+                        <strong style="font-size: 1.05rem; color: #0f172a;">${nomModule}</strong>
                         <span style="font-size: 0.85rem; color: #64748b; margin-left: 8px;">(Objectif : ${objectifParAgent}h/agent)</span>
                     </div>
                     <div style="font-weight: bold; color: ${estAJour ? '#16a34a' : '#d97706'}; font-size: 1.05rem;">
-                        ${pctModule}% <span style="font-size: 0.85rem; color: #64748b; font-weight: normal;">(${heuresRealiseesEquipe}h / ${objectifTotalEquipe}h)</span>
+                        ${pctModule}% <span style="font-size: 0.85rem; color: #64748b; font-weight: normal;">(${heuresRealiseesModule}h / ${objectifTotalModuleEquipe}h)</span>
                     </div>
                 </div>
 
-                <!-- Barre de progression du module -->
                 <div style="width: 100%; background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 10px;">
                     <div style="width: ${pctModule}%; background: ${estAJour ? '#16a34a' : '#d97706'}; height: 100%;"></div>
                 </div>
 
-                <!-- Liste des agents ou statut validé -->
                 ${estAJour ? `
                     <div style="color: #16a34a; font-weight: bold; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
                         ✅ Module 100% à jour pour toute l'équipe
@@ -1617,9 +1633,19 @@ function genererFicheEquipe() {
         `;
     });
 
+    // Remise à niveau des objectifs totaux si les catégories ne sont pas explicitées
+    if (totalSocleCible === 0 && totalSpeCible === 0) {
+        totalSocleCible = totalHeuresCibleEquipe;
+        totalSocleFait = totalHeuresFaitesEquipe;
+    }
+
+    // Mise à jour des jauges d'en-tête
+    mettreAJourJauge('barre-global', 'txt-pct-global', 'txt-heures-global', totalHeuresFaitesEquipe, totalHeuresCibleEquipe);
+    mettreAJourJauge('barre-socle', 'txt-pct-socle', null, totalSocleFait, totalSocleCible);
+    mettreAJourJauge('barre-spe', 'txt-pct-spe', null, totalSpeFait, totalSpeCible);
+
     conteneurModules.innerHTML = htmlModules;
 }
-
 // Fonction utilitaire de mise à jour des jauges
 function mettreAJourJauge(idBarre, idTxtPct, idTxtHeures, fait, total) {
     const pct = total > 0 ? Math.min(100, Math.round((fait / total) * 100)) : 0;
