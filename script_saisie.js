@@ -121,6 +121,7 @@ async function chargerClasseur(file) {
     catalogueInitial = convertirCatalogue(classeurXLSX.Sheets.catalogue);
     historiqueSaisiesFMPA = convertirHistorique(classeurXLSX.Sheets.historiqueSuivi);
 
+    // --- LECTURE DE LA DATE RÉF W@CT DEPUIS L'ONGLET PARAMETRES ---
     if (classeurXLSX.Sheets["Parametres"] && classeurXLSX.Sheets["Parametres"]["B1"]) {
         const valWact = classeurXLSX.Sheets["Parametres"]["B1"].v;
         const inputWact = document.getElementById("hist-ref-wact");
@@ -139,6 +140,7 @@ async function chargerClasseur(file) {
     initialiserFiltresEtListes();
     filtrerEtAfficherTableau();
 
+    // --- MISE À JOUR DU BOUTON UNE FOIS CHARGÉ ---
     const btnOpen = document.getElementById("btn-open-xlsx");
     if (btnOpen) {
         btnOpen.classList.remove("btn-clignotant");
@@ -585,9 +587,13 @@ function genererAvancementSpecialites(agent) {
     const specAgentBase = specAgentBrutes.map(s => s.replace(/\s*\d+$/, ""));
     const heuresAgent = cumulHeuresParAgent[agent.id] || {};
 
+    // Filtrage rigoureux :
+    // 1. On exclut TOUS les modules appartenant au Socle Commun
+    // 2. On s'assure que le module correspond spécifiquement aux spécialités de l'agent
     const formationsSpec = catalogueInitial.filter(f => {
         const typeF = (f.type || "").trim().toUpperCase();
         
+        // Exclusion explicite des formations Socle / Commun
         const estSocle = typeF.includes("SOCLE") || typeF.includes("COMMUN");
         if (estSocle) return false;
 
@@ -603,6 +609,7 @@ function genererAvancementSpecialites(agent) {
 
         const matchProfil = profils.some(p => specAgentBrutes.includes(p) || specAgentBase.includes(p));
 
+        // La formation doit être typée spécialité ET correspondre à une spécialité attribuée à l'agent
         return (estTypeSpec || matchActivite || matchProfil) && (matchActivite || matchProfil);
     });
 
@@ -930,11 +937,14 @@ function escapeJs(value) {
     return String(value ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
 
+// --- OUVERTURE ET FERMETURE DE LA MODALE ---
 let indexEnEdition = null;
 let estAdminDeverrouille = false;
 
+// Empreinte par défaut de secours si rien n'est encore défini dans Excel (empreinte de "1234")
 const HASH_DEFAUT_SECOURS = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
 
+// --- FONCTION UTILITAIRE DE HACHAGE SHA-256 ---
 async function hacherTexte(texte) {
     const encoder = new TextEncoder();
     const data = encoder.encode(texte);
@@ -943,6 +953,7 @@ async function hacherTexte(texte) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// --- RÉCUPÉRATION DU HASH DEPUIS EXCEL ---
 function obtenirHashAdminDepuisExcel() {
     try {
         if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets && classeurXLSX.Sheets["Parametres"]) {
@@ -964,6 +975,7 @@ function obtenirHashAdminDepuisExcel() {
     return HASH_DEFAUT_SECOURS;
 }
 
+// --- VÉRIFICATION DU CODE ADMIN ---
 async function verifierCodeAdmin() {
     const inputCode = document.getElementById("hist-code-admin");
     const inputWact = document.getElementById("hist-ref-wact");
@@ -1004,6 +1016,7 @@ async function verifierCodeAdmin() {
     afficherHistorique();
 }
 
+// --- MODIFICATION DU CODE ADMIN DEPUIS L'INTERFACE ---
 async function modifierMotDePasseAdmin() {
     if (!estAdminDeverrouille) {
         alert("Veuillez d'abord déverrouiller l'accès administrateur.");
@@ -1539,21 +1552,10 @@ function genererFicheEquipe() {
         let htmlFormations = '';
 
         const estSpe = act.type.includes('spe') || act.type.includes('spé');
-        const setAgentsRestantsActivite = new Set();
 
-       act.formations.forEach(f => {
-    // Récupère le libellé, l'intitulé ou le nom selon ce qui existe dans 'f'
-    const nomFormation = f.libelle || f.nom || f.intitule || f.code;
-
-    // 1. Filtrer les agents éligibles
-    const agentsEligibles = listeAgentsEquipe.filter(agent => {
-        return agent.specialites && agent.specialites.includes(nomFormation);
-    });
-
-    // 2. Calculer le total
-    const cibleTotaleEquipe = f.heuresCibleAgent * agentsEligibles.length;
-    activiteHeuresCible += cibleTotaleEquipe;
-});
+        act.formations.forEach(f => {
+            const cibleTotaleEquipe = f.heuresCibleAgent * effectif;
+            activiteHeuresCible += cibleTotaleEquipe;
 
             let formationHeuresFaites = 0;
             let agentsAFormer = [];
@@ -1585,7 +1587,6 @@ function genererFicheEquipe() {
                         reste: f.heuresCibleAgent - hAgent,
                         objectif: f.heuresCibleAgent
                     });
-                    setAgentsRestantsActivite.add(nomPrenom);
                 }
             });
 
@@ -1635,7 +1636,6 @@ function genererFicheEquipe() {
         }
 
         const pctActivite = activiteHeuresCible > 0 ? Math.min(100, Math.round((activiteHeuresFaites / activiteHeuresCible) * 100)) : 0;
-        const listeAgentsRestants = Array.from(setAgentsRestantsActivite);
 
         htmlContenu += `
             <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
@@ -1644,16 +1644,8 @@ function genererFicheEquipe() {
                     <span style="font-size: 1.1rem; font-weight: bold; color: ${pctActivite >= 100 ? '#16a34a' : '#0284c7'};">${pctActivite}% (${activiteHeuresFaites}h / ${activiteHeuresCible}h)</span>
                 </div>
                 
-                <div style="width: 100%; background: #cbd5e1; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 10px;">
+                <div style="width: 100%; background: #cbd5e1; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 12px;">
                     <div style="width: ${pctActivite}%; background: ${pctActivite >= 100 ? '#16a34a' : '#0284c7'}; height: 100%;"></div>
-                </div>
-
-                <div style="margin-bottom: 12px; padding: 6px 10px; background: #f1f5f9; border-left: 4px solid ${listeAgentsRestants.length === 0 ? '#16a34a' : '#d97706'}; border-radius: 4px; font-size: 0.85rem; color: #334155;">
-                    ${listeAgentsRestants.length === 0 ? `
-                        <strong>Agents restants à former sur ce domaine :</strong> <span style="color: #16a34a; font-weight: bold;">Aucun (Domaine validé à 100%)</span>
-                    ` : `
-                        <strong>Agents restants à former sur ce domaine (${listeAgentsRestants.length}/${effectif}) :</strong> ${listeAgentsRestants.join(', ')}
-                    `}
                 </div>
 
                 <div style="padding-left: 8px;">
