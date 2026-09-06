@@ -1527,28 +1527,34 @@ function genererFicheEquipe() {
 
     const normaliser = (str) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
-    // Extraction dynamique du nom de formation réel (ex: "INC 1", "INC 1 - Principe...", "GOC 1", etc.)
-    const extraireNomFormation = (item) => {
-        // Liste des propriétés potentielles dans le fichier Excel
-        const proprietes = ['Thème', 'Theme', 'theme', 'thème', 'Code', 'code', 'Libelle', 'Libellé', 'Intitule', 'Intitulé', 'Sous-Domaine', 'Formation', 'formation'];
+    // Conversion des identifiants (ex: "fmpa-goc-1" -> "GOC 1")
+    const nettoyerLibelleTheme = (valeur) => {
+        if (!valeur) return '';
+        let str = String(valeur).trim();
         
-        for (const prop of proprietes) {
-            if (item[prop] && String(item[prop]).trim() !== '' && String(item[prop]).trim().toLowerCase() !== 'formation' && String(item[prop]).trim().toLowerCase() !== 'module') {
-                return String(item[prop]).trim();
+        // Si c'est un ID au format fmpa-xxx-1
+        if (/^fmpa-[a-z0-9]+-\d+/i.test(str)) {
+            const parties = str.split('-');
+            if (parties.length >= 3) {
+                return `${parties[1].toUpperCase()} ${parties[2]}`;
             }
         }
+        return str;
+    };
 
-        // Si aucune propriété standard ne colle, on cherche la première valeur texte non générique
-        for (const key of Object.keys(item)) {
-            const kLower = key.toLowerCase();
-            const val = String(item[key]).trim();
-            if (!kLower.includes('domaine') && !kLower.includes('activite') && !kLower.includes('type') && !kLower.includes('heure') && !kLower.includes('duree') && !kLower.includes('quota')) {
-                if (val !== '' && val.toLowerCase() !== 'formation' && val.toLowerCase() !== 'module') {
-                    return val;
+    // Extraction dynamique du véritable nom du thème / formation
+    const extraireNomFormation = (item) => {
+        const champsLibelle = ['Libelle', 'Libellé', 'Thème', 'Theme', 'theme', 'thème', 'Intitule', 'Intitulé', 'Formation', 'formation', 'Code', 'code'];
+        
+        for (const prop of champsLibelle) {
+            if (item[prop] && String(item[prop]).trim() !== '') {
+                const nomPropre = nettoyerLibelleTheme(item[prop]);
+                if (nomPropre && !['formation', 'module'].includes(nomPropre.toLowerCase())) {
+                    return nomPropre;
                 }
             }
         }
-        return "Formation inconnue";
+        return "Thème inconnu";
     };
 
     // 2. Regroupement par Domaine / Activité
@@ -1580,7 +1586,7 @@ function genererFicheEquipe() {
 
     let htmlContenu = '';
 
-    // 3. Traitement par Activité et Formations
+    // 3. Calculs et construction du rendu
     Object.values(activitesMap).forEach(act => {
         let activiteHeuresFaites = 0;
         let activiteHeuresCible = 0;
@@ -1595,10 +1601,8 @@ function genererFicheEquipe() {
             let formationHeuresFaites = 0;
             let agentsAFormer = [];
 
-            // Déduction du code court (ex: "INC 1" depuis "INC 1 - Principe et règles...")
-            const codeCourt = f.nom.includes('-') ? f.nom.split('-')[0].trim() : f.nom;
-            const codeNorm = normaliser(codeCourt);
-            const nomNorm = normaliser(f.nom);
+            // Clé normalisée pour la comparaison (ex: "goc1", "inc1")
+            const fNorm = normaliser(f.nom);
 
             agentsEquipe.forEach(agent => {
                 const mat = String(agent.Matricule || agent.matricule || agent.MATRICULE || '');
@@ -1606,14 +1610,13 @@ function genererFicheEquipe() {
 
                 let hAgent = 0;
 
-                // Lecture dans toutes les clés de l'objet Agent (ex: "INC 1 : 0/2h" ou "GOC 1 : 1/1h")
+                // Parcours des colonnes de l'agent pour matcher "GOC 1 : 1/1h" ou "INC 1 : 0/2h"
                 for (const prop in agent) {
                     const val = String(agent[prop] || '');
-                    const texteComplet = `${prop} ${val}`;
-                    const texteNorm = normaliser(texteComplet);
+                    const chaineComplete = `${prop} ${val}`;
+                    const chaineNorm = normaliser(chaineComplete);
 
-                    if (texteNorm.includes(codeNorm) || (codeNorm.length > 2 && texteNorm.includes(nomNorm))) {
-                        // Extraction du nombre d'heures faites avant le slash "1/1h" ou "4.5/18h"
+                    if (chaineNorm.includes(fNorm)) {
                         const matchRatio = val.match(/([\d\.]+)\s*\/\s*[\d\.]+\s*h/i) || val.match(/:\s*([\d\.]+)\s*\//);
                         if (matchRatio) {
                             hAgent = parseFloat(matchRatio[1]) || 0;
@@ -1622,13 +1625,13 @@ function genererFicheEquipe() {
                     }
                 }
 
-                // Fallback via historique direct des saisies
+                // Fallback sur l'historique direct
                 if (hAgent === 0 && Array.isArray(historiqueSaisiesFMPA)) {
                     hAgent = historiqueSaisiesFMPA
                         .filter(h => {
                             const hMat = String(h.Matricule || h.matricule || '');
                             const hForm = normaliser(h.Formation || h.formation || h.Theme || h.theme || h.Code || '');
-                            return (hMat === mat) && (hForm.includes(codeNorm) || codeNorm.includes(hForm));
+                            return (hMat === mat) && (hForm.includes(fNorm) || fNorm.includes(hForm));
                         })
                         .reduce((sum, h) => sum + parseFloat(h.Duree || h.duree || h.Heures || 0), 0);
                 }
