@@ -35,9 +35,6 @@ function obtenirValeurChamp(item, clesPossibles) {
 }
 
 /**
- * Traitement Excel
- */
-/**
  * Traitement Excel avec détection complète des entêtes
  */
 function traiterDonneesExcel(arrayBuffer) {
@@ -59,7 +56,6 @@ function traiterDonneesExcel(arrayBuffer) {
                 "FOR_COMPETENCE", "FOR_COMPETENCES", "COMP", "COMPS"
             ]);
 
-            // Prise en charge exacte de "DateNaissance"
             const dateNaiss = obtenirValeurChamp(item, [
                 "DATENAISSANCE", "DATE NAISSANCE", "DATE_NAISSANCE", "DATE_NAISS", 
                 "DATE NAISS", "DATENAISS", "NAISSANCE", "DT_NAISS", "DDN", "BIRTHDATE"
@@ -107,6 +103,7 @@ function traiterDonneesExcel(arrayBuffer) {
         console.error(err);
     }
 }
+
 function estFemme(agent) {
     if (!agent || !agent.sexe) return false;
     const val = String(agent.sexe).trim().toLowerCase();
@@ -134,29 +131,24 @@ function extraireLettreEquipe(nomEquipe) {
 }
 
 /**
- * Convertit n'importe quel format de date Excel (Nombre série Excel, String DD/MM/YYYY, ISO) en objet Date JS
+ * Convertit n'importe quel format de date Excel en objet Date JS
  */
 function parserDateExcel(valeur) {
     if (!valeur) return null;
 
-    // 1. Si la date est au format numérique Excel (ex: 32450)
     if (typeof valeur === 'number') {
         return new Date(Math.round((valeur - 25569) * 86400 * 1000));
     }
 
-    // 2. Si c'est du texte
     const str = String(valeur).trim();
-
-    // Format JJ/MM/AAAA ou JJ-MM-AAAA
     const matchFR = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
     if (matchFR) {
         const jour = parseInt(matchFR[1], 10);
-        const mois = parseInt(matchFR[2], 10) - 1; // Les mois commencent à 0 en JS
+        const mois = parseInt(matchFR[2], 10) - 1;
         const annee = parseInt(matchFR[3], 10);
         return new Date(annee, mois, jour);
     }
 
-    // Tente le constructeur standard
     const d = new Date(str);
     return isNaN(d.getTime()) ? null : d;
 }
@@ -177,63 +169,6 @@ function calculerAge(dateNaissance) {
     }
 
     return age > 0 ? age : 0;
-}
-
-/**
- * Calcul des statistiques d'équipe
- */
-function calculerStatsEquipe(membres, conserverNiveaux = true) {
-    const nb = membres.length;
-    
-    const nbF = membres.filter(a => estFemme(a)).length;
-    const pctF = nb > 0 ? Math.round((nbF / nb) * 100) : 0;
-    
-    // Calcul de l'âge moyen corrigé (en ignorant les agents sans date valide)
-    const agentsAvecAge = membres.map(a => calculerAge(a.dateNaissance)).filter(age => age > 0);
-    const ageMoy = agentsAvecAge.length > 0 
-        ? Math.round(agentsAvecAge.reduce((sum, age) => sum + age, 0) / agentsAvecAge.length) 
-        : 0;
-    
-    const compteFnStricte = (fn) => membres.filter(a => String(a?.fonction || '').trim().toUpperCase() === fn.toUpperCase()).length;
-
-    const cdg = compteFnStricte('CDG');
-    const acdg = compteFnStricte('ACDG1') + compteFnStricte('ACDG2');
-    const cate = compteFnStricte('CATE');
-    const ca1e = compteFnStricte('CA1E');
-    const cequ = compteFnStricte('CEQU');
-    const equ = compteFnStricte('EQU');
-
-    const getRegime = (a) => String(a?.regime || '').toLowerCase();
-    const nbG24 = membres.filter(a => getRegime(a).includes('g24')).length;
-    const nbMixte = membres.filter(a => getRegime(a).includes('mixte')).length;
-
-    const dicSpecs = {};
-    const dicComps = {};
-    const dicDept = {};
-
-    membres.forEach(a => {
-        extraireItems(a.specialites).forEach(s => {
-            const cle = traiterNomItem(s, conserverNiveaux);
-            if (cle) dicSpecs[cle] = (dicSpecs[cle] || 0) + 1;
-        });
-        
-        extraireItems(a.competences).forEach(c => {
-            const cle = traiterNomItem(c, conserverNiveaux);
-            if (cle) dicComps[cle] = (dicComps[cle] || 0) + 1;
-        });
-        
-        const dep = extraireDepartement(a);
-        if (dep) dicDept[dep] = (dicDept[dep] || 0) + 1;
-    });
-
-    return { 
-        nb, nbF, pctF, ageMoy,
-        nbG24, nbMixte,
-        cdg,
-        acdgCate: acdg + cate,
-        ca1e, cequ, equ,
-        dicSpecs, dicComps, dicDept
-    };
 }
 
 function extraireDepartement(agent) {
@@ -321,15 +256,19 @@ function trierAgentsHierarchie(a, b) {
     return String(a?.prenom || '').localeCompare(String(b?.prenom || ''));
 }
 
+/**
+ * Calcul des statistiques d'équipe
+ */
 function calculerStatsEquipe(membres, conserverNiveaux = true) {
     const nb = membres.length;
     
     const nbF = membres.filter(a => estFemme(a)).length;
     const pctF = nb > 0 ? Math.round((nbF / nb) * 100) : 0;
     
-    const ageMoy = nb > 0 ? Math.round(membres.reduce((s, a) => {
-        return s + (a.dateNaissance ? calculerAge(a.dateNaissance) : 0);
-    }, 0) / nb) : 0;
+    const agentsAvecAge = membres.map(a => calculerAge(a.dateNaissance)).filter(age => age > 0);
+    const ageMoy = agentsAvecAge.length > 0 
+        ? Math.round(agentsAvecAge.reduce((sum, age) => sum + age, 0) / agentsAvecAge.length) 
+        : 0;
     
     const compteFnStricte = (fn) => membres.filter(a => String(a?.fonction || '').trim().toUpperCase() === fn.toUpperCase()).length;
 
@@ -500,14 +439,20 @@ function calculerScorePenalite(equipes, conserverNiveaux = true) {
     scorePena += evaluerEcart(s => s.acdgCate) * (p4 * 10);
     scorePena += evaluerEcart(s => s.cequ + s.equ) * (p5 * 10);
     
+    // Prise en compte du poids individuel des spécialités
     const toutesSpecs = new Set(stats.flatMap(s => Object.keys(s.dicSpecs)));
     toutesSpecs.forEach(spec => {
-        scorePena += evaluerEcart(s => s.dicSpecs[spec] || 0) * (p6 * 10);
+        const inputPoids = document.getElementById(`poids-spec-${spec}`);
+        const poidsSpecif = inputPoids ? parseInt(inputPoids.value, 10) : 5;
+        scorePena += evaluerEcart(s => s.dicSpecs[spec] || 0) * (p6 * poidsSpecif * 2);
     });
 
+    // Prise en compte du poids individuel des compétences
     const toutesComps = new Set(stats.flatMap(s => Object.keys(s.dicComps)));
     toutesComps.forEach(comp => {
-        scorePena += evaluerEcart(s => s.dicComps[comp] || 0) * (p7 * 10);
+        const inputPoids = document.getElementById(`poids-comp-${comp}`);
+        const poidsComp = inputPoids ? parseInt(inputPoids.value, 10) : 5;
+        scorePena += evaluerEcart(s => s.dicComps[comp] || 0) * (p7 * poidsComp * 2);
     });
 
     scorePena += evaluerEcart(s => s.nbG24) * (p8 * 10);
@@ -532,7 +477,6 @@ function suggererReequilibrage() {
     const chkNiveaux = document.getElementById("chk-conserver-niveaux");
     const conserverNiveaux = chkNiveaux ? chkNiveaux.checked : true;
 
-    // Simulation basée sur l'état ACTUEL des agents
     let etatSimule = JSON.parse(JSON.stringify(agentsLocaux));
 
     const lettres = ['A', 'B', 'C'];
@@ -565,7 +509,7 @@ function suggererReequilibrage() {
 
                         const testScore = calculerScorePenalite([testA, testB, testC], conserverNiveaux);
 
-                        if (testScore < meilleurScore - 0.05) { // Seuil minimal d'amélioration
+                        if (testScore < meilleurScore - 0.05) {
                             meilleurScore = testScore;
                             meilleurMouvement = {
                                 type: 'TRANSFERT',
@@ -614,7 +558,6 @@ function suggererReequilibrage() {
             testerPaireEchange(eqA, eqC, 'A', 'C');
         }
 
-        // Enregistrement et application de la simulation
         if (meilleurMouvement) {
             if (meilleurMouvement.type === 'TRANSFERT') {
                 const target = etatSimule.find(a => a.idUnique === meilleurMouvement.agent.idUnique);
@@ -671,10 +614,12 @@ function afficherPropositions() {
     if (modal) modal.style.display = "flex";
 }
 
-function fermerModal() { document.getElementById("modal-transferts").style.display = "none"; }
+function fermerModal() { 
+    const modal = document.getElementById("modal-transferts");
+    if (modal) modal.style.display = "none"; 
+}
 
 function appliquerPropositions() {
-    // Met à jour la VRAIE liste agentsLocaux
     propositionsEnAttente.forEach(p => {
         if (p.type === 'TRANSFERT') {
             const ag = agentsLocaux.find(a => a.idUnique === p.a1.idUnique);
@@ -692,7 +637,7 @@ function appliquerPropositions() {
 
     propositionsEnAttente = [];
     fermerModal();
-    rendreEquipes(); // Réaffiche la grille avec les nouveaux effectifs réels
+    rendreEquipes();
 }
 
 function basculerVerrou(idUnique) {
