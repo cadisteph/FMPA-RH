@@ -1488,6 +1488,15 @@ function alimenterSelectEquipeModal() {
 }
 
 function genererFicheEquipe() {
+
+
+console.log("=== EXAMEN DU CATALOGUE ===");
+console.log("1er objet du catalogue :", catalogueInitial[0]);
+console.log("Les clés disponibles :", Object.keys(catalogueInitial[0] || {}));
+
+
+
+    
     const selectEquipe = document.getElementById('modal-select-equipe');
     const conteneurModules = document.getElementById('conteneur-modules-equipe');
     const nomEquipe = selectEquipe ? selectEquipe.value : '';
