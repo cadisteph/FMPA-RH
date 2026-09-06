@@ -1443,7 +1443,7 @@ function exporterHistoriquePDF() {
 
 
 // ==========================================
-// GESTION DE LA MODAL ÉQUIPE
+// GESTION DU BILAN & FICHE ÉQUIPE
 // ==========================================
 
 function ouvrirModalEquipe() {
@@ -1452,81 +1452,188 @@ function ouvrirModalEquipe() {
 
     modal.style.display = 'flex';
     alimenterSelectEquipeModal();
-    filtrerDonneesModalEquipe();
+
+    // Si une équipe est déjà sélectionnée dans le filtre principal, on la pré-sélectionne
+    const filtrePrincipal = document.getElementById('filter-equipe');
+    const selectModal = document.getElementById('modal-select-equipe');
+    if (filtrePrincipal && filtrePrincipal.value && selectModal) {
+        selectModal.value = filtrePrincipal.value;
+    }
+
+    genererFicheEquipe();
 }
 
 function fermerModalEquipe() {
     const modal = document.getElementById('modal-equipe');
-    if (modal) {
-        modal.style.display = 'none';
-    }
+    if (modal) modal.style.display = 'none';
 }
 
 function alimenterSelectEquipeModal() {
     const select = document.getElementById('modal-select-equipe');
     if (!select) return;
 
-    // Utilisation de ta variable tableauAgentsRH
     const equipes = [...new Set(tableauAgentsRH.map(a => a.Equipe || a.equipe).filter(Boolean))].sort();
-
-    select.innerHTML = '<option value="">Toutes les équipes</option>';
+    
+    const valeurActuelle = select.value;
+    select.innerHTML = '<option value="">-- Choisir une équipe --</option>';
+    
     equipes.forEach(eq => {
         const opt = document.createElement('option');
         opt.value = eq;
         opt.textContent = eq;
         select.appendChild(opt);
     });
+
+    if (valeurActuelle) select.value = valeurActuelle;
 }
 
-function filtrerDonneesModalEquipe() {
+function genererFicheEquipe() {
     const selectEquipe = document.getElementById('modal-select-equipe');
-    const tbody = document.getElementById('tbody-modal-equipe');
-    if (!tbody) return;
+    const conteneurModules = document.getElementById('conteneur-modules-equipe');
+    const nomEquipe = selectEquipe ? selectEquipe.value : '';
 
-    const equipeFiltre = selectEquipe ? selectEquipe.value : '';
+    // Date du jour
+    document.getElementById('fiche-date-edition').textContent = new Date().toLocaleDateString('fr-FR');
 
-    // Filtrage sur tableauAgentsRH
-    const agentsFiltres = equipeFiltre 
-        ? tableauAgentsRH.filter(a => (a.Equipe || a.equipe) === equipeFiltre)
-        : tableauAgentsRH;
-
-    // Calculs de synthèse
-    const totalAgents = agentsFiltres.length;
-    let totalSocle = 0;
-    let totalSpe = 0;
-
-    agentsFiltres.forEach(a => {
-        totalSocle += parseFloat(a.HeuresSocle || a.heuresSocle || 0);
-        totalSpe += parseFloat(a.HeuresSpe || a.heuresSpe || 0);
-    });
-
-    const moySocle = totalAgents > 0 ? (totalSocle / totalAgents).toFixed(1) : '0.0';
-    const moySpe = totalAgents > 0 ? (totalSpe / totalAgents).toFixed(1) : '0.0';
-
-    // Mise à jour des cartes
-    document.getElementById('equipe-stat-total').textContent = totalAgents;
-    document.getElementById('equipe-stat-socle').textContent = `${moySocle} h`;
-    document.getElementById('equipe-stat-spe').textContent = `${moySpe} h`;
-
-    // Affichage du tableau
-    if (agentsFiltres.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">Aucun agent à afficher. Chargez d'abord FMPA-RH.xlsx.</td></tr>`;
+    if (!nomEquipe) {
+        document.getElementById('fiche-titre-equipe').textContent = "BILAN FMA - Aucune équipe sélectionnée";
+        document.getElementById('fiche-effectif').textContent = "0 agent(s)";
+        conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Veuillez sélectionner une équipe dans la liste ci-dessus.</div>`;
+        
+        // Remise à zéro des jauges
+        mettreAJourJauge('barre-global', 'txt-pct-global', 'txt-heures-global', 0, 0, 0);
+        mettreAJourJauge('barre-socle', 'txt-pct-socle', null, 0, 0, 0);
+        mettreAJourJauge('barre-spe', 'txt-pct-spe', null, 0, 0, 0);
         return;
     }
 
-    tbody.innerHTML = agentsFiltres.map(a => `
-        <tr>
-            <td><strong>${a.Equipe || a.equipe || '-'}</strong></td>
-            <td>${a.Matricule || a.matricule || '-'}</td>
-            <td>${a.Nom || a.nom || ''} ${a.Prenom || a.prenom || ''}</td>
-            <td>${a.Statut || a.statut || '-'}</td>
-            <td>${a.HeuresSocle || a.heuresSocle || 0} h</td>
-            <td>${a.HeuresSpe || a.heuresSpe || 0} h</td>
-        </tr>
-    `).join('');
+    // 1. Filtrer les agents de l'équipe
+    const agentsEquipe = tableauAgentsRH.filter(a => (a.Equipe || a.equipe) === nomEquipe);
+    const effectif = agentsEquipe.length;
+
+    document.getElementById('fiche-titre-equipe').textContent = `BILAN FMA - Équipe ${nomEquipe}`;
+    document.getElementById('fiche-effectif').textContent = `${effectif} agent(s)`;
+
+    if (effectif === 0) {
+        conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Aucun agent trouvé pour l'équipe ${nomEquipe}.</div>`;
+        return;
+    }
+
+    // 2. Calcul des heures globales, socle et spé pour l'équipe
+    let totalSocleFait = 0, totalSocleCible = 0;
+    let totalSpeFait = 0, totalSpeCible = 0;
+
+    agentsEquipe.forEach(a => {
+        totalSocleFait += parseFloat(a.HeuresSocle || a.heuresSocle || 0);
+        totalSocleCible += parseFloat(a.ObjectifSocle || a.objectifSocle || 16); // Valeur par défaut si non définie
+
+        totalSpeFait += parseFloat(a.HeuresSpe || a.heuresSpe || 0);
+        totalSpeCible += parseFloat(a.ObjectifSpe || a.objectifSpe || 8);
+    });
+
+    const totalFait = totalSocleFait + totalSpeFait;
+    const totalCible = totalSocleCible + totalSpeCible;
+
+    // Mise à jour des jauges d'en-tête
+    mettreAJourJauge('barre-global', 'txt-pct-global', 'txt-heures-global', totalFait, totalCible);
+    mettreAJourJauge('barre-socle', 'txt-pct-socle', null, totalSocleFait, totalSocleCible);
+    mettreAJourJauge('barre-spe', 'txt-pct-spe', null, totalSpeFait, totalSpeCible);
+
+    // 3. Traitement par Module / Thème à partir du catalogue
+    const catalogue = catalogueInitial || [];
+    if (catalogue.length === 0) {
+        conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Catalogue vide. Chargez d'abord FMPA-RH.xlsx.</div>`;
+        return;
+    }
+
+    let htmlModules = '';
+
+    catalogue.forEach(mod => {
+        const codeModule = mod.Code || mod.Theme || mod.theme;
+        const objectifParAgent = parseFloat(mod.Heures || mod.heures || 0);
+        const objectifTotalEquipe = objectifParAgent * effectif;
+
+        let heuresRealiseesEquipe = 0;
+        let agentsAFormer = [];
+
+        agentsEquipe.forEach(agent => {
+            const matricule = agent.Matricule || agent.matricule;
+            const nomPrenom = `${agent.Nom || agent.nom} ${agent.Prenom || agent.prenom}`;
+
+            // Calcul des heures faites par l'agent sur ce module précis dans l'historique
+            const heuresAgent = (historiqueSaisiesFMPA || [])
+                .filter(h => (h.Matricule === matricule || h.matricule === matricule) && (h.Code === codeModule || h.Theme === codeModule))
+                .reduce((sum, h) => sum + parseFloat(h.Duree || h.duree || 0), 0);
+
+            heuresRealiseesEquipe += heuresAgent;
+
+            if (heuresAgent < objectifParAgent) {
+                const resteAValider = objectifParAgent - heuresAgent;
+                agentsAFormer.push({
+                    nom: nomPrenom,
+                    fait: heuresAgent,
+                    reste: resteAValider,
+                    objectif: objectifParAgent
+                });
+            }
+        });
+
+        // Tri des agents prioritaires (ceux à qui il reste le plus d'heures)
+        agentsAFormer.sort((a, b) => b.reste - a.reste);
+
+        const pctModule = objectifTotalEquipe > 0 ? Math.min(100, Math.round((heuresRealiseesEquipe / objectifTotalEquipe) * 100)) : 100;
+        const estAJour = pctModule >= 100 || agentsAFormer.length === 0;
+
+        // Rendu de la carte du module
+        htmlModules += `
+            <div style="background: ${estAJour ? '#f0fdf4' : '#fff'}; border: 1px solid ${estAJour ? '#bbf7d0' : '#e2e8f0'}; border-radius: 8px; padding: 12px 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div>
+                        <strong style="font-size: 1.05rem; color: #0f172a;">${codeModule}</strong>
+                        <span style="font-size: 0.85rem; color: #64748b; margin-left: 8px;">(Objectif : ${objectifParAgent}h/agent)</span>
+                    </div>
+                    <div style="font-weight: bold; color: ${estAJour ? '#16a34a' : '#d97706'}; font-size: 1.05rem;">
+                        ${pctModule}% <span style="font-size: 0.85rem; color: #64748b; font-weight: normal;">(${heuresRealiseesEquipe}h / ${objectifTotalEquipe}h)</span>
+                    </div>
+                </div>
+
+                <!-- Barre de progression du module -->
+                <div style="width: 100%; background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 10px;">
+                    <div style="width: ${pctModule}%; background: ${estAJour ? '#16a34a' : '#d97706'}; height: 100%;"></div>
+                </div>
+
+                <!-- Liste des agents ou statut validé -->
+                ${estAJour ? `
+                    <div style="color: #16a34a; font-weight: bold; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+                        ✅ Module 100% à jour pour toute l'équipe
+                    </div>
+                ` : `
+                    <div style="font-size: 0.88rem; color: #334155;">
+                        <strong>Restent à former (${agentsAFormer.length} agent(s)) :</strong> 
+                        ${agentsAFormer.map(a => `${a.nom} <span style="color: #dc2626; font-weight: bold;">(${a.fait}/${a.objectif}h)</span>`).join(', ')}
+                    </div>
+                `}
+            </div>
+        `;
+    });
+
+    conteneurModules.innerHTML = htmlModules;
 }
 
-// Fermeture au clic en dehors
+// Fonction utilitaire de mise à jour des jauges
+function mettreAJourJauge(idBarre, idTxtPct, idTxtHeures, fait, total) {
+    const pct = total > 0 ? Math.min(100, Math.round((fait / total) * 100)) : 0;
+    
+    const barre = document.getElementById(idBarre);
+    const txtPct = document.getElementById(idTxtPct);
+    const txtHeures = document.getElementById(idTxtHeures);
+
+    if (barre) barre.style.width = `${pct}%`;
+    if (txtPct) txtPct.textContent = `${pct}%`;
+    if (txtHeures) txtHeures.textContent = `${fait}h / ${total}h`;
+}
+
+// Fermeture au clic à l'extérieur
 window.addEventListener('click', function(event) {
     const modalHist = document.getElementById('modal-historique');
     const modalEq = document.getElementById('modal-equipe');
