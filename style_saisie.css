@@ -37,12 +37,19 @@ body {
     flex-shrink: 0;
 }
 
+
+
 .header-title-bar {
     display: flex;
-    align-items: baseline;
-    gap: 15px;
-    flex-wrap: wrap;
+    justify-content: space-between; /* Pousse le titre à gauche et les actions à droite */
+    align-items: center; /* Aligne verticalement au centre */
 }
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Espace entre le bouton et l'indication de statut */
+}
+
 
 .app-header h1 {
     color: var(--primary-color);
