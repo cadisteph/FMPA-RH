@@ -19,7 +19,7 @@ function importerFichierExcelManuel(event) {
 }
 
 /**
- * Recherche dynamique d'une clé dans un objet (tolérant à la casse et aux espaces)
+ * Recherche dynamique d'une clé dans un objet
  */
 function obtenirValeurChamp(item, clesPossibles) {
     const clesObjet = Object.keys(item);
@@ -35,7 +35,7 @@ function obtenirValeurChamp(item, clesPossibles) {
 }
 
 /**
- * Traitement Excel avec détection complète des entêtes
+ * Traitement Excel avec détection des entêtes
  */
 function traiterDonneesExcel(arrayBuffer) {
     try {
@@ -131,7 +131,7 @@ function extraireLettreEquipe(nomEquipe) {
 }
 
 /**
- * Convertit n'importe quel format de date Excel en objet Date JS
+ * Parsing de date Excel (Nombre série, String FR, ISO)
  */
 function parserDateExcel(valeur) {
     if (!valeur) return null;
@@ -154,7 +154,7 @@ function parserDateExcel(valeur) {
 }
 
 /**
- * Calcul précis de l'âge en années
+ * Calcul précis de l'âge
  */
 function calculerAge(dateNaissance) {
     const d = parserDateExcel(dateNaissance);
@@ -169,6 +169,62 @@ function calculerAge(dateNaissance) {
     }
 
     return age > 0 ? age : 0;
+}
+
+/**
+ * Calcul des statistiques d'équipe
+ */
+function calculerStatsEquipe(membres, conserverNiveaux = true) {
+    const nb = membres.length;
+    
+    const nbF = membres.filter(a => estFemme(a)).length;
+    const pctF = nb > 0 ? Math.round((nbF / nb) * 100) : 0;
+    
+    const agentsAvecAge = membres.map(a => calculerAge(a.dateNaissance)).filter(age => age > 0);
+    const ageMoy = agentsAvecAge.length > 0 
+        ? Math.round(agentsAvecAge.reduce((sum, age) => sum + age, 0) / agentsAvecAge.length) 
+        : 0;
+    
+    const compteFnStricte = (fn) => membres.filter(a => String(a?.fonction || '').trim().toUpperCase() === fn.toUpperCase()).length;
+
+    const cdg = compteFnStricte('CDG');
+    const acdg = compteFnStricte('ACDG1') + compteFnStricte('ACDG2');
+    const cate = compteFnStricte('CATE');
+    const ca1e = compteFnStricte('CA1E');
+    const cequ = compteFnStricte('CEQU');
+    const equ = compteFnStricte('EQU');
+
+    const getRegime = (a) => String(a?.regime || '').toLowerCase();
+    const nbG24 = membres.filter(a => getRegime(a).includes('g24')).length;
+    const nbMixte = membres.filter(a => getRegime(a).includes('mixte')).length;
+
+    const dicSpecs = {};
+    const dicComps = {};
+    const dicDept = {};
+
+    membres.forEach(a => {
+        extraireItems(a.specialites).forEach(s => {
+            const cle = traiterNomItem(s, conserverNiveaux);
+            if (cle) dicSpecs[cle] = (dicSpecs[cle] || 0) + 1;
+        });
+        
+        extraireItems(a.competences).forEach(c => {
+            const cle = traiterNomItem(c, conserverNiveaux);
+            if (cle) dicComps[cle] = (dicComps[cle] || 0) + 1;
+        });
+        
+        const dep = extraireDepartement(a);
+        if (dep) dicDept[dep] = (dicDept[dep] || 0) + 1;
+    });
+
+    return { 
+        nb, nbF, pctF, ageMoy,
+        nbG24, nbMixte,
+        cdg,
+        acdgCate: acdg + cate,
+        ca1e, cequ, equ,
+        dicSpecs, dicComps, dicDept
+    };
 }
 
 function extraireDepartement(agent) {
@@ -254,62 +310,6 @@ function trierAgentsHierarchie(a, b) {
     if (nomA !== 0) return nomA;
 
     return String(a?.prenom || '').localeCompare(String(b?.prenom || ''));
-}
-
-/**
- * Calcul des statistiques d'équipe
- */
-function calculerStatsEquipe(membres, conserverNiveaux = true) {
-    const nb = membres.length;
-    
-    const nbF = membres.filter(a => estFemme(a)).length;
-    const pctF = nb > 0 ? Math.round((nbF / nb) * 100) : 0;
-    
-    const agentsAvecAge = membres.map(a => calculerAge(a.dateNaissance)).filter(age => age > 0);
-    const ageMoy = agentsAvecAge.length > 0 
-        ? Math.round(agentsAvecAge.reduce((sum, age) => sum + age, 0) / agentsAvecAge.length) 
-        : 0;
-    
-    const compteFnStricte = (fn) => membres.filter(a => String(a?.fonction || '').trim().toUpperCase() === fn.toUpperCase()).length;
-
-    const cdg = compteFnStricte('CDG');
-    const acdg = compteFnStricte('ACDG1') + compteFnStricte('ACDG2');
-    const cate = compteFnStricte('CATE');
-    const ca1e = compteFnStricte('CA1E');
-    const cequ = compteFnStricte('CEQU');
-    const equ = compteFnStricte('EQU');
-
-    const getRegime = (a) => String(a?.regime || '').toLowerCase();
-    const nbG24 = membres.filter(a => getRegime(a).includes('g24')).length;
-    const nbMixte = membres.filter(a => getRegime(a).includes('mixte')).length;
-
-    const dicSpecs = {};
-    const dicComps = {};
-    const dicDept = {};
-
-    membres.forEach(a => {
-        extraireItems(a.specialites).forEach(s => {
-            const cle = traiterNomItem(s, conserverNiveaux);
-            if (cle) dicSpecs[cle] = (dicSpecs[cle] || 0) + 1;
-        });
-        
-        extraireItems(a.competences).forEach(c => {
-            const cle = traiterNomItem(c, conserverNiveaux);
-            if (cle) dicComps[cle] = (dicComps[cle] || 0) + 1;
-        });
-        
-        const dep = extraireDepartement(a);
-        if (dep) dicDept[dep] = (dicDept[dep] || 0) + 1;
-    });
-
-    return { 
-        nb, nbF, pctF, ageMoy,
-        nbG24, nbMixte,
-        cdg,
-        acdgCate: acdg + cate,
-        ca1e, cequ, equ,
-        dicSpecs, dicComps, dicDept
-    };
 }
 
 function genererBadgesHTML(dictionnaire, couleurHex) {
@@ -439,20 +439,14 @@ function calculerScorePenalite(equipes, conserverNiveaux = true) {
     scorePena += evaluerEcart(s => s.acdgCate) * (p4 * 10);
     scorePena += evaluerEcart(s => s.cequ + s.equ) * (p5 * 10);
     
-    // Prise en compte du poids individuel des spécialités
     const toutesSpecs = new Set(stats.flatMap(s => Object.keys(s.dicSpecs)));
     toutesSpecs.forEach(spec => {
-        const inputPoids = document.getElementById(`poids-spec-${spec}`);
-        const poidsSpecif = inputPoids ? parseInt(inputPoids.value, 10) : 5;
-        scorePena += evaluerEcart(s => s.dicSpecs[spec] || 0) * (p6 * poidsSpecif * 2);
+        scorePena += evaluerEcart(s => s.dicSpecs[spec] || 0) * (p6 * 10);
     });
 
-    // Prise en compte du poids individuel des compétences
     const toutesComps = new Set(stats.flatMap(s => Object.keys(s.dicComps)));
     toutesComps.forEach(comp => {
-        const inputPoids = document.getElementById(`poids-comp-${comp}`);
-        const poidsComp = inputPoids ? parseInt(inputPoids.value, 10) : 5;
-        scorePena += evaluerEcart(s => s.dicComps[comp] || 0) * (p7 * poidsComp * 2);
+        scorePena += evaluerEcart(s => s.dicComps[comp] || 0) * (p7 * 10);
     });
 
     scorePena += evaluerEcart(s => s.nbG24) * (p8 * 10);
@@ -614,10 +608,7 @@ function afficherPropositions() {
     if (modal) modal.style.display = "flex";
 }
 
-function fermerModal() { 
-    const modal = document.getElementById("modal-transferts");
-    if (modal) modal.style.display = "none"; 
-}
+function fermerModal() { document.getElementById("modal-transferts").style.display = "none"; }
 
 function appliquerPropositions() {
     propositionsEnAttente.forEach(p => {
