@@ -4,7 +4,7 @@ let propositionsEnAttente = [];
 const ORDRE_FONCTIONS = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
 
 /**
- * Importation manuelle Excel via sélection utilisateur
+ * Importation manuelle Excel
  */
 function importerFichierExcelManuel(event) {
     const file = event.target.files[0];
@@ -13,10 +13,9 @@ function importerFichierExcelManuel(event) {
     const reader = new FileReader();
     reader.onload = (e) => {
         const arrayBuffer = e.target.result;
-        traiterDonneesExcel(arrayBuffer, file.name);
+        traiterDonneesExcel(arrayBuffer);
     };
     reader.readAsArrayBuffer(file);
-    event.target.value = null;
 }
 
 /**
@@ -38,7 +37,7 @@ function obtenirValeurChamp(item, clesPossibles) {
 /**
  * Traitement Excel avec détection complète des entêtes
  */
-function traiterDonneesExcel(arrayBuffer, nomFichier = "") {
+function traiterDonneesExcel(arrayBuffer) {
     try {
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
         const premierNomFeuille = workbook.SheetNames[0];
@@ -97,17 +96,6 @@ function traiterDonneesExcel(arrayBuffer, nomFichier = "") {
             if (a.verrouille === undefined) a.verrouille = false;
         });
 
-        // Mise à jour de l'état du bouton si le fichier FMPA-RH.xlsx est détecté
-        const nomNormalise = normaliserTexte(nomFichier);
-        if (nomNormalise.includes("FMPA-RH") || nomNormalise.includes("FMPA_RH")) {
-            const btn = document.getElementById("btn-reseau");
-            if (btn) {
-                btn.classList.remove("btn-clignotant");
-                btn.classList.add("btn-connecte");
-                btn.innerHTML = "🌐 Connecté Réseau";
-            }
-        }
-
         genererControlesDynamiques();
         rendreEquipes();
     } catch (err) {
@@ -143,7 +131,7 @@ function extraireLettreEquipe(nomEquipe) {
 }
 
 /**
- * Convertit tout format de date Excel (Nombre série, String DD/MM/YYYY, ISO) en Date JS
+ * Convertit n'importe quel format de date Excel en objet Date JS
  */
 function parserDateExcel(valeur) {
     if (!valeur) return null;
@@ -156,10 +144,12 @@ function parserDateExcel(valeur) {
 
     const matchFR = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
     if (matchFR) {
-        const jour = parseInt(matchFR[1], 10);
-        const mois = parseInt(matchFR[2], 10) - 1;
-        const annee = parseInt(matchFR[3], 10);
-        return new Date(annee, mois, jour);
+        return new Date(parseInt(matchFR[3], 10), parseInt(matchFR[2], 10) - 1, parseInt(matchFR[1], 10));
+    }
+
+    const matchISO = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+    if (matchISO) {
+        return new Date(parseInt(matchISO[1], 10), parseInt(matchISO[2], 10) - 1, parseInt(matchISO[3], 10));
     }
 
     const d = new Date(str);
@@ -191,6 +181,7 @@ function calculerStatsEquipe(membres, conserverNiveaux = true) {
     const nb = membres.length;
     
     const nbF = membres.filter(a => estFemme(a)).length;
+    const pctF = nb > 0 ? Math.round((nbF / nb) * 100) : 0;
     
     const agentsAvecAge = membres.map(a => calculerAge(a.dateNaissance)).filter(age => age > 0);
     const ageMoy = agentsAvecAge.length > 0 
@@ -230,7 +221,7 @@ function calculerStatsEquipe(membres, conserverNiveaux = true) {
     });
 
     return { 
-        nb, nbF, ageMoy,
+        nb, nbF, pctF, ageMoy,
         nbG24, nbMixte,
         cdg,
         acdgCate: acdg + cate,
@@ -271,7 +262,7 @@ function genererControlesDynamiques() {
             containerSpecs.innerHTML += `
                 <div class="reglage-group">
                     <label><span>${spec}</span> : <span id="val-${id}">5</span></label>
-                    <input type="range" id="${id}" data-item="${spec}" class="input-poids-spec" min="0" max="5" value="5" oninput="document.getElementById('val-${id}').innerText=this.value">
+                    <input type="range" id="${id}" data-item="${spec}" class="input-poids-spec" min="0" max="5" value="5" oninput="document.getElementById('val-${id}').innerText=this.value; rendreEquipes();">
                 </div>
             `;
         });
@@ -284,7 +275,7 @@ function genererControlesDynamiques() {
             containerComps.innerHTML += `
                 <div class="reglage-group">
                     <label><span>${comp}</span> : <span id="val-${id}">5</span></label>
-                    <input type="range" id="${id}" data-item="${comp}" class="input-poids-comp" min="0" max="5" value="5" oninput="document.getElementById('val-${id}').innerText=this.value">
+                    <input type="range" id="${id}" data-item="${comp}" class="input-poids-comp" min="0" max="5" value="5" oninput="document.getElementById('val-${id}').innerText=this.value; rendreEquipes();">
                 </div>
             `;
         });
@@ -453,12 +444,16 @@ function calculerScorePenalite(equipes, conserverNiveaux = true) {
     
     const toutesSpecs = new Set(stats.flatMap(s => Object.keys(s.dicSpecs)));
     toutesSpecs.forEach(spec => {
-        scorePena += evaluerEcart(s => s.dicSpecs[spec] || 0) * (p6 * 10);
+        const el = document.getElementById(`poids-spec-${spec}`);
+        const pDyn = el ? parseInt(el.value, 10) : 1;
+        scorePena += evaluerEcart(s => s.dicSpecs[spec] || 0) * (p6 * pDyn);
     });
 
     const toutesComps = new Set(stats.flatMap(s => Object.keys(s.dicComps)));
     toutesComps.forEach(comp => {
-        scorePena += evaluerEcart(s => s.dicComps[comp] || 0) * (p7 * 10);
+        const el = document.getElementById(`poids-comp-${comp}`);
+        const pDyn = el ? parseInt(el.value, 10) : 1;
+        scorePena += evaluerEcart(s => s.dicComps[comp] || 0) * (p7 * pDyn);
     });
 
     scorePena += evaluerEcart(s => s.nbG24) * (p8 * 10);
@@ -499,7 +494,7 @@ function suggererReequilibrage() {
 
         const dics = { 'A': eqA, 'B': eqB, 'C': eqC };
 
-        // 1. TESTER LES TRANSFERTS DIRECTS
+        // TESTER LES TRANSFERTS DIRECTS
         lettres.forEach(source => {
             lettres.forEach(cible => {
                 if (source !== cible) {
@@ -530,7 +525,7 @@ function suggererReequilibrage() {
             });
         });
 
-        // 2. TESTER LES ÉCHANGES 1 CONTRE 1
+        // TESTER LES ÉCHANGES 1 CONTRE 1
         if (!meilleurMouvement) {
             const testerPaireEchange = (eq1, eq2, nom1, nom2) => {
                 const mob1 = eq1.filter(a => !a.verrouille);
