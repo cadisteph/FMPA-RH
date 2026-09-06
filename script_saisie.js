@@ -19,6 +19,13 @@ const HEADERS_HISTORIQUE = [
     "DateSaisie"
 ];
 
+// --- GESTION DU MAPPING & CONSTANTES ADMIN ---
+let indexEnEdition = null;
+let estAdminDeverrouille = false;
+
+// Empreinte SHA-256 par défaut si absente d'Excel ("1234")
+const HASH_DEFAUT_SECOURS = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
+
 document.addEventListener("DOMContentLoaded", () => {
     const dateInput = document.getElementById("saisie-date");
     if (dateInput) dateInput.valueAsDate = new Date();
@@ -45,23 +52,24 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("select-all")?.addEventListener("change", basculerToutSelectionner);
     document.getElementById("form-saisie-groupee")?.addEventListener("submit", validerSaisieGroupee);
 
+    document.getElementById("hist-code-admin")?.addEventListener("input", verifierCodeAdmin);
+    document.getElementById("hist-ref-wact")?.addEventListener("change", enregistrerChangementDateWact);
+
     calculerDuree();
 });
-
 
 function afficherMessageAccueil() {
     const tbody = document.getElementById("tbody-agents");
     if (!tbody) return;
     tbody.innerHTML = `
         <tr>
-            <td colspan="8" style="text-align:left; padding:40px; color:#64748b; display: none">
+            <td colspan="8" style="text-align:left; padding:40px; color:#64748b;">
                 <div style="font-size:1.1rem; color: #bd1e1e; margin-bottom:8px;"><strong>Aucun fichier Excel chargé</strong></div>
                 Cliquez sur <strong>📂 Ouvrir FMPA-RH.xlsx</strong>.
             </td>
         </tr>
     `;
 }
-
 
 async function ouvrirFichierXLSX() {
     try {
@@ -122,14 +130,27 @@ async function chargerClasseur(file) {
     historiqueSaisiesFMPA = convertirHistorique(classeurXLSX.Sheets.historiqueSuivi);
 
     // --- LECTURE DE LA DATE RÉF W@CT DEPUIS L'ONGLET PARAMETRES ---
-    if (classeurXLSX.Sheets["Parametres"] && classeurXLSX.Sheets["Parametres"]["B1"]) {
-        const valWact = classeurXLSX.Sheets["Parametres"]["B1"].v;
-        const inputWact = document.getElementById("hist-ref-wact");
-        if (inputWact && valWact) {
-            const dateStr = valWact instanceof Date 
-                ? valWact.toISOString().slice(0, 10) 
-                : String(valWact);
-            inputWact.value = dateStr;
+    if (classeurXLSX.Sheets["Parametres"]) {
+        const sheetParam = classeurXLSX.Sheets["Parametres"];
+        let valWact = null;
+
+        if (sheetParam["B1"] && sheetParam["B1"].v !== undefined) {
+            valWact = sheetParam["B1"].v;
+        } else {
+            const dataParam = XLSX.utils.sheet_to_json(sheetParam, { header: 1 });
+            if (dataParam && dataParam[0] && dataParam[0][1] !== undefined) {
+                valWact = dataParam[0][1];
+            }
+        }
+
+        if (valWact) {
+            const inputWact = document.getElementById("hist-ref-wact");
+            if (inputWact) {
+                const dateStr = valWact instanceof Date 
+                    ? valWact.toISOString().slice(0, 10) 
+                    : normaliserDate(valWact);
+                inputWact.value = dateStr;
+            }
         }
     }
 
@@ -140,7 +161,6 @@ async function chargerClasseur(file) {
     initialiserFiltresEtListes();
     filtrerEtAfficherTableau();
 
-    // --- MISE À JOUR DU BOUTON UNE FOIS CHARGÉ ---
     const btnOpen = document.getElementById("btn-open-xlsx");
     if (btnOpen) {
         btnOpen.classList.remove("btn-clignotant");
@@ -439,9 +459,9 @@ function verifierChevauchementHoraire(matricule, dateSaisie, heureDebutSaisie, h
 }
 
 function filtrerEtAfficherTableau() {
-    const eqFiltre = document.getElementById("filter-equipe").value;
+    const eqFiltre = document.getElementById("filter-equipe")?.value || "";
     const stFiltre = document.getElementById("filter-statut")?.value || "";
-    const recherche = document.getElementById("filter-search").value.toLowerCase().trim();
+    const recherche = document.getElementById("filter-search")?.value.toLowerCase().trim() || "";
 
     const agentsFiltres = tableauAgentsRH.filter(agent => {
         const matchEquipe = !eqFiltre || agent.equipe === eqFiltre;
@@ -456,9 +476,9 @@ function filtrerEtAfficherTableau() {
 }
 
 function reinitialiserFiltres() {
-    document.getElementById("filter-equipe").value = "";
-    document.getElementById("filter-statut").value = "";
-    document.getElementById("filter-search").value = "";
+    if (document.getElementById("filter-equipe")) document.getElementById("filter-equipe").value = "";
+    if (document.getElementById("filter-statut")) document.getElementById("filter-statut").value = "";
+    if (document.getElementById("filter-search")) document.getElementById("filter-search").value = "";
     filtrerEtAfficherTableau();
 }
 
@@ -469,7 +489,8 @@ function afficherTableauAgents(listeAgents) {
 
     if (listeAgents.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" class="empty-msg">Aucun agent à afficher.</td></tr>';
-        document.getElementById("count-badge").textContent = `0 / ${tableauAgentsRH.length} agent(s)`;
+        const countBadge = document.getElementById("count-badge");
+        if (countBadge) countBadge.textContent = `0 / ${tableauAgentsRH.length} agent(s)`;
         majStatutSelection();
         return;
     }
@@ -503,7 +524,8 @@ function afficherTableauAgents(listeAgents) {
         tbody.appendChild(tr);
     });
 
-    document.getElementById("count-badge").textContent = `${listeAgents.length} / ${tableauAgentsRH.length} agent(s)`;
+    const countBadge = document.getElementById("count-badge");
+    if (countBadge) countBadge.textContent = `${listeAgents.length} / ${tableauAgentsRH.length} agent(s)`;
     majStatutSelection();
 }
 
@@ -587,13 +609,9 @@ function genererAvancementSpecialites(agent) {
     const specAgentBase = specAgentBrutes.map(s => s.replace(/\s*\d+$/, ""));
     const heuresAgent = cumulHeuresParAgent[agent.id] || {};
 
-    // Filtrage rigoureux :
-    // 1. On exclut TOUS les modules appartenant au Socle Commun
-    // 2. On s'assure que le module correspond spécifiquement aux spécialités de l'agent
     const formationsSpec = catalogueInitial.filter(f => {
         const typeF = (f.type || "").trim().toUpperCase();
         
-        // Exclusion explicite des formations Socle / Commun
         const estSocle = typeF.includes("SOCLE") || typeF.includes("COMMUN");
         if (estSocle) return false;
 
@@ -609,7 +627,6 @@ function genererAvancementSpecialites(agent) {
 
         const matchProfil = profils.some(p => specAgentBrutes.includes(p) || specAgentBase.includes(p));
 
-        // La formation doit être typée spécialité ET correspondre à une spécialité attribuée à l'agent
         return (estTypeSpec || matchActivite || matchProfil) && (matchActivite || matchProfil);
     });
 
@@ -705,8 +722,10 @@ function basculerToutSelectionner(e) {
 
 function majStatutSelection() {
     const count = agentsSelectionnes.size;
-    document.getElementById("selection-status").textContent = `👥 ${count} agent(s) sélectionné(s)`;
-    document.getElementById("btn-valider-groupe").disabled = count === 0 || !classeurXLSX;
+    const statusEl = document.getElementById("selection-status");
+    const btnValider = document.getElementById("btn-valider-groupe");
+    if (statusEl) statusEl.textContent = `👥 ${count} agent(s) sélectionné(s)`;
+    if (btnValider) btnValider.disabled = count === 0 || !classeurXLSX;
 }
 
 function reinitialiserFormulaire() {
@@ -736,12 +755,12 @@ async function validerSaisieGroupee(e) {
     }
 
     const duree = calculerDuree();
-    const dateFormation = document.getElementById("saisie-date").value;
-    const heureDebut = document.getElementById("saisie-heure-debut").value;
-    const heureFin = document.getElementById("saisie-heure-fin").value;
-    const idFormation = document.getElementById("saisie-theme").value;
-    const formateur = document.getElementById("saisie-formateur").value.trim();
-    const commentaires = document.getElementById("saisie-commentaires").value.trim();
+    const dateFormation = document.getElementById("saisie-date")?.value;
+    const heureDebut = document.getElementById("saisie-heure-debut")?.value;
+    const heureFin = document.getElementById("saisie-heure-fin")?.value;
+    const idFormation = document.getElementById("saisie-theme")?.value;
+    const formateur = document.getElementById("saisie-formateur")?.value.trim() || "";
+    const commentaires = document.getElementById("saisie-commentaires")?.value.trim() || "";
 
     if (!agentsSelectionnes.size) {
         alert("Veuillez sélectionner au moins un agent.");
@@ -925,6 +944,10 @@ function escapeHtml(value) {
         .replace(/'/g, "&#039;");
 }
 
+function escapeJs(value) {
+    return String(value ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
 function annulerSaisie() {
     reinitialiserFormulaire();
     agentsSelectionnes.clear();
@@ -932,17 +955,6 @@ function annulerSaisie() {
     if (selectAll) selectAll.checked = false;
     filtrerEtAfficherTableau();
 }
-
-function escapeJs(value) {
-    return String(value ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-}
-
-// --- OUVERTURE ET FERMETURE DE LA MODALE ---
-let indexEnEdition = null;
-let estAdminDeverrouille = false;
-
-// Empreinte par défaut de secours si rien n'est encore défini dans Excel (empreinte de "1234")
-const HASH_DEFAUT_SECOURS = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
 
 // --- FONCTION UTILITAIRE DE HACHAGE SHA-256 ---
 async function hacherTexte(texte) {
@@ -956,7 +968,7 @@ async function hacherTexte(texte) {
 // --- RÉCUPÉRATION DU HASH DEPUIS EXCEL ---
 function obtenirHashAdminDepuisExcel() {
     try {
-        if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets && classeurXLSX.Sheets["Parametres"]) {
+        if (typeof classeurXLSX !== "undefined" && classeurXLSX?.Sheets?.["Parametres"]) {
             const sheetParam = classeurXLSX.Sheets["Parametres"];
             
             if (sheetParam["B2"] && sheetParam["B2"].v !== undefined && String(sheetParam["B2"].v).trim() !== "") {
@@ -1057,7 +1069,6 @@ async function modifierMotDePasseAdmin() {
         if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
             await enregistrerFichierXLSX();
             alert("🔑 Nouveau mot de passe enregistré avec succès dans le fichier Excel !");
-            
             verifierCodeAdmin();
         } else {
             alert("⚠️ Nouveau mot de passe pris en compte pour la session, mais le fichier Excel n'a pas pu être sauvegardé sur le disque.");
@@ -1065,7 +1076,31 @@ async function modifierMotDePasseAdmin() {
     }
 }
 
-document.getElementById("hist-code-admin")?.addEventListener("input", verifierCodeAdmin);
+async function enregistrerChangementDateWact(e) {
+    const nouvelleDate = e.target.value;
+    afficherHistorique();
+
+    if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
+        if (!classeurXLSX.Sheets["Parametres"]) {
+            const hashActuel = obtenirHashAdminDepuisExcel();
+            const newSheet = XLSX.utils.aoa_to_sheet([
+                ["DateRefWact", nouvelleDate],
+                ["CodeAdminHash", hashActuel]
+            ]);
+            XLSX.utils.book_append_sheet(classeurXLSX, newSheet, "Parametres");
+        } else {
+            XLSX.utils.sheet_add_aoa(
+                classeurXLSX.Sheets["Parametres"], 
+                [["DateRefWact", nouvelleDate]], 
+                { origin: "A1" }
+            );
+        }
+
+        if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
+            await enregistrerFichierXLSX();
+        }
+    }
+}
 
 function ouvrirModalHistorique() {
     indexEnEdition = null;
@@ -1099,7 +1134,8 @@ function ouvrirModalHistorique() {
 async function fermerModalHistorique() {
     indexEnEdition = null;
     
-    document.getElementById("modal-historique").style.display = "none";
+    const modal = document.getElementById("modal-historique");
+    if (modal) modal.style.display = "none";
 
     const dateRefWact = document.getElementById("hist-ref-wact")?.value || "";
 
@@ -1319,32 +1355,6 @@ async function supprimerLigneHistorique(index) {
     }
 }
 
-document.getElementById("hist-ref-wact")?.addEventListener("change", async (e) => {
-    const nouvelleDate = e.target.value;
-    afficherHistorique();
-
-    if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
-        if (!classeurXLSX.Sheets["Parametres"]) {
-            const hashActuel = obtenirHashAdminDepuisExcel();
-            const newSheet = XLSX.utils.aoa_to_sheet([
-                ["DateRefWact", nouvelleDate],
-                ["CodeAdminHash", hashActuel]
-            ]);
-            XLSX.utils.book_append_sheet(classeurXLSX, newSheet, "Parametres");
-        } else {
-            XLSX.utils.sheet_add_aoa(
-                classeurXLSX.Sheets["Parametres"], 
-                [["DateRefWact", nouvelleDate]], 
-                { origin: "A1" }
-            );
-        }
-
-        if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
-            await enregistrerFichierXLSX();
-        }
-    }
-});
-
 function exporterHistoriquePDF() {
     if (!historiqueSaisiesFMPA.length) {
         alert("Aucune donnée à exporter.");
@@ -1467,12 +1477,15 @@ function genererFicheEquipe() {
     const conteneurModules = document.getElementById('conteneur-modules-equipe');
     const nomEquipe = selectEquipe ? selectEquipe.value : '';
 
-    document.getElementById('fiche-date-edition').textContent = new Date().toLocaleDateString('fr-FR');
+    const dateEd = document.getElementById('fiche-date-edition');
+    if (dateEd) dateEd.textContent = new Date().toLocaleDateString('fr-FR');
 
     if (!nomEquipe) {
-        document.getElementById('fiche-titre-equipe').textContent = "BILAN FMA - Aucune équipe sélectionnée";
-        document.getElementById('fiche-effectif').textContent = "0 agent(s)";
-        conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Veuillez sélectionner une équipe dans la liste ci-dessus.</div>`;
+        const tit = document.getElementById('fiche-titre-equipe');
+        const eff = document.getElementById('fiche-effectif');
+        if (tit) tit.textContent = "BILAN FMA - Aucune équipe sélectionnée";
+        if (eff) eff.textContent = "0 agent(s)";
+        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Veuillez sélectionner une équipe dans la liste ci-dessus.</div>`;
         mettreAJourJauge('barre-global', 'txt-pct-global', 'txt-heures-global', 0, 0);
         mettreAJourJauge('barre-socle', 'txt-pct-socle', null, 0, 0);
         mettreAJourJauge('barre-spe', 'txt-pct-spe', null, 0, 0);
@@ -1485,17 +1498,19 @@ function genererFicheEquipe() {
     });
     const effectif = agentsEquipe.length;
 
-    document.getElementById('fiche-titre-equipe').textContent = `BILAN FMA - Équipe ${nomEquipe}`;
-    document.getElementById('fiche-effectif').textContent = `${effectif} agent(s)`;
+    const tit = document.getElementById('fiche-titre-equipe');
+    const eff = document.getElementById('fiche-effectif');
+    if (tit) tit.textContent = `BILAN FMA - Équipe ${nomEquipe}`;
+    if (eff) eff.textContent = `${effectif} agent(s)`;
 
     if (effectif === 0) {
-        conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Aucun agent trouvé pour l'équipe ${nomEquipe}.</div>`;
+        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Aucun agent trouvé pour l'équipe ${nomEquipe}.</div>`;
         return;
     }
 
     const catalogue = catalogueInitial || [];
     if (catalogue.length === 0) {
-        conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Catalogue vide. Chargez d'abord FMPA-RH.xlsx.</div>`;
+        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Catalogue vide. Chargez d'abord FMPA-RH.xlsx.</div>`;
         return;
     }
 
@@ -1664,7 +1679,7 @@ function genererFicheEquipe() {
     mettreAJourJauge('barre-socle', 'txt-pct-socle', null, totalSocleFait, totalSocleCible);
     mettreAJourJauge('barre-spe', 'txt-pct-spe', null, totalSpeFait, totalSpeCible);
 
-    conteneurModules.innerHTML = htmlContenu;
+    if (conteneurModules) conteneurModules.innerHTML = htmlContenu;
 }
 
 function mettreAJourJauge(idBarre, idTxtPct, idTxtHeures, fait, total) {
