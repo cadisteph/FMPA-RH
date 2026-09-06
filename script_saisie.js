@@ -1488,6 +1488,17 @@ function alimenterSelectEquipeModal() {
 }
 
 function genererFicheEquipe() {
+
+
+agentsEquipe.forEach((agent, index) => {
+    if (index === 0) {
+        console.log("=== INSPECTION PREMIER AGENT EQUIPE ===");
+        console.log("Objet Agent complet :", agent);
+        console.log("Clés disponibles dans l'Agent :", Object.keys(agent));
+    }
+
+
+    
     const selectEquipe = document.getElementById('modal-select-equipe');
     const conteneurModules = document.getElementById('conteneur-modules-equipe');
     const nomEquipe = selectEquipe ? selectEquipe.value : '';
