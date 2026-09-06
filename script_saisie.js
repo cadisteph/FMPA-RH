@@ -149,7 +149,7 @@ async function chargerClasseur(file) {
     }
 
     afficherStatut(
-        `🌐 ${nomFichierXLSX} chargé — ` +
+        `⚡️${nomFichierXLSX} chargé — ` +
         `${tableauAgentsRH.length} agent(s), ` +
         `${catalogueInitial.length} formation(s), ` +
         `${historiqueSaisiesFMPA.length} ligne(s) d'historique`
