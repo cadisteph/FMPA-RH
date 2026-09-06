@@ -1519,137 +1519,175 @@ function genererFicheEquipe() {
         return;
     }
 
-    // 2. Traitement des modules du catalogue
     const catalogue = catalogueInitial || [];
     if (catalogue.length === 0) {
         conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Catalogue vide. Chargez d'abord FMPA-RH.xlsx.</div>`;
         return;
     }
 
-    let totalHeuresFaitesEquipe = 0;
-    let totalHeuresCibleEquipe = 0;
+    // 2. Regroupement du catalogue par Activité / Domaine
+    const activitesMap = {};
+
+    catalogue.forEach(item => {
+        const nomActivite = item.Activite || item.activite || item.Domaine || item.domaine || item.DomaineActivite || "Général";
+        const nomTheme = item.Theme || item.theme || item.Thème || item.thème || item.Code || item.code || "Module";
+        const heuresCibleAgent = parseFloat(item.Heures || item.heures || item.Quota || item.quota || item.Duree || item.duree || 0);
+
+        if (!activitesMap[nomActivite]) {
+            activitesMap[nomActivite] = {
+                nom: nomActivite,
+                themes: [],
+                type: String(item.Type || item.type || item.Domaine || '').toLowerCase()
+            };
+        }
+
+        activitesMap[nomActivite].themes.push({
+            nom: nomTheme,
+            heuresCibleAgent: heuresCibleAgent
+        });
+    });
+
+    let totalHeuresFaitesGlobal = 0;
+    let totalHeuresCibleGlobal = 0;
     let totalSocleFait = 0, totalSocleCible = 0;
     let totalSpeFait = 0, totalSpeCible = 0;
 
-    let htmlModules = '';
+    let htmlContenu = '';
 
-    // Utilitaire de nettoyage pour comparaison flexible (ex: "GOC 1" matching "GOC")
     const normaliser = (str) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
-    catalogue.forEach(mod => {
-        const nomModule = mod.Theme || mod.theme || mod.Thème || mod.thème || mod.Code || mod.code || mod.MODULE || mod.Module || mod.Activité || mod.activite || "Module";
-        const codeNorm = normaliser(nomModule);
+    // 3. Calcul par Activité puis par Thème
+    Object.values(activitesMap).forEach(act => {
+        let activiteHeuresFaites = 0;
+        let activiteHeuresCible = 0;
+        let htmlThemes = '';
 
-        const objectifParAgent = parseFloat(mod.Heures || mod.heures || mod.HEURES || mod.Quota || mod.quota || mod.Duree || mod.duree || 0);
-        const objectifTotalModuleEquipe = objectifParAgent * effectif;
+        const estSpe = act.type.includes('spe') || act.type.includes('spé');
 
-        totalHeuresCibleEquipe += objectifTotalModuleEquipe;
+        act.themes.forEach(th => {
+            const cibleTotaleThemeEquipe = th.heuresCibleAgent * effectif;
+            activiteHeuresCible += cibleTotaleThemeEquipe;
 
-        const typeModule = String(mod.Type || mod.type || mod.Domaine || mod.domaine || '').toLowerCase();
-        const estSpe = typeModule.includes('spe') || typeModule.includes('spé');
+            let themeHeuresFaites = 0;
+            let agentsAFormer = [];
 
-        if (estSpe) {
-            totalSpeCible += objectifTotalModuleEquipe;
-        } else {
-            totalSocleCible += objectifTotalModuleEquipe;
-        }
+            agentsEquipe.forEach(agent => {
+                const mat = String(agent.Matricule || agent.matricule || agent.MATRICULE || '');
+                const nomPrenom = `${agent.Nom || agent.nom || ''} ${agent.Prenom || agent.prenom || ''}`.trim() || `Agent ${mat}`;
 
-        let heuresRealiseesModule = 0;
-        let agentsAFormer = [];
+                // Recherche dans l'historique des saisies
+                let hAgent = (historiqueSaisiesFMPA || [])
+                    .filter(h => {
+                        const hMat = String(h.Matricule || h.matricule || h.MATRICULE || '');
+                        const hTheme = normaliser(h.Theme || h.theme || h.Thème || h.Code || h.code || '');
+                        const hAct = normaliser(h.Activité || h.activite || h.Domaine || '');
 
-        agentsEquipe.forEach(agent => {
-            const matricule = String(agent.Matricule || agent.matricule || agent.MATRICULE || agent.Id || '');
-            const nom = agent.Nom || agent.nom || agent.NOM || '';
-            const prenom = agent.Prenom || agent.prenom || agent.PRENOM || '';
-            const nomPrenom = `${nom} ${prenom}`.trim() || `Agent ${matricule}`;
+                        const matchAgent = (hMat === mat);
+                        const matchTheme = hTheme.includes(normaliser(th.nom)) || normaliser(th.nom).includes(hTheme);
+                        const matchAct = !hAct || hAct.includes(normaliser(act.nom)) || normaliser(act.nom).includes(hAct);
 
-            // Récupération des heures dans l'historique
-            let heuresAgent = (historiqueSaisiesFMPA || [])
-                .filter(h => {
-                    const hMat = String(h.Matricule || h.matricule || h.MATRICULE || '');
-                    const hMod = normaliser(h.Theme || h.theme || h.Thème || h.Code || h.code || h.Activité || h.activite || '');
-                    
-                    // Match si le matricule correspond ET que les noms de modules se contiennent
-                    const mêmeAgent = (hMat === matricule);
-                    const mêmeModule = hMod.includes(codeNorm) || codeNorm.includes(hMod);
-                    return mêmeAgent && mêmeModule;
-                })
-                .reduce((sum, h) => sum + parseFloat(h.Duree || h.duree || h.DURÉE || h.Heures || h.heures || 0), 0);
+                        return matchAgent && matchTheme && matchAct;
+                    })
+                    .reduce((sum, h) => sum + parseFloat(h.Duree || h.duree || h.Heures || h.heures || 0), 0);
 
-            // Si non trouvé dans l'historique, fallback sur les champs d'heures cumulées dans l'objet agent si présent
-            if (heuresAgent === 0 && agent.cumulHeures && agent.cumulHeures[nomModule]) {
-                heuresAgent = parseFloat(agent.cumulHeures[nomModule]) || 0;
-            }
+                // Fallback si cumulHeuresParAgent existe
+                if (hAgent === 0 && cumulHeuresParAgent && cumulHeuresParAgent[mat]) {
+                    const clesAgent = Object.keys(cumulHeuresParAgent[mat]);
+                    const cleTrouvee = clesAgent.find(k => normaliser(k).includes(normaliser(th.nom)));
+                    if (cleTrouvee) hAgent = parseFloat(cumulHeuresParAgent[mat][cleTrouvee]) || 0;
+                }
 
-            heuresRealiseesModule += heuresAgent;
+                themeHeuresFaites += hAgent;
 
-            if (heuresAgent < objectifParAgent) {
-                const reste = Math.max(0, objectifParAgent - heuresAgent);
-                agentsAFormer.push({
-                    nom: nomPrenom,
-                    fait: heuresAgent,
-                    reste: reste,
-                    objectif: objectifParAgent
-                });
-            }
+                if (hAgent < th.heuresCibleAgent) {
+                    agentsAFormer.push({
+                        nom: nomPrenom,
+                        fait: hAgent,
+                        reste: th.heuresCibleAgent - hAgent,
+                        objectif: th.heuresCibleAgent
+                    });
+                }
+            });
+
+            activiteHeuresFaites += themeHeuresFaites;
+
+            agentsAFormer.sort((a, b) => b.reste - a.reste);
+
+            const pctTheme = cibleTotaleThemeEquipe > 0 ? Math.min(100, Math.round((themeHeuresFaites / cibleTotaleThemeEquipe) * 100)) : 100;
+            const themeEstAJour = (pctTheme >= 100) || (th.heuresCibleAgent > 0 && agentsAFormer.length === 0);
+
+            // HTML pour un thème
+            htmlThemes += `
+                <div style="background: ${themeEstAJour ? '#f0fdf4' : '#ffffff'}; border: 1px solid ${themeEstAJour ? '#bbf7d0' : '#cbd5e1'}; border-radius: 6px; padding: 10px 14px; margin-top: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <div>
+                            <strong style="color: #1e293b; font-size: 0.95rem;">${th.nom}</strong>
+                            <span style="font-size: 0.8rem; color: #64748b; margin-left: 6px;">(Objectif : ${th.heuresCibleAgent}h/agent)</span>
+                        </div>
+                        <div style="font-weight: bold; color: ${themeEstAJour ? '#16a34a' : '#d97706'}; font-size: 0.95rem;">
+                            ${pctTheme}% <span style="font-size: 0.8rem; color: #64748b; font-weight: normal;">(${themeHeuresFaites}h / ${cibleTotaleThemeEquipe}h)</span>
+                        </div>
+                    </div>
+
+                    <div style="width: 100%; background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
+                        <div style="width: ${pctTheme}%; background: ${themeEstAJour ? '#16a34a' : '#d97706'}; height: 100%;"></div>
+                    </div>
+
+                    ${themeEstAJour ? `
+                        <div style="color: #16a34a; font-weight: bold; font-size: 0.82rem;">✅ Module 100% à jour pour toute l'équipe</div>
+                    ` : `
+                        <div style="font-size: 0.82rem; color: #334155;">
+                            <strong>Restent à former (${agentsAFormer.length} agent(s)) :</strong> 
+                            ${agentsAFormer.map(a => `${a.nom} <span style="color: #dc2626; font-weight: bold;">(${a.fait}/${a.objectif}h)</span>`).join(', ')}
+                        </div>
+                    `}
+                </div>
+            `;
         });
 
-        totalHeuresFaitesEquipe += heuresRealiseesModule;
+        totalHeuresFaitesGlobal += activiteHeuresFaites;
+        totalHeuresCibleGlobal += activiteHeuresCible;
 
         if (estSpe) {
-            totalSpeFait += heuresRealiseesModule;
+            totalSpeFait += activiteHeuresFaites;
+            totalSpeCible += activiteHeuresCible;
         } else {
-            totalSocleFait += heuresRealiseesModule;
+            totalSocleFait += activiteHeuresFaites;
+            totalSocleCible += activiteHeuresCible;
         }
 
-        agentsAFormer.sort((a, b) => b.reste - a.reste);
+        const pctActivite = activiteHeuresCible > 0 ? Math.min(100, Math.round((activiteHeuresFaites / activiteHeuresCible) * 100)) : 0;
 
-        const pctModule = objectifTotalModuleEquipe > 0 
-            ? Math.min(100, Math.round((heuresRealiseesModule / objectifTotalModuleEquipe) * 100)) 
-            : 100;
-            
-        const estAJour = (pctModule >= 100) || (objectifParAgent > 0 && agentsAFormer.length === 0);
-
-        htmlModules += `
-            <div style="background: ${estAJour ? '#f0fdf4' : '#fff'}; border: 1px solid ${estAJour ? '#bbf7d0' : '#e2e8f0'}; border-radius: 8px; padding: 12px 16px;">
+        // Block HTML d'une Activité avec sa jauge globale
+        htmlContenu += `
+            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <div>
-                        <strong style="font-size: 1.05rem; color: #0f172a;">${nomModule}</strong>
-                        <span style="font-size: 0.85rem; color: #64748b; margin-left: 8px;">(Objectif : ${objectifParAgent}h/agent)</span>
-                    </div>
-                    <div style="font-weight: bold; color: ${estAJour ? '#16a34a' : '#d97706'}; font-size: 1.05rem;">
-                        ${pctModule}% <span style="font-size: 0.85rem; color: #64748b; font-weight: normal;">(${heuresRealiseesModule}h / ${objectifTotalModuleEquipe}h)</span>
-                    </div>
+                    <h3 style="margin: 0; color: #0f172a; font-size: 1.1rem;">📂 Domaine / Activité : ${act.nom}</h3>
+                    <span style="font-size: 1.1rem; font-weight: bold; color: ${pctActivite >= 100 ? '#16a34a' : '#0284c7'};">${pctActivite}% (${activiteHeuresFaites}h / ${activiteHeuresCible}h)</span>
+                </div>
+                
+                <div style="width: 100%; background: #cbd5e1; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 12px;">
+                    <div style="width: ${pctActivite}%; background: ${pctActivite >= 100 ? '#16a34a' : '#0284c7'}; height: 100%;"></div>
                 </div>
 
-                <div style="width: 100%; background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 10px;">
-                    <div style="width: ${pctModule}%; background: ${estAJour ? '#16a34a' : '#d97706'}; height: 100%;"></div>
+                <div style="padding-left: 8px;">
+                    ${htmlThemes}
                 </div>
-
-                ${estAJour ? `
-                    <div style="color: #16a34a; font-weight: bold; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
-                        ✅ Module 100% à jour pour toute l'équipe
-                    </div>
-                ` : `
-                    <div style="font-size: 0.88rem; color: #334155;">
-                        <strong>Restent à former (${agentsAFormer.length} agent(s)) :</strong> 
-                        ${agentsAFormer.map(a => `${a.nom} <span style="color: #dc2626; font-weight: bold;">(${a.fait}/${a.objectif}h)</span>`).join(', ')}
-                    </div>
-                `}
             </div>
         `;
     });
 
     if (totalSocleCible === 0 && totalSpeCible === 0) {
-        totalSocleCible = totalHeuresCibleEquipe;
-        totalSocleFait = totalHeuresFaitesEquipe;
+        totalSocleCible = totalHeuresCibleGlobal;
+        totalSocleFait = totalHeuresFaitesGlobal;
     }
 
-    mettreAJourJauge('barre-global', 'txt-pct-global', 'txt-heures-global', totalHeuresFaitesEquipe, totalHeuresCibleEquipe);
+    // Mise à jour des jauges en-tête
+    mettreAJourJauge('barre-global', 'txt-pct-global', 'txt-heures-global', totalHeuresFaitesGlobal, totalHeuresCibleGlobal);
     mettreAJourJauge('barre-socle', 'txt-pct-socle', null, totalSocleFait, totalSocleCible);
     mettreAJourJauge('barre-spe', 'txt-pct-spe', null, totalSpeFait, totalSpeCible);
 
-    conteneurModules.innerHTML = htmlModules;
+    conteneurModules.innerHTML = htmlContenu;
 }
 // Fonction utilitaire de mise à jour des jauges
 function mettreAJourJauge(idBarre, idTxtPct, idTxtHeures, fait, total) {
