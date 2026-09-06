@@ -1541,9 +1541,19 @@ function genererFicheEquipe() {
         const estSpe = act.type.includes('spe') || act.type.includes('spé');
         const setAgentsRestantsActivite = new Set();
 
-        act.formations.forEach(f => {
-            const cibleTotaleEquipe = f.heuresCibleAgent * effectif;
-            activiteHeuresCible += cibleTotaleEquipe;
+       act.formations.forEach(f => {
+    // Récupère le libellé, l'intitulé ou le nom selon ce qui existe dans 'f'
+    const nomFormation = f.libelle || f.nom || f.intitule || f.code;
+
+    // 1. Filtrer les agents éligibles
+    const agentsEligibles = listeAgentsEquipe.filter(agent => {
+        return agent.specialites && agent.specialites.includes(nomFormation);
+    });
+
+    // 2. Calculer le total
+    const cibleTotaleEquipe = f.heuresCibleAgent * agentsEligibles.length;
+    activiteHeuresCible += cibleTotaleEquipe;
+});
 
             let formationHeuresFaites = 0;
             let agentsAFormer = [];
