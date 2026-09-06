@@ -1527,14 +1527,37 @@ function genererFicheEquipe() {
 
     const normaliser = (str) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
-    // 2. Regroupement du catalogue par Domaine / Activité
+    // Extraction dynamique du nom de formation réel (ex: "INC 1", "INC 1 - Principe...", "GOC 1", etc.)
+    const extraireNomFormation = (item) => {
+        // Liste des propriétés potentielles dans le fichier Excel
+        const proprietes = ['Thème', 'Theme', 'theme', 'thème', 'Code', 'code', 'Libelle', 'Libellé', 'Intitule', 'Intitulé', 'Sous-Domaine', 'Formation', 'formation'];
+        
+        for (const prop of proprietes) {
+            if (item[prop] && String(item[prop]).trim() !== '' && String(item[prop]).trim().toLowerCase() !== 'formation' && String(item[prop]).trim().toLowerCase() !== 'module') {
+                return String(item[prop]).trim();
+            }
+        }
+
+        // Si aucune propriété standard ne colle, on cherche la première valeur texte non générique
+        for (const key of Object.keys(item)) {
+            const kLower = key.toLowerCase();
+            const val = String(item[key]).trim();
+            if (!kLower.includes('domaine') && !kLower.includes('activite') && !kLower.includes('type') && !kLower.includes('heure') && !kLower.includes('duree') && !kLower.includes('quota')) {
+                if (val !== '' && val.toLowerCase() !== 'formation' && val.toLowerCase() !== 'module') {
+                    return val;
+                }
+            }
+        }
+        return "Formation inconnue";
+    };
+
+    // 2. Regroupement par Domaine / Activité
     const activitesMap = {};
 
     catalogue.forEach(item => {
         const nomActivite = item.Activite || item.activite || item.Domaine || item.domaine || "Général";
-        // Prise en compte directe de la colonne "Formation"
-        const nomFormation = item.Formation || item.formation || item.Theme || item.theme || item.Thème || item.Code || "Formation";
-        const heuresCibleAgent = parseFloat(item.Heures || item.heures || item.Quota || item.quota || item.Duree || item.duree || 0);
+        const nomFormation = extraireNomFormation(item);
+        const heuresCibleAgent = parseFloat(item.Heures || item.heures || item.Quota || item.quota || item.Duree || item.duree || item['Objectif (h)'] || 0);
 
         if (!activitesMap[nomActivite]) {
             activitesMap[nomActivite] = {
@@ -1557,7 +1580,7 @@ function genererFicheEquipe() {
 
     let htmlContenu = '';
 
-    // 3. Traitement par Activité et par Formation
+    // 3. Traitement par Activité et Formations
     Object.values(activitesMap).forEach(act => {
         let activiteHeuresFaites = 0;
         let activiteHeuresCible = 0;
@@ -1571,7 +1594,11 @@ function genererFicheEquipe() {
 
             let formationHeuresFaites = 0;
             let agentsAFormer = [];
-            const fNorm = normaliser(f.nom);
+
+            // Déduction du code court (ex: "INC 1" depuis "INC 1 - Principe et règles...")
+            const codeCourt = f.nom.includes('-') ? f.nom.split('-')[0].trim() : f.nom;
+            const codeNorm = normaliser(codeCourt);
+            const nomNorm = normaliser(f.nom);
 
             agentsEquipe.forEach(agent => {
                 const mat = String(agent.Matricule || agent.matricule || agent.MATRICULE || '');
@@ -1579,28 +1606,29 @@ function genererFicheEquipe() {
 
                 let hAgent = 0;
 
-                // Extraction des heures depuis la chaîne d'avancement de l'agent (ex: "GOC 1 : 1/1h")
+                // Lecture dans toutes les clés de l'objet Agent (ex: "INC 1 : 0/2h" ou "GOC 1 : 1/1h")
                 for (const prop in agent) {
                     const val = String(agent[prop] || '');
-                    if (val.includes(':') && val.includes('/')) {
-                        const combinaisonNorm = normaliser(prop + ' ' + val);
-                        if (combinaisonNorm.includes(fNorm) || fNorm.includes(normaliser(prop))) {
-                            const match = val.match(/:\s*([\d\.]+)\s*\//);
-                            if (match) {
-                                hAgent = parseFloat(match[1]) || 0;
-                                break;
-                            }
+                    const texteComplet = `${prop} ${val}`;
+                    const texteNorm = normaliser(texteComplet);
+
+                    if (texteNorm.includes(codeNorm) || (codeNorm.length > 2 && texteNorm.includes(nomNorm))) {
+                        // Extraction du nombre d'heures faites avant le slash "1/1h" ou "4.5/18h"
+                        const matchRatio = val.match(/([\d\.]+)\s*\/\s*[\d\.]+\s*h/i) || val.match(/:\s*([\d\.]+)\s*\//);
+                        if (matchRatio) {
+                            hAgent = parseFloat(matchRatio[1]) || 0;
+                            break;
                         }
                     }
                 }
 
-                // Fallback sur l'historique des saisies directes
+                // Fallback via historique direct des saisies
                 if (hAgent === 0 && Array.isArray(historiqueSaisiesFMPA)) {
                     hAgent = historiqueSaisiesFMPA
                         .filter(h => {
                             const hMat = String(h.Matricule || h.matricule || '');
-                            const hForm = normaliser(h.Formation || h.formation || h.Theme || h.theme || '');
-                            return (hMat === mat) && (hForm.includes(fNorm) || fNorm.includes(hForm));
+                            const hForm = normaliser(h.Formation || h.formation || h.Theme || h.theme || h.Code || '');
+                            return (hMat === mat) && (hForm.includes(codeNorm) || codeNorm.includes(hForm));
                         })
                         .reduce((sum, h) => sum + parseFloat(h.Duree || h.duree || h.Heures || 0), 0);
                 }
