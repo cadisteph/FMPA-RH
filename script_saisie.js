@@ -1506,6 +1506,7 @@ function genererFicheEquipe() {
         return;
     }
 
+    // 1. Filtrer les agents de l'équipe
     const agentsEquipe = (tableauAgentsRH || []).filter(a => {
         const eq = a.Equipe || a.equipe || a.EQUIPE || a['Équipe'];
         return eq === nomEquipe;
@@ -1526,12 +1527,10 @@ function genererFicheEquipe() {
         return;
     }
 
-    // Affichage dans F12 de la structure brute de l'agent
-    console.log("=== STRUCTURE DU PREMIER AGENT DE L'ÉQUIPE ===");
-    console.log(agentsEquipe[0]);
-
+    // Nettoyeur de texte pour comparaison (ex: "EMRS (18h)" -> "emrs", "GOC 1" -> "goc1")
     const epurer = (str) => String(str || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
 
+    // 2. Regroupement du catalogue par Activité / Domaine
     const activitesMap = {};
 
     catalogue.forEach(item => {
@@ -1549,6 +1548,7 @@ function genererFicheEquipe() {
 
         activitesMap[nomActivite].formations.push({
             nom: nomFormation,
+            id: item.id || item.fmpa || '',
             heuresCibleAgent: heuresCibleAgent
         });
     });
@@ -1560,6 +1560,7 @@ function genererFicheEquipe() {
 
     let htmlContenu = '';
 
+    // 3. Calculs et rendu
     Object.values(activitesMap).forEach(act => {
         let activiteHeuresFaites = 0;
         let activiteHeuresCible = 0;
@@ -1575,54 +1576,45 @@ function genererFicheEquipe() {
             let agentsAFormer = [];
 
             const keyFormationCatalogue = epurer(f.nom);
+            const keyIdCatalogue = epurer(f.id);
 
-            agentsEquipe.forEach((agent, idx) => {
-                const mat = String(agent.Matricule || agent.matricule || agent.MATRICULE || '');
+            agentsEquipe.forEach(agent => {
+                const mat = String(agent.Matricule || agent.matricule || agent.MATRICULE || agent.id || '');
                 const nomPrenom = `${agent.Nom || agent.nom || ''} ${agent.Prenom || agent.prenom || ''}`.trim() || `Agent ${mat}`;
 
                 let hAgent = 0;
 
-                // Parcours de toutes les paires clé/valeur de l'agent
-                for (const prop in agent) {
-                    const keyProp = epurer(prop);
-                    const valStr = String(agent[prop] || '');
+                // 1. Recherche dans l'historique des saisies (historiqueSaisiesFMPA)
+                if (Array.isArray(historiqueSaisiesFMPA)) {
+                    hAgent = historiqueSaisiesFMPA
+                        .filter(h => {
+                            const hMat = String(h.Matricule || h.matricule || h.matriculeAgent || h.idAgent || '');
+                            const hForm = epurer(h.Formation || h.formation || h.libelle || h.Theme || h.theme || h.fmpa || h.code || h.id || '');
+                            
+                            const matchMatricule = (hMat === mat);
+                            const matchModule = (hForm === keyFormationCatalogue) || 
+                                                (keyIdCatalogue !== '' && hForm === keyIdCatalogue) || 
+                                                (hForm.length > 2 && keyFormationCatalogue.includes(hForm)) || 
+                                                (keyFormationCatalogue.length > 2 && hForm.includes(keyFormationCatalogue));
 
-                    // CAS 1: Le nom du module est dans le nom de la propriété (ex: agent["GOC 1"] = "1/1h")
-                    if (keyProp === keyFormationCatalogue || keyProp.includes(keyFormationCatalogue) || keyFormationCatalogue.includes(keyProp)) {
-                        const m = valStr.match(/([\d\.]+)\s*\//) || valStr.match(/([\d\.]+)/);
-                        if (m) {
-                            hAgent = parseFloat(m[1]) || 0;
-                            break;
-                        }
-                    }
+                            return matchMatricule && matchModule;
+                        })
+                        .reduce((sum, h) => sum + parseFloat(h.Duree || h.duree || h.Heures || h.heures || h.dureeHeures || 0), 0);
+                }
 
-                    // CAS 2: La valeur contient une chaîne globale "GOC 1 : 1/1h | INC 1 : 0/2h"
-                    if (valStr.includes('|') || valStr.includes('/')) {
-                        const morceaux = valStr.split('|');
-                        for (const morceau of morceaux) {
-                            const keyMorceau = epurer(morceau);
-                            if (keyMorceau.includes(keyFormationCatalogue)) {
-                                const m = morceau.match(/([\d\.]+)\s*\//) || morceau.match(/:\s*([\d\.]+)/);
-                                if (m) {
-                                    hAgent = parseFloat(m[1]) || 0;
-                                    break;
-                                }
+                // 2. Si non trouvé dans l'historique, vérification des attributs dynamiques calculés sur l'agent (s'il en existe)
+                if (hAgent === 0) {
+                    for (const prop in agent) {
+                        const keyProp = epurer(prop);
+                        if (keyProp === keyFormationCatalogue || keyProp === keyIdCatalogue) {
+                            const valStr = String(agent[prop] || '');
+                            const m = valStr.match(/([\d\.]+)/);
+                            if (m) {
+                                hAgent = parseFloat(m[1]) || 0;
+                                break;
                             }
                         }
                     }
-
-                    if (hAgent > 0) break;
-                }
-
-                // Fallback sur l'historique
-                if (hAgent === 0 && Array.isArray(historiqueSaisiesFMPA)) {
-                    hAgent = historiqueSaisiesFMPA
-                        .filter(h => {
-                            const hMat = String(h.Matricule || h.matricule || '');
-                            const hFormKey = epurer(h.Formation || h.formation || h.libelle || h.Theme || h.theme || h.fmpa || '');
-                            return (hMat === mat) && (hFormKey.includes(keyFormationCatalogue) || keyFormationCatalogue.includes(hFormKey));
-                        })
-                        .reduce((sum, h) => sum + parseFloat(h.Duree || h.duree || h.Heures || 0), 0);
                 }
 
                 formationHeuresFaites += hAgent;
