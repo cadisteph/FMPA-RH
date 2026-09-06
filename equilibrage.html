@@ -48,24 +48,33 @@
 
 /* Animation de clignotement rouge / jaune */
 @keyframes clignotementAlerte {
-    0% { background-color: #ef4444; border-color: #b91c1c; color: #ffffff; }
-    50% { background-color: #eab308; border-color: #ca8a04; color: #000000; }
-    100% { background-color: #ef4444; border-color: #b91c1c; color: #ffffff; }
+0% {
+    background-color: #eac40c;
+    box-shadow: 0 0 4px #ea580c;
+}
+100% {
+    background-color: #f80404;
+    box-shadow: 0 0 10px #dc2626;
 }
 
 .btn-reseau-deconnecte {
-    animation: clignotementAlerte 1s infinite;
+    background-color: #f9d016;
+    color: #1e293b;
     font-weight: bold;
-    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    animation: clignoterAlerte 0.35s infinite alternate;
 }
-
+        
 .btn-reseau-connecte {
-    background-color: #2563eb !important;
-    border-color: #3b82f6 !important;
-    color: #ffffff !important;
     animation: none !important;
+    background-color: #334155 !important;
+    color: #4ac1f5;
+    border: 1.5px solid #4ac1f5;
+    font-weight: bold;
     box-shadow: none !important;
-}
 
 
 
@@ -356,8 +365,7 @@
     <div class="header-bar">
         <h2 style="margin: 0; font-size: 1.2rem;">⚖️ Optimisation & Équilibrage des Équipes</h2>
         <div class="header-actions">
-            <label id="btn-charger-excel" class="btn-action btn-reseau-deconnecte" style="cursor: pointer;">
-    📂 Charger Excel (Réseau)
+            <label id="btn-charger-excel" class="btn-action btn-reseau-deconnecte" style="cursor: pointer;">📲 Charger FMPA-RH.xlsx
     <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
 </label>
             <button onclick="window.print()" class="btn-action" style="background: #334155; border-color: #475569;">🖨️ Imprimer la simulation</button>
