@@ -1492,14 +1492,12 @@ function genererFicheEquipe() {
     const conteneurModules = document.getElementById('conteneur-modules-equipe');
     const nomEquipe = selectEquipe ? selectEquipe.value : '';
 
-    // Date du jour
     document.getElementById('fiche-date-edition').textContent = new Date().toLocaleDateString('fr-FR');
 
     if (!nomEquipe) {
         document.getElementById('fiche-titre-equipe').textContent = "BILAN FMA - Aucune équipe sélectionnée";
         document.getElementById('fiche-effectif').textContent = "0 agent(s)";
         conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Veuillez sélectionner une équipe dans la liste ci-dessus.</div>`;
-        
         mettreAJourJauge('barre-global', 'txt-pct-global', 'txt-heures-global', 0, 0);
         mettreAJourJauge('barre-socle', 'txt-pct-socle', null, 0, 0);
         mettreAJourJauge('barre-spe', 'txt-pct-spe', null, 0, 0);
@@ -1508,7 +1506,7 @@ function genererFicheEquipe() {
 
     // 1. Filtrer les agents de l'équipe
     const agentsEquipe = (tableauAgentsRH || []).filter(a => {
-        const eq = a.Equipe || a.equipe || a.EQUIPE || a['Équipe'] || a['EQUIPE'];
+        const eq = a.Equipe || a.equipe || a.EQUIPE || a['Équipe'];
         return eq === nomEquipe;
     });
     const effectif = agentsEquipe.length;
@@ -1521,7 +1519,7 @@ function genererFicheEquipe() {
         return;
     }
 
-    // 2. Traitement des modules du catalogue (avec gestion robuste des noms de champs)
+    // 2. Traitement des modules du catalogue
     const catalogue = catalogueInitial || [];
     if (catalogue.length === 0) {
         conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Catalogue vide. Chargez d'abord FMPA-RH.xlsx.</div>`;
@@ -1530,25 +1528,27 @@ function genererFicheEquipe() {
 
     let totalHeuresFaitesEquipe = 0;
     let totalHeuresCibleEquipe = 0;
-
     let totalSocleFait = 0, totalSocleCible = 0;
     let totalSpeFait = 0, totalSpeCible = 0;
 
     let htmlModules = '';
 
+    // Utilitaire de nettoyage pour comparaison flexible (ex: "GOC 1" matching "GOC")
+    const normaliser = (str) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
     catalogue.forEach(mod => {
-        // Détection automatique des clés pour le titre du module
-        const nomModule = mod.Theme || mod.theme || mod.Thème || mod.thème || mod.Code || mod.code || mod.MODULE || mod.Module || mod.Activité || mod.Activite || mod.activite || "Module sans nom";
-        
-        // Détection automatique des clés pour le quota/objectif d'heures
-        const objectifParAgent = parseFloat(mod.Heures || mod.heures || mod.HEURES || mod.Quota || mod.quota || mod.Duree || mod.duree || mod['Objectif (h)'] || 0);
+        const nomModule = mod.Theme || mod.theme || mod.Thème || mod.thème || mod.Code || mod.code || mod.MODULE || mod.Module || mod.Activité || mod.activite || "Module";
+        const codeNorm = normaliser(nomModule);
+
+        const objectifParAgent = parseFloat(mod.Heures || mod.heures || mod.HEURES || mod.Quota || mod.quota || mod.Duree || mod.duree || 0);
         const objectifTotalModuleEquipe = objectifParAgent * effectif;
-        
+
         totalHeuresCibleEquipe += objectifTotalModuleEquipe;
 
-        // Détection du type (Socle ou Spécialité)
         const typeModule = String(mod.Type || mod.type || mod.Domaine || mod.domaine || '').toLowerCase();
-        if (typeModule.includes('spe') || typeModule.includes('spé')) {
+        const estSpe = typeModule.includes('spe') || typeModule.includes('spé');
+
+        if (estSpe) {
             totalSpeCible += objectifTotalModuleEquipe;
         } else {
             totalSocleCible += objectifTotalModuleEquipe;
@@ -1558,24 +1558,33 @@ function genererFicheEquipe() {
         let agentsAFormer = [];
 
         agentsEquipe.forEach(agent => {
-            const matricule = String(agent.Matricule || agent.matricule || agent.MATRICULE || agent.Id || agent.id || '');
+            const matricule = String(agent.Matricule || agent.matricule || agent.MATRICULE || agent.Id || '');
             const nom = agent.Nom || agent.nom || agent.NOM || '';
             const prenom = agent.Prenom || agent.prenom || agent.PRENOM || '';
             const nomPrenom = `${nom} ${prenom}`.trim() || `Agent ${matricule}`;
 
-            // Recherche des heures dans l'historique pour cet agent et ce module
-            const heuresAgent = (historiqueSaisiesFMPA || [])
+            // Récupération des heures dans l'historique
+            let heuresAgent = (historiqueSaisiesFMPA || [])
                 .filter(h => {
                     const hMat = String(h.Matricule || h.matricule || h.MATRICULE || '');
-                    const hMod = h.Theme || h.theme || h.Thème || h.thème || h.Code || h.code || h.Activité || h.activite || '';
-                    return (hMat === matricule) && (hMod === nomModule);
+                    const hMod = normaliser(h.Theme || h.theme || h.Thème || h.Code || h.code || h.Activité || h.activite || '');
+                    
+                    // Match si le matricule correspond ET que les noms de modules se contiennent
+                    const mêmeAgent = (hMat === matricule);
+                    const mêmeModule = hMod.includes(codeNorm) || codeNorm.includes(hMod);
+                    return mêmeAgent && mêmeModule;
                 })
                 .reduce((sum, h) => sum + parseFloat(h.Duree || h.duree || h.DURÉE || h.Heures || h.heures || 0), 0);
+
+            // Si non trouvé dans l'historique, fallback sur les champs d'heures cumulées dans l'objet agent si présent
+            if (heuresAgent === 0 && agent.cumulHeures && agent.cumulHeures[nomModule]) {
+                heuresAgent = parseFloat(agent.cumulHeures[nomModule]) || 0;
+            }
 
             heuresRealiseesModule += heuresAgent;
 
             if (heuresAgent < objectifParAgent) {
-                const reste = objectifParAgent - heuresAgent;
+                const reste = Math.max(0, objectifParAgent - heuresAgent);
                 agentsAFormer.push({
                     nom: nomPrenom,
                     fait: heuresAgent,
@@ -1587,13 +1596,12 @@ function genererFicheEquipe() {
 
         totalHeuresFaitesEquipe += heuresRealiseesModule;
 
-        if (typeModule.includes('spe') || typeModule.includes('spé')) {
+        if (estSpe) {
             totalSpeFait += heuresRealiseesModule;
         } else {
             totalSocleFait += heuresRealiseesModule;
         }
 
-        // Tri des agents par retard décroissant
         agentsAFormer.sort((a, b) => b.reste - a.reste);
 
         const pctModule = objectifTotalModuleEquipe > 0 
@@ -1602,7 +1610,6 @@ function genererFicheEquipe() {
             
         const estAJour = (pctModule >= 100) || (objectifParAgent > 0 && agentsAFormer.length === 0);
 
-        // HTML de chaque module
         htmlModules += `
             <div style="background: ${estAJour ? '#f0fdf4' : '#fff'}; border: 1px solid ${estAJour ? '#bbf7d0' : '#e2e8f0'}; border-radius: 8px; padding: 12px 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
@@ -1633,13 +1640,11 @@ function genererFicheEquipe() {
         `;
     });
 
-    // Remise à niveau des objectifs totaux si les catégories ne sont pas explicitées
     if (totalSocleCible === 0 && totalSpeCible === 0) {
         totalSocleCible = totalHeuresCibleEquipe;
         totalSocleFait = totalHeuresFaitesEquipe;
     }
 
-    // Mise à jour des jauges d'en-tête
     mettreAJourJauge('barre-global', 'txt-pct-global', 'txt-heures-global', totalHeuresFaitesEquipe, totalHeuresCibleEquipe);
     mettreAJourJauge('barre-socle', 'txt-pct-socle', null, totalSocleFait, totalSocleCible);
     mettreAJourJauge('barre-spe', 'txt-pct-spe', null, totalSpeFait, totalSpeCible);
