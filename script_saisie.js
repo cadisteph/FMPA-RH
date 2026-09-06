@@ -126,7 +126,6 @@ async function chargerClasseur(file) {
         const valWact = classeurXLSX.Sheets["Parametres"]["B1"].v;
         const inputWact = document.getElementById("hist-ref-wact");
         if (inputWact && valWact) {
-            // Formate la date au format YYYY-MM-DD si c'est un objet Date Excel
             const dateStr = valWact instanceof Date 
                 ? valWact.toISOString().slice(0, 10) 
                 : String(valWact);
@@ -140,6 +139,14 @@ async function chargerClasseur(file) {
     alimenterSelectFiltres();
     initialiserFiltresEtListes();
     filtrerEtAfficherTableau();
+
+    // --- MISE À JOUR DU BOUTON UNE FOIS CHARGÉ ---
+    const btnOpen = document.getElementById("btn-open-xlsx");
+    if (btnOpen) {
+        btnOpen.classList.remove("btn-clignotant");
+        btnOpen.classList.add("btn-connecte");
+        btnOpen.innerHTML = "🌐 Réseau connecté";
+    }
 
     afficherStatut(
         `🌐 ${nomFichierXLSX} chargé — ` +
