@@ -1527,8 +1527,25 @@ function genererFicheEquipe() {
         return;
     }
 
-    // Nettoyeur de texte pour comparaison (ex: "EMRS (18h)" -> "emrs", "GOC 1" -> "goc1")
+    // Fonction de nettoyage pour comparer facilement les noms de modules
     const epurer = (str) => String(str || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
+
+    // Fonction pour calculer la durée d'une saisie (en heures)
+    const calculerDureesSaisie = (saisie) => {
+        if (saisie.duree || saisie.Duree || saisie.heures || saisie.Heures) {
+            return parseFloat(saisie.duree || saisie.Duree || saisie.heures || saisie.Heures || 0);
+        }
+        if (saisie.heureDebut && saisie.heureFin) {
+            const [hD, mD] = saisie.heureDebut.split(':').map(Number);
+            const [hF, mF] = saisie.heureFin.split(':').map(Number);
+            const debutMin = hD * 60 + (mD || 0);
+            const finMin = hF * 60 + (mF || 0);
+            if (finMin > debutMin) {
+                return (finMin - debutMin) / 60;
+            }
+        }
+        return 0;
+    };
 
     // 2. Regroupement du catalogue par Activité / Domaine
     const activitesMap = {};
@@ -1548,7 +1565,7 @@ function genererFicheEquipe() {
 
         activitesMap[nomActivite].formations.push({
             nom: nomFormation,
-            id: item.id || item.fmpa || '',
+            id: item.id || '',
             heuresCibleAgent: heuresCibleAgent
         });
     });
@@ -1560,7 +1577,7 @@ function genererFicheEquipe() {
 
     let htmlContenu = '';
 
-    // 3. Calculs et rendu
+    // 3. Calcul par Activité et par Module
     Object.values(activitesMap).forEach(act => {
         let activiteHeuresFaites = 0;
         let activiteHeuresCible = 0;
@@ -1576,45 +1593,22 @@ function genererFicheEquipe() {
             let agentsAFormer = [];
 
             const keyFormationCatalogue = epurer(f.nom);
-            const keyIdCatalogue = epurer(f.id);
 
             agentsEquipe.forEach(agent => {
-                const mat = String(agent.Matricule || agent.matricule || agent.MATRICULE || agent.id || '');
-                const nomPrenom = `${agent.Nom || agent.nom || ''} ${agent.Prenom || agent.prenom || ''}`.trim() || `Agent ${mat}`;
+                const mat = String(agent.matricule || agent.Matricule || agent.id || '');
+                const nomPrenom = `${agent.nom || agent.Nom || ''} ${agent.prenom || agent.Prenom || ''}`.trim() || `Agent ${mat}`;
 
                 let hAgent = 0;
 
-                // 1. Recherche dans l'historique des saisies (historiqueSaisiesFMPA)
+                // Extraction des heures depuis historiqueSaisiesFMPA
                 if (Array.isArray(historiqueSaisiesFMPA)) {
                     hAgent = historiqueSaisiesFMPA
-                        .filter(h => {
-                            const hMat = String(h.Matricule || h.matricule || h.matriculeAgent || h.idAgent || '');
-                            const hForm = epurer(h.Formation || h.formation || h.libelle || h.Theme || h.theme || h.fmpa || h.code || h.id || '');
-                            
-                            const matchMatricule = (hMat === mat);
-                            const matchModule = (hForm === keyFormationCatalogue) || 
-                                                (keyIdCatalogue !== '' && hForm === keyIdCatalogue) || 
-                                                (hForm.length > 2 && keyFormationCatalogue.includes(hForm)) || 
-                                                (keyFormationCatalogue.length > 2 && hForm.includes(keyFormationCatalogue));
-
-                            return matchMatricule && matchModule;
+                        .filter(s => {
+                            const sMat = String(s.matricule || s.Matricule || '');
+                            const sForm = epurer(s.formation || s.Formation || s.libelle || s.fmpa || '');
+                            return (sMat === mat) && (sForm === keyFormationCatalogue || sForm.includes(keyFormationCatalogue) || keyFormationCatalogue.includes(sForm));
                         })
-                        .reduce((sum, h) => sum + parseFloat(h.Duree || h.duree || h.Heures || h.heures || h.dureeHeures || 0), 0);
-                }
-
-                // 2. Si non trouvé dans l'historique, vérification des attributs dynamiques calculés sur l'agent (s'il en existe)
-                if (hAgent === 0) {
-                    for (const prop in agent) {
-                        const keyProp = epurer(prop);
-                        if (keyProp === keyFormationCatalogue || keyProp === keyIdCatalogue) {
-                            const valStr = String(agent[prop] || '');
-                            const m = valStr.match(/([\d\.]+)/);
-                            if (m) {
-                                hAgent = parseFloat(m[1]) || 0;
-                                break;
-                            }
-                        }
-                    }
+                        .reduce((sum, s) => sum + calculerDureesSaisie(s), 0);
                 }
 
                 formationHeuresFaites += hAgent;
