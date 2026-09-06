@@ -624,6 +624,12 @@ function afficherPropositions() {
     if (modal) modal.style.display = "flex";
 }
 
+function imprimerRecommandations() {
+    // Déclenche la boîte de dialogue d'impression native (sauvegarde en PDF disponible)
+    window.print();
+}
+
+
 function fermerModal() { document.getElementById("modal-transferts").style.display = "none"; }
 
 function appliquerPropositions() {
