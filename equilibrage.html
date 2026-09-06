@@ -247,34 +247,32 @@
 
 
 
-        /* Bouton réseau */
+/* Animation d'alerte */
 @keyframes clignoterAlerte {
     0% {
-        background-color: #eac40c;
+        background-color: #eac40c !important;
         box-shadow: 0 0 4px #ea580c;
     }
     100% {
-        background-color: #f80404;
+        background-color: #f80404 !important;
         box-shadow: 0 0 10px #dc2626;
     }
 }
 
+/* Bouton non connecté (clignotant) */
 #btn-reseau-clignotant {
-    background-color: #f9d016;
     color: #1e293b;
     font-weight: bold;
-    padding: 6px 10px;
     border: none;
-    border-radius: 6px;
     cursor: pointer;
-    animation: clignoterAlerte 0.35s infinite alternate;
+    animation: clignoterAlerte 0.35s infinite alternate !important;
 }
 
-        
+/* Bouton une fois connecté (fixe) */
 #btn-reseau-clignotant.connecte {
     animation: none !important;
     background-color: #334155 !important;
-    color: #4ac1f5;
+    color: #4ac1f5 !important;
     border: 1.5px solid #4ac1f5;
     font-weight: bold;
     box-shadow: none !important;
