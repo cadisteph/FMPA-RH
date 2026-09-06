@@ -42,10 +42,6 @@
         }
 
 
-
-
-
-
 /* Animation de clignotement rouge / jaune */
 @keyframes clignotementAlerte {
     0% { background-color: #eac40c; box-shadow: 0 0 4px #ea580c;; color: #1e293b; }
@@ -53,7 +49,7 @@
 }
 
 .btn-reseau-deconnecte {
-    animation: clignotementAlerte 0.35s infinite;
+    animation: clignotementAlerte 0.75s infinite;
     transition: background-color 0.3s, color 0.3s;
     font-weight: bold;
     color: #1e293b;
@@ -70,11 +66,6 @@
 
 
 
-
-
-
-
-        
         /* Panneau de configuration à gauche */
         .panneau-reglages {
             background: #1e293b;
@@ -434,7 +425,7 @@
                 <div class="titre-equipe">Équipe A <span id="count-A" style="font-size: 0.85rem; color: white; background: #334155; padding: 1px 7px; border-radius: 8px;">0</span></div>
                 <div class="dashboard-stats" id="stats-A"></div>
                 <div class="liste-agents" id="container-A">
-                    <div style="padding: 10px; color: #cbd5e1; font-style: italic; font-size: 0.8rem;">
+                    <div style="padding: 10px; color: #cbd5e1; font-style: italic; font-size: 0.8rem; display: none">
                         Veuillez charger le fichier Excel.
                     </div>
                 </div>
@@ -468,5 +459,5 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="script_equilibrage.js?v=1.0.1"></script></body>
+<script src="script_equilibrage.js?v=1.0.2"></script></body>
 </html>
