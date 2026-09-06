@@ -1487,18 +1487,10 @@ function alimenterSelectEquipeModal() {
     if (valeurActuelle) select.value = valeurActuelle;
 }
 
+
+
 function genererFicheEquipe() {
 
-
-agentsEquipe.forEach((agent, index) => {
-    if (index === 0) {
-        console.log("=== INSPECTION PREMIER AGENT EQUIPE ===");
-        console.log("Objet Agent complet :", agent);
-        console.log("Clés disponibles dans l'Agent :", Object.keys(agent));
-    }
-
-
-    
     const selectEquipe = document.getElementById('modal-select-equipe');
     const conteneurModules = document.getElementById('conteneur-modules-equipe');
     const nomEquipe = selectEquipe ? selectEquipe.value : '';
@@ -1585,31 +1577,16 @@ agentsEquipe.forEach((agent, index) => {
             // Nettoyage des clés pour la correspondance (ex: "GOC 1" ou "EMRS")
             const fNorm = normaliser(f.nom);
 
-            agentsEquipe.forEach(agent => {
-                const mat = String(agent.Matricule || agent.matricule || agent.MATRICULE || '');
-                const nomPrenom = `${agent.Nom || agent.nom || ''} ${agent.Prenom || agent.prenom || ''}`.trim() || `Agent ${mat}`;
+            agentsEquipe.forEach((agent, index) => {
+    if (index === 0) {
+        console.log("=== INSPECTION PREMIER AGENT EQUIPE ===");
+        console.log("Objet Agent complet :", agent);
+        console.log("Clés disponibles dans l'Agent :", Object.keys(agent));
+    }
 
-                let hAgent = 0;
 
-                // Extraction de toute la chaîne de texte disponible pour l'agent
-                const texteAgent = Object.values(agent).join(' | ');
 
-                // Découpage par segment séparé par "|"
-                const segments = texteAgent.split('|');
-                for (const seg of segments) {
-                    const segNorm = normaliser(seg);
-
-                    // Vérifie si ce segment correspond au module (ex: "goc1:1/1h" ou "emrs18h:4.5/18h")
-                    if (segNorm.includes(fNorm) || fNorm.includes(segNorm.split(':')[0] || '')) {
-                        // Capture du nombre avant la barre / (ex: 4.5/18h ou 1/1h)
-                        const matchRatio = seg.match(/:\s*([\d\.]+)\s*\//) || seg.match(/([\d\.]+)\s*\/\s*[\d\.]+\s*h/i);
-                        if (matchRatio && matchRatio[1]) {
-                            hAgent = parseFloat(matchRatio[1]) || 0;
-                            break;
-                        }
-                    }
-                }
-
+                
                 // Fallback direct sur l'historique de saisie si non trouvé dans le tableau
                 if (hAgent === 0 && Array.isArray(historiqueSaisiesFMPA)) {
                     hAgent = historiqueSaisiesFMPA
