@@ -1488,15 +1488,6 @@ function alimenterSelectEquipeModal() {
 }
 
 function genererFicheEquipe() {
-
-
-console.log("=== EXAMEN DU CATALOGUE ===");
-console.log("1er objet du catalogue :", catalogueInitial[0]);
-console.log("Les clés disponibles :", Object.keys(catalogueInitial[0] || {}));
-
-
-
-    
     const selectEquipe = document.getElementById('modal-select-equipe');
     const conteneurModules = document.getElementById('conteneur-modules-equipe');
     const nomEquipe = selectEquipe ? selectEquipe.value : '';
@@ -1536,49 +1527,19 @@ console.log("Les clés disponibles :", Object.keys(catalogueInitial[0] || {}));
 
     const normaliser = (str) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
-    // Conversion des identifiants (ex: "fmpa-goc-1" -> "GOC 1")
-    const nettoyerLibelleTheme = (valeur) => {
-        if (!valeur) return '';
-        let str = String(valeur).trim();
-        
-        // Si c'est un ID au format fmpa-xxx-1
-        if (/^fmpa-[a-z0-9]+-\d+/i.test(str)) {
-            const parties = str.split('-');
-            if (parties.length >= 3) {
-                return `${parties[1].toUpperCase()} ${parties[2]}`;
-            }
-        }
-        return str;
-    };
-
-    // Extraction dynamique du véritable nom du thème / formation
-    const extraireNomFormation = (item) => {
-        const champsLibelle = ['Libelle', 'Libellé', 'Thème', 'Theme', 'theme', 'thème', 'Intitule', 'Intitulé', 'Formation', 'formation', 'Code', 'code'];
-        
-        for (const prop of champsLibelle) {
-            if (item[prop] && String(item[prop]).trim() !== '') {
-                const nomPropre = nettoyerLibelleTheme(item[prop]);
-                if (nomPropre && !['formation', 'module'].includes(nomPropre.toLowerCase())) {
-                    return nomPropre;
-                }
-            }
-        }
-        return "Thème inconnu";
-    };
-
-    // 2. Regroupement par Domaine / Activité
+    // 2. Regroupement du catalogue par Activité / Domaine
     const activitesMap = {};
 
     catalogue.forEach(item => {
-        const nomActivite = item.Activite || item.activite || item.Domaine || item.domaine || "Général";
-        const nomFormation = extraireNomFormation(item);
-        const heuresCibleAgent = parseFloat(item.Heures || item.heures || item.Quota || item.quota || item.Duree || item.duree || item['Objectif (h)'] || 0);
+        const nomActivite = item.activite || item.Activite || item.Domaine || item.domaine || "Général";
+        const nomFormation = item.libelle || item.Libelle || item.fmpa || item.sequence || "Formation";
+        const heuresCibleAgent = parseFloat(item.quota || item.Quota || item.heures || item.Heures || 0);
 
         if (!activitesMap[nomActivite]) {
             activitesMap[nomActivite] = {
                 nom: nomActivite,
                 formations: [],
-                type: String(item.Type || item.type || item.Domaine || '').toLowerCase()
+                type: String(item.type || item.Type || '').toLowerCase()
             };
         }
 
@@ -1595,7 +1556,7 @@ console.log("Les clés disponibles :", Object.keys(catalogueInitial[0] || {}));
 
     let htmlContenu = '';
 
-    // 3. Calculs et construction du rendu
+    // 3. Traitement par Activité et par Formation
     Object.values(activitesMap).forEach(act => {
         let activiteHeuresFaites = 0;
         let activiteHeuresCible = 0;
@@ -1610,8 +1571,10 @@ console.log("Les clés disponibles :", Object.keys(catalogueInitial[0] || {}));
             let formationHeuresFaites = 0;
             let agentsAFormer = [];
 
-            // Clé normalisée pour la comparaison (ex: "goc1", "inc1")
-            const fNorm = normaliser(f.nom);
+            // Déduction d'un mot-clé court (ex: "EMRS" depuis "EMRS (18h)" ou "GOC 1" depuis "GOC 1 - ...")
+            const nomCourt = f.nom.includes('(') ? f.nom.split('(')[0].trim() : (f.nom.includes('-') ? f.nom.split('-')[0].trim() : f.nom);
+            const nomCourtNorm = normaliser(nomCourt);
+            const nomCompletNorm = normaliser(f.nom);
 
             agentsEquipe.forEach(agent => {
                 const mat = String(agent.Matricule || agent.matricule || agent.MATRICULE || '');
@@ -1619,13 +1582,12 @@ console.log("Les clés disponibles :", Object.keys(catalogueInitial[0] || {}));
 
                 let hAgent = 0;
 
-                // Parcours des colonnes de l'agent pour matcher "GOC 1 : 1/1h" ou "INC 1 : 0/2h"
+                // Parcours des colonnes de l'agent pour matcher "EMRS (18h) : 4.5/18h" ou "GOC 1 : 1/1h"
                 for (const prop in agent) {
                     const val = String(agent[prop] || '');
-                    const chaineComplete = `${prop} ${val}`;
-                    const chaineNorm = normaliser(chaineComplete);
+                    const chaineNorm = normaliser(`${prop} ${val}`);
 
-                    if (chaineNorm.includes(fNorm)) {
+                    if (chaineNorm.includes(nomCourtNorm) || chaineNorm.includes(nomCompletNorm)) {
                         const matchRatio = val.match(/([\d\.]+)\s*\/\s*[\d\.]+\s*h/i) || val.match(/:\s*([\d\.]+)\s*\//);
                         if (matchRatio) {
                             hAgent = parseFloat(matchRatio[1]) || 0;
@@ -1634,13 +1596,13 @@ console.log("Les clés disponibles :", Object.keys(catalogueInitial[0] || {}));
                     }
                 }
 
-                // Fallback sur l'historique direct
+                // Fallback via historique direct des saisies
                 if (hAgent === 0 && Array.isArray(historiqueSaisiesFMPA)) {
                     hAgent = historiqueSaisiesFMPA
                         .filter(h => {
                             const hMat = String(h.Matricule || h.matricule || '');
-                            const hForm = normaliser(h.Formation || h.formation || h.Theme || h.theme || h.Code || '');
-                            return (hMat === mat) && (hForm.includes(fNorm) || fNorm.includes(hForm));
+                            const hForm = normaliser(h.Formation || h.formation || h.libelle || h.Theme || h.theme || h.fmpa || '');
+                            return (hMat === mat) && (hForm.includes(nomCourtNorm) || nomCourtNorm.includes(hForm));
                         })
                         .reduce((sum, h) => sum + parseFloat(h.Duree || h.duree || h.Heures || 0), 0);
                 }
@@ -1733,6 +1695,9 @@ console.log("Les clés disponibles :", Object.keys(catalogueInitial[0] || {}));
 
     conteneurModules.innerHTML = htmlContenu;
 }
+
+
+
 // Fonction utilitaire de mise à jour des jauges
 function mettreAJourJauge(idBarre, idTxtPct, idTxtHeures, fait, total) {
     const pct = total > 0 ? Math.min(100, Math.round((fait / total) * 100)) : 0;
