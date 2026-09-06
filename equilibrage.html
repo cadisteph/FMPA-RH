@@ -89,30 +89,60 @@
 
 /* Règle CSS pour l'impression / export PDF */
 @media print {
-    body * {
-        visibility: hidden;
-    }
-    /* Affiche uniquement le contenu de la modale */
-    #fenetre-modale, #fenetre-modale * {
-        visibility: visible;
-    }
-    #fenetre-modale {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
+    /* 1. Masquer tout le corps de la page */
+    body {
         background: #ffffff !important;
         color: #000000 !important;
-        box-shadow: none !important;
-        border: none !important;
     }
-    /* Annule le défilement pour tout afficher sur le PDF */
-    .contenu-liste-mouvements, #liste-recommandations {
+
+    body * {
+        visibility: hidden !important;
+    }
+
+    /* 2. Rendre uniquement la modale et son contenu visibles */
+    #modal-transferts, 
+    #modal-transferts * {
+        visibility: visible !important;
+    }
+
+    /* 3. Repositionner la modale pour l'impression A4 */
+    #modal-transferts {
+        position: absolute !important;
+        inset: 0 !important;
+        background: #ffffff !important;
+        display: block !important;
+    }
+
+    .modal-content {
+        background: #ffffff !important;
+        color: #000000 !important;
+        border: none !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+    }
+
+    /* 4. Déplier complètement la liste pour tout afficher (suppression du scroll) */
+    #liste-propositions {
         max-height: none !important;
         overflow: visible !important;
+        color: #000000 !important;
     }
-    /* Masque les boutons d'action sur le document imprimé */
-    .actions-modale, .btn-imprimer-modale {
+
+    #liste-propositions li {
+        color: #000000 !important;
+        page-break-inside: avoid;
+        margin-bottom: 8px !important;
+    }
+
+    #liste-propositions span {
+        color: #475569 !important;
+    }
+
+    /* 5. Masquer les boutons d'action lors de l'impression */
+    .modal-content button, 
+    .modal-content .btn-action {
         display: none !important;
     }
 }
