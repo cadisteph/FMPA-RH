@@ -5,13 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Saisie des Formations FMPA</title>
     <link rel="stylesheet" href="style_saisie.css">
-
-<!-- Bibliothèque pour générer le PDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-
-
-    
 </head>
 <body>
 
@@ -31,7 +24,12 @@
     <section class="top-bar">
         <div class="filter-group">
             <label for="filter-equipe">👥ÉQUIPE</label>
-            <select id="filter-equipe"><option value="">Toutes</option></select>
+
+            <!-- BOUTON D'ACCÈS À LA MODAL ÉQUIPE -->
+            <div style="display: flex; gap: 4px; align-items: center;">
+                <select id="filter-equipe"><option value="">Toutes</option></select>
+                <button type="button" id="btn-open-modal-equipe" class="btn-sec" onclick="ouvrirModalEquipe()" title="Gérer / Consulter les équipes" style="padding: 6px 10px; font-weight: bold;">⚙️</button>
+            </div>
         </div>
 
         <div class="filter-group">
@@ -64,20 +62,20 @@
 
             <div class="table-container">
                 <table class="data-table">
-<thead>
-    <tr>
-        <th style="width:40px;" class="sticky-col col-chk">
-            <input type="checkbox" id="select-all" title="Tout sélectionner / désélectionner">
-        </th>
-        <th class="sticky-col col-agent">Agent</th>
-        <th class="sticky-col col-equipe">Équipe</th>
-        <th>Statut</th>
-        <th class="col-avancement">Avancement Socle</th>
-        <th class="col-avancement">Avancement Spécialités</th>
-        <th class="col-total">Total Socle</th>
-        <th class="col-total">Total Spé.</th>
-    </tr>
-</thead>
+                    <thead>
+                        <tr>
+                            <th style="width:40px;" class="sticky-col col-chk">
+                                <input type="checkbox" id="select-all" title="Tout sélectionner / désélectionner">
+                            </th>
+                            <th class="sticky-col col-agent">Agent</th>
+                            <th class="sticky-col col-equipe">Équipe</th>
+                            <th>Statut</th>
+                            <th class="col-avancement">Avancement Socle</th>
+                            <th class="col-avancement">Avancement Spécialités</th>
+                            <th class="col-total">Total Socle</th>
+                            <th class="col-total">Total Spé.</th>
+                        </tr>
+                    </thead>
                     <tbody id="tbody-agents">
                         <tr>
                             <td colspan="8" class="empty-msg">
@@ -142,63 +140,53 @@
                 </div>
 
                 <div class="form-actions-inline">
-    <button type="submit" id="btn-valider-groupe" class="btn btn-primary" disabled>
-        💾Valider Saisie
-    </button>
-    <button type="button" id="btn-annuler-saisie" class="btn btn-secondary" onclick="annulerSaisie()">
-        ❌Annuler Saisie
-    </button>
-</div>
+                    <button type="submit" id="btn-valider-groupe" class="btn btn-primary" disabled>
+                        💾Valider Saisie
+                    </button>
+                    <button type="button" id="btn-annuler-saisie" class="btn btn-secondary" onclick="annulerSaisie()">
+                        ❌Annuler Saisie
+                    </button>
+                </div>
             </form>
         </section>
     </div>
 </main>
 
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script src="script_saisie.js?v=7"></script>
-
-
-
-
-
-<!-- Fenêtre Modale Historique -->
+<!-- ========================================== -->
+<!-- MODAL 1 : HISTORIQUE                       -->
+<!-- ========================================== -->
 <div id="modal-historique" class="modal-overlay" style="display: none;">
     <div class="modal-content">
 
-            <div class="modal-header">
-    <h2>📜 Historique des Saisies</h2>
-    <div class="filter-card">
-        <!-- Champ déverrouillé par défaut -->
-        <div class="filter-field">
-            <label for="hist-search-agent">👤Agent</label>
-            <input type="text" id="hist-search-agent" placeholder="Nom..." oninput="filtrerHistorique()">
-        </div>
-        <!-- Champ déverrouillé par défaut -->
-        <div class="filter-field">
-            <label for="hist-search-date">📅Date formation</label>
-            <input type="date" id="hist-search-date" onchange="filtrerHistorique()">
-        </div>
-        
-        <!-- NOUVEAU : Date Réf. W@ct (Vérouillé par le code admin) -->
-        <div class="filter-field">
-            <label for="hist-ref-wact">📧Date Réf. W@ct</label>
-            <input type="date" id="hist-ref-wact" onchange="filtrerHistorique()" disabled>
-        </div>
+        <div class="modal-header">
+            <h2>📜 Historique des Saisies</h2>
+            <div class="filter-card">
+                <div class="filter-field">
+                    <label for="hist-search-agent">👤Agent</label>
+                    <input type="text" id="hist-search-agent" placeholder="Nom..." oninput="filtrerHistorique()">
+                </div>
+                <div class="filter-field">
+                    <label for="hist-search-date">📅Date formation</label>
+                    <input type="date" id="hist-search-date" onchange="filtrerHistorique()">
+                </div>
+                
+                <div class="filter-field">
+                    <label for="hist-ref-wact">📧Date Réf. W@ct</label>
+                    <input type="date" id="hist-ref-wact" onchange="filtrerHistorique()" disabled>
+                </div>
 
-        <!-- NOUVEAU : Code Administration -->
-        <div class="filter-field">
-            <label for="hist-code-admin">🔑Code Admin</label>
-            <input type="password" id="hist-code-admin" placeholder="Saisir le code..." oninput="verifierCodeAdmin()">
-            <button type="button" id="btn-changer-code-admin" onclick="modifierMotDePasseAdmin()" style="display: none; margin-left: 8px; padding: 6px 12px; background-color: #0284c7; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">🔑 Modifier MDP</button>
-        </div>
+                <div class="filter-field">
+                    <label for="hist-code-admin">🔑Code Admin</label>
+                    <input type="password" id="hist-code-admin" placeholder="Saisir le code..." oninput="verifierCodeAdmin()">
+                    <button type="button" id="btn-changer-code-admin" onclick="modifierMotDePasseAdmin()" style="display: none; margin-left: 8px; padding: 6px 12px; background-color: #0284c7; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">🔑 Modifier MDP</button>
+                </div>
 
-        <button type="button" class="btn-reset-hist" onclick="reinitialiserFiltresHistorique()">♻️Réinitialiser</button>
-        </div>
-    <!-- Bouton Fermer toujours actif -->        
-                <button type="button" class="btn-print-hist" onclick="exporterHistoriquePDF()"style="background: #f30505; color: #ffffff; border: none; padding: 7px 7px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; margin-top: 14px">🖨️.Pdf</button>
-                <button type="button" class="btn-close" onclick="fermerModalHistorique()" style="background: #1e293b; color: #ffffff; border: 2px solid #f30505; padding: 7px 7px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; margin-top: 14px">❌ Fermer</button>
-
+                <button type="button" class="btn-reset-hist" onclick="reinitialiserFiltresHistorique()">♻️Réinitialiser</button>
             </div>
+            
+            <button type="button" class="btn-print-hist" onclick="exporterHistoriquePDF()" style="background: #f30505; color: #ffffff; border: none; padding: 7px 7px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; margin-top: 14px">🖨️.Pdf</button>
+            <button type="button" class="btn-close" onclick="fermerModalHistorique()" style="background: #1e293b; color: #ffffff; border: 2px solid #f30505; padding: 7px 7px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; margin-top: 14px">❌ Fermer</button>
+        </div>
 
         <div class="modal-body">
             <table class="table-hist">
@@ -224,11 +212,65 @@
     </div>
 </div>
 
+<!-- ========================================== -->
+<!-- MODAL 2 : GESTION / CONSULTATION ÉQUIPE    -->
+<!-- ========================================== -->
+<div id="modal-equipe" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
 
+        <div class="modal-header">
+            <h2>👥 Gestion et Synthèse des Équipes</h2>
+            <div class="filter-card">
+                <div class="filter-field">
+                    <label for="modal-select-equipe">Sélectionner Équipe</label>
+                    <select id="modal-select-equipe" onchange="filtrerDonneesModalEquipe()">
+                        <option value="">Toutes les équipes</option>
+                    </select>
+                </div>
+            </div>
+            <button type="button" class="btn-close" onclick="fermerModalEquipe()" style="background: #1e293b; color: #ffffff; border: 2px solid #f30505; padding: 7px 7px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; margin-top: 14px">❌ Fermer</button>
+        </div>
 
+        <div class="modal-body">
+            <div id="equipe-summary-cards" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; flex: 1;">
+                    <strong>Total Agents :</strong> <span id="equipe-stat-total">0</span>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; flex: 1;">
+                    <strong>Moyenne Socle :</strong> <span id="equipe-stat-socle">0 h</span>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; flex: 1;">
+                    <strong>Moyenne Spécialité :</strong> <span id="equipe-stat-spe">0 h</span>
+                </div>
+            </div>
 
+            <table class="table-hist">
+                <thead>
+                    <tr>
+                        <th>Équipe</th>
+                        <th>Matricule</th>
+                        <th>Agent</th>
+                        <th>Statut</th>
+                        <th>Heures Socle</th>
+                        <th>Heures Spé.</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-modal-equipe">
+                    <!-- Rempli en JS via ouvrirModalEquipe() / filtrerDonneesModalEquipe() -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
+<!-- ========================================== -->
+<!-- BLOC DE SCRIPTS (Placé en bas de page)     -->
+<!-- ========================================== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
+<script src="script_saisie.js?v=7"></script>
 
 </body>
 </html>
