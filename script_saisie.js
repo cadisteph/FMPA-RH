@@ -1506,7 +1506,6 @@ function genererFicheEquipe() {
         return;
     }
 
-    // 1. Filtrer les agents de l'équipe
     const agentsEquipe = (tableauAgentsRH || []).filter(a => {
         const eq = a.Equipe || a.equipe || a.EQUIPE || a['Équipe'];
         return eq === nomEquipe;
@@ -1527,10 +1526,12 @@ function genererFicheEquipe() {
         return;
     }
 
-    // Nettoyage agressif des chaînes pour comparaison sans faille (ex: "EMRS (18h)" -> "emrs", "GOC 1" -> "goc1")
+    // Affichage dans F12 de la structure brute de l'agent
+    console.log("=== STRUCTURE DU PREMIER AGENT DE L'ÉQUIPE ===");
+    console.log(agentsEquipe[0]);
+
     const epurer = (str) => String(str || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
 
-    // 2. Regroupement du catalogue par Activité / Domaine
     const activitesMap = {};
 
     catalogue.forEach(item => {
@@ -1559,7 +1560,6 @@ function genererFicheEquipe() {
 
     let htmlContenu = '';
 
-    // 3. Traitement par Activité et par Formation
     Object.values(activitesMap).forEach(act => {
         let activiteHeuresFaites = 0;
         let activiteHeuresCible = 0;
@@ -1582,36 +1582,39 @@ function genererFicheEquipe() {
 
                 let hAgent = 0;
 
-                // Construction d'une grande chaîne de tous les champs de l'agent
-                const toutLeTexteAgent = Object.entries(agent)
-                    .map(([k, v]) => `${k} : ${v}`)
-                    .join(' | ');
+                // Parcours de toutes les paires clé/valeur de l'agent
+                for (const prop in agent) {
+                    const keyProp = epurer(prop);
+                    const valStr = String(agent[prop] || '');
 
-                if (idx === 0) {
-                    console.log(`[Diagnostic] Agent : ${nomPrenom} | Recherche du module : "${f.nom}" (clé : "${keyFormationCatalogue}")`);
-                }
-
-                // Expression régulière pour extraire toutes les paires du type :  "NomModule : X.X/Yh" ou "NomModule : X.X/Y"
-                // Exemple matche : "GOC 1 : 1/1h", "EMRS (18h) : 4.5/18h", "INC 2 : 0.5/2h"
-                const regexPaires = /([^:|]+)\s*:\s*([\d\.]+)\s*\/\s*[\d\.]+/g;
-                let match;
-
-                while ((match = regexPaires.exec(toutLeTexteAgent)) !== null) {
-                    const nomModuleTrouve = match[1];
-                    const heuresFaitesExtrait = parseFloat(match[2]);
-
-                    const keyModuleTrouve = epurer(nomModuleTrouve);
-
-                    if (keyModuleTrouve === keyFormationCatalogue || keyModuleTrouve.includes(keyFormationCatalogue) || keyFormationCatalogue.includes(keyModuleTrouve)) {
-                        hAgent = heuresFaitesExtrait;
-                        if (idx === 0) {
-                            console.log(`  -> TROUVÉ ! Module : "${nomModuleTrouve}" = ${hAgent}h`);
+                    // CAS 1: Le nom du module est dans le nom de la propriété (ex: agent["GOC 1"] = "1/1h")
+                    if (keyProp === keyFormationCatalogue || keyProp.includes(keyFormationCatalogue) || keyFormationCatalogue.includes(keyProp)) {
+                        const m = valStr.match(/([\d\.]+)\s*\//) || valStr.match(/([\d\.]+)/);
+                        if (m) {
+                            hAgent = parseFloat(m[1]) || 0;
+                            break;
                         }
-                        break;
                     }
+
+                    // CAS 2: La valeur contient une chaîne globale "GOC 1 : 1/1h | INC 1 : 0/2h"
+                    if (valStr.includes('|') || valStr.includes('/')) {
+                        const morceaux = valStr.split('|');
+                        for (const morceau of morceaux) {
+                            const keyMorceau = epurer(morceau);
+                            if (keyMorceau.includes(keyFormationCatalogue)) {
+                                const m = morceau.match(/([\d\.]+)\s*\//) || morceau.match(/:\s*([\d\.]+)/);
+                                if (m) {
+                                    hAgent = parseFloat(m[1]) || 0;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (hAgent > 0) break;
                 }
 
-                // Fallback si la regex n'a rien trouvé : recherche dans l'historique de saisie JS
+                // Fallback sur l'historique
                 if (hAgent === 0 && Array.isArray(historiqueSaisiesFMPA)) {
                     hAgent = historiqueSaisiesFMPA
                         .filter(h => {
