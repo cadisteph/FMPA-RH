@@ -1571,10 +1571,8 @@ function genererFicheEquipe() {
             let formationHeuresFaites = 0;
             let agentsAFormer = [];
 
-            // Déduction d'un mot-clé court (ex: "EMRS" depuis "EMRS (18h)" ou "GOC 1" depuis "GOC 1 - ...")
-            const nomCourt = f.nom.includes('(') ? f.nom.split('(')[0].trim() : (f.nom.includes('-') ? f.nom.split('-')[0].trim() : f.nom);
-            const nomCourtNorm = normaliser(nomCourt);
-            const nomCompletNorm = normaliser(f.nom);
+            // Nettoyage des clés pour la correspondance (ex: "GOC 1" ou "EMRS")
+            const fNorm = normaliser(f.nom);
 
             agentsEquipe.forEach(agent => {
                 const mat = String(agent.Matricule || agent.matricule || agent.MATRICULE || '');
@@ -1582,27 +1580,32 @@ function genererFicheEquipe() {
 
                 let hAgent = 0;
 
-                // Parcours des colonnes de l'agent pour matcher "EMRS (18h) : 4.5/18h" ou "GOC 1 : 1/1h"
-                for (const prop in agent) {
-                    const val = String(agent[prop] || '');
-                    const chaineNorm = normaliser(`${prop} ${val}`);
+                // Extraction de toute la chaîne de texte disponible pour l'agent
+                const texteAgent = Object.values(agent).join(' | ');
 
-                    if (chaineNorm.includes(nomCourtNorm) || chaineNorm.includes(nomCompletNorm)) {
-                        const matchRatio = val.match(/([\d\.]+)\s*\/\s*[\d\.]+\s*h/i) || val.match(/:\s*([\d\.]+)\s*\//);
-                        if (matchRatio) {
+                // Découpage par segment séparé par "|"
+                const segments = texteAgent.split('|');
+                for (const seg of segments) {
+                    const segNorm = normaliser(seg);
+
+                    // Vérifie si ce segment correspond au module (ex: "goc1:1/1h" ou "emrs18h:4.5/18h")
+                    if (segNorm.includes(fNorm) || fNorm.includes(segNorm.split(':')[0] || '')) {
+                        // Capture du nombre avant la barre / (ex: 4.5/18h ou 1/1h)
+                        const matchRatio = seg.match(/:\s*([\d\.]+)\s*\//) || seg.match(/([\d\.]+)\s*\/\s*[\d\.]+\s*h/i);
+                        if (matchRatio && matchRatio[1]) {
                             hAgent = parseFloat(matchRatio[1]) || 0;
                             break;
                         }
                     }
                 }
 
-                // Fallback via historique direct des saisies
+                // Fallback direct sur l'historique de saisie si non trouvé dans le tableau
                 if (hAgent === 0 && Array.isArray(historiqueSaisiesFMPA)) {
                     hAgent = historiqueSaisiesFMPA
                         .filter(h => {
                             const hMat = String(h.Matricule || h.matricule || '');
                             const hForm = normaliser(h.Formation || h.formation || h.libelle || h.Theme || h.theme || h.fmpa || '');
-                            return (hMat === mat) && (hForm.includes(nomCourtNorm) || nomCourtNorm.includes(hForm));
+                            return (hMat === mat) && (hForm.includes(fNorm) || fNorm.includes(hForm));
                         })
                         .reduce((sum, h) => sum + parseFloat(h.Duree || h.duree || h.Heures || 0), 0);
                 }
