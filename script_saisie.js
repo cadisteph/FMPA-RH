@@ -1490,7 +1490,6 @@ function alimenterSelectEquipeModal() {
 
 
 function genererFicheEquipe() {
-
     const selectEquipe = document.getElementById('modal-select-equipe');
     const conteneurModules = document.getElementById('conteneur-modules-equipe');
     const nomEquipe = selectEquipe ? selectEquipe.value : '';
@@ -1528,7 +1527,8 @@ function genererFicheEquipe() {
         return;
     }
 
-    const normaliser = (str) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    // Nettoyage agressif des chaînes pour comparaison sans faille (ex: "EMRS (18h)" -> "emrs", "GOC 1" -> "goc1")
+    const epurer = (str) => String(str || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
 
     // 2. Regroupement du catalogue par Activité / Domaine
     const activitesMap = {};
@@ -1574,26 +1574,50 @@ function genererFicheEquipe() {
             let formationHeuresFaites = 0;
             let agentsAFormer = [];
 
-            // Nettoyage des clés pour la correspondance (ex: "GOC 1" ou "EMRS")
-            const fNorm = normaliser(f.nom);
+            const keyFormationCatalogue = epurer(f.nom);
 
-            agentsEquipe.forEach((agent, index) => {
-    if (index === 0) {
-        console.log("=== INSPECTION PREMIER AGENT EQUIPE ===");
-        console.log("Objet Agent complet :", agent);
-        console.log("Clés disponibles dans l'Agent :", Object.keys(agent));
-    }
+            agentsEquipe.forEach((agent, idx) => {
+                const mat = String(agent.Matricule || agent.matricule || agent.MATRICULE || '');
+                const nomPrenom = `${agent.Nom || agent.nom || ''} ${agent.Prenom || agent.prenom || ''}`.trim() || `Agent ${mat}`;
 
+                let hAgent = 0;
 
+                // Construction d'une grande chaîne de tous les champs de l'agent
+                const toutLeTexteAgent = Object.entries(agent)
+                    .map(([k, v]) => `${k} : ${v}`)
+                    .join(' | ');
 
-                
-                // Fallback direct sur l'historique de saisie si non trouvé dans le tableau
+                if (idx === 0) {
+                    console.log(`[Diagnostic] Agent : ${nomPrenom} | Recherche du module : "${f.nom}" (clé : "${keyFormationCatalogue}")`);
+                }
+
+                // Expression régulière pour extraire toutes les paires du type :  "NomModule : X.X/Yh" ou "NomModule : X.X/Y"
+                // Exemple matche : "GOC 1 : 1/1h", "EMRS (18h) : 4.5/18h", "INC 2 : 0.5/2h"
+                const regexPaires = /([^:|]+)\s*:\s*([\d\.]+)\s*\/\s*[\d\.]+/g;
+                let match;
+
+                while ((match = regexPaires.exec(toutLeTexteAgent)) !== null) {
+                    const nomModuleTrouve = match[1];
+                    const heuresFaitesExtrait = parseFloat(match[2]);
+
+                    const keyModuleTrouve = epurer(nomModuleTrouve);
+
+                    if (keyModuleTrouve === keyFormationCatalogue || keyModuleTrouve.includes(keyFormationCatalogue) || keyFormationCatalogue.includes(keyModuleTrouve)) {
+                        hAgent = heuresFaitesExtrait;
+                        if (idx === 0) {
+                            console.log(`  -> TROUVÉ ! Module : "${nomModuleTrouve}" = ${hAgent}h`);
+                        }
+                        break;
+                    }
+                }
+
+                // Fallback si la regex n'a rien trouvé : recherche dans l'historique de saisie JS
                 if (hAgent === 0 && Array.isArray(historiqueSaisiesFMPA)) {
                     hAgent = historiqueSaisiesFMPA
                         .filter(h => {
                             const hMat = String(h.Matricule || h.matricule || '');
-                            const hForm = normaliser(h.Formation || h.formation || h.libelle || h.Theme || h.theme || h.fmpa || '');
-                            return (hMat === mat) && (hForm.includes(fNorm) || fNorm.includes(hForm));
+                            const hFormKey = epurer(h.Formation || h.formation || h.libelle || h.Theme || h.theme || h.fmpa || '');
+                            return (hMat === mat) && (hFormKey.includes(keyFormationCatalogue) || keyFormationCatalogue.includes(hFormKey));
                         })
                         .reduce((sum, h) => sum + parseFloat(h.Duree || h.duree || h.Heures || 0), 0);
                 }
