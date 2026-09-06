@@ -66,6 +66,66 @@
 
 
 
+
+
+/* Style du bouton imprimer */
+.btn-imprimer-modale {
+    background-color: #4b5563;
+    color: #ffffff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+}
+
+.btn-imprimer-modale:hover {
+    background-color: #374151;
+}
+
+/* Règle CSS pour l'impression / export PDF */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    /* Affiche uniquement le contenu de la modale */
+    #fenetre-modale, #fenetre-modale * {
+        visibility: visible;
+    }
+    #fenetre-modale {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: #ffffff !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    /* Annule le défilement pour tout afficher sur le PDF */
+    .contenu-liste-mouvements, #liste-recommandations {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+    /* Masque les boutons d'action sur le document imprimé */
+    .actions-modale, .btn-imprimer-modale {
+        display: none !important;
+    }
+}
+
+
+
+
+
+
+
+
+        
+
         /* Panneau de configuration à gauche */
         .panneau-reglages {
             background: #1e293b;
@@ -453,6 +513,7 @@
             <ul id="liste-propositions" style="font-size: 0.82rem; line-height: 1.4; color: #60a5fa; max-height: 200px; overflow-y: auto; padding-left: 18px; margin-bottom: 12px;"></ul>
             <div style="display: flex; gap: 8px;">
                 <button onclick="appliquerPropositions()" style="flex: 1; padding: 8px; background: #22c55e; border: none; color: white; border-radius: 5px; font-weight: bold; cursor: pointer;">Valider les changements</button>
+                <button type="button" class="btn-imprimer-modale" onclick="imprimerRecommandations()">📑 Export PDF</button>
                 <button onclick="fermerModal()" style="padding: 8px 12px; background: #64748b; border: none; color: white; border-radius: 5px; cursor: pointer;">Annuler</button>
             </div>
         </div>
