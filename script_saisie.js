@@ -1474,7 +1474,7 @@ function alimenterSelectEquipeModal() {
 
 /**
  * Filtre une liste d'agents en fonction d'un module/domaine de formation requis.
- * @param {Array} listeAgents - La liste complète des agents (ex: tableauAgentsRH)
+ * @param {Array} listeAgents - La liste complète des agents
  * @param {string} filtreModule - Le nom ou l'ID du module/domaine à filtrer
  * @returns {Array} La liste des agents filtrés
  */
@@ -1485,10 +1485,10 @@ function filtrerAgentsPourModale(listeAgents, filtreModule) {
     const recherche = filtreModule.toLowerCase().trim();
 
     return listeAgents.filter(agent => {
-        // Recherche dans les spécialités, compétences ou l'équipe de l'agent
-        const specialites = Array.isArray(agent.specialites) ? agent.specialites.join(" ") : String(agent.specialites || "");
-        const competences = Array.isArray(agent.competences) ? agent.competences.join(" ") : String(agent.competences || "");
-        const infosAgent = `${agent.equipe || ""} ${specialites} ${competences}`.toLowerCase();
+        const specialites = Array.isArray(agent.specialites) ? agent.specialites.join(" ") : String(agent.specialites || agent.Specialites || "");
+        const competences = Array.isArray(agent.competences) ? agent.competences.join(" ") : String(agent.competences || agent.Competences || "");
+        const nomComplet = `${agent.nom || agent.Nom || ''} ${agent.prenom || agent.Prenom || ''}`;
+        const infosAgent = `${agent.equipe || agent.Equipe || ""} ${specialites} ${competences} ${nomComplet}`.toLowerCase();
 
         return infosAgent.includes(recherche);
     });
@@ -1514,10 +1514,17 @@ function genererFicheEquipe() {
         return;
     }
 
-    const agentsEquipe = (tableauAgentsRH || []).filter(a => {
+    // 1. Filtrage initial par équipe
+    let agentsEquipe = (tableauAgentsRH || []).filter(a => {
         const eq = a.Equipe || a.equipe || a.EQUIPE || a['Équipe'];
         return eq === nomEquipe;
     });
+
+    // 2. Application du filtre module / recherche s'il existe
+    const inputFiltre = document.getElementById('filter-module') || document.getElementById('filter-recherche');
+    const termeFiltre = inputFiltre ? inputFiltre.value : '';
+    agentsEquipe = filtrerAgentsPourModale(agentsEquipe, termeFiltre);
+
     const effectif = agentsEquipe.length;
 
     const tit = document.getElementById('fiche-titre-equipe');
