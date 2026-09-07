@@ -1713,10 +1713,10 @@ function genererFicheEquipe() {
         const pctActivite = activiteHeuresCible > 0 ? Math.min(100, Math.round((activiteHeuresFaites / activiteHeuresCible) * 100)) : 0;
 
         htmlContenu += `
-            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px; margin-bottom: 6px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <h3 style="margin: 0; color: #0f172a; font-size: 1.1rem;">📂 Domaine / Activité : ${act.nom}</h3>
-                    <span style="font-size: 1.1rem; font-weight: bold; color: ${pctActivite >= 100 ? '#16a34a' : '#0284c7'};">${pctActivite}% (${activiteHeuresFaites}h / ${activiteHeuresCible}h)</span>
+                    <h3 style="margin: 0; color: #0f172a; font-size: 1rem;">📂 Domaine / Activité : ${act.nom}</h3>
+                    <span style="font-size: 0.9rem; font-weight: bold; color: ${pctActivite >= 100 ? '#16a34a' : '#0284c7'};">${pctActivite}% (${activiteHeuresFaites}h / ${activiteHeuresCible}h)</span>
                 </div>
                 
                 <div style="width: 100%; background: #cbd5e1; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 12px;">
@@ -1949,10 +1949,10 @@ function genererFicheAgent() {
         const pctAct = actCible > 0 ? Math.min(100, Math.round((actFait / actCible) * 100)) : 0;
 
         htmlContenu += `
-            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px; margin-bottom: 6px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <h3 style="margin: 0; color: #0f172a; font-size: 1.05rem;">📂 ${act.nom} ${estSpe ? '<span style="font-size: 0.75rem; background:#e0e7ff; color:#4338ca; padding: 2px 6px; border-radius:4px;">Spécialité</span>' : ''}</h3>
-                    <span style="font-size: 1rem; font-weight: bold; color: ${pctAct >= 100 ? '#16a34a' : '#0284c7'};">${pctAct}% (${actFait}h / ${actCible}h)</span>
+                    <h3 style="margin: 0; color: #0f172a; font-size: 0.95rem;">📂 ${act.nom} ${estSpe ? '<span style="font-size: 0.75rem; background:#e0e7ff; color:#4338ca; padding: 2px 6px; border-radius:4px;">Spécialité</span>' : ''}</h3>
+                    <span style="font-size: 0.85rem; font-weight: bold; color: ${pctAct >= 100 ? '#16a34a' : '#0284c7'};">${pctAct}% (${actFait}h / ${actCible}h)</span>
                 </div>
                 ${htmlFormations}
             </div>
