@@ -28,7 +28,6 @@
             <!-- BOUTON D'ACCÈS À LA MODAL ÉQUIPE -->
             <div style="display: flex; gap: 4px; align-items: center;">
                 <select id="filter-equipe"><option value="">Toutes</option></select>
-                <button type="button" id="btn-open-modal-equipe" class="btn-sec" onclick="ouvrirModalEquipe()" title="Gérer / Consulter les équipes" style="padding: 6px 10px; font-weight: bold;">⚙️</button>
             </div>
         </div>
 
@@ -42,6 +41,10 @@
             <input type="text" id="filter-search" placeholder="Nom, prénom, matricule...">
         </div>
 
+        <button type="button" id="btn-open-modal-equipe" class="btn-sec" onclick="ouvrirModalEquipe()" title="Gérer / Consulter les équipes" style="padding: 6px 10px; font-weight: bold;">⚙️ Fiche Equipe</button>
+        
+        <button type="button" onclick="ouvrirModalAgent()">👤 Fiche Agent</button>
+        
         <button id="btn-reset-filters" class="btn-sec">🔄Réinitialiser Filtres</button>
         
         <input type="file" id="file-input-xlsx" accept=".xlsx,.xls" style="display:none;">
