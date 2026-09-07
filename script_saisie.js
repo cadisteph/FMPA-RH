@@ -34,10 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById('filter-module')?.addEventListener('input', genererFicheEquipe);
     document.getElementById('filter-recherche')?.addEventListener('input', genererFicheEquipe);
-});
 
-
-    
     document.getElementById("btn-open-xlsx")?.addEventListener("click", ouvrirFichierXLSX);
     document.getElementById("file-input-xlsx")?.addEventListener("change", importerXLSXFallback);
 
