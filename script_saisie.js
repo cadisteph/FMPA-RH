@@ -1472,6 +1472,28 @@ function alimenterSelectEquipeModal() {
     if (valeurActuelle) select.value = valeurActuelle;
 }
 
+/**
+ * Filtre une liste d'agents en fonction d'un module/domaine de formation requis.
+ * @param {Array} listeAgents - La liste complète des agents (ex: tableauAgentsRH)
+ * @param {string} filtreModule - Le nom ou l'ID du module/domaine à filtrer
+ * @returns {Array} La liste des agents filtrés
+ */
+function filtrerAgentsPourModale(listeAgents, filtreModule) {
+    if (!Array.isArray(listeAgents)) return [];
+    if (!filtreModule || filtreModule.trim() === "") return listeAgents;
+
+    const recherche = filtreModule.toLowerCase().trim();
+
+    return listeAgents.filter(agent => {
+        // Recherche dans les spécialités, compétences ou l'équipe de l'agent
+        const specialites = Array.isArray(agent.specialites) ? agent.specialites.join(" ") : String(agent.specialites || "");
+        const competences = Array.isArray(agent.competences) ? agent.competences.join(" ") : String(agent.competences || "");
+        const infosAgent = `${agent.equipe || ""} ${specialites} ${competences}`.toLowerCase();
+
+        return infosAgent.includes(recherche);
+    });
+}
+
 function genererFicheEquipe() {
     const selectEquipe = document.getElementById('modal-select-equipe');
     const conteneurModules = document.getElementById('conteneur-modules-equipe');
