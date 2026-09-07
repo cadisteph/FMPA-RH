@@ -31,7 +31,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (dateInput) dateInput.valueAsDate = new Date();
 
     afficherMessageAccueil();
-document.getElementById('filter-module')?.addEventListener('input', genererFicheEquipe);
+
+    document.getElementById('filter-module')?.addEventListener('input', genererFicheEquipe);
     document.getElementById('filter-recherche')?.addEventListener('input', genererFicheEquipe);
 });
 
