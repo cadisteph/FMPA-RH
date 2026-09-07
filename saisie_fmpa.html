@@ -308,6 +308,79 @@
 </div>
 
 
+<!-- ========================================== -->
+<!-- MODAL 3 : BILAN & FICHE AGENT              -->
+<!-- ========================================== -->
+<div id="modal-agent" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 900px; width: 95%;">
+
+        <!-- En-tête avec bouton Impression & Sélecteur Agent -->
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px;">
+            <div>
+                <button type="button" class="btn-primary" onclick="window.print()" style="padding: 8px 14px; background-color: #0284c7; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">🖨️ Imprimer la fiche agent</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label for="modal-select-agent" style="font-weight: bold;">Agent :</label>
+                <select id="modal-select-agent" onchange="genererFicheAgent()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: bold;">
+                    <option value="">-- Choisir un agent --</option>
+                </select>
+                <button type="button" class="btn-close" onclick="fermerModalAgent()" style="background: #ef4444; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer;">❌ Fermer</button>
+            </div>
+        </div>
+
+        <!-- Corps de la Fiche Agent -->
+        <div class="modal-body" id="zone-impression-agent" style="padding-top: 15px;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #cbd5e1; padding-bottom: 10px;">
+                <div>
+                    <h2 id="fiche-agent-nom" style="margin: 0; color: #1e293b;">FICHE INDIVIDUELLE FMA</h2>
+                    <p id="fiche-agent-infos" style="margin: 4px 0 0 0; color: #64748b; font-weight: 500;">Sélectionnez un agent...</p>
+                </div>
+                <div style="text-align: right; font-size: 0.85rem; color: #64748b;">
+                    Édité le : <span id="fiche-agent-date-edition">-</span>
+                </div>
+            </div>
+
+            <!-- Filtre de recherche interne pour les modules -->
+            <div style="margin-bottom: 15px;">
+                <input type="text" id="filter-module-agent" placeholder="🔍 Filtrer un module ou domaine..." oninput="genererFicheAgent()" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+            </div>
+
+            <!-- Résumé des Jauges de l'agent -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div>
+                    <div style="font-weight: bold; color: #1e293b; font-size: 0.9rem;">Progression Globale</div>
+                    <div style="font-size: 1.1rem; font-weight: bold; color: #0284c7;"><span id="txt-pct-agent-global">0%</span> <span id="txt-heures-agent-global" style="font-size: 0.85rem; color: #64748b;">(0h / 0h)</span></div>
+                    <div style="width: 100%; background: #cbd5e1; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 4px;">
+                        <div id="barre-agent-global" style="width: 0%; background: #0284c7; height: 100%;"></div>
+                    </div>
+                </div>
+                <div>
+                    <div style="font-weight: bold; color: #1e293b; font-size: 0.9rem;">Socle Commun</div>
+                    <div style="font-size: 1.1rem; font-weight: bold; color: #16a34a;"><span id="txt-pct-agent-socle">0%</span></div>
+                    <div style="width: 100%; background: #cbd5e1; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 4px;">
+                        <div id="barre-agent-socle" style="width: 0%; background: #16a34a; height: 100%;"></div>
+                    </div>
+                </div>
+                <div>
+                    <div style="font-weight: bold; color: #1e293b; font-size: 0.9rem;">Spécialités</div>
+                    <div style="font-size: 1.1rem; font-weight: bold; color: #4338ca;"><span id="txt-pct-agent-spe">0%</span></div>
+                    <div style="width: 100%; background: #cbd5e1; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 4px;">
+                        <div id="barre-agent-spe" style="width: 0%; background: #4338ca; height: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conteneur dynamique des domaines/modules de l'agent -->
+            <div id="conteneur-modules-agent">
+                <div style="text-align:center; padding: 20px; color: #64748b;">Veuillez sélectionner un agent dans la liste ci-dessus.</div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+    
 
     
 <!-- ========================================== -->
