@@ -621,3 +621,69 @@ body {
     color: #ffffff !important;
 }
 
+
+
+
+
+/* ==========================================
+   STYLE IMPRESSION POUR LA MODALE ÉQUIPE
+   ========================================== */
+@media print {
+    /* 1. Masquer tout le reste de la page */
+    body * {
+        visibility: hidden !important;
+    }
+
+    /* 2. Rendre visible uniquement la modale et ses enfants */
+    #modal-equipe,
+    #modal-equipe * {
+        visibility: visible !important;
+    }
+
+    /* 3. Débloquer la superposition (overlay) et positionner en haut de page */
+    #modal-equipe.modal-overlay {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        background: transparent !important;
+        display: block !important;
+    }
+
+    /* 4. Déplier le contenu de la modale pour supprimer toute scrollbar */
+    #modal-equipe .modal-content {
+        position: relative !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+
+    /* 5. S'assurer que le corps de la modale s'étende sur plusieurs pages A4 si besoin */
+    #zone-impression-equipe,
+    #conteneur-modules-equipe {
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* 6. Masquer les éléments interactifs à l'impression (boutons, sélecteurs) */
+    .modal-header button,
+    .modal-header select,
+    .modal-header label,
+    #modal-equipe input {
+        display: none !important;
+    }
+
+    /* 7. Éviter qu'un bloc de module soit coupé au milieu d'un saut de page */
+    #conteneur-modules-equipe > div {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+}
+
