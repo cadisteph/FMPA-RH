@@ -629,19 +629,18 @@ body {
    STYLE IMPRESSION POUR LA MODALE ÉQUIPE
    ========================================== */
 @media print {
-    /* 1. Masquer tout le reste de la page */
     body * {
         visibility: hidden !important;
     }
 
-    /* 2. Rendre visible uniquement la modale et ses enfants */
-    #modal-equipe,
-    #modal-equipe * {
+    /* Rendre visible la modale équipe OU la modale agent */
+    #modal-equipe, #modal-equipe *,
+    #modal-agent, #modal-agent * {
         visibility: visible !important;
     }
 
-    /* 3. Débloquer la superposition (overlay) et positionner en haut de page */
-    #modal-equipe.modal-overlay {
+    #modal-equipe.modal-overlay,
+    #modal-agent.modal-overlay {
         position: absolute !important;
         left: 0 !important;
         top: 0 !important;
@@ -651,8 +650,8 @@ body {
         display: block !important;
     }
 
-    /* 4. Déplier le contenu de la modale pour supprimer toute scrollbar */
-    #modal-equipe .modal-content {
+    #modal-equipe .modal-content,
+    #modal-agent .modal-content {
         position: relative !important;
         width: 100% !important;
         max-width: 100% !important;
@@ -664,26 +663,26 @@ body {
         padding: 0 !important;
     }
 
-    /* 5. S'assurer que le corps de la modale s'étende sur plusieurs pages A4 si besoin */
     #zone-impression-equipe,
-    #conteneur-modules-equipe {
+    #zone-impression-agent,
+    #conteneur-modules-equipe,
+    #conteneur-modules-agent {
         max-height: none !important;
         height: auto !important;
         overflow: visible !important;
     }
 
-    /* 6. Masquer les éléments interactifs à l'impression (boutons, sélecteurs) */
     .modal-header button,
     .modal-header select,
     .modal-header label,
+    #modal-agent input,
     #modal-equipe input {
         display: none !important;
     }
 
-    /* 7. Éviter qu'un bloc de module soit coupé au milieu d'un saut de page */
-    #conteneur-modules-equipe > div {
+    #conteneur-modules-equipe > div,
+    #conteneur-modules-agent > div {
         page-break-inside: avoid;
         break-inside: avoid;
     }
 }
-
