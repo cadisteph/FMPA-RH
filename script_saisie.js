@@ -1664,7 +1664,7 @@ function genererFicheEquipe() {
 
             // Badge visuel Socle vs Spécialité
             const badgeType = estSpe 
-                ? `<span style="background: #e0e7ff; color: #4338ca; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 600;">Spécialité (${effectifConcerne} spéléo/agent(s))</span>`
+                ? `<span style="background: #e0e7ff; color: #4338ca; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 600;">Spécialité (${effectifConcerne} agent(s))</span>`
                 : `<span style="background: #f1f5f9; color: #475569; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">Socle Commun</span>`;
 
             htmlFormations += `
