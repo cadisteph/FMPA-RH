@@ -1755,3 +1755,214 @@ window.addEventListener('click', function(event) {
     if (event.target === modalHist) fermerModalHistorique();
     if (event.target === modalEq) fermerModalEquipe();
 });
+
+
+
+
+// --- OUVERTURE / FERMETURE DE LA MODALE AGENT ---
+function ouvrirModalAgent() {
+    const modal = document.getElementById('modal-agent');
+    const select = document.getElementById('modal-select-agent');
+    if (!modal || !select) return;
+
+    // Remplir la liste déroulante des agents
+    select.innerHTML = '<option value="">-- Choisir un agent --</option>';
+    const agents = (tableauAgentsRH || []).slice().sort((a, b) => {
+        const nomA = (a.nom || a.Nom || '').toUpperCase();
+        const nomB = (b.nom || b.Nom || '').toUpperCase();
+        return nomA.localeCompare(nomB);
+    });
+
+    agents.forEach(a => {
+        const mat = a.matricule || a.Matricule || a.id || '';
+        const nomPrenom = `${a.nom || a.Nom || ''} ${a.prenom || a.Prenom || ''}`.trim();
+        const eq = a.Equipe || a.equipe || a.EQUIPE || '';
+        const option = document.createElement('option');
+        option.value = mat;
+        option.textContent = `${nomPrenom} (${eq || 'Sans équipe'})`;
+        select.appendChild(option);
+    });
+
+    modal.style.display = 'flex';
+    genererFicheAgent();
+}
+
+function fermerModalAgent() {
+    const modal = document.getElementById('modal-agent');
+    if (modal) modal.style.display = 'none';
+}
+
+// --- GÉNÉRATION DYNAMIQUE DE LA FICHE AGENT ---
+function genererFicheAgent() {
+    const selectAgent = document.getElementById('modal-select-agent');
+    const conteneurModules = document.getElementById('conteneur-modules-agent');
+    const matriculeAgent = selectAgent ? selectAgent.value : '';
+
+    const dateEd = document.getElementById('fiche-agent-date-edition');
+    if (dateEd) dateEd.textContent = new Date().toLocaleDateString('fr-FR');
+
+    if (!matriculeAgent) {
+        document.getElementById('fiche-agent-nom').textContent = "FICHE INDIVIDUELLE FMA";
+        document.getElementById('fiche-agent-infos').textContent = "Sélectionnez un agent...";
+        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Veuillez sélectionner un agent dans la liste.</div>`;
+        mettreAJourJauge('barre-agent-global', 'txt-pct-agent-global', 'txt-heures-agent-global', 0, 0);
+        mettreAJourJauge('barre-agent-socle', 'txt-pct-agent-socle', null, 0, 0);
+        mettreAJourJauge('barre-agent-spe', 'txt-pct-agent-spe', null, 0, 0);
+        return;
+    }
+
+    // Retrouver l'agent
+    const agent = (tableauAgentsRH || []).find(a => String(a.matricule || a.Matricule || a.id || '') === String(matriculeAgent));
+    if (!agent) return;
+
+    const nomPrenom = `${agent.nom || agent.Nom || ''} ${agent.prenom || agent.Prenom || ''}`.trim();
+    const eq = agent.Equipe || agent.equipe || agent.EQUIPE || 'Sans équipe';
+    const speListRaw = Array.isArray(agent.specialites) ? agent.specialites.join(', ') : (agent.specialites || agent.Specialites || 'Aucune');
+
+    document.getElementById('fiche-agent-nom').textContent = nomPrenom.toUpperCase();
+    document.getElementById('fiche-agent-infos').textContent = `Équipe : ${eq} | Spécialités : ${speListRaw}`;
+
+    const catalogue = catalogueInitial || [];
+    if (catalogue.length === 0) {
+        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Catalogue vide.</div>`;
+        return;
+    }
+
+    const epurer = (str) => String(str || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
+
+    const calculerDureesSaisie = (saisie) => {
+        if (saisie.duree || saisie.Duree || saisie.heures || saisie.Heures) {
+            return parseFloat(saisie.duree || saisie.Duree || saisie.heures || saisie.Heures || 0);
+        }
+        if (saisie.heureDebut && saisie.heureFin) {
+            const [hD, mD] = saisie.heureDebut.split(':').map(Number);
+            const [hF, mF] = saisie.heureFin.split(':').map(Number);
+            const debutMin = hD * 60 + (mD || 0);
+            const finMin = hF * 60 + (mF || 0);
+            if (finMin > debutMin) return (finMin - debutMin) / 60;
+        }
+        return 0;
+    };
+
+    const agentAParticuliereSpe = (nomSpe) => epurer(speListRaw).includes(epurer(nomSpe));
+
+    // Filtre texte
+    const inputFiltre = document.getElementById('filter-module-agent');
+    const termeFiltre = epurer(inputFiltre ? inputFiltre.value : '');
+
+    const activitesMap = {};
+
+    catalogue.forEach(item => {
+        const nomActivite = item.activite || item.Activite || item.Domaine || item.domaine || "Général";
+        const nomFormation = item.libelle || item.Libelle || item.fmpa || item.sequence || "Formation";
+        const quota = parseFloat(item.quota || item.Quota || item.heures || item.Heures || 0);
+        const typeAct = String(item.type || item.Type || '').toLowerCase();
+
+        if (!activitesMap[nomActivite]) {
+            activitesMap[nomActivite] = {
+                nom: nomActivite,
+                formations: [],
+                type: typeAct
+            };
+        }
+
+        activitesMap[nomActivite].formations.push({
+            nom: nomFormation,
+            quota: quota
+        });
+    });
+
+    let totalFaitGlobal = 0, totalCibleGlobal = 0;
+    let totalSocleFait = 0, totalSocleCible = 0;
+    let totalSpeFait = 0, totalSpeCible = 0;
+
+    let htmlContenu = '';
+
+    Object.values(activitesMap).forEach(act => {
+        const estSpe = act.type.includes('spe') || act.type.includes('spé');
+
+        // Si l'activité est une spécialité et que l'agent NE L'A PAS, on l'ignore complètement
+        if (estSpe && !agentAParticuliereSpe(act.nom)) {
+            return;
+        }
+
+        let actFait = 0, actCible = 0;
+        let htmlFormations = '';
+
+        act.formations.forEach(f => {
+            const keyForm = epurer(f.nom);
+
+            // Filtre de recherche
+            if (termeFiltre && !epurer(act.nom).includes(termeFiltre) && !keyForm.includes(termeFiltre)) {
+                return;
+            }
+
+            // Calcul des heures faites par CET agent pour CE module
+            let hFaites = 0;
+            if (Array.isArray(historiqueSaisiesFMPA)) {
+                hFaites = historiqueSaisiesFMPA
+                    .filter(s => {
+                        const sMat = String(s.matricule || s.Matricule || '');
+                        const sForm = epurer(s.formation || s.Formation || s.libelle || s.fmpa || '');
+                        return (sMat === String(matriculeAgent)) && (sForm === keyForm || sForm.includes(keyForm) || keyForm.includes(sForm));
+                    })
+                    .reduce((sum, s) => sum + calculerDureesSaisie(s), 0);
+            }
+
+            const pctForm = f.quota > 0 ? Math.min(100, Math.round((hFaites / f.quota) * 100)) : 100;
+            const aJour = hFaites >= f.quota;
+
+            actFait += hFaites;
+            actCible += f.quota;
+
+            htmlFormations += `
+                <div style="background: ${aJour ? '#f0fdf4' : '#ffffff'}; border: 1px solid ${aJour ? '#bbf7d0' : '#cbd5e1'}; border-radius: 6px; padding: 10px 14px; margin-top: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <div>
+                            <strong style="color: #1e293b; font-size: 0.95rem;">${f.nom}</strong>
+                            <span style="font-size: 0.8rem; color: #64748b; margin-left: 6px;">(Objectif : ${f.quota}h)</span>
+                        </div>
+                        <div style="font-weight: bold; color: ${aJour ? '#16a34a' : '#dc2626'}; font-size: 0.95rem;">
+                            ${hFaites}h / ${f.quota}h
+                        </div>
+                    </div>
+                    <div style="width: 100%; background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden;">
+                        <div style="width: ${pctForm}%; background: ${aJour ? '#16a34a' : '#d97706'}; height: 100%;"></div>
+                    </div>
+                </div>
+            `;
+        });
+
+        if (htmlFormations === '') return;
+
+        totalFaitGlobal += actFait;
+        totalCibleGlobal += actCible;
+
+        if (estSpe) {
+            totalSpeFait += actFait;
+            totalSpeCible += actCible;
+        } else {
+            totalSocleFait += actFait;
+            totalSocleCible += actCible;
+        }
+
+        const pctAct = actCible > 0 ? Math.min(100, Math.round((actFait / actCible) * 100)) : 0;
+
+        htmlContenu += `
+            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <h3 style="margin: 0; color: #0f172a; font-size: 1.05rem;">📂 ${act.nom} ${estSpe ? '<span style="font-size: 0.75rem; background:#e0e7ff; color:#4338ca; padding: 2px 6px; border-radius:4px;">Spécialité</span>' : ''}</h3>
+                    <span style="font-size: 1rem; font-weight: bold; color: ${pctAct >= 100 ? '#16a34a' : '#0284c7'};">${pctAct}% (${actFait}h / ${actCible}h)</span>
+                </div>
+                ${htmlFormations}
+            </div>
+        `;
+    });
+
+    mettreAJourJauge('barre-agent-global', 'txt-pct-agent-global', 'txt-heures-agent-global', totalFaitGlobal, totalCibleGlobal);
+    mettreAJourJauge('barre-agent-socle', 'txt-pct-agent-socle', null, totalSocleFait, totalSocleCible);
+    mettreAJourJauge('barre-agent-spe', 'txt-pct-agent-spe', null, totalSpeFait, totalSpeCible);
+
+    if (conteneurModules) conteneurModules.innerHTML = htmlContenu;
+}
+
