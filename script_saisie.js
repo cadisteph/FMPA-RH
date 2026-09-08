@@ -533,283 +533,146 @@ function afficherTableauAgents(listeAgents) {
 }
 
 function genererAvancementSocle(agent) {
-
     const idAgent = agent.id;
-
     const heuresAgent = cumulHeuresParAgent[idAgent] || {};
-
     const socleFormations = catalogueInitial.filter(f => String(f.type).toUpperCase().includes("SOCLE"));
 
-
-
     if (!socleFormations.length) {
-
         return { html: `<span style="color:#64748b;">Catalogue non chargé</span>`, totalUtile: 0, totalReel: 0, totalAFaire: 0, libelleTotal: "0 / 0 h" };
-
     }
 
-
-
     const profilsAgent = new Set([
-
         ...extraireValeurs(agent.statut),
-
         ...extraireValeurs(agent.grade),
-
         ...extraireValeurs(agent.fonction),
-
         ...extraireValeurs(agent.specialites),
-
         ...extraireValeurs(agent.competences),
-
         ...extraireValeurs(agent.engagement),
-
         ...extraireValeurs(agent.regime)
-
     ]);
 
-
-
     let totalUtile = 0;
-
     let totalReel = 0;
-
     let totalAFaire = 0;
 
-
-
     const itemsHtml = socleFormations.map(f => {
-
         let quotaRequis = Number(f.quota) || 0;
-
         let estDispense = false;
 
-
-
         if (Array.isArray(f.modulations) && f.modulations.length > 0) {
-
             const matchMod = f.modulations.find(m => {
-
                 const profilMod = String(m.profil || "").trim().toUpperCase();
-
                 return profilsAgent.has(profilMod);
-
             });
 
-
-
             if (matchMod) {
-
                 if (matchMod.dispense === true || matchMod.quota === 0) {
-
                     estDispense = true;
-
                 } else {
-
                     quotaRequis = Number(matchMod.quota);
-
                 }
-
             }
-
         }
-
-
 
         if (estDispense || quotaRequis === 0) return null;
 
-
-
-        totalAFaire += quotaRequis;
-
-
+        totalAFaire = Math.round((totalAFaire + quotaRequis) * 10) / 10;
 
         const faitReel = heuresAgent[f.id] || heuresAgent[f.libelle] || 0;
-
         const faitUtile = Math.min(faitReel, quotaRequis);
 
+        totalReel = Math.round((totalReel + faitReel) * 10) / 10;
+        totalUtile = Math.round((totalUtile + faitUtile) * 10) / 10;
 
-
-        totalReel += faitReel;
-
-        totalUtile += faitUtile;
-
-
-
+        const faitUtileAffichage = Math.round(faitUtile * 10) / 10;
         const styleClass = faitUtile >= quotaRequis ? "fma-done" : (faitUtile > 0 ? "fma-partial" : "fma-todo");
 
-
-
-        return `<span class="fma-item"><span style="color:#0284c7; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${faitUtile}/${quotaRequis}h</span></span>`;
-
+        return `<span class="fma-item"><span style="color:#0284c7; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${faitUtileAffichage}/${quotaRequis}h</span></span>`;
     }).filter(Boolean);
 
-
-
     let libelleTotal = `${totalUtile} / ${totalAFaire} h`;
-
     if (totalReel > totalUtile) {
-
         libelleTotal += ` <small style="color:#64748b; font-weight:normal; font-size:0.8em;">(réel : ${totalReel}h)</small>`;
-
     }
-
-
 
     return {
-
         html: itemsHtml.join(" | ") || `<span style="color:#64748b;">Aucun socle requis</span>`,
-
         totalUtile,
-
         totalReel,
-
         totalAFaire,
-
         libelleTotal
-
     };
-
 }
 
-
-
 function genererAvancementSpecialites(agent) {
-
     const specAgentBrutes = (agent.specialites || []).map(s => s.trim().toUpperCase()).filter(Boolean);
-
     if (!specAgentBrutes.length) {
-
         return { html: `<span style="color:#94a3b8;">Aucune spé.</span>`, totalUtile: 0, totalReel: 0, totalAFaire: 0, libelleTotal: "0 / 0 h" };
-
     }
 
-
-
     const specAgentBase = specAgentBrutes.map(s => s.replace(/\s*\d+$/, ""));
-
     const heuresAgent = cumulHeuresParAgent[agent.id] || {};
 
-
-
     const formationsSpec = catalogueInitial.filter(f => {
-
         const typeF = (f.type || "").trim().toUpperCase();
-
         
-
         const estSocle = typeF.includes("SOCLE") || typeF.includes("COMMUN");
-
         if (estSocle) return false;
 
-
-
         const activiteF = (f.activite || "").trim().toUpperCase();
-
         const estTypeSpec = typeF.includes("SPEC") || typeF.includes("SPÉCIALITÉ");
-
-
 
         const matchActivite = activiteF && specAgentBase.some(s => s === activiteF || activiteF.includes(s) || s.includes(activiteF));
 
-
-
         const profils = [
-
             ...(Array.isArray(f.profils) ? f.profils : []),
-
             ...extraireValeurs(f.modulations?.map(m => m?.profil).filter(Boolean) || [])
-
         ].map(v => String(v).trim().toUpperCase());
-
-
 
         const matchProfil = profils.some(p => specAgentBrutes.includes(p) || specAgentBase.includes(p));
 
-
-
         return (estTypeSpec || matchActivite || matchProfil) && (matchActivite || matchProfil);
-
     });
 
-
-
     if (!formationsSpec.length) {
-
         return { html: `<span style="color:#94a3b8;">Aucun suivi requis</span>`, totalUtile: 0, totalReel: 0, totalAFaire: 0, libelleTotal: "0 / 0 h" };
-
     }
-
-
 
     let totalUtile = 0;
-
     let totalReel = 0;
-
     let totalAFaire = 0;
 
-
-
     const itemsHtml = formationsSpec.map(f => {
-
         const quotaRequis = Number(f.quota) || 0;
-
         if (!quotaRequis) return null;
 
-
-
-        totalAFaire += quotaRequis;
-
-
+        totalAFaire = Math.round((totalAFaire + quotaRequis) * 10) / 10;
 
         const faitReel = heuresAgent[f.id] || heuresAgent[f.libelle] || 0;
-
         const faitUtile = Math.min(faitReel, quotaRequis);
 
+        totalReel = Math.round((totalReel + faitReel) * 10) / 10;
+        totalUtile = Math.round((totalUtile + faitUtile) * 10) / 10;
 
-
-        totalReel += faitReel;
-
-        totalUtile += faitUtile;
-
-
-
+        const faitUtileAffichage = Math.round(faitUtile * 10) / 10;
         const styleClass = faitUtile >= quotaRequis ? "fma-done" : (faitUtile > 0 ? "fma-partial" : "fma-todo");
 
-
-
-        return `<span class="fma-item"><span style="color:#8b5cf6; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${faitUtile}/${quotaRequis}h</span></span>`;
-
+        return `<span class="fma-item"><span style="color:#8b5cf6; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${faitUtileAffichage}/${quotaRequis}h</span></span>`;
     }).filter(Boolean);
 
-
-
     let libelleTotal = `${totalUtile} / ${totalAFaire} h`;
-
     if (totalReel > totalUtile) {
-
         libelleTotal += ` <small style="color:#64748b; font-weight:normal; font-size:0.8em;">(réel : ${totalReel}h)</small>`;
-
     }
 
-
-
     return {
-
         html: itemsHtml.join(" | ") || `<span style="color:#64748b;">0/0h</span>`,
-
         totalUtile,
-
         totalReel,
-
         totalAFaire,
-
         libelleTotal
-
     };
-
-} 
-
+}
 
 
 function extraireValeurs(champ) {
