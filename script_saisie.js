@@ -1834,6 +1834,7 @@ function genererFicheAgent() {
 
     const epurer = (str) => String(str || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
 
+    // CORRECTION 1 : Arrondi propre sur les saisies d'heures
     const calculerDureesSaisie = (saisie) => {
         if (saisie.duree || saisie.Duree || saisie.heures || saisie.Heures) {
             return parseFloat(saisie.duree || saisie.Duree || saisie.heures || saisie.Heures || 0);
@@ -1843,7 +1844,7 @@ function genererFicheAgent() {
             const [hF, mF] = saisie.heureFin.split(':').map(Number);
             const debutMin = hD * 60 + (mD || 0);
             const finMin = hF * 60 + (mF || 0);
-            if (finMin > debutMin) return (finMin - debutMin) / 60;
+            if (finMin > debutMin) return Math.round(((finMin - debutMin) / 60) * 10) / 10;
         }
         return 0;
     };
@@ -1913,21 +1914,25 @@ function genererFicheAgent() {
                     .reduce((sum, s) => sum + calculerDureesSaisie(s), 0);
             }
 
-            const pctForm = f.quota > 0 ? Math.min(100, Math.round((hFaites / f.quota) * 100)) : 100;
-            const aJour = hFaites >= f.quota;
+            // CORRECTION 2 : Arrondis individuels pour la formation
+            hFaites = Math.round(hFaites * 10) / 10;
+            const quotaArrondi = Math.round((f.quota || 0) * 10) / 10;
 
-            actFait += hFaites;
-            actCible += f.quota;
+            const pctForm = quotaArrondi > 0 ? Math.min(100, Math.round((hFaites / quotaArrondi) * 100)) : 100;
+            const aJour = hFaites >= quotaArrondi;
+
+            actFait = Math.round((actFait + hFaites) * 10) / 10;
+            actCible = Math.round((actCible + quotaArrondi) * 10) / 10;
 
             htmlFormations += `
                 <div style="background: ${aJour ? '#f0fdf4' : '#ffffff'}; border: 1px solid ${aJour ? '#bbf7d0' : '#cbd5e1'}; border-radius: 6px; padding: 10px 14px; margin-top: 8px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <div>
                             <strong style="color: #1e293b; font-size: 0.95rem;">${f.nom}</strong>
-                            <span style="font-size: 0.8rem; color: #64748b; margin-left: 6px;">(Objectif : ${f.quota}h)</span>
+                            <span style="font-size: 0.8rem; color: #64748b; margin-left: 6px;">(Objectif : ${quotaArrondi}h)</span>
                         </div>
                         <div style="font-weight: bold; color: ${aJour ? '#16a34a' : '#dc2626'}; font-size: 0.95rem;">
-                            ${hFaites}h / ${f.quota}h
+                            ${hFaites}h / ${quotaArrondi}h
                         </div>
                     </div>
                     <div style="width: 100%; background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden;">
@@ -1939,15 +1944,16 @@ function genererFicheAgent() {
 
         if (htmlFormations === '') return;
 
-        totalFaitGlobal += actFait;
-        totalCibleGlobal += actCible;
+        // CORRECTION 3 : Cumuls d'activités et totaux globaux
+        totalFaitGlobal = Math.round((totalFaitGlobal + actFait) * 10) / 10;
+        totalCibleGlobal = Math.round((totalCibleGlobal + actCible) * 10) / 10;
 
         if (estSpe) {
-            totalSpeFait += actFait;
-            totalSpeCible += actCible;
+            totalSpeFait = Math.round((totalSpeFait + actFait) * 10) / 10;
+            totalSpeCible = Math.round((totalSpeCible + actCible) * 10) / 10;
         } else {
-            totalSocleFait += actFait;
-            totalSocleCible += actCible;
+            totalSocleFait = Math.round((totalSocleFait + actFait) * 10) / 10;
+            totalSocleCible = Math.round((totalSocleCible + actCible) * 10) / 10;
         }
 
         const pctAct = actCible > 0 ? Math.min(100, Math.round((actFait / actCible) * 100)) : 0;
@@ -1969,4 +1975,3 @@ function genererFicheAgent() {
 
     if (conteneurModules) conteneurModules.innerHTML = htmlContenu;
 }
-
