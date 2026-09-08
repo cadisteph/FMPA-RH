@@ -533,77 +533,146 @@ function afficherTableauAgents(listeAgents) {
 }
 
 function genererAvancementSocle(agent) {
+
     const idAgent = agent.id;
+
     const heuresAgent = cumulHeuresParAgent[idAgent] || {};
+
     const socleFormations = catalogueInitial.filter(f => String(f.type).toUpperCase().includes("SOCLE"));
 
+
+
     if (!socleFormations.length) {
+
         return { html: `<span style="color:#64748b;">Catalogue non chargé</span>`, totalUtile: 0, totalReel: 0, totalAFaire: 0, libelleTotal: "0 / 0 h" };
+
     }
 
+
+
     const profilsAgent = new Set([
+
         ...extraireValeurs(agent.statut),
+
         ...extraireValeurs(agent.grade),
+
         ...extraireValeurs(agent.fonction),
+
         ...extraireValeurs(agent.specialites),
+
         ...extraireValeurs(agent.competences),
+
         ...extraireValeurs(agent.engagement),
+
         ...extraireValeurs(agent.regime)
+
     ]);
 
+
+
     let totalUtile = 0;
+
     let totalReel = 0;
+
     let totalAFaire = 0;
 
+
+
     const itemsHtml = socleFormations.map(f => {
+
         let quotaRequis = Number(f.quota) || 0;
+
         let estDispense = false;
 
+
+
         if (Array.isArray(f.modulations) && f.modulations.length > 0) {
+
             const matchMod = f.modulations.find(m => {
+
                 const profilMod = String(m.profil || "").trim().toUpperCase();
+
                 return profilsAgent.has(profilMod);
+
             });
 
+
+
             if (matchMod) {
+
                 if (matchMod.dispense === true || matchMod.quota === 0) {
+
                     estDispense = true;
+
                 } else {
+
                     quotaRequis = Number(matchMod.quota);
+
                 }
+
             }
+
         }
+
+
 
         if (estDispense || quotaRequis === 0) return null;
 
+
+
         totalAFaire += quotaRequis;
 
+
+
         const faitReel = heuresAgent[f.id] || heuresAgent[f.libelle] || 0;
+
         const faitUtile = Math.min(faitReel, quotaRequis);
 
+
+
         totalReel += faitReel;
+
         totalUtile += faitUtile;
 
-        const faitUtilePropre = Math.round(faitUtile * 10) / 10;
+
+
         const styleClass = faitUtile >= quotaRequis ? "fma-done" : (faitUtile > 0 ? "fma-partial" : "fma-todo");
-        return `<span class="fma-item"><span style="color:#0284c7; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${faitUtilePropre}/${quotaRequis}h</span></span>`;
 
-        const tUtileP = Math.round(totalUtile * 10) / 10;
-        const tReelP = Math.round(totalReel * 10) / 10;
 
-        let libelleTotal = `${tUtileP} / ${totalAFaire} h`;
-        if (tReelP > tUtileP) {
-        libelleTotal += ` <small style="color:#64748b; font-weight:normal; font-size:0.8em;">(réel : ${tReelP}h)</small>`;
-}
+
+        return `<span class="fma-item"><span style="color:#0284c7; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${faitUtile}/${quotaRequis}h</span></span>`;
+
+    }).filter(Boolean);
+
+
+
+    let libelleTotal = `${totalUtile} / ${totalAFaire} h`;
+
+    if (totalReel > totalUtile) {
+
+        libelleTotal += ` <small style="color:#64748b; font-weight:normal; font-size:0.8em;">(réel : ${totalReel}h)</small>`;
+
+    }
+
+
 
     return {
+
         html: itemsHtml.join(" | ") || `<span style="color:#64748b;">Aucun socle requis</span>`,
+
         totalUtile,
+
         totalReel,
+
         totalAFaire,
+
         libelleTotal
+
     };
+
 }
+
+
 
 function genererAvancementSpecialites(agent) {
 
@@ -740,6 +809,7 @@ function genererAvancementSpecialites(agent) {
     };
 
 } 
+
 
 
 function extraireValeurs(champ) {
