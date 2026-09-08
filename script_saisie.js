@@ -437,7 +437,7 @@ function calculerDureeEntreHeures(debut, fin) {
     if (d.length < 2 || f.length < 2 || d.some(Number.isNaN) || f.some(Number.isNaN)) return 0;
     let min = (f[0] * 60 + f[1]) - (d[0] * 60 + d[1]);
     if (min < 0) min += 24 * 60;
-    return min / 60;
+    return Math.round((min / 60) * 10) / 10;
 }
 
 function verifierChevauchementHoraire(matricule, dateSaisie, heureDebutSaisie, heureFinSaisie) {
