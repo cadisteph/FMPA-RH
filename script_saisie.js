@@ -1743,13 +1743,17 @@ function genererFicheEquipe() {
 function mettreAJourJauge(idBarre, idTxtPct, idTxtHeures, fait, total) {
     const pct = total > 0 ? Math.min(100, Math.round((fait / total) * 100)) : 0;
     
+    // Arrondi propre à 1 décimale pour l'affichage du texte dans la modale
+    const faitPropre = Math.round((Number(fait) || 0) * 10) / 10;
+    const totalPropre = Math.round((Number(total) || 0) * 10) / 10;
+
     const barre = document.getElementById(idBarre);
     const txtPct = document.getElementById(idTxtPct);
     const txtHeures = document.getElementById(idTxtHeures);
 
     if (barre) barre.style.width = `${pct}%`;
     if (txtPct) txtPct.textContent = `${pct}%`;
-    if (txtHeures) txtHeures.textContent = `${fait}h / ${total}h`;
+    if (txtHeures) txtHeures.textContent = `${faitPropre}h / ${totalPropre}h`;
 }
 
 window.addEventListener('click', function(event) {
