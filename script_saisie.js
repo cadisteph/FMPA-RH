@@ -1551,6 +1551,7 @@ function genererFicheEquipe() {
 
     const epurer = (str) => String(str || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
 
+    // CORRECTION 1 : Arrondi propre sur les saisies d'heures
     const calculerDureesSaisie = (saisie) => {
         if (saisie.duree || saisie.Duree || saisie.heures || saisie.Heures) {
             return parseFloat(saisie.duree || saisie.Duree || saisie.heures || saisie.Heures || 0);
@@ -1560,12 +1561,11 @@ function genererFicheEquipe() {
             const [hF, mF] = saisie.heureFin.split(':').map(Number);
             const debutMin = hD * 60 + (mD || 0);
             const finMin = hF * 60 + (mF || 0);
-            if (finMin > debutMin) return (finMin - debutMin) / 60;
+            if (finMin > debutMin) return Math.round(((finMin - debutMin) / 60) * 10) / 10;
         }
         return 0;
     };
 
-    // Helper pour savoir si un agent a une spécialité donnée
     const agentAParticuliereSpe = (agent, nomSpe) => {
         const speList = Array.isArray(agent.specialites) 
             ? agent.specialites.join(' ') 
@@ -1610,21 +1610,17 @@ function genererFicheEquipe() {
         const estSpe = act.type.includes('spe') || act.type.includes('spé');
 
         act.formations.forEach(f => {
-            // S'il s'agit d'une spécialité, on ne cible QUE les agents ayant cette spécialité
-            // Sinon (Socle commun), on cible TOUS les agents de l'équipe
             const agentsConcernes = estSpe 
                 ? agentsEquipe.filter(a => agentAParticuliereSpe(a, act.nom) || agentAParticuliereSpe(a, f.nom))
                 : agentsEquipe;
 
             const effectifConcerne = agentsConcernes.length;
 
-            // Si c'est une spécialité et qu'aucun agent n'est spécialisé dedans, on passe la formation
-            if (estSpe && effectifConcerne === 0) {
-                return;
-            }
+            if (estSpe && effectifConcerne === 0) return;
 
-            const cibleTotaleModule = f.heuresCibleAgent * effectifConcerne;
-            activiteHeuresCible += cibleTotaleModule;
+            // CORRECTION 2 : Arrondi des heures cibles modules
+            const cibleTotaleModule = Math.round((f.heuresCibleAgent * effectifConcerne) * 10) / 10;
+            activiteHeuresCible = Math.round((activiteHeuresCible + cibleTotaleModule) * 10) / 10;
 
             let formationHeuresFaites = 0;
             let agentsAFormer = [];
@@ -1647,25 +1643,26 @@ function genererFicheEquipe() {
                         .reduce((sum, s) => sum + calculerDureesSaisie(s), 0);
                 }
 
-                formationHeuresFaites += hAgent;
+                hAgent = Math.round(hAgent * 10) / 10;
+                formationHeuresFaites = Math.round((formationHeuresFaites + hAgent) * 10) / 10;
 
                 if (hAgent < f.heuresCibleAgent) {
+                    const reste = Math.round((f.heuresCibleAgent - hAgent) * 10) / 10;
                     agentsAFormer.push({
                         nom: nomPrenom,
                         fait: hAgent,
-                        reste: f.heuresCibleAgent - hAgent,
+                        reste: reste,
                         objectif: f.heuresCibleAgent
                     });
                 }
             });
 
-            activiteHeuresFaites += formationHeuresFaites;
+            activiteHeuresFaites = Math.round((activiteHeuresFaites + formationHeuresFaites) * 10) / 10;
             agentsAFormer.sort((a, b) => b.reste - a.reste);
 
             const pctFormation = cibleTotaleModule > 0 ? Math.min(100, Math.round((formationHeuresFaites / cibleTotaleModule) * 100)) : 100;
             const formationEstAJour = (pctFormation >= 100) || (f.heuresCibleAgent > 0 && agentsAFormer.length === 0);
 
-            // Badge visuel Socle vs Spécialité
             const badgeType = estSpe 
                 ? `<span style="background: #e0e7ff; color: #4338ca; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 600;">Spécialité (${effectifConcerne} agent(s))</span>`
                 : `<span style="background: #f1f5f9; color: #475569; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">Socle Commun</span>`;
@@ -1699,18 +1696,18 @@ function genererFicheEquipe() {
             `;
         });
 
-        // Si le domaine est une spécialité mais qu'aucune formation n'a été affichée (aucun agent spécialisé)
         if (htmlFormations === '') return;
 
-        totalHeuresFaitesGlobal += activiteHeuresFaites;
-        totalHeuresCibleGlobal += activiteHeuresCible;
+        // CORRECTION 3 : Cumuls d'activités et totaux
+        totalHeuresFaitesGlobal = Math.round((totalHeuresFaitesGlobal + activiteHeuresFaites) * 10) / 10;
+        totalHeuresCibleGlobal = Math.round((totalHeuresCibleGlobal + activiteHeuresCible) * 10) / 10;
 
         if (estSpe) {
-            totalSpeFait += activiteHeuresFaites;
-            totalSpeCible += activiteHeuresCible;
+            totalSpeFait = Math.round((totalSpeFait + activiteHeuresFaites) * 10) / 10;
+            totalSpeCible = Math.round((totalSpeCible + activiteHeuresCible) * 10) / 10;
         } else {
-            totalSocleFait += activiteHeuresFaites;
-            totalSocleCible += activiteHeuresCible;
+            totalSocleFait = Math.round((totalSocleFait + activiteHeuresFaites) * 10) / 10;
+            totalSocleCible = Math.round((totalSocleCible + activiteHeuresCible) * 10) / 10;
         }
 
         const pctActivite = activiteHeuresCible > 0 ? Math.min(100, Math.round((activiteHeuresFaites / activiteHeuresCible) * 100)) : 0;
