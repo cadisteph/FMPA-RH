@@ -1097,6 +1097,16 @@ function afficherListeAlertesVMA() {
 
 
 
+
+
+
+
+
+
+
+
+
+
 async function ouvrirTableauAttribution() {
     if (typeof XLSX === 'undefined') {
         alert("❌ La bibliothèque SheetJS (XLSX) n'est pas chargée.");
