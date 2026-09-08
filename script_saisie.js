@@ -584,15 +584,17 @@ function genererAvancementSocle(agent) {
         totalReel += faitReel;
         totalUtile += faitUtile;
 
+        const faitUtilePropre = Math.round(faitUtile * 10) / 10;
         const styleClass = faitUtile >= quotaRequis ? "fma-done" : (faitUtile > 0 ? "fma-partial" : "fma-todo");
+        return `<span class="fma-item"><span style="color:#0284c7; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${faitUtilePropre}/${quotaRequis}h</span></span>`;
 
-        return `<span class="fma-item"><span style="color:#0284c7; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${faitUtile}/${quotaRequis}h</span></span>`;
-    }).filter(Boolean);
+        const tUtileP = Math.round(totalUtile * 10) / 10;
+        const tReelP = Math.round(totalReel * 10) / 10;
 
-    let libelleTotal = `${totalUtile} / ${totalAFaire} h`;
-    if (totalReel > totalUtile) {
-        libelleTotal += ` <small style="color:#64748b; font-weight:normal; font-size:0.8em;">(réel : ${totalReel}h)</small>`;
-    }
+        let libelleTotal = `${tUtileP} / ${totalAFaire} h`;
+        if (tReelP > tUtileP) {
+        libelleTotal += ` <small style="color:#64748b; font-weight:normal; font-size:0.8em;">(réel : ${tReelP}h)</small>`;
+}
 
     return {
         html: itemsHtml.join(" | ") || `<span style="color:#64748b;">Aucun socle requis</span>`,
@@ -653,21 +655,29 @@ function genererAvancementSpecialites(agent) {
         totalReel += faitReel;
         totalUtile += faitUtile;
 
+        // Arrondi propre à 1 décimale pour l'affichage de l'item
+        const faitUtilePropre = Math.round(faitUtile * 10) / 10;
+
         const styleClass = faitUtile >= quotaRequis ? "fma-done" : (faitUtile > 0 ? "fma-partial" : "fma-todo");
 
-        return `<span class="fma-item"><span style="color:#8b5cf6; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${faitUtile}/${quotaRequis}h</span></span>`;
+        return `<span class="fma-item"><span style="color:#8b5cf6; font-weight:600;">${escapeHtml(f.libelle)} :</span> <span class="${styleClass}">${faitUtilePropre}/${quotaRequis}h</span></span>`;
     }).filter(Boolean);
 
-    let libelleTotal = `${totalUtile} / ${totalAFaire} h`;
-    if (totalReel > totalUtile) {
-        libelleTotal += ` <small style="color:#64748b; font-weight:normal; font-size:0.8em;">(réel : ${totalReel}h)</small>`;
+    // Arrondis propres à 1 décimale pour les totaux
+    const totalUtilePropre = Math.round(totalUtile * 10) / 10;
+    const totalReelPropre = Math.round(totalReel * 10) / 10;
+    const totalAFairePropre = Math.round(totalAFaire * 10) / 10;
+
+    let libelleTotal = `${totalUtilePropre} / ${totalAFairePropre} h`;
+    if (totalReelPropre > totalUtilePropre) {
+        libelleTotal += ` <small style="color:#64748b; font-weight:normal; font-size:0.8em;">(réel : ${totalReelPropre}h)</small>`;
     }
 
     return {
         html: itemsHtml.join(" | ") || `<span style="color:#64748b;">0/0h</span>`,
-        totalUtile,
-        totalReel,
-        totalAFaire,
+        totalUtile: totalUtilePropre,
+        totalReel: totalReelPropre,
+        totalAFaire: totalAFairePropre,
         libelleTotal
     };
 }
