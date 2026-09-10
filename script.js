@@ -528,11 +528,7 @@ const ligneAlertes = (badgeVMA || badgePL || badgeEngagement)
     ? `<br><div style="margin-top: 3px; display: flex; align-items: center; gap: 4px;">${badgeVMA}${badgePL}${badgeEngagement}</div>` 
     : '';
 
-        
-// Intégration dans la ligne d'alertes
-        const ligneAlertes = (badgeVMA || badgePL || badgeAnciennete) 
-    ? `<br><div style="margin-top: 3px; display: flex; align-items: center; gap: 4px;">${badgeVMA}${badgePL}${badgeAnciennete}</div>` 
-    : '';
+
 
         corps.innerHTML += `
             <tr style="${styleLigne}" onclick="editerAgent(${agent.id})">
