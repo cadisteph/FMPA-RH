@@ -207,32 +207,28 @@ function doitRenouvelerPL(datePLStr) {
 }
 
 // Détection du renouvellement SPV (4e, 9e, 14e, 19e année...)
+// Détection du renouvellement SPV (4e, 9e, 14e, 19e année...)
 function doitRenouvelerEngagement(datePriseFonctionStr) {
     if (!datePriseFonctionStr) return false;
-    let dateEntree = null;
-    // A. Cas d'une date JS ou déjà convertible
-    if (typeof datePriseFonctionStr === 'string' && datePriseFonctionStr.includes('/')) {
-        // Gestion des formats FR "JJ/MM/AAAA"
-        const partes = datePriseFonctionStr.split('/');
-        if (partes.length === 3) {
-            dateEntree = new Date(partes[2], partes[1] - 1, partes[0]);
-        }
-    } else if (typeof formaterDatePourInput === 'function') {
-        const isoDate = formaterDatePourInput(datePriseFonctionStr);
-        dateEntree = new Date(isoDate);
-    } else {
-        dateEntree = new Date(datePriseFonctionStr);
-    }
-    if (!dateEntree || isNaN(dateEntree.getTime())) return false;
+    
+    // Normalisation au format Date ISO (AAAA-MM-JJ)
+    const isoDate = formaterDatePourInput(datePriseFonctionStr);
+    const dateEntree = new Date(isoDate);
+    
+    if (isNaN(dateEntree.getTime())) return false;
+
     const aujourdhui = new Date();
-    // Calcul de la différence exacte en mois
+    
+    // Calcul de la différence en mois
     let moisEcoules = (aujourdhui.getFullYear() - dateEntree.getFullYear()) * 12 + (aujourdhui.getMonth() - dateEntree.getMonth());
+    
     if (aujourdhui.getDate() < dateEntree.getDate()) {
         moisEcoules--;
     }
+
     if (moisEcoules < 0) return false;
-    // Calcul du cycle de 5 ans (60 mois)
-    // On déclenche l'alerte de 48 mois à 59 mois inclus (soit la 5e année du cycle)
+
+    // Déclenchement pendant la 5e année du cycle de 5 ans (entre 48 et 59 mois)
     const moisDansCycle = moisEcoules % 60;
     return moisDansCycle >= 48 && moisDansCycle < 60;
 }
@@ -516,14 +512,14 @@ const badgePL = (typeof doitRenouvelerPL === 'function' && doitRenouvelerPL(agen
     ? `<span style="background-color: none; border: 1px solid #8a2be2; color: #8a2be2; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🚒 Permis</span>` 
     : '';
 
-// Récupération de la date d'entrée SDIS
-
+// Récupération directe du champ d'entrée SDIS propre à l'agent
 const valDateEntree = agent.entreeSdis;
+
 const badgeEngagement = (typeof doitRenouvelerEngagement === 'function' && doitRenouvelerEngagement(valDateEntree))
     ? `<span style="background-color: none; border: 1px solid #d97706; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">📝 Renouv. SPV</span>`
     : '';
 
-// UNE SEULE DÉCLARATION POUR ligneAlertes
+// Fabrication de la ligne d'alertes
 const ligneAlertes = (badgeVMA || badgePL || badgeEngagement) 
     ? `<br><div style="margin-top: 3px; display: flex; align-items: center; gap: 4px;">${badgeVMA}${badgePL}${badgeEngagement}</div>` 
     : '';
