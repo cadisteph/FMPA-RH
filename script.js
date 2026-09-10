@@ -512,14 +512,14 @@ const badgePL = (typeof doitRenouvelerPL === 'function' && doitRenouvelerPL(agen
     ? `<span style="background-color: none; border: 1px solid #8a2be2; color: #8a2be2; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🚒 Permis</span>` 
     : '';
 
-// Récupération directe du champ d'entrée SDIS propre à l'agent
+// Alerte de renouvellement uniquement pour le statut SPV
+const estSPV = (agent.statut === "SPV");
 const valDateEntree = agent.entreeSdis;
 
-const badgeEngagement = (typeof doitRenouvelerEngagement === 'function' && doitRenouvelerEngagement(valDateEntree))
+const badgeEngagement = (estSPV && typeof doitRenouvelerEngagement === 'function' && doitRenouvelerEngagement(valDateEntree))
     ? `<span style="background-color: none; border: 1px solid #d97706; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">📝 Renouv. SPV</span>`
     : '';
 
-// Fabrication de la ligne d'alertes
 const ligneAlertes = (badgeVMA || badgePL || badgeEngagement) 
     ? `<br><div style="margin-top: 3px; display: flex; align-items: center; gap: 4px;">${badgeVMA}${badgePL}${badgeEngagement}</div>` 
     : '';
