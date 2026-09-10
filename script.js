@@ -206,8 +206,8 @@ function doitRenouvelerPL(datePLStr) {
     return moisEcoules >= 54;
 }
 
-// Vérifie si l'agent a 4 ans de service ou plus (48 mois)
-function aQuatreAnsDeService(datePriseFonctionStr) {
+// Alerte si l'agent est dans sa 4e, 9e, 14e, 19e... année de service (1 an avant le renouvellement des 5 ans)
+function doitRenouvelerEngagement(datePriseFonctionStr) {
     if (!datePriseFonctionStr) return false;
     const isoDate = formaterDatePourInput(datePriseFonctionStr);
     const dateEntree = new Date(isoDate);
@@ -216,7 +216,11 @@ function aQuatreAnsDeService(datePriseFonctionStr) {
     const aujourdhui = new Date();
     const moisEcoules = (aujourdhui.getFullYear() - dateEntree.getFullYear()) * 12 + (aujourdhui.getMonth() - dateEntree.getMonth());
     
-    return moisEcoules >= 48;
+    // Année en cours dans le cycle de 5 ans (0, 1, 2, 3 ou 4)
+    const anneesDansLeCycle = Math.floor(moisEcoules / 12) % 5;
+    
+    // Si on est dans la 4e année du cycle (ex: 4 ans, 9 ans, 14 ans, 19 ans...)
+    return anneesDansLeCycle === 4;
 }
 
 
@@ -489,19 +493,23 @@ function actualiserTableauRH() {
             ? "cursor:pointer; background-color: #dce7f3; border-bottom:2px solid #2b6cb0; font-weight: 500;" 
             : "cursor:pointer; border-bottom:1px solid #e2e8f0;";
 
-        const badgeVMA = doitRenouvelerVMA(agent.dateVMA) 
+const badgeVMA = doitRenouvelerVMA(agent.dateVMA) 
     ? `<span style="background-color: none; border: 1px solid #ff1493; color: #ff1493; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🩺 VMA</span>` 
     : '';
 
-        const badgePL = doitRenouvelerPL(agent.datePL) 
+const badgePL = doitRenouvelerPL(agent.datePL) 
     ? `<span style="background-color: none; border: 1px solid #8a2be2; color: #8a2be2; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🚒 Permis</span>` 
     : '';
 
-// Récupération avec l'en-tête exacte et sécurité sur les minuscules/majuscules
-        const dateService = agent.DateEntreeSDIS || agent.dateEntreeSDIS || agent.dateentreesdis;
+// Vérification du renouvellement d'engagement SPV
+const dateService = agent.DateEntreeSDIS || agent.dateEntreeSDIS || agent.dateentreesdis;
+const badgeEngagement = doitRenouvelerEngagement(dateService)
+    ? `<span style="background-color: none; border: 1px solid #d97706; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">📝 Renouv. SPV</span>`
+    : '';
 
-        const badgeAnciennete = aQuatreAnsDeService(dateService)
-    ? `<span style="background-color: none; border: 1px solid #d97706; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🏅 4 ans</span>`
+// Intégration dans la ligne d'alertes
+const ligneAlertes = (badgeVMA || badgePL || badgeEngagement) 
+    ? `<br><div style="margin-top: 3px; display: flex; align-items: center; gap: 4px;">${badgeVMA}${badgePL}${badgeEngagement}</div>` 
     : '';
 
 // Intégration dans la ligne d'alertes
