@@ -517,8 +517,8 @@ const badgePL = (typeof doitRenouvelerPL === 'function' && doitRenouvelerPL(agen
     : '';
 
 // Récupération de la date d'entrée SDIS
-const valDateEntree = agent.DateEntreeSDIS || agent.DateEntreeSdis || agent['DateEntreeSDIS'] || agent['Date Entree SDIS'] || agent.dateEntreeSDIS;
 
+const valDateEntree = agent.entreeSdis;
 const badgeEngagement = (typeof doitRenouvelerEngagement === 'function' && doitRenouvelerEngagement(valDateEntree))
     ? `<span style="background-color: none; border: 1px solid #d97706; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">📝 Renouv. SPV</span>`
     : '';
