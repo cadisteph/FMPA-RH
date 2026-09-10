@@ -508,21 +508,22 @@ function actualiserTableauRH() {
             : "cursor:pointer; border-bottom:1px solid #e2e8f0;";
 
         
-const badgeVMA = doitRenouvelerVMA(agent.dateVMA) 
+const badgeVMA = (typeof doitRenouvelerVMA === 'function' && doitRenouvelerVMA(agent.dateVMA))
     ? `<span style="background-color: none; border: 1px solid #ff1493; color: #ff1493; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🩺 VMA</span>` 
     : '';
-const badgePL = doitRenouvelerPL(agent.datePL) 
+
+const badgePL = (typeof doitRenouvelerPL === 'function' && doitRenouvelerPL(agent.datePL))
     ? `<span style="background-color: none; border: 1px solid #8a2be2; color: #8a2be2; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🚒 Permis</span>` 
     : '';
-// Récupération de la valeur du champ
+
+// Récupération de la date d'entrée SDIS
 const valDateEntree = agent.DateEntreeSDIS || agent.DateEntreeSdis || agent['DateEntreeSDIS'] || agent['Date Entree SDIS'] || agent.dateEntreeSDIS;
-// VERIFICATION CONSOLE : Ouvre la console F12 pour voir ce qui sort
-if (agent.nom || agent.Nom) {
-    console.log(`Agent: ${agent.nom || agent.Nom} | Date récupérée:`, valDateEntree);
-}
-const badgeEngagement = doitRenouvelerEngagement(valDateEntree)
+
+const badgeEngagement = (typeof doitRenouvelerEngagement === 'function' && doitRenouvelerEngagement(valDateEntree))
     ? `<span style="background-color: none; border: 1px solid #d97706; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">📝 Renouv. SPV</span>`
     : '';
+
+// UNE SEULE DÉCLARATION POUR ligneAlertes
 const ligneAlertes = (badgeVMA || badgePL || badgeEngagement) 
     ? `<br><div style="margin-top: 3px; display: flex; align-items: center; gap: 4px;">${badgeVMA}${badgePL}${badgeEngagement}</div>` 
     : '';
