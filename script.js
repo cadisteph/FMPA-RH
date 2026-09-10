@@ -206,6 +206,21 @@ function doitRenouvelerPL(datePLStr) {
     return moisEcoules >= 54;
 }
 
+// Vérifie si l'agent a 4 ans de service ou plus (48 mois)
+function aQuatreAnsDeService(datePriseFonctionStr) {
+    if (!datePriseFonctionStr) return false;
+    const isoDate = formaterDatePourInput(datePriseFonctionStr);
+    const dateEntree = new Date(isoDate);
+    if (isNaN(dateEntree.getTime())) return false;
+    
+    const aujourdhui = new Date();
+    const moisEcoules = (aujourdhui.getFullYear() - dateEntree.getFullYear()) * 12 + (aujourdhui.getMonth() - dateEntree.getMonth());
+    
+    return moisEcoules >= 48;
+}
+
+
+
 /* ==========================================================================
    2. CALCUL DYNAMIQUE DES BASES DE GARDES
    ========================================================================== */
@@ -475,16 +490,24 @@ function actualiserTableauRH() {
             : "cursor:pointer; border-bottom:1px solid #e2e8f0;";
 
         const badgeVMA = doitRenouvelerVMA(agent.dateVMA) 
-            ? `<span style="background-color: none; border: 1px solid #ff1493; color: #ff1493; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🩺 VMA</span>` 
-            : '';
+    ? `<span style="background-color: none; border: 1px solid #ff1493; color: #ff1493; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🩺 VMA</span>` 
+    : '';
 
         const badgePL = doitRenouvelerPL(agent.datePL) 
-            ? `<span style="background-color: none; border: 1px solid #8a2be2; color: #8a2be2; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🚒 Permis</span>` 
-            : '';
+    ? `<span style="background-color: none; border: 1px solid #8a2be2; color: #8a2be2; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🚒 Permis</span>` 
+    : '';
 
-        const ligneAlertes = (badgeVMA || badgePL) 
-            ? `<br><div style="margin-top: 3px; display: flex; align-items: center; gap: 4px;">${badgeVMA}${badgePL}</div>` 
-            : '';
+// Récupération avec l'en-tête exacte et sécurité sur les minuscules/majuscules
+        const dateService = agent.DateEntreeSDIS || agent.dateEntreeSDIS || agent.dateentreesdis;
+
+        const badgeAnciennete = aQuatreAnsDeService(dateService)
+    ? `<span style="background-color: none; border: 1px solid #d97706; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🏅 4 ans</span>`
+    : '';
+
+// Intégration dans la ligne d'alertes
+        const ligneAlertes = (badgeVMA || badgePL || badgeAnciennete) 
+    ? `<br><div style="margin-top: 3px; display: flex; align-items: center; gap: 4px;">${badgeVMA}${badgePL}${badgeAnciennete}</div>` 
+    : '';
 
         corps.innerHTML += `
             <tr style="${styleLigne}" onclick="editerAgent(${agent.id})">
