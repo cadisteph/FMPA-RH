@@ -206,21 +206,35 @@ function doitRenouvelerPL(datePLStr) {
     return moisEcoules >= 54;
 }
 
-// Alerte si l'agent est dans sa 4e, 9e, 14e, 19e... année de service (1 an avant le renouvellement des 5 ans)
+// Détection du renouvellement SPV (4e, 9e, 14e, 19e année...)
 function doitRenouvelerEngagement(datePriseFonctionStr) {
     if (!datePriseFonctionStr) return false;
-    const isoDate = formaterDatePourInput(datePriseFonctionStr);
-    const dateEntree = new Date(isoDate);
-    if (isNaN(dateEntree.getTime())) return false;
-    
+    let dateEntree = null;
+    // A. Cas d'une date JS ou déjà convertible
+    if (typeof datePriseFonctionStr === 'string' && datePriseFonctionStr.includes('/')) {
+        // Gestion des formats FR "JJ/MM/AAAA"
+        const partes = datePriseFonctionStr.split('/');
+        if (partes.length === 3) {
+            dateEntree = new Date(partes[2], partes[1] - 1, partes[0]);
+        }
+    } else if (typeof formaterDatePourInput === 'function') {
+        const isoDate = formaterDatePourInput(datePriseFonctionStr);
+        dateEntree = new Date(isoDate);
+    } else {
+        dateEntree = new Date(datePriseFonctionStr);
+    }
+    if (!dateEntree || isNaN(dateEntree.getTime())) return false;
     const aujourdhui = new Date();
-    const moisEcoules = (aujourdhui.getFullYear() - dateEntree.getFullYear()) * 12 + (aujourdhui.getMonth() - dateEntree.getMonth());
-    
-    // Année en cours dans le cycle de 5 ans (0, 1, 2, 3 ou 4)
-    const anneesDansLeCycle = Math.floor(moisEcoules / 12) % 5;
-    
-    // Si on est dans la 4e année du cycle (ex: 4 ans, 9 ans, 14 ans, 19 ans...)
-    return anneesDansLeCycle === 4;
+    // Calcul de la différence exacte en mois
+    let moisEcoules = (aujourdhui.getFullYear() - dateEntree.getFullYear()) * 12 + (aujourdhui.getMonth() - dateEntree.getMonth());
+    if (aujourdhui.getDate() < dateEntree.getDate()) {
+        moisEcoules--;
+    }
+    if (moisEcoules < 0) return false;
+    // Calcul du cycle de 5 ans (60 mois)
+    // On déclenche l'alerte de 48 mois à 59 mois inclus (soit la 5e année du cycle)
+    const moisDansCycle = moisEcoules % 60;
+    return moisDansCycle >= 48 && moisDansCycle < 60;
 }
 
 
@@ -493,25 +507,27 @@ function actualiserTableauRH() {
             ? "cursor:pointer; background-color: #dce7f3; border-bottom:2px solid #2b6cb0; font-weight: 500;" 
             : "cursor:pointer; border-bottom:1px solid #e2e8f0;";
 
+        
 const badgeVMA = doitRenouvelerVMA(agent.dateVMA) 
     ? `<span style="background-color: none; border: 1px solid #ff1493; color: #ff1493; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🩺 VMA</span>` 
     : '';
-
 const badgePL = doitRenouvelerPL(agent.datePL) 
     ? `<span style="background-color: none; border: 1px solid #8a2be2; color: #8a2be2; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🚒 Permis</span>` 
     : '';
-
-// Vérification du renouvellement d'engagement SPV
-const dateService = agent.DateEntreeSDIS || agent.dateEntreeSDIS || agent.dateentreesdis;
-const badgeEngagement = doitRenouvelerEngagement(dateService)
+// Récupération de la valeur du champ
+const valDateEntree = agent.DateEntreeSDIS || agent.DateEntreeSdis || agent['DateEntreeSDIS'] || agent['Date Entree SDIS'] || agent.dateEntreeSDIS;
+// VERIFICATION CONSOLE : Ouvre la console F12 pour voir ce qui sort
+if (agent.nom || agent.Nom) {
+    console.log(`Agent: ${agent.nom || agent.Nom} | Date récupérée:`, valDateEntree);
+}
+const badgeEngagement = doitRenouvelerEngagement(valDateEntree)
     ? `<span style="background-color: none; border: 1px solid #d97706; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">📝 Renouv. SPV</span>`
     : '';
-
-// Intégration dans la ligne d'alertes
 const ligneAlertes = (badgeVMA || badgePL || badgeEngagement) 
     ? `<br><div style="margin-top: 3px; display: flex; align-items: center; gap: 4px;">${badgeVMA}${badgePL}${badgeEngagement}</div>` 
     : '';
 
+        
 // Intégration dans la ligne d'alertes
         const ligneAlertes = (badgeVMA || badgePL || badgeAnciennete) 
     ? `<br><div style="margin-top: 3px; display: flex; align-items: center; gap: 4px;">${badgeVMA}${badgePL}${badgeAnciennete}</div>` 
