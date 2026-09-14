@@ -1515,238 +1515,240 @@ function genererFicheEquipe() {
     const conteneurModules = document.getElementById('conteneur-modules-equipe');
     const nomEquipe = selectEquipe ? selectEquipe.value : '';
 
-    const dateEd = document.getElementById('fiche-date-edition');
+    const dateEd = document.getElementById('fiche-equipe-date-edition');
     if (dateEd) dateEd.textContent = new Date().toLocaleDateString('fr-FR');
 
     if (!nomEquipe) {
-        const tit = document.getElementById('fiche-titre-equipe');
-        const eff = document.getElementById('fiche-effectif');
-        if (tit) tit.textContent = "BILAN FMA - Aucune équipe sélectionnée";
-        if (eff) eff.textContent = "0 agent(s)";
-        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Veuillez sélectionner une équipe dans la liste ci-dessus.</div>`;
-        mettreAJourJauge('barre-global', 'txt-pct-global', 'txt-heures-global', 0, 0);
-        mettreAJourJauge('barre-socle', 'txt-pct-socle', null, 0, 0);
-        mettreAJourJauge('barre-spe', 'txt-pct-spe', null, 0, 0);
+        const elNom = document.getElementById('fiche-equipe-nom');
+        const elInfos = document.getElementById('fiche-equipe-infos');
+        if (elNom) elNom.textContent = "FICHE ÉQUIPE FMA";
+        if (elInfos) elInfos.textContent = "Sélectionnez une équipe...";
+        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Veuillez sélectionner une équipe dans la liste.</div>`;
+        mettreAJourJauge('barre-equipe-global', 'txt-pct-equipe-global', 'txt-heures-equipe-global', 0, 0);
+        mettreAJourJauge('barre-equipe-socle', 'txt-pct-equipe-socle', null, 0, 0);
+        mettreAJourJauge('barre-equipe-spe', 'txt-pct-equipe-spe', null, 0, 0);
         return;
     }
 
-    // 1. Agents de l'équipe
-    let agentsEquipe = (tableauAgentsRH || []).filter(a => {
-        const eq = a.Equipe || a.equipe || a.EQUIPE || a['Équipe'];
-        return eq === nomEquipe;
-    });
+    // Récupérer les agents de l'équipe
+    const agentsEquipe = (tableauAgentsRH || []).filter(a => String(a.equipe || 'Sans équipe') === nomEquipe);
 
-    // 2. Application du filtre de recherche si saisi
-    const inputFiltre = document.getElementById('filter-module') || document.getElementById('filter-recherche');
-    const termeFiltre = inputFiltre ? inputFiltre.value : '';
-    agentsEquipe = filtrerAgentsPourModale(agentsEquipe, termeFiltre);
-
-    const effectifTotal = agentsEquipe.length;
-
-    const tit = document.getElementById('fiche-titre-equipe');
-    const eff = document.getElementById('fiche-effectif');
-    if (tit) tit.textContent = `BILAN FMA - Équipe ${nomEquipe}`;
-    if (eff) eff.textContent = `${effectifTotal} agent(s)`;
-
-    if (effectifTotal === 0) {
-        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Aucun agent trouvé pour l'équipe ${nomEquipe}.</div>`;
-        return;
-    }
+    const elNom = document.getElementById('fiche-equipe-nom');
+    const elInfos = document.getElementById('fiche-equipe-infos');
+    if (elNom) elNom.textContent = `ÉQUIPE : ${nomEquipe.toUpperCase()}`;
+    if (elInfos) elInfos.textContent = `Effectif : ${agentsEquipe.length} agent(s)`;
 
     const catalogue = catalogueInitial || [];
-    if (catalogue.length === 0) {
-        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Catalogue vide. Chargez d'abord FMPA-RH.xlsx.</div>`;
+    if (catalogue.length === 0 || agentsEquipe.length === 0) {
+        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Aucune donnée ou effectif vide pour cette équipe.</div>`;
         return;
     }
 
     const epurer = (str) => String(str || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
 
-    // CORRECTION 1 : Arrondi propre sur les saisies d'heures
     const calculerDureesSaisie = (saisie) => {
         if (saisie.duree || saisie.Duree || saisie.heures || saisie.Heures) {
             return parseFloat(saisie.duree || saisie.Duree || saisie.heures || saisie.Heures || 0);
         }
         if (saisie.heureDebut && saisie.heureFin) {
-            const [hD, mD] = saisie.heureDebut.split(':').map(Number);
-            const [hF, mF] = saisie.heureFin.split(':').map(Number);
-            const debutMin = hD * 60 + (mD || 0);
-            const finMin = hF * 60 + (mF || 0);
-            if (finMin > debutMin) return Math.round(((finMin - debutMin) / 60) * 10) / 10;
+            return calculerDureeEntreHeures(saisie.heureDebut, saisie.heureFin);
         }
         return 0;
     };
 
-    const agentAParticuliereSpe = (agent, nomSpe) => {
-        const speList = Array.isArray(agent.specialites) 
-            ? agent.specialites.join(' ') 
-            : String(agent.specialites || agent.Specialites || agent.spe || agent.Spe || '');
-        return epurer(speList).includes(epurer(nomSpe));
-    };
+    // Pré-préparer les données profils/spécialités pour chaque agent de l'équipe
+    const mapAgentsProps = agentsEquipe.map(agent => {
+        const specBrutes = (agent.specialites || []).map(s => String(s).trim().toUpperCase()).filter(Boolean);
+        const specBase = specBrutes.map(s => s.replace(/\s*\d+$/, ""));
+        const profils = new Set([
+            ...extraireValeurs(agent.statut),
+            ...extraireValeurs(agent.grade),
+            ...extraireValeurs(agent.fonction),
+            ...extraireValeurs(agent.specialites),
+            ...extraireValeurs(agent.competences),
+            ...extraireValeurs(agent.engagement),
+            ...extraireValeurs(agent.regime)
+        ]);
 
+        return {
+            agent,
+            matricule: String(agent.matricule || agent.id || ''),
+            specBrutes,
+            specBase,
+            profils
+        };
+    });
+
+    const inputFiltre = document.getElementById('filter-module-equipe');
+    const termeFiltre = epurer(inputFiltre ? inputFiltre.value : '');
+
+    // Structuration des activités du catalogue
     const activitesMap = {};
-
     catalogue.forEach(item => {
-        const nomActivite = item.activite || item.Activite || item.Domaine || item.domaine || "Général";
-        const nomFormation = item.libelle || item.Libelle || item.fmpa || item.sequence || "Formation";
-        const heuresCibleAgent = parseFloat(item.quota || item.Quota || item.heures || item.Heures || 0);
+        const nomActivite = item.activite || "Général";
+        const nomFormation = item.libelle || item.fmpa || item.sequence || "Formation";
+        const typeAct = String(item.type || '').toUpperCase();
 
         if (!activitesMap[nomActivite]) {
             activitesMap[nomActivite] = {
                 nom: nomActivite,
                 formations: [],
-                type: String(item.type || item.Type || '').toLowerCase()
+                type: typeAct
             };
         }
 
         activitesMap[nomActivite].formations.push({
-            nom: nomFormation,
             id: item.id || '',
-            heuresCibleAgent: heuresCibleAgent
+            nom: nomFormation,
+            quotaDefaut: parseFloat(item.quota || 0),
+            modulations: item.modulations || [],
+            type: typeAct,
+            profils: item.profils || []
         });
     });
 
-    let totalHeuresFaitesGlobal = 0;
-    let totalHeuresCibleGlobal = 0;
+    let totalFaitGlobal = 0, totalCibleGlobal = 0;
     let totalSocleFait = 0, totalSocleCible = 0;
     let totalSpeFait = 0, totalSpeCible = 0;
 
     let htmlContenu = '';
 
     Object.values(activitesMap).forEach(act => {
-        let activiteHeuresFaites = 0;
-        let activiteHeuresCible = 0;
+        const estSocle = act.type.includes('SOCLE') || act.type.includes('COMMUN');
+        const estSpe = act.type.includes('SPEC') || act.type.includes('SPÉCIALITÉ');
+
+        let actFait = 0, actCible = 0;
         let htmlFormations = '';
 
-        const estSpe = act.type.includes('spe') || act.type.includes('spé');
-
         act.formations.forEach(f => {
-            const agentsConcernes = estSpe 
-                ? agentsEquipe.filter(a => agentAParticuliereSpe(a, act.nom) || agentAParticuliereSpe(a, f.nom))
-                : agentsEquipe;
+            const keyForm = epurer(f.nom);
 
-            const effectifConcerne = agentsConcernes.length;
+            if (termeFiltre && !epurer(act.nom).includes(termeFiltre) && !keyForm.includes(termeFiltre)) {
+                return;
+            }
 
-            if (estSpe && effectifConcerne === 0) return;
+            let formCibleEquipe = 0;
+            let formFaitEquipe = 0;
 
-            // CORRECTION 2 : Arrondi des heures cibles modules
-            const cibleTotaleModule = Math.round((f.heuresCibleAgent * effectifConcerne) * 10) / 10;
-            activiteHeuresCible = Math.round((activiteHeuresCible + cibleTotaleModule) * 10) / 10;
+            // Parcours individuel de chaque agent de l'équipe pour cette formation
+            mapAgentsProps.forEach(ap => {
+                // Vérification spécialité
+                if (!estSocle) {
+                    const activiteF = (act.nom || "").trim().toUpperCase();
+                    const matchActivite = activiteF && ap.specBase.some(s => s === activiteF || activiteF.includes(s) || s.includes(activiteF));
 
-            let formationHeuresFaites = 0;
-            let agentsAFormer = [];
+                    const profilsForm = [
+                        ...(Array.isArray(f.profils) ? f.profils : []),
+                        ...extraireValeurs(f.modulations?.map(m => m?.profil).filter(Boolean) || [])
+                    ].map(v => String(v).trim().toUpperCase());
 
-            const keyFormationCatalogue = epurer(f.nom);
+                    const matchProfil = profilsForm.some(p => ap.specBrutes.includes(p) || ap.specBase.includes(p));
 
-            agentsConcernes.forEach(agent => {
-                const mat = String(agent.matricule || agent.Matricule || agent.id || '');
-                const nomPrenom = `${agent.nom || agent.Nom || ''} ${agent.prenom || agent.Prenom || ''}`.trim() || `Agent ${mat}`;
+                    if (!matchActivite && !matchProfil) return;
+                }
 
-                let hAgent = 0;
+                // Application des modulations / dispenses individuelles
+                let quotaAgent = f.quotaDefaut;
+                let estDispense = false;
 
+                if (Array.isArray(f.modulations) && f.modulations.length > 0) {
+                    const matchMod = f.modulations.find(m => {
+                        const profilMod = String(m.profil || "").trim().toUpperCase();
+                        return ap.profils.has(profilMod);
+                    });
+
+                    if (matchMod) {
+                        if (matchMod.dispense === true || matchMod.quota === 0) {
+                            estDispense = true;
+                        } else {
+                            quotaAgent = Number(matchMod.quota);
+                        }
+                    }
+                }
+
+                if (estDispense || quotaAgent === 0) return;
+
+                // Calcul du fait pour cet agent
+                let hFaites = 0;
                 if (Array.isArray(historiqueSaisiesFMPA)) {
-                    hAgent = historiqueSaisiesFMPA
+                    hFaites = historiqueSaisiesFMPA
                         .filter(s => {
-                            const sMat = String(s.matricule || s.Matricule || '');
-                            const sForm = epurer(s.formation || s.Formation || s.libelle || s.fmpa || '');
-                            return (sMat === mat) && (sForm === keyFormationCatalogue || sForm.includes(keyFormationCatalogue) || keyFormationCatalogue.includes(sForm));
+                            const sMat = String(s.matricule || '');
+                            const sForm = epurer(s.formation || '');
+                            return (sMat === ap.matricule) && 
+                                   (sForm === keyForm || sForm.includes(keyForm) || keyForm.includes(sForm) || (f.id && s.formation === f.id));
                         })
                         .reduce((sum, s) => sum + calculerDureesSaisie(s), 0);
                 }
 
-                hAgent = Math.round(hAgent * 10) / 10;
-                formationHeuresFaites = Math.round((formationHeuresFaites + hAgent) * 10) / 10;
-
-                if (hAgent < f.heuresCibleAgent) {
-                    const reste = Math.round((f.heuresCibleAgent - hAgent) * 10) / 10;
-                    agentsAFormer.push({
-                        nom: nomPrenom,
-                        fait: hAgent,
-                        reste: reste,
-                        objectif: f.heuresCibleAgent
-                    });
-                }
+                formCibleEquipe += quotaAgent;
+                formFaitEquipe += hFaites;
             });
 
-            activiteHeuresFaites = Math.round((activiteHeuresFaites + formationHeuresFaites) * 10) / 10;
-            agentsAFormer.sort((a, b) => b.reste - a.reste);
+            // Si aucun agent de l'équipe n'est concerné par le module
+            if (formCibleEquipe === 0 && formFaitEquipe === 0) return;
 
-            const pctFormation = cibleTotaleModule > 0 ? Math.min(100, Math.round((formationHeuresFaites / cibleTotaleModule) * 100)) : 100;
-            const formationEstAJour = (pctFormation >= 100) || (f.heuresCibleAgent > 0 && agentsAFormer.length === 0);
+            formFaitEquipe = Math.round(formFaitEquipe * 10) / 10;
+            formCibleEquipe = Math.round(formCibleEquipe * 10) / 10;
 
-            const badgeType = estSpe 
-                ? `<span style="background: #e0e7ff; color: #4338ca; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 600;">Spécialité (${effectifConcerne} agent(s))</span>`
-                : `<span style="background: #f1f5f9; color: #475569; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">Socle Commun</span>`;
+            const pctForm = formCibleEquipe > 0 ? Math.min(100, Math.round((formFaitEquipe / formCibleEquipe) * 100)) : 100;
+            const aJour = formFaitEquipe >= formCibleEquipe;
+
+            actFait = Math.round((actFait + formFaitEquipe) * 10) / 10;
+            actCible = Math.round((actCible + formCibleEquipe) * 10) / 10;
 
             htmlFormations += `
-                <div style="background: ${formationEstAJour ? '#f0fdf4' : '#ffffff'}; border: 1px solid ${formationEstAJour ? '#bbf7d0' : '#cbd5e1'}; border-radius: 6px; padding: 10px 14px; margin-top: 8px;">
+                <div style="background: ${aJour ? '#f0fdf4' : '#ffffff'}; border: 1px solid ${aJour ? '#bbf7d0' : '#cbd5e1'}; border-radius: 6px; padding: 10px 14px; margin-top: 8px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <div>
-                            <strong style="color: #1e293b; font-size: 0.95rem;">${f.nom}</strong>
-                            ${badgeType}
-                            <span style="font-size: 0.8rem; color: #64748b; margin-left: 6px;">(Objectif : ${f.heuresCibleAgent}h/agent)</span>
+                            <strong style="color: #1e293b; font-size: 0.95rem;">${escapeHtml(f.nom)}</strong>
+                            <span style="font-size: 0.8rem; color: #64748b; margin-left: 6px;">(Cible Équipe : ${formCibleEquipe}h)</span>
                         </div>
-                        <div style="font-weight: bold; color: ${formationEstAJour ? '#16a34a' : '#d97706'}; font-size: 0.95rem;">
-                            ${pctFormation}% <span style="font-size: 0.8rem; color: #64748b; font-weight: normal;">(${formationHeuresFaites}h / ${cibleTotaleModule}h)</span>
+                        <div style="font-weight: bold; color: ${aJour ? '#16a34a' : '#dc2626'}; font-size: 0.95rem;">
+                            ${formFaitEquipe}h / ${formCibleEquipe}h
                         </div>
                     </div>
-
-                    <div style="width: 100%; background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
-                        <div style="width: ${pctFormation}%; background: ${formationEstAJour ? '#16a34a' : '#d97706'}; height: 100%;"></div>
+                    <div style="width: 100%; background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden;">
+                        <div style="width: ${pctForm}%; background: ${aJour ? '#16a34a' : '#d97706'}; height: 100%;"></div>
                     </div>
-
-                    ${formationEstAJour ? `
-                        <div style="color: #16a34a; font-weight: bold; font-size: 0.82rem;">✅ Module 100% à jour</div>
-                    ` : `
-                        <div style="font-size: 0.82rem; color: #334155;">
-                            <strong>Restent à former (${agentsAFormer.length} agent(s)) :</strong> 
-                            ${agentsAFormer.map(a => `${a.nom} <span style="color: #dc2626; font-weight: bold;">(${a.fait}/${a.objectif}h)</span>`).join(', ')}
-                        </div>
-                    `}
                 </div>
             `;
         });
 
         if (htmlFormations === '') return;
 
-        // CORRECTION 3 : Cumuls d'activités et totaux
-        totalHeuresFaitesGlobal = Math.round((totalHeuresFaitesGlobal + activiteHeuresFaites) * 10) / 10;
-        totalHeuresCibleGlobal = Math.round((totalHeuresCibleGlobal + activiteHeuresCible) * 10) / 10;
+        totalFaitGlobal = Math.round((totalFaitGlobal + actFait) * 10) / 10;
+        totalCibleGlobal = Math.round((totalCibleGlobal + actCible) * 10) / 10;
 
         if (estSpe) {
-            totalSpeFait = Math.round((totalSpeFait + activiteHeuresFaites) * 10) / 10;
-            totalSpeCible = Math.round((totalSpeCible + activiteHeuresCible) * 10) / 10;
+            totalSpeFait = Math.round((totalSpeFait + actFait) * 10) / 10;
+            totalSpeCible = Math.round((totalSpeCible + actCible) * 10) / 10;
         } else {
-            totalSocleFait = Math.round((totalSocleFait + activiteHeuresFaites) * 10) / 10;
-            totalSocleCible = Math.round((totalSocleCible + activiteHeuresCible) * 10) / 10;
+            totalSocleFait = Math.round((totalSocleFait + actFait) * 10) / 10;
+            totalSocleCible = Math.round((totalSocleCible + actCible) * 10) / 10;
         }
 
-        const pctActivite = activiteHeuresCible > 0 ? Math.min(100, Math.round((activiteHeuresFaites / activiteHeuresCible) * 100)) : 0;
+        const pctAct = actCible > 0 ? Math.min(100, Math.round((actFait / actCible) * 100)) : 0;
 
         htmlContenu += `
             <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px; margin-bottom: 6px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <h3 style="margin: 0; color: #0f172a; font-size: 1rem;">📂 Domaine / Activité : ${act.nom}</h3>
-                    <span style="font-size: 0.9rem; font-weight: bold; color: ${pctActivite >= 100 ? '#16a34a' : '#0284c7'};">${pctActivite}% (${activiteHeuresFaites}h / ${activiteHeuresCible}h)</span>
+                    <h3 style="margin: 0; color: #0f172a; font-size: 0.95rem;">📂 ${escapeHtml(act.nom)} ${estSpe ? '<span style="font-size: 0.75rem; background:#e0e7ff; color:#4338ca; padding: 2px 6px; border-radius:4px;">Spécialité</span>' : ''}</h3>
+                    <span style="font-size: 0.85rem; font-weight: bold; color: ${pctAct >= 100 ? '#16a34a' : '#0284c7'};">${pctAct}% (${actFait}h / ${actCible}h)</span>
                 </div>
-                
-                <div style="width: 100%; background: #cbd5e1; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 12px;">
-                    <div style="width: ${pctActivite}%; background: ${pctActivite >= 100 ? '#16a34a' : '#0284c7'}; height: 100%;"></div>
-                </div>
-
-                <div style="padding-left: 8px;">
-                    ${htmlFormations}
-                </div>
+                ${htmlFormations}
             </div>
         `;
     });
 
-    mettreAJourJauge('barre-global', 'txt-pct-global', 'txt-heures-global', totalHeuresFaitesGlobal, totalHeuresCibleGlobal);
-    mettreAJourJauge('barre-socle', 'txt-pct-socle', null, totalSocleFait, totalSocleCible);
-    mettreAJourJauge('barre-spe', 'txt-pct-spe', null, totalSpeFait, totalSpeCible);
+    mettreAJourJauge('barre-equipe-global', 'txt-pct-equipe-global', 'txt-heures-equipe-global', totalFaitGlobal, totalCibleGlobal);
+    mettreAJourJauge('barre-equipe-socle', 'txt-pct-equipe-socle', null, totalSocleFait, totalSocleCible);
+    mettreAJourJauge('barre-equipe-spe', 'txt-pct-equipe-spe', null, totalSpeFait, totalSpeCible);
 
-    if (conteneurModules) conteneurModules.innerHTML = htmlContenu;
+    if (conteneurModules) {
+        conteneurModules.innerHTML = htmlContenu || `<div style="text-align:center; padding: 20px; color: #64748b;">Aucune formation socle ou spécialité pour cette équipe.</div>`;
+    }
 }
-
 function mettreAJourJauge(idBarre, idTxtPct, idTxtHeures, fait, total) {
     const pct = total > 0 ? Math.min(100, Math.round((fait / total) * 100)) : 0;
     
@@ -1779,21 +1781,28 @@ function ouvrirModalAgent() {
     const select = document.getElementById('modal-select-agent');
     if (!modal || !select) return;
 
+    // Écouteur pour le filtre texte interne à la modale agent si présent
+    const inputFiltre = document.getElementById('filter-module-agent');
+    if (inputFiltre && !inputFiltre.dataset.hasListener) {
+        inputFiltre.addEventListener('input', genererFicheAgent);
+        inputFiltre.dataset.hasListener = "true";
+    }
+
     // Remplir la liste déroulante des agents
     select.innerHTML = '<option value="">-- Choisir un agent --</option>';
     const agents = (tableauAgentsRH || []).slice().sort((a, b) => {
-        const nomA = (a.nom || a.Nom || '').toUpperCase();
-        const nomB = (b.nom || b.Nom || '').toUpperCase();
-        return nomA.localeCompare(nomB);
+        const nomA = (a.nom || '').toUpperCase();
+        const nomB = (b.nom || '').toUpperCase();
+        return nomA.localeCompare(nomB, 'fr');
     });
 
     agents.forEach(a => {
-        const mat = a.matricule || a.Matricule || a.id || '';
-        const nomPrenom = `${a.nom || a.Nom || ''} ${a.prenom || a.Prenom || ''}`.trim();
-        const eq = a.Equipe || a.equipe || a.EQUIPE || '';
+        const mat = a.matricule || a.id || '';
+        const nomPrenom = `${a.nom || ''} ${a.prenom || ''}`.trim();
+        const eq = a.equipe || 'Sans équipe';
         const option = document.createElement('option');
         option.value = mat;
-        option.textContent = `${nomPrenom} (${eq || 'Sans équipe'})`;
+        option.textContent = `${nomPrenom} (${eq})`;
         select.appendChild(option);
     });
 
@@ -1816,8 +1825,10 @@ function genererFicheAgent() {
     if (dateEd) dateEd.textContent = new Date().toLocaleDateString('fr-FR');
 
     if (!matriculeAgent) {
-        document.getElementById('fiche-agent-nom').textContent = "FICHE INDIVIDUELLE FMA";
-        document.getElementById('fiche-agent-infos').textContent = "Sélectionnez un agent...";
+        const elNom = document.getElementById('fiche-agent-nom');
+        const elInfos = document.getElementById('fiche-agent-infos');
+        if (elNom) elNom.textContent = "FICHE INDIVIDUELLE FMA";
+        if (elInfos) elInfos.textContent = "Sélectionnez un agent...";
         if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Veuillez sélectionner un agent dans la liste.</div>`;
         mettreAJourJauge('barre-agent-global', 'txt-pct-agent-global', 'txt-heures-agent-global', 0, 0);
         mettreAJourJauge('barre-agent-socle', 'txt-pct-agent-socle', null, 0, 0);
@@ -1825,53 +1836,62 @@ function genererFicheAgent() {
         return;
     }
 
-    // Retrouver l'agent
-    const agent = (tableauAgentsRH || []).find(a => String(a.matricule || a.Matricule || a.id || '') === String(matriculeAgent));
+    // Retrouver l'agent sélectionné
+    const agent = (tableauAgentsRH || []).find(a => String(a.matricule || a.id || '') === String(matriculeAgent));
     if (!agent) return;
 
-    const nomPrenom = `${agent.nom || agent.Nom || ''} ${agent.prenom || agent.Prenom || ''}`.trim();
-    const eq = agent.Equipe || agent.equipe || agent.EQUIPE || 'Sans équipe';
-    const speListRaw = Array.isArray(agent.specialites) ? agent.specialites.join(', ') : (agent.specialites || agent.Specialites || 'Aucune');
+    const nomPrenom = `${agent.nom || ''} ${agent.prenom || ''}`.trim();
+    const eq = agent.equipe || 'Sans équipe';
+    const speListRaw = Array.isArray(agent.specialites) ? agent.specialites.join(', ') : String(agent.specialites || 'Aucune');
 
-    document.getElementById('fiche-agent-nom').textContent = nomPrenom.toUpperCase();
-    document.getElementById('fiche-agent-infos').textContent = `Équipe : ${eq} | Spécialités : ${speListRaw}`;
+    const elNom = document.getElementById('fiche-agent-nom');
+    const elInfos = document.getElementById('fiche-agent-infos');
+    if (elNom) elNom.textContent = nomPrenom.toUpperCase();
+    if (elInfos) elInfos.textContent = `Équipe : ${eq} | Spécialités : ${speListRaw}`;
 
     const catalogue = catalogueInitial || [];
     if (catalogue.length === 0) {
-        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Catalogue vide.</div>`;
+        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Catalogue vide. Chargez d'abord FMPA-RH.xlsx.</div>`;
         return;
     }
 
     const epurer = (str) => String(str || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
 
-    // CORRECTION 1 : Arrondi propre sur les saisies d'heures
+    // Récupération des profils de l'agent pour le croisement avec les modulations catalogue
+    const profilsAgent = new Set([
+        ...extraireValeurs(agent.statut),
+        ...extraireValeurs(agent.grade),
+        ...extraireValeurs(agent.fonction),
+        ...extraireValeurs(agent.specialites),
+        ...extraireValeurs(agent.competences),
+        ...extraireValeurs(agent.engagement),
+        ...extraireValeurs(agent.regime)
+    ]);
+
+    // Calcul de la durée d'une saisie historique
     const calculerDureesSaisie = (saisie) => {
         if (saisie.duree || saisie.Duree || saisie.heures || saisie.Heures) {
             return parseFloat(saisie.duree || saisie.Duree || saisie.heures || saisie.Heures || 0);
         }
         if (saisie.heureDebut && saisie.heureFin) {
-            const [hD, mD] = saisie.heureDebut.split(':').map(Number);
-            const [hF, mF] = saisie.heureFin.split(':').map(Number);
-            const debutMin = hD * 60 + (mD || 0);
-            const finMin = hF * 60 + (mF || 0);
-            if (finMin > debutMin) return Math.round(((finMin - debutMin) / 60) * 10) / 10;
+            return calculerDureeEntreHeures(saisie.heureDebut, saisie.heureFin);
         }
         return 0;
     };
 
-    const agentAParticuliereSpe = (nomSpe) => epurer(speListRaw).includes(epurer(nomSpe));
+    const specAgentBrutes = (agent.specialites || []).map(s => String(s).trim().toUpperCase()).filter(Boolean);
+    const specAgentBase = specAgentBrutes.map(s => s.replace(/\s*\d+$/, ""));
 
-    // Filtre texte
+    // Filtre texte si saisi dans la modale agent
     const inputFiltre = document.getElementById('filter-module-agent');
     const termeFiltre = epurer(inputFiltre ? inputFiltre.value : '');
 
     const activitesMap = {};
 
     catalogue.forEach(item => {
-        const nomActivite = item.activite || item.Activite || item.Domaine || item.domaine || "Général";
-        const nomFormation = item.libelle || item.Libelle || item.fmpa || item.sequence || "Formation";
-        const quota = parseFloat(item.quota || item.Quota || item.heures || item.Heures || 0);
-        const typeAct = String(item.type || item.Type || '').toLowerCase();
+        const nomActivite = item.activite || "Général";
+        const nomFormation = item.libelle || item.fmpa || item.sequence || "Formation";
+        const typeAct = String(item.type || '').toUpperCase();
 
         if (!activitesMap[nomActivite]) {
             activitesMap[nomActivite] = {
@@ -1882,8 +1902,12 @@ function genererFicheAgent() {
         }
 
         activitesMap[nomActivite].formations.push({
+            id: item.id || '',
             nom: nomFormation,
-            quota: quota
+            quotaDefaut: parseFloat(item.quota || 0),
+            modulations: item.modulations || [],
+            type: typeAct,
+            profils: item.profils || []
         });
     });
 
@@ -1894,12 +1918,8 @@ function genererFicheAgent() {
     let htmlContenu = '';
 
     Object.values(activitesMap).forEach(act => {
-        const estSpe = act.type.includes('spe') || act.type.includes('spé');
-
-        // Si l'activité est une spécialité et que l'agent NE L'A PAS, on l'ignore complètement
-        if (estSpe && !agentAParticuliereSpe(act.nom)) {
-            return;
-        }
+        const estSocle = act.type.includes('SOCLE') || act.type.includes('COMMUN');
+        const estSpe = act.type.includes('SPEC') || act.type.includes('SPÉCIALITÉ');
 
         let actFait = 0, actCible = 0;
         let htmlFormations = '';
@@ -1907,42 +1927,80 @@ function genererFicheAgent() {
         act.formations.forEach(f => {
             const keyForm = epurer(f.nom);
 
-            // Filtre de recherche
+            // 1. Filtrage Spécialité : Si la formation est une spécialité, l'agent doit posséder la spécialité correspondante
+            if (!estSocle) {
+                const activiteF = (act.nom || "").trim().toUpperCase();
+                const matchActivite = activiteF && specAgentBase.some(s => s === activiteF || activiteF.includes(s) || s.includes(activiteF));
+
+                const profilsForm = [
+                    ...(Array.isArray(f.profils) ? f.profils : []),
+                    ...extraireValeurs(f.modulations?.map(m => m?.profil).filter(Boolean) || [])
+                ].map(v => String(v).trim().toUpperCase());
+
+                const matchProfil = profilsForm.some(p => specAgentBrutes.includes(p) || specAgentBase.includes(p));
+
+                // Si pas de correspondance d'activité ou de profil spé pour cet agent, on passe le module
+                if (!matchActivite && !matchProfil) return;
+            }
+
+            // 2. Filtre de recherche texte
             if (termeFiltre && !epurer(act.nom).includes(termeFiltre) && !keyForm.includes(termeFiltre)) {
                 return;
             }
 
-            // Calcul des heures faites par CET agent pour CE module
+            // 3. Calcul du quota requis en tenant compte des modulations et dispenses
+            let quotaRequis = f.quotaDefaut;
+            let estDispense = false;
+
+            if (Array.isArray(f.modulations) && f.modulations.length > 0) {
+                const matchMod = f.modulations.find(m => {
+                    const profilMod = String(m.profil || "").trim().toUpperCase();
+                    return profilsAgent.has(profilMod);
+                });
+
+                if (matchMod) {
+                    if (matchMod.dispense === true || matchMod.quota === 0) {
+                        estDispense = true;
+                    } else {
+                        quotaRequis = Number(matchMod.quota);
+                    }
+                }
+            }
+
+            // Si dispensé ou quota nul, ne pas comptabiliser dans la fiche
+            if (estDispense || quotaRequis === 0) return;
+
+            // 4. Calcul des heures réalisées par l'agent dans l'historique
             let hFaites = 0;
             if (Array.isArray(historiqueSaisiesFMPA)) {
                 hFaites = historiqueSaisiesFMPA
                     .filter(s => {
-                        const sMat = String(s.matricule || s.Matricule || '');
-                        const sForm = epurer(s.formation || s.Formation || s.libelle || s.fmpa || '');
-                        return (sMat === String(matriculeAgent)) && (sForm === keyForm || sForm.includes(keyForm) || keyForm.includes(sForm));
+                        const sMat = String(s.matricule || '');
+                        const sForm = epurer(s.formation || '');
+                        return (sMat === String(matriculeAgent)) && 
+                               (sForm === keyForm || sForm.includes(keyForm) || keyForm.includes(sForm) || (f.id && s.formation === f.id));
                     })
                     .reduce((sum, s) => sum + calculerDureesSaisie(s), 0);
             }
 
-            // CORRECTION 2 : Arrondis individuels pour la formation
             hFaites = Math.round(hFaites * 10) / 10;
-            const quotaArrondi = Math.round((f.quota || 0) * 10) / 10;
+            quotaRequis = Math.round(quotaRequis * 10) / 10;
 
-            const pctForm = quotaArrondi > 0 ? Math.min(100, Math.round((hFaites / quotaArrondi) * 100)) : 100;
-            const aJour = hFaites >= quotaArrondi;
+            const pctForm = quotaRequis > 0 ? Math.min(100, Math.round((hFaites / quotaRequis) * 100)) : 100;
+            const aJour = hFaites >= quotaRequis;
 
             actFait = Math.round((actFait + hFaites) * 10) / 10;
-            actCible = Math.round((actCible + quotaArrondi) * 10) / 10;
+            actCible = Math.round((actCible + quotaRequis) * 10) / 10;
 
             htmlFormations += `
                 <div style="background: ${aJour ? '#f0fdf4' : '#ffffff'}; border: 1px solid ${aJour ? '#bbf7d0' : '#cbd5e1'}; border-radius: 6px; padding: 10px 14px; margin-top: 8px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <div>
-                            <strong style="color: #1e293b; font-size: 0.95rem;">${f.nom}</strong>
-                            <span style="font-size: 0.8rem; color: #64748b; margin-left: 6px;">(Objectif : ${quotaArrondi}h)</span>
+                            <strong style="color: #1e293b; font-size: 0.95rem;">${escapeHtml(f.nom)}</strong>
+                            <span style="font-size: 0.8rem; color: #64748b; margin-left: 6px;">(Objectif : ${quotaRequis}h)</span>
                         </div>
                         <div style="font-weight: bold; color: ${aJour ? '#16a34a' : '#dc2626'}; font-size: 0.95rem;">
-                            ${hFaites}h / ${quotaArrondi}h
+                            ${hFaites}h / ${quotaRequis}h
                         </div>
                     </div>
                     <div style="width: 100%; background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden;">
@@ -1954,7 +2012,7 @@ function genererFicheAgent() {
 
         if (htmlFormations === '') return;
 
-        // CORRECTION 3 : Cumuls d'activités et totaux globaux
+        // Cumuls d'activités et totaux globaux
         totalFaitGlobal = Math.round((totalFaitGlobal + actFait) * 10) / 10;
         totalCibleGlobal = Math.round((totalCibleGlobal + actCible) * 10) / 10;
 
@@ -1971,7 +2029,7 @@ function genererFicheAgent() {
         htmlContenu += `
             <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px; margin-bottom: 6px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <h3 style="margin: 0; color: #0f172a; font-size: 0.95rem;">📂 ${act.nom} ${estSpe ? '<span style="font-size: 0.75rem; background:#e0e7ff; color:#4338ca; padding: 2px 6px; border-radius:4px;">Spécialité</span>' : ''}</h3>
+                    <h3 style="margin: 0; color: #0f172a; font-size: 0.95rem;">📂 ${escapeHtml(act.nom)} ${estSpe ? '<span style="font-size: 0.75rem; background:#e0e7ff; color:#4338ca; padding: 2px 6px; border-radius:4px;">Spécialité</span>' : ''}</h3>
                     <span style="font-size: 0.85rem; font-weight: bold; color: ${pctAct >= 100 ? '#16a34a' : '#0284c7'};">${pctAct}% (${actFait}h / ${actCible}h)</span>
                 </div>
                 ${htmlFormations}
@@ -1983,5 +2041,7 @@ function genererFicheAgent() {
     mettreAJourJauge('barre-agent-socle', 'txt-pct-agent-socle', null, totalSocleFait, totalSocleCible);
     mettreAJourJauge('barre-agent-spe', 'txt-pct-agent-spe', null, totalSpeFait, totalSpeCible);
 
-    if (conteneurModules) conteneurModules.innerHTML = htmlContenu;
+    if (conteneurModules) {
+        conteneurModules.innerHTML = htmlContenu || `<div style="text-align:center; padding: 20px; color: #64748b;">Aucune formation socle ou spécialité requise pour cet agent.</div>`;
+    }
 }
