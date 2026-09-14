@@ -1372,7 +1372,18 @@ async function supprimerLigneHistorique(index) {
 }
 
 function exporterHistoriquePDF() {
-    if (!historiqueSaisiesFMPA.length) {
+    // 1. Récupération des données (filtrées si une fonction existe, sinon l'historique complet)
+    let donneesAExporter = historiqueSaisiesFMPA;
+    if (typeof obtenirHistoriqueFiltre === "function") {
+        donneesAExporter = obtenirHistoriqueFiltre();
+    } else if (typeof filtrerHistorique === "function") {
+        // Sécurité si les données filtrées sont stockées dans une variable globale dédiée
+        if (typeof historiqueFiltre !== "undefined" && Array.isArray(historiqueFiltre)) {
+            donneesAExporter = historiqueFiltre;
+        }
+    }
+
+    if (!donneesAExporter || !donneesAExporter.length) {
         alert("Aucune donnée à exporter.");
         return;
     }
@@ -1381,6 +1392,7 @@ function exporterHistoriquePDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
+    // En-tête du document
     doc.setFontSize(16);
     doc.text("Historique des Saisies FMPA-RH", 14, 15);
 
@@ -1389,41 +1401,46 @@ function exporterHistoriquePDF() {
         "Activité", "Thème / Module", "Début", "Fin", "Durée", "Statut"
     ];
 
-    const lignes = historiqueSaisiesFMPA.slice().reverse().map(row => {
-        const agent = Array.isArray(tableauAgentsRH) ? tableauAgentsRH.find(a => a.matricule === row.matricule) : null;
-        const nomAgentComplet = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule}`;
-        const equipeAgent = agent ? agent.equipe : "-";
+    // 2. Tri par date de formation (du plus récent au plus ancien) et formatage des lignes
+    const lignes = donneesAExporter
+        .slice()
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .map(row => {
+            const agent = Array.isArray(tableauAgentsRH) ? tableauAgentsRH.find(a => a.matricule === row.matricule) : null;
+            const nomAgentComplet = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule}`;
+            const equipeAgent = agent ? agent.equipe : "-";
 
-        const estFormateur = row.commentaires?.includes("(Animation / Formateur)") || 
-            (row.formateur && nomAgentComplet.toLowerCase().includes(row.formateur.toLowerCase()));
+            const estFormateur = row.commentaires?.includes("(Animation / Formateur)") || 
+                (row.formateur && nomAgentComplet.toLowerCase().includes(row.formateur.toLowerCase()));
 
-        const nomAffichage = estFormateur ? `${nomAgentComplet} [Formateur]` : nomAgentComplet;
+            const nomAffichage = estFormateur ? `${nomAgentComplet} [Formateur]` : nomAgentComplet;
 
-        const formationObj = Array.isArray(catalogueInitial) ? catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation) : null;
-        const activite = formationObj ? formationObj.activite : "-";
-        const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
-        const duree = typeof calculerDureeEntreHeures === "function" ? calculerDureeEntreHeures(row.heureDebut, row.heureFin) : "0";
+            const formationObj = Array.isArray(catalogueInitial) ? catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation) : null;
+            const activite = formationObj ? formationObj.activite : "-";
+            const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
+            const duree = typeof calculerDureeEntreHeures === "function" ? calculerDureeEntreHeures(row.heureDebut, row.heureFin) : "0";
 
-        const estClotureLigne = row.cloture || row.dateCloture || row.statut === "clôturé";
-        const estClotureWact = dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact;
-        const estCloture = estClotureLigne || estClotureWact;
+            const estClotureLigne = row.cloture || row.dateCloture || row.statut === "clôturé";
+            const estClotureWact = dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact;
+            const estCloture = estClotureLigne || estClotureWact;
 
-        const statutTexte = estCloture ? "Clôturé W@ct" : "A traiter";
+            const statutTexte = estCloture ? "Clôturé W@ct" : "À traiter";
 
-        return [
-            nomAffichage,
-            equipeAgent,
-            row.date,
-            dateSaisieSeule,
-            activite,
-            row.formation,
-            row.heureDebut,
-            row.heureFin,
-            `${duree} h`,
-            statutTexte
-        ];
-    });
+            return [
+                nomAffichage,
+                equipeAgent,
+                row.date,
+                dateSaisieSeule,
+                activite,
+                row.formation,
+                row.heureDebut,
+                row.heureFin,
+                `${duree} h`,
+                statutTexte
+            ];
+        });
 
+    // 3. Génération de la table dans le PDF
     doc.autoTable({
         startY: 22,
         head: [colonnes],
