@@ -1182,9 +1182,19 @@ function afficherHistorique() {
         return;
     }
 
-    historiqueSaisiesFMPA.slice().reverse().forEach((row, indexReversed) => {
-        const realIndex = historiqueSaisiesFMPA.length - 1 - indexReversed;
-        
+    // =========================================================================
+    // MODIFICATION ICI : On mappe le tableau avec son index réel dans historiqueSaisiesFMPA,
+    // puis on trie par dateSaisie de manière décroissante (plus récent d'abord).
+    // =========================================================================
+    const historiqueTrie = historiqueSaisiesFMPA
+        .map((row, realIndex) => ({ row, realIndex }))
+        .sort((a, b) => {
+            const dateA = String(a.row.dateSaisie || "");
+            const dateB = String(b.row.dateSaisie || "");
+            return dateB.localeCompare(dateA); // Ordre décroissant
+        });
+
+    historiqueTrie.forEach(({ row, realIndex }) => {
         const agent = Array.isArray(tableauAgentsRH) ? tableauAgentsRH.find(a => String(a.matricule) === String(row.matricule)) : null;
         const nomAgentComplet = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule || "-"}`;
         const equipeAgent = agent ? agent.equipe : "-";
