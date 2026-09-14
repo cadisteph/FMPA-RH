@@ -1513,7 +1513,7 @@ function filtrerAgentsPourModale(listeAgents, filtreModule) {
 function genererFicheEquipe() {
     const selectEquipe = document.getElementById('modal-select-equipe');
     const conteneurModules = document.getElementById('conteneur-modules-equipe');
-    const nomEquipe = selectEquipe ? selectEquipe.value : '';
+    const nomEquipe = selectEquipe ? selectEquipe.value.trim() : '';
 
     const dateEd = document.getElementById('fiche-equipe-date-edition');
     if (dateEd) dateEd.textContent = new Date().toLocaleDateString('fr-FR');
@@ -1530,20 +1530,27 @@ function genererFicheEquipe() {
         return;
     }
 
-    const agentsEquipe = (tableauAgentsRH || []).filter(a => String(a.equipe || 'Sans équipe') === nomEquipe);
+    const epurer = (str) => String(str || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
+
+    // Comparaison souple pour correspondre au nom d'équipe sans risquer de problème de casse/format
+    const agentsEquipe = (tableauAgentsRH || []).filter(a => {
+        const eqAgent = String(a.equipe || 'Sans équipe').trim();
+        return epurer(eqAgent) === epurer(nomEquipe) || eqAgent.toUpperCase() === nomEquipe.toUpperCase();
+    });
 
     const elNom = document.getElementById('fiche-equipe-nom');
     const elInfos = document.getElementById('fiche-equipe-infos');
-    if (elNom) elNom.textContent = `ÉQUIPE : ${nomEquipe.toUpperCase()}`;
+    if (elNom) elNom.textContent = `BILAN FMA - ÉQUIPE : ${nomEquipe.toUpperCase()}`;
     if (elInfos) elInfos.textContent = `Effectif : ${agentsEquipe.length} agent(s)`;
 
     const catalogue = catalogueInitial || [];
     if (catalogue.length === 0 || agentsEquipe.length === 0) {
         if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Aucune donnée ou effectif vide pour cette équipe.</div>`;
+        mettreAJourJauge('barre-equipe-global', 'txt-pct-equipe-global', 'txt-heures-equipe-global', 0, 0);
+        mettreAJourJauge('barre-equipe-socle', 'txt-pct-equipe-socle', null, 0, 0);
+        mettreAJourJauge('barre-equipe-spe', 'txt-pct-equipe-spe', null, 0, 0);
         return;
     }
-
-    const epurer = (str) => String(str || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
 
     const calculerDureesSaisie = (saisie) => {
         if (saisie.duree || saisie.Duree || saisie.heures || saisie.Heures) {
@@ -1678,8 +1685,7 @@ function genererFicheEquipe() {
 
                 hFaites = Math.round(hFaites * 10) / 10;
                 quotaAgent = Math.round(quotaAgent * 10) / 10;
-                
-                // CAPAGE INDIVIDUEL : on ne prend pas en compte le surplus d'un agent
+
                 const hUtilesAgent = Math.min(hFaites, quotaAgent);
                 const hRestantes = Math.max(0, Math.round((quotaAgent - hFaites) * 10) / 10);
 
@@ -1699,7 +1705,6 @@ function genererFicheEquipe() {
             formUtileEquipe = Math.round(formUtileEquipe * 10) / 10;
             formCibleEquipe = Math.round(formCibleEquipe * 10) / 10;
 
-            // Tri : les agents ayant le plus d'heures à faire restent en haut
             detailsAgents.sort((a, b) => b.hRestantes - a.hRestantes);
 
             const pctForm = formCibleEquipe > 0 ? Math.min(100, Math.round((formUtileEquipe / formCibleEquipe) * 100)) : 100;
@@ -1773,6 +1778,7 @@ function genererFicheEquipe() {
         `;
     });
 
+    // Mettre à jour les jauges en haut du bilan
     mettreAJourJauge('barre-equipe-global', 'txt-pct-equipe-global', 'txt-heures-equipe-global', totalUtileGlobal, totalCibleGlobal);
     mettreAJourJauge('barre-equipe-socle', 'txt-pct-equipe-socle', null, totalSocleUtile, totalSocleCible);
     mettreAJourJauge('barre-equipe-spe', 'txt-pct-equipe-spe', null, totalSpeUtile, totalSpeCible);
@@ -1781,7 +1787,6 @@ function genererFicheEquipe() {
         conteneurModules.innerHTML = htmlContenu || `<div style="text-align:center; padding: 20px; color: #64748b;">Aucune formation socle ou spécialité pour cette équipe.</div>`;
     }
 }
-
 
 function mettreAJourJauge(idBarre, idTxtPct, idTxtHeures, fait, total) {
     const pct = total > 0 ? Math.min(100, Math.round((fait / total) * 100)) : 0;
