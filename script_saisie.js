@@ -1863,12 +1863,15 @@ function genererFicheAgent() {
     const dateEd = document.getElementById('fiche-agent-date-edition');
     if (dateEd) dateEd.textContent = new Date().toLocaleDateString('fr-FR');
 
+    // 1. Cas où aucun agent n'est sélectionné
     if (!matriculeAgent) {
         const elNom = document.getElementById('fiche-agent-nom');
         const elInfos = document.getElementById('fiche-agent-infos');
         if (elNom) elNom.textContent = "FICHE INDIVIDUELLE FMA";
         if (elInfos) elInfos.textContent = "Sélectionnez un agent...";
         if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Veuillez sélectionner un agent dans la liste.</div>`;
+        
+        // Utilisation des ID exacts de la Modal Agent
         mettreAJourJauge('barre-agent-global', 'txt-pct-agent-global', 'txt-heures-agent-global', 0, 0);
         mettreAJourJauge('barre-agent-socle', 'txt-pct-agent-socle', null, 0, 0);
         mettreAJourJauge('barre-agent-spe', 'txt-pct-agent-spe', null, 0, 0);
