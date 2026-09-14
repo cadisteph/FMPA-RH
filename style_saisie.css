@@ -523,12 +523,13 @@ body {
 .nom-agent-formateur { color: #15803d; }
 
 .badge-cloture {
-    background-color: #e2e8f0;
-    color: #475569;
+    background-color: #caf7fb;
+    color: #2563eb;
     padding: 4px 8px;
     border-radius: 6px;
-    font-size: 0.8rem;
-    font-weight: 700;
+    font-size: 0.7rem;
+    font-style : italic
+    font-weight: 600;
     display: inline-block;
 }
 
