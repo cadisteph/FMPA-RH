@@ -1254,7 +1254,7 @@ function afficherHistorique() {
             if (estCloture) {
                 colActions = `<span class="badge-cloture">🔒 Web@ct Saisi 🔵</span>`;
             } else if (!estAdminDeverrouille) {
-                colActions = `<span class="badge-verrouille">🔒 Web@ct à faire 🔴</span>`;
+                colActions = `<span class="badge-verrouille">🔒 Web@ct à Saisir 🔴</span>`;
             } else {
                 colActions = `
                     <button type="button" class="btn-act-mod" onclick="activerEditionHistorique(${realIndex})">✏️ Modifier</button>
