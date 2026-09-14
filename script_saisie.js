@@ -1372,16 +1372,14 @@ async function supprimerLigneHistorique(index) {
 }
 
 function exporterHistoriquePDF() {
-    // 1. Récupération des lignes visibles directement dans le tableau HTML de l'historique
     const tbody = document.getElementById("tbody-historique");
     if (!tbody) {
         alert("Impossible de trouver le tableau d'historique.");
         return;
     }
 
+    // Récupération des lignes visibles
     const trs = Array.from(tbody.querySelectorAll("tr"));
-    
-    // Filtrer les lignes réelles (exclure le message d'absence de données)
     const lignesVisibles = trs.filter(tr => {
         return tr.querySelectorAll("td").length > 1 && tr.style.display !== "none";
     });
@@ -1391,10 +1389,13 @@ function exporterHistoriquePDF() {
         return;
     }
 
+    // Récupération de la Date Réf. W@ct
+    const inputRefWact = document.getElementById("hist-ref-wact");
+    const dateRefWact = inputRefWact ? inputRefWact.value : "";
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
-    // En-tête du document
     doc.setFontSize(16);
     doc.text("Historique des Saisies FMPA-RH", 14, 15);
 
@@ -1403,12 +1404,21 @@ function exporterHistoriquePDF() {
         "Activité", "Thème / Module", "Début", "Fin", "Durée", "Statut"
     ];
 
-    // 2. Extraire le texte de chaque cellule du tableau filtré
     const lignes = lignesVisibles.map(tr => {
         const tds = tr.querySelectorAll("td");
+
+        // 1. Nettoyage du nom de l'agent (suppression des emojis 🎓 et balises HTML/badges)
+        let rawAgentText = tds[0]?.innerText || tds[0]?.textContent || "-";
         
-        // Extraction des cellules (en ignorant la dernière colonne "Actions")
-        const agent = tds[0]?.textContent.trim() || "-";
+        // Retrait des émojis et caractères non standards
+        rawAgentText = rawAgentText.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').replace(/[^\x00-\x7FàâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ\s\[\]-]/g, '');
+
+        // Formatage propre : "NOM Prénom [Formateur]"
+        if (rawAgentText.includes("Formateur")) {
+            rawAgentText = rawAgentText.replace(/Formateur/gi, '').trim() + " [Formateur]";
+        }
+        const nomPropre = rawAgentText.replace(/\s+/g, ' ').trim();
+
         const equipe = tds[1]?.textContent.trim() || "-";
         const dateFormation = tds[2]?.textContent.trim() || "-";
         const dateSaisie = tds[3]?.textContent.trim() || "-";
@@ -1417,18 +1427,28 @@ function exporterHistoriquePDF() {
         const debut = tds[6]?.textContent.trim() || "-";
         const fin = tds[7]?.textContent.trim() || "-";
         const duree = tds[8]?.textContent.trim() || "-";
-        
-        // On détermine le statut d'après le style ou le contenu
-        const estCloture = tr.classList.contains("ligne-cloturee") || tr.style.backgroundColor.includes("rgb");
-        const statutTexte = estCloture ? "Clôturé W@ct" : "À traiter";
 
-        return [agent, equipe, dateFormation, dateSaisie, activite, theme, debut, fin, duree, statutTexte];
+        // 2. Évaluation exacte du Statut (Web@ct Saisi vs Web@ct à Saisir)
+        const tdActionText = tds[9]?.textContent || "";
+        let estCloture = false;
+
+        if (tdActionText.includes("Saisi") && !tdActionText.includes("à Saisir")) {
+            estCloture = true;
+        } else if (dateRefWact && dateSaisie !== "-" && dateSaisie <= dateRefWact) {
+            estCloture = true;
+        } else if (tr.classList.contains("ligne-cloturee")) {
+            estCloture = true;
+        }
+
+        const statutTexte = estCloture ? "Web@ct Saisi" : "Web@ct à Saisir";
+
+        return [nomPropre, equipe, dateFormation, dateSaisie, activite, theme, debut, fin, duree, statutTexte];
     });
 
-    // 3. Tri chronologique de la liste filtrée (du plus récent au plus ancien selon la date de formation)
+    // 3. Tri chronologique (du plus récent au plus ancien)
     lignes.sort((a, b) => new Date(b[2]) - new Date(a[2]));
 
-    // 4. Génération du PDF
+    // 4. Rendu de la table PDF avec coloration conditionnelle
     doc.autoTable({
         startY: 22,
         head: [colonnes],
@@ -1438,8 +1458,11 @@ function exporterHistoriquePDF() {
         headStyles: { fillColor: [30, 41, 59] },
         didParseCell: function(data) {
             if (data.section === 'body' && data.column.index === 9) {
-                if (data.cell.raw === "Clôturé W@ct") {
-                    data.cell.styles.textColor = [185, 28, 28];
+                if (data.cell.raw === "Web@ct Saisi") {
+                    data.cell.styles.textColor = [22, 163, 74]; // Vert
+                    data.cell.styles.fontStyle = 'bold';
+                } else if (data.cell.raw === "Web@ct à Saisir") {
+                    data.cell.styles.textColor = [220, 38, 38]; // Rouge
                     data.cell.styles.fontStyle = 'bold';
                 }
             }
