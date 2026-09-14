@@ -1372,23 +1372,25 @@ async function supprimerLigneHistorique(index) {
 }
 
 function exporterHistoriquePDF() {
-    // 1. Récupération des données (filtrées si une fonction existe, sinon l'historique complet)
-    let donneesAExporter = historiqueSaisiesFMPA;
-    if (typeof obtenirHistoriqueFiltre === "function") {
-        donneesAExporter = obtenirHistoriqueFiltre();
-    } else if (typeof filtrerHistorique === "function") {
-        // Sécurité si les données filtrées sont stockées dans une variable globale dédiée
-        if (typeof historiqueFiltre !== "undefined" && Array.isArray(historiqueFiltre)) {
-            donneesAExporter = historiqueFiltre;
-        }
+    // 1. Récupération des lignes visibles directement dans le tableau HTML de l'historique
+    const tbody = document.getElementById("tbody-historique");
+    if (!tbody) {
+        alert("Impossible de trouver le tableau d'historique.");
+        return;
     }
 
-    if (!donneesAExporter || !donneesAExporter.length) {
+    const trs = Array.from(tbody.querySelectorAll("tr"));
+    
+    // Filtrer les lignes réelles (exclure le message d'absence de données)
+    const lignesVisibles = trs.filter(tr => {
+        return tr.querySelectorAll("td").length > 1 && tr.style.display !== "none";
+    });
+
+    if (lignesVisibles.length === 0) {
         alert("Aucune donnée à exporter.");
         return;
     }
 
-    const dateRefWact = document.getElementById("hist-ref-wact")?.value || "";
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
@@ -1401,46 +1403,32 @@ function exporterHistoriquePDF() {
         "Activité", "Thème / Module", "Début", "Fin", "Durée", "Statut"
     ];
 
-    // 2. Tri par date de formation (du plus récent au plus ancien) et formatage des lignes
-    const lignes = donneesAExporter
-        .slice()
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .map(row => {
-            const agent = Array.isArray(tableauAgentsRH) ? tableauAgentsRH.find(a => a.matricule === row.matricule) : null;
-            const nomAgentComplet = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule}`;
-            const equipeAgent = agent ? agent.equipe : "-";
+    // 2. Extraire le texte de chaque cellule du tableau filtré
+    const lignes = lignesVisibles.map(tr => {
+        const tds = tr.querySelectorAll("td");
+        
+        // Extraction des cellules (en ignorant la dernière colonne "Actions")
+        const agent = tds[0]?.textContent.trim() || "-";
+        const equipe = tds[1]?.textContent.trim() || "-";
+        const dateFormation = tds[2]?.textContent.trim() || "-";
+        const dateSaisie = tds[3]?.textContent.trim() || "-";
+        const activite = tds[4]?.textContent.trim() || "-";
+        const theme = tds[5]?.textContent.trim() || "-";
+        const debut = tds[6]?.textContent.trim() || "-";
+        const fin = tds[7]?.textContent.trim() || "-";
+        const duree = tds[8]?.textContent.trim() || "-";
+        
+        // On détermine le statut d'après le style ou le contenu
+        const estCloture = tr.classList.contains("ligne-cloturee") || tr.style.backgroundColor.includes("rgb");
+        const statutTexte = estCloture ? "Clôturé W@ct" : "À traiter";
 
-            const estFormateur = row.commentaires?.includes("(Animation / Formateur)") || 
-                (row.formateur && nomAgentComplet.toLowerCase().includes(row.formateur.toLowerCase()));
+        return [agent, equipe, dateFormation, dateSaisie, activite, theme, debut, fin, duree, statutTexte];
+    });
 
-            const nomAffichage = estFormateur ? `${nomAgentComplet} [Formateur]` : nomAgentComplet;
+    // 3. Tri chronologique de la liste filtrée (du plus récent au plus ancien selon la date de formation)
+    lignes.sort((a, b) => new Date(b[2]) - new Date(a[2]));
 
-            const formationObj = Array.isArray(catalogueInitial) ? catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation) : null;
-            const activite = formationObj ? formationObj.activite : "-";
-            const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
-            const duree = typeof calculerDureeEntreHeures === "function" ? calculerDureeEntreHeures(row.heureDebut, row.heureFin) : "0";
-
-            const estClotureLigne = row.cloture || row.dateCloture || row.statut === "clôturé";
-            const estClotureWact = dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact;
-            const estCloture = estClotureLigne || estClotureWact;
-
-            const statutTexte = estCloture ? "Clôturé W@ct" : "À traiter";
-
-            return [
-                nomAffichage,
-                equipeAgent,
-                row.date,
-                dateSaisieSeule,
-                activite,
-                row.formation,
-                row.heureDebut,
-                row.heureFin,
-                `${duree} h`,
-                statutTexte
-            ];
-        });
-
-    // 3. Génération de la table dans le PDF
+    // 4. Génération du PDF
     doc.autoTable({
         startY: 22,
         head: [colonnes],
