@@ -1242,9 +1242,9 @@ function afficherHistorique() {
         } else {
             let colActions = "";
             if (estCloture) {
-                colActions = `<span class="badge-cloture">🔒 Clôturé</span>`;
+                colActions = `<span class="badge-cloture">🔒 Web@ct Saisi 🔵</span>`;
             } else if (!estAdminDeverrouille) {
-                colActions = `<span class="badge-verrouille">🔒 Verrouillé</span>`;
+                colActions = `<span class="badge-verrouille">🔒 Web@ct à faire 🔴</span>`;
             } else {
                 colActions = `
                     <button type="button" class="btn-act-mod" onclick="activerEditionHistorique(${realIndex})">✏️ Modifier</button>
