@@ -1530,7 +1530,6 @@ function genererFicheEquipe() {
         return;
     }
 
-    // Récupérer les agents de l'équipe
     const agentsEquipe = (tableauAgentsRH || []).filter(a => String(a.equipe || 'Sans équipe') === nomEquipe);
 
     const elNom = document.getElementById('fiche-equipe-nom');
@@ -1556,7 +1555,6 @@ function genererFicheEquipe() {
         return 0;
     };
 
-    // Pré-préparer les données profils/spécialités pour chaque agent de l'équipe
     const mapAgentsProps = agentsEquipe.map(agent => {
         const specBrutes = (agent.specialites || []).map(s => String(s).trim().toUpperCase()).filter(Boolean);
         const specBase = specBrutes.map(s => s.replace(/\s*\d+$/, ""));
@@ -1573,6 +1571,7 @@ function genererFicheEquipe() {
         return {
             agent,
             matricule: String(agent.matricule || agent.id || ''),
+            nomPrenom: `${agent.nom || ''} ${agent.prenom || ''}`.trim(),
             specBrutes,
             specBase,
             profils
@@ -1582,7 +1581,6 @@ function genererFicheEquipe() {
     const inputFiltre = document.getElementById('filter-module-equipe');
     const termeFiltre = epurer(inputFiltre ? inputFiltre.value : '');
 
-    // Structuration des activités du catalogue
     const activitesMap = {};
     catalogue.forEach(item => {
         const nomActivite = item.activite || "Général";
@@ -1607,9 +1605,9 @@ function genererFicheEquipe() {
         });
     });
 
-    let totalFaitGlobal = 0, totalCibleGlobal = 0;
-    let totalSocleFait = 0, totalSocleCible = 0;
-    let totalSpeFait = 0, totalSpeCible = 0;
+    let totalUtileGlobal = 0, totalCibleGlobal = 0;
+    let totalSocleUtile = 0, totalSocleCible = 0;
+    let totalSpeUtile = 0, totalSpeCible = 0;
 
     let htmlContenu = '';
 
@@ -1617,7 +1615,7 @@ function genererFicheEquipe() {
         const estSocle = act.type.includes('SOCLE') || act.type.includes('COMMUN');
         const estSpe = act.type.includes('SPEC') || act.type.includes('SPÉCIALITÉ');
 
-        let actFait = 0, actCible = 0;
+        let actUtile = 0, actCible = 0;
         let htmlFormations = '';
 
         act.formations.forEach(f => {
@@ -1628,11 +1626,10 @@ function genererFicheEquipe() {
             }
 
             let formCibleEquipe = 0;
-            let formFaitEquipe = 0;
+            let formUtileEquipe = 0;
+            const detailsAgents = [];
 
-            // Parcours individuel de chaque agent de l'équipe pour cette formation
             mapAgentsProps.forEach(ap => {
-                // Vérification spécialité
                 if (!estSocle) {
                     const activiteF = (act.nom || "").trim().toUpperCase();
                     const matchActivite = activiteF && ap.specBase.some(s => s === activiteF || activiteF.includes(s) || s.includes(activiteF));
@@ -1647,7 +1644,6 @@ function genererFicheEquipe() {
                     if (!matchActivite && !matchProfil) return;
                 }
 
-                // Application des modulations / dispenses individuelles
                 let quotaAgent = f.quotaDefaut;
                 let estDispense = false;
 
@@ -1668,7 +1664,6 @@ function genererFicheEquipe() {
 
                 if (estDispense || quotaAgent === 0) return;
 
-                // Calcul du fait pour cet agent
                 let hFaites = 0;
                 if (Array.isArray(historiqueSaisiesFMPA)) {
                     hFaites = historiqueSaisiesFMPA
@@ -1681,74 +1676,113 @@ function genererFicheEquipe() {
                         .reduce((sum, s) => sum + calculerDureesSaisie(s), 0);
                 }
 
+                hFaites = Math.round(hFaites * 10) / 10;
+                quotaAgent = Math.round(quotaAgent * 10) / 10;
+                
+                // CAPAGE INDIVIDUEL : on ne prend pas en compte le surplus d'un agent
+                const hUtilesAgent = Math.min(hFaites, quotaAgent);
+                const hRestantes = Math.max(0, Math.round((quotaAgent - hFaites) * 10) / 10);
+
                 formCibleEquipe += quotaAgent;
-                formFaitEquipe += hFaites;
+                formUtileEquipe += hUtilesAgent;
+
+                detailsAgents.push({
+                    nomPrenom: ap.nomPrenom,
+                    hFaites,
+                    quotaAgent,
+                    hRestantes
+                });
             });
 
-            // Si aucun agent de l'équipe n'est concerné par le module
-            if (formCibleEquipe === 0 && formFaitEquipe === 0) return;
+            if (formCibleEquipe === 0 && formUtileEquipe === 0) return;
 
-            formFaitEquipe = Math.round(formFaitEquipe * 10) / 10;
+            formUtileEquipe = Math.round(formUtileEquipe * 10) / 10;
             formCibleEquipe = Math.round(formCibleEquipe * 10) / 10;
 
-            const pctForm = formCibleEquipe > 0 ? Math.min(100, Math.round((formFaitEquipe / formCibleEquipe) * 100)) : 100;
-            const aJour = formFaitEquipe >= formCibleEquipe;
+            // Tri : les agents ayant le plus d'heures à faire restent en haut
+            detailsAgents.sort((a, b) => b.hRestantes - a.hRestantes);
 
-            actFait = Math.round((actFait + formFaitEquipe) * 10) / 10;
+            const pctForm = formCibleEquipe > 0 ? Math.min(100, Math.round((formUtileEquipe / formCibleEquipe) * 100)) : 100;
+            const aJour = formUtileEquipe >= formCibleEquipe;
+
+            actUtile = Math.round((actUtile + formUtileEquipe) * 10) / 10;
             actCible = Math.round((actCible + formCibleEquipe) * 10) / 10;
+
+            let htmlListeAgents = '';
+            detailsAgents.forEach(ag => {
+                const agFait = ag.hRestantes === 0;
+                htmlListeAgents += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; margin-top: 4px; background: ${agFait ? '#f1f5f9' : '#ffffff'}; border-left: 3px solid ${agFait ? '#22c55e' : '#f59e0b'}; border-radius: 4px; font-size: 0.82rem;">
+                        <span style="color: #334155; font-weight: 500;">${escapeHtml(ag.nomPrenom)}</span>
+                        <span style="color: ${agFait ? '#15803d' : '#b45309'}; font-weight: 600;">
+                            ${agFait ? 'OK' : 'Reste ' + ag.hRestantes + ' h'} (${ag.hFaites}/${ag.quotaAgent}h)
+                        </span>
+                    </div>
+                `;
+            });
 
             htmlFormations += `
                 <div style="background: ${aJour ? '#f0fdf4' : '#ffffff'}; border: 1px solid ${aJour ? '#bbf7d0' : '#cbd5e1'}; border-radius: 6px; padding: 10px 14px; margin-top: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                         <div>
                             <strong style="color: #1e293b; font-size: 0.95rem;">${escapeHtml(f.nom)}</strong>
                             <span style="font-size: 0.8rem; color: #64748b; margin-left: 6px;">(Cible Équipe : ${formCibleEquipe}h)</span>
                         </div>
                         <div style="font-weight: bold; color: ${aJour ? '#16a34a' : '#dc2626'}; font-size: 0.95rem;">
-                            ${formFaitEquipe}h / ${formCibleEquipe}h
+                            ${formUtileEquipe}h / ${formCibleEquipe}h
                         </div>
                     </div>
-                    <div style="width: 100%; background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden;">
+                    <div style="width: 100%; background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
                         <div style="width: ${pctForm}%; background: ${aJour ? '#16a34a' : '#d97706'}; height: 100%;"></div>
                     </div>
+                    <details style="margin-top: 6px; font-size: 0.85rem; color: #475569;">
+                        <summary style="cursor: pointer; font-weight: 600; color: #0284c7;">
+                            Détail par agent (${detailsAgents.length})
+                        </summary>
+                        <div style="margin-top: 6px;">
+                            ${htmlListeAgents}
+                        </div>
+                    </details>
                 </div>
             `;
         });
 
         if (htmlFormations === '') return;
 
-        totalFaitGlobal = Math.round((totalFaitGlobal + actFait) * 10) / 10;
+        totalUtileGlobal = Math.round((totalUtileGlobal + actUtile) * 10) / 10;
         totalCibleGlobal = Math.round((totalCibleGlobal + actCible) * 10) / 10;
 
         if (estSpe) {
-            totalSpeFait = Math.round((totalSpeFait + actFait) * 10) / 10;
+            totalSpeUtile = Math.round((totalSpeUtile + actUtile) * 10) / 10;
             totalSpeCible = Math.round((totalSpeCible + actCible) * 10) / 10;
         } else {
-            totalSocleFait = Math.round((totalSocleFait + actFait) * 10) / 10;
+            totalSocleUtile = Math.round((totalSocleUtile + actUtile) * 10) / 10;
             totalSocleCible = Math.round((totalSocleCible + actCible) * 10) / 10;
         }
 
-        const pctAct = actCible > 0 ? Math.min(100, Math.round((actFait / actCible) * 100)) : 0;
+        const pctAct = actCible > 0 ? Math.min(100, Math.round((actUtile / actCible) * 100)) : 0;
 
         htmlContenu += `
             <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px; margin-bottom: 6px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <h3 style="margin: 0; color: #0f172a; font-size: 0.95rem;">📂 ${escapeHtml(act.nom)} ${estSpe ? '<span style="font-size: 0.75rem; background:#e0e7ff; color:#4338ca; padding: 2px 6px; border-radius:4px;">Spécialité</span>' : ''}</h3>
-                    <span style="font-size: 0.85rem; font-weight: bold; color: ${pctAct >= 100 ? '#16a34a' : '#0284c7'};">${pctAct}% (${actFait}h / ${actCible}h)</span>
+                    <span style="font-size: 0.85rem; font-weight: bold; color: ${pctAct >= 100 ? '#16a34a' : '#0284c7'};">${pctAct}% (${actUtile}h / ${actCible}h)</span>
                 </div>
                 ${htmlFormations}
             </div>
         `;
     });
 
-    mettreAJourJauge('barre-equipe-global', 'txt-pct-equipe-global', 'txt-heures-equipe-global', totalFaitGlobal, totalCibleGlobal);
-    mettreAJourJauge('barre-equipe-socle', 'txt-pct-equipe-socle', null, totalSocleFait, totalSocleCible);
-    mettreAJourJauge('barre-equipe-spe', 'txt-pct-equipe-spe', null, totalSpeFait, totalSpeCible);
+    mettreAJourJauge('barre-equipe-global', 'txt-pct-equipe-global', 'txt-heures-equipe-global', totalUtileGlobal, totalCibleGlobal);
+    mettreAJourJauge('barre-equipe-socle', 'txt-pct-equipe-socle', null, totalSocleUtile, totalSocleCible);
+    mettreAJourJauge('barre-equipe-spe', 'txt-pct-equipe-spe', null, totalSpeUtile, totalSpeCible);
 
     if (conteneurModules) {
         conteneurModules.innerHTML = htmlContenu || `<div style="text-align:center; padding: 20px; color: #64748b;">Aucune formation socle ou spécialité pour cette équipe.</div>`;
     }
 }
+
+
 function mettreAJourJauge(idBarre, idTxtPct, idTxtHeures, fait, total) {
     const pct = total > 0 ? Math.min(100, Math.round((fait / total) * 100)) : 0;
     
@@ -1836,7 +1870,6 @@ function genererFicheAgent() {
         return;
     }
 
-    // Retrouver l'agent sélectionné
     const agent = (tableauAgentsRH || []).find(a => String(a.matricule || a.id || '') === String(matriculeAgent));
     if (!agent) return;
 
@@ -1857,7 +1890,6 @@ function genererFicheAgent() {
 
     const epurer = (str) => String(str || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
 
-    // Récupération des profils de l'agent pour le croisement avec les modulations catalogue
     const profilsAgent = new Set([
         ...extraireValeurs(agent.statut),
         ...extraireValeurs(agent.grade),
@@ -1868,7 +1900,6 @@ function genererFicheAgent() {
         ...extraireValeurs(agent.regime)
     ]);
 
-    // Calcul de la durée d'une saisie historique
     const calculerDureesSaisie = (saisie) => {
         if (saisie.duree || saisie.Duree || saisie.heures || saisie.Heures) {
             return parseFloat(saisie.duree || saisie.Duree || saisie.heures || saisie.Heures || 0);
@@ -1882,7 +1913,6 @@ function genererFicheAgent() {
     const specAgentBrutes = (agent.specialites || []).map(s => String(s).trim().toUpperCase()).filter(Boolean);
     const specAgentBase = specAgentBrutes.map(s => s.replace(/\s*\d+$/, ""));
 
-    // Filtre texte si saisi dans la modale agent
     const inputFiltre = document.getElementById('filter-module-agent');
     const termeFiltre = epurer(inputFiltre ? inputFiltre.value : '');
 
@@ -1911,9 +1941,9 @@ function genererFicheAgent() {
         });
     });
 
-    let totalFaitGlobal = 0, totalCibleGlobal = 0;
-    let totalSocleFait = 0, totalSocleCible = 0;
-    let totalSpeFait = 0, totalSpeCible = 0;
+    let totalUtileGlobal = 0, totalCibleGlobal = 0;
+    let totalSocleUtile = 0, totalSocleCible = 0;
+    let totalSpeUtile = 0, totalSpeCible = 0;
 
     let htmlContenu = '';
 
@@ -1921,13 +1951,12 @@ function genererFicheAgent() {
         const estSocle = act.type.includes('SOCLE') || act.type.includes('COMMUN');
         const estSpe = act.type.includes('SPEC') || act.type.includes('SPÉCIALITÉ');
 
-        let actFait = 0, actCible = 0;
+        let actUtile = 0, actCible = 0;
         let htmlFormations = '';
 
         act.formations.forEach(f => {
             const keyForm = epurer(f.nom);
 
-            // 1. Filtrage Spécialité : Si la formation est une spécialité, l'agent doit posséder la spécialité correspondante
             if (!estSocle) {
                 const activiteF = (act.nom || "").trim().toUpperCase();
                 const matchActivite = activiteF && specAgentBase.some(s => s === activiteF || activiteF.includes(s) || s.includes(activiteF));
@@ -1939,16 +1968,13 @@ function genererFicheAgent() {
 
                 const matchProfil = profilsForm.some(p => specAgentBrutes.includes(p) || specAgentBase.includes(p));
 
-                // Si pas de correspondance d'activité ou de profil spé pour cet agent, on passe le module
                 if (!matchActivite && !matchProfil) return;
             }
 
-            // 2. Filtre de recherche texte
             if (termeFiltre && !epurer(act.nom).includes(termeFiltre) && !keyForm.includes(termeFiltre)) {
                 return;
             }
 
-            // 3. Calcul du quota requis en tenant compte des modulations et dispenses
             let quotaRequis = f.quotaDefaut;
             let estDispense = false;
 
@@ -1967,10 +1993,8 @@ function genererFicheAgent() {
                 }
             }
 
-            // Si dispensé ou quota nul, ne pas comptabiliser dans la fiche
             if (estDispense || quotaRequis === 0) return;
 
-            // 4. Calcul des heures réalisées par l'agent dans l'historique
             let hFaites = 0;
             if (Array.isArray(historiqueSaisiesFMPA)) {
                 hFaites = historiqueSaisiesFMPA
@@ -1986,10 +2010,13 @@ function genererFicheAgent() {
             hFaites = Math.round(hFaites * 10) / 10;
             quotaRequis = Math.round(quotaRequis * 10) / 10;
 
-            const pctForm = quotaRequis > 0 ? Math.min(100, Math.round((hFaites / quotaRequis) * 100)) : 100;
+            // CAPAGE : Les heures utiles ne dépassent pas le quota requis
+            const hUtiles = Math.min(hFaites, quotaRequis);
+
+            const pctForm = quotaRequis > 0 ? Math.min(100, Math.round((hUtiles / quotaRequis) * 100)) : 100;
             const aJour = hFaites >= quotaRequis;
 
-            actFait = Math.round((actFait + hFaites) * 10) / 10;
+            actUtile = Math.round((actUtile + hUtiles) * 10) / 10;
             actCible = Math.round((actCible + quotaRequis) * 10) / 10;
 
             htmlFormations += `
@@ -2000,7 +2027,7 @@ function genererFicheAgent() {
                             <span style="font-size: 0.8rem; color: #64748b; margin-left: 6px;">(Objectif : ${quotaRequis}h)</span>
                         </div>
                         <div style="font-weight: bold; color: ${aJour ? '#16a34a' : '#dc2626'}; font-size: 0.95rem;">
-                            ${hFaites}h / ${quotaRequis}h
+                            ${hFaites}h / ${quotaRequis}h ${hFaites > quotaRequis ? `<span style="font-size:0.75rem; color:#64748b;">(dont ${quotaRequis}h utiles)</span>` : ''}
                         </div>
                     </div>
                     <div style="width: 100%; background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden;">
@@ -2012,34 +2039,33 @@ function genererFicheAgent() {
 
         if (htmlFormations === '') return;
 
-        // Cumuls d'activités et totaux globaux
-        totalFaitGlobal = Math.round((totalFaitGlobal + actFait) * 10) / 10;
+        totalUtileGlobal = Math.round((totalUtileGlobal + actUtile) * 10) / 10;
         totalCibleGlobal = Math.round((totalCibleGlobal + actCible) * 10) / 10;
 
         if (estSpe) {
-            totalSpeFait = Math.round((totalSpeFait + actFait) * 10) / 10;
+            totalSpeUtile = Math.round((totalSpeUtile + actUtile) * 10) / 10;
             totalSpeCible = Math.round((totalSpeCible + actCible) * 10) / 10;
         } else {
-            totalSocleFait = Math.round((totalSocleFait + actFait) * 10) / 10;
+            totalSocleUtile = Math.round((totalSocleUtile + actUtile) * 10) / 10;
             totalSocleCible = Math.round((totalSocleCible + actCible) * 10) / 10;
         }
 
-        const pctAct = actCible > 0 ? Math.min(100, Math.round((actFait / actCible) * 100)) : 0;
+        const pctAct = actCible > 0 ? Math.min(100, Math.round((actUtile / actCible) * 100)) : 0;
 
         htmlContenu += `
             <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px; margin-bottom: 6px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <h3 style="margin: 0; color: #0f172a; font-size: 0.95rem;">📂 ${escapeHtml(act.nom)} ${estSpe ? '<span style="font-size: 0.75rem; background:#e0e7ff; color:#4338ca; padding: 2px 6px; border-radius:4px;">Spécialité</span>' : ''}</h3>
-                    <span style="font-size: 0.85rem; font-weight: bold; color: ${pctAct >= 100 ? '#16a34a' : '#0284c7'};">${pctAct}% (${actFait}h / ${actCible}h)</span>
+                    <span style="font-size: 0.85rem; font-weight: bold; color: ${pctAct >= 100 ? '#16a34a' : '#0284c7'};">${pctAct}% (${actUtile}h / ${actCible}h)</span>
                 </div>
                 ${htmlFormations}
             </div>
         `;
     });
 
-    mettreAJourJauge('barre-agent-global', 'txt-pct-agent-global', 'txt-heures-agent-global', totalFaitGlobal, totalCibleGlobal);
-    mettreAJourJauge('barre-agent-socle', 'txt-pct-agent-socle', null, totalSocleFait, totalSocleCible);
-    mettreAJourJauge('barre-agent-spe', 'txt-pct-agent-spe', null, totalSpeFait, totalSpeCible);
+    mettreAJourJauge('barre-agent-global', 'txt-pct-agent-global', 'txt-heures-agent-global', totalUtileGlobal, totalCibleGlobal);
+    mettreAJourJauge('barre-agent-socle', 'txt-pct-agent-socle', null, totalSocleUtile, totalSocleCible);
+    mettreAJourJauge('barre-agent-spe', 'txt-pct-agent-spe', null, totalSpeUtile, totalSpeCible);
 
     if (conteneurModules) {
         conteneurModules.innerHTML = htmlContenu || `<div style="text-align:center; padding: 20px; color: #64748b;">Aucune formation socle ou spécialité requise pour cet agent.</div>`;
