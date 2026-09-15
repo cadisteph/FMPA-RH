@@ -324,22 +324,34 @@
               </div>
             </div>
 
-            <!-- Bloc 3 Champs Dates : PL, VMA, Entrée SDIS -->
-            <div style="display: flex; gap: 8px;">
-              <div style="flex:1;">
-                <label style="font-size:0.75em; font-weight:bold;">Date MàJ PL🚒</label>
-                <input type="date" id="agentDatePL" style="width:100%;">
-              </div>
-              <div style="flex:1;">
-                <label style="font-size:0.75em; font-weight:bold;">Date VMA🩺</label>
-                <input type="date" id="agentDateVMA" style="width:100%;">
-              </div>
-              <div style="flex:1;">
-                <label style="font-size:0.75em; font-weight:bold;">Entrée SDIS🗓️</label>
-                <label style="font-size:0.5em; font-weight:bold; color:#e53e3e">(Réeng.SPV)</label>
-                <input type="date" id="agentEntreeSdis" style="width:100%;">
-              </div>
-            </div>
+            
+            <!-- Bloc 3 Champs Dates + Délais sur mesure -->
+<div style="display: flex; gap: 8px;">
+  <div style="flex:1;">
+    <label style="font-size:0.75em; font-weight:bold;">Date MàJ PL🚒</label>
+    <input type="date" id="agentDatePL" style="width:100%;">
+    <select id="agentDelaiPL" style="width:100%; margin-top:2px; font-size:0.75em;">
+      <option value="12">Période : 1 an</option>
+      <option value="24">Période : 2 ans</option>
+      <option value="60" selected>Période : 5 ans</option>
+    </select>
+  </div>
+  <div style="flex:1;">
+    <label style="font-size:0.75em; font-weight:bold;">Date VMA🩺</label>
+    <input type="date" id="agentDateVMA" style="width:100%;">
+    <select id="agentDelaiVMA" style="width:100%; margin-top:2px; font-size:0.75em;">
+      <option value="12">Période : 1 an</option>
+      <option value="24" selected>Période : 2 ans</option>
+      <option value="36">Période : 3 ans</option>
+      <option value="60">Période : 5 ans</option>
+    </select>
+  </div>
+  <div style="flex:1;">
+    <label style="font-size:0.75em; font-weight:bold;">Entrée SDIS🗓️</label>
+    <label style="font-size:0.5em; font-weight:bold; color:#e53e3e">(Réeng.SPV)</label>
+    <input type="date" id="agentEntreeSdis" style="width:100%;">
+  </div>
+</div>
 
             <!-- Bloc Naissance & Lieu -->
             <div style="display: flex; gap: 8px;">
