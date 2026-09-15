@@ -111,7 +111,6 @@ html, body {
     flex-direction: row !important;
     gap: 5px !important;
     width: 100% !important;
-    /* On calcule précisément la hauteur restante (100% écran moins le bandeau du haut) */
     height: calc(100vh - 200px) !important;
     max-height: calc(100vh - 200px) !important;
     overflow: hidden !important;
@@ -265,7 +264,6 @@ html, body {
 
 button:hover { opacity: 0.9; }
 
-/* Alignement des boutons du formulaire */
 .form-actions {
     grid-column: span 3 / span 3 !important;
     display: flex !important;
@@ -275,7 +273,6 @@ button:hover { opacity: 0.9; }
     border-top: 1px solid #e2e8f0 !important;
 }
 
-/* Barres de défilement discrètes */
 .form-card::-webkit-scrollbar,
 .table-container::-webkit-scrollbar {
     width: 6px;
@@ -287,7 +284,6 @@ button:hover { opacity: 0.9; }
     border-radius: 4px;
 }
 
-/* ===== STYLE SPÉCIFIQUE : CASES À COCHER COMPÉTENCES ====== */
 #containerCompetencesForm label {
     font-size: 0.7em !important;
     font-weight: 600 !important;
@@ -306,7 +302,6 @@ button:hover { opacity: 0.9; }
     margin: 0 !important;
 }
 
-/* 1. Le conteneur (alignement et masquage initial) */
 #groupDisponibilite {
     display: none;
     flex-direction: column;
@@ -314,14 +309,12 @@ button:hover { opacity: 0.9; }
     width: 100%;
 }
 
-/* 2. La case à cocher elle-même */
 #agentDisponibilite {
     width: 18px !important;
     height: 18px !important;
     cursor: pointer !important;
 }
 
-/* ====== DISPOSITION 2x2 PLEINE LARGEUR POUR SPÉCIALITÉS ====== */
 #containerCompetencesForm .form-grid-2 {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
@@ -342,7 +335,6 @@ button:hover { opacity: 0.9; }
     box-sizing: border-box !important;
 }
 
-/* Style du titre (FICHE INDIVIDUELLE) du formulaire */
 .form-title {
     font-size: 1.1em !important;
     font-weight: bold !important;
@@ -355,23 +347,19 @@ button:hover { opacity: 0.9; }
     text-transform: uppercase !important;
 }
 
-
-
-/* Animation de clignotement rouge / jaune à 0.35s */
 @keyframes clignoterAlerte {
     0% {
-        background-color: #eac40c; /* jaune */
+        background-color: #eac40c;
         color: #1e293b;
         box-shadow: 0 0 4px #ea580c;
     }
     100% {
-        background-color: #f80404; /* rouge */
+        background-color: #f80404;
         color: #1e293b;
         box-shadow: 0 0 10px #dc2626;
     }
 }
 
-/* Style initial clignotant */
 .btn-reseau-clignotant {
     font-weight: bold;
     padding: 6px 10px;
@@ -382,12 +370,10 @@ button:hover { opacity: 0.9; }
     transition: background-color 0.3s, color 0.3s;
 }
 
-/* Style bleu fixe après connexion */
 .btn-reseau-clignotant.connecte {
     animation: none !important;
-    background-color: #334155 !important; /* Bleu */
+    background-color: #334155 !important;
     color: #4ac1f5 !important;
     border: 1.5px solid #4ac1f5;
     box-shadow: none !important;
 }
-
