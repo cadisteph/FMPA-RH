@@ -38,7 +38,6 @@ const HEADERS_BASE_AGENTS = [
    1. UTILITAIRES DE FORMATAGE, DATES & BADGES
    ========================================================================== */
 
-// Convertit 1 -> "100%", 0.7 -> "70%" pour l'affichage (Tableau et Formulaire)
 function formaterPourcentageAffichage(valeur) {
     if (valeur === null || valeur === undefined || valeur === "") return "100%";
     
@@ -55,7 +54,6 @@ function formaterPourcentageAffichage(valeur) {
     return Math.round(num) + "%";
 }
 
-// Convertit "70%", "70" ou "0.7" -> 0.7 pour l'enregistrement numérique dans Excel
 function convertirTempsPartielEnNombre(valeur) {
     if (valeur === null || valeur === undefined || valeur === "") return 1;
     
@@ -81,7 +79,6 @@ function formaterPrenom(str) {
     return String(str).trim().toLowerCase().replace(/(^|\s|-)\S/g, match => match.toUpperCase());
 }
 
-// Convertit JJ/MM/AAAA ou AAAA-MM-JJ vers AAAA-MM-JJ (pour les <input type="date">)
 function formaterDatePourInput(dateStr) {
     if (!dateStr) return "";
     dateStr = String(dateStr).trim();
@@ -94,7 +91,6 @@ function formaterDatePourInput(dateStr) {
     return dateStr;
 }
 
-// Convertit n'importe quelle date valide vers le format Français JJ/MM/AAAA (pour le tableau)
 function formaterDateFR(dateStr) {
     if (!dateStr) return "";
     const iso = formaterDatePourInput(dateStr);
@@ -132,7 +128,6 @@ function mettreAJourAffichageAge() {
     if (dateInput && label) label.innerText = calculerAge(dateInput.value);
 }
 
-// Générateur de badges triés par ordre alphabétique
 function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#2d3748") {
     if (chaineTxt === null || chaineTxt === undefined) return "-";
 
@@ -150,7 +145,6 @@ function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#
         let bg = couleurBg;
         let txtColor = couleurTexte;
 
-        // 1. Temps plein / Complet / 100%
         if (txtUpper === "COMPLET") {
             bg = "#05fb5287";
             txtColor = "#058148";
@@ -159,12 +153,10 @@ function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#
             bg = "#05fb5233";
             txtColor = "#058148";
         }
-        // 2. Temps partiels (80%, 70%, 50%, etc.)
         else if (/^\d{2,3}\s*%$/.test(badge) || /^(0\.\d+)$/.test(badge)) { 
             bg = "#feebc8"; 
             txtColor = "#744210";
         } 
-        // 3. Spécialités / Statuts SUAP
         else if (txtUpper === "SUAP") {
             bg = "#f3bdd6"; 
             txtColor = "#f218c9";
@@ -173,7 +165,6 @@ function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#
             bg = "#f39927"; 
             txtColor = "#542b01";
         } 
-        // 4. Indisponibilité / Dispo
         else if (txtUpper === "EN DISPO" || txtUpper === "DISPO") {
             bg = "#ff6363"; 
             txtColor = "#ffffff";
@@ -185,7 +176,6 @@ function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#
     }).join("");
 }
 
-// Vérifie si la date VMA date de 10 mois ou plus
 function doitRenouvelerVMA(dateVMAStr) {
     if (!dateVMAStr) return false;
     const isoDate = formaterDatePourInput(dateVMAStr);
@@ -207,11 +197,9 @@ function doitRenouvelerPL(datePLStr) {
 }
 
 // Détection du renouvellement SPV (4e, 9e, 14e, 19e année...)
-// Détection du renouvellement SPV (4e, 9e, 14e, 19e année...)
 function doitRenouvelerEngagement(datePriseFonctionStr) {
     if (!datePriseFonctionStr) return false;
     
-    // Normalisation au format Date ISO (AAAA-MM-JJ)
     const isoDate = formaterDatePourInput(datePriseFonctionStr);
     const dateEntree = new Date(isoDate);
     
@@ -219,7 +207,6 @@ function doitRenouvelerEngagement(datePriseFonctionStr) {
 
     const aujourdhui = new Date();
     
-    // Calcul de la différence en mois
     let moisEcoules = (aujourdhui.getFullYear() - dateEntree.getFullYear()) * 12 + (aujourdhui.getMonth() - dateEntree.getMonth());
     
     if (aujourdhui.getDate() < dateEntree.getDate()) {
@@ -228,12 +215,9 @@ function doitRenouvelerEngagement(datePriseFonctionStr) {
 
     if (moisEcoules < 0) return false;
 
-    // Déclenchement pendant la 5e année du cycle de 5 ans (entre 48 et 59 mois)
     const moisDansCycle = moisEcoules % 60;
     return moisDansCycle >= 48 && moisDansCycle < 60;
 }
-
-
 
 /* ==========================================================================
    2. CALCUL DYNAMIQUE DES BASES DE GARDES
@@ -487,7 +471,6 @@ function actualiserTableauRH() {
         if (agent.statut === "SPV") {
             tpEngagement = agent.engagement || "Complet";
         } else if (agent.statut === "SPP") {
-            // Conversion et affichage en %
             tpEngagement = formaterPourcentageAffichage(agent.tempsPartiel);
         }
 
@@ -503,28 +486,24 @@ function actualiserTableauRH() {
             ? "cursor:pointer; background-color: #dce7f3; border-bottom:2px solid #2b6cb0; font-weight: 500;" 
             : "cursor:pointer; border-bottom:1px solid #e2e8f0;";
 
-        
-const badgeVMA = (typeof doitRenouvelerVMA === 'function' && doitRenouvelerVMA(agent.dateVMA))
-    ? `<span style="background-color: none; border: 1px solid #ff1493; color: #ff1493; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🩺 VMA</span>` 
-    : '';
+        const badgeVMA = (typeof doitRenouvelerVMA === 'function' && doitRenouvelerVMA(agent.dateVMA))
+            ? `<span style="background-color: none; border: 1px solid #ff1493; color: #ff1493; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🩺 VMA</span>` 
+            : '';
 
-const badgePL = (typeof doitRenouvelerPL === 'function' && doitRenouvelerPL(agent.datePL))
-    ? `<span style="background-color: none; border: 1px solid #8a2be2; color: #8a2be2; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🚒 Permis</span>` 
-    : '';
+        const badgePL = (typeof doitRenouvelerPL === 'function' && doitRenouvelerPL(agent.datePL))
+            ? `<span style="background-color: none; border: 1px solid #8a2be2; color: #8a2be2; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🚒 Permis</span>` 
+            : '';
 
-// Alerte de renouvellement uniquement pour le statut SPV
-const estSPV = (agent.statut === "SPV");
-const valDateEntree = agent.entreeSdis;
+        const estSPV = (agent.statut === "SPV");
+        const valDateEntree = agent.entreeSdis;
 
-const badgeEngagement = (estSPV && typeof doitRenouvelerEngagement === 'function' && doitRenouvelerEngagement(valDateEntree))
-    ? `<span style="background-color: none; border: 1px solid #d97706; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">📝 Renouv. SPV</span>`
-    : '';
+        const badgeEngagement = (estSPV && typeof doitRenouvelerEngagement === 'function' && doitRenouvelerEngagement(valDateEntree))
+            ? `<span style="background-color: none; border: 1px solid #d97706; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">📝 Renouv. SPV</span>`
+            : '';
 
-const ligneAlertes = (badgeVMA || badgePL || badgeEngagement) 
-    ? `<br><div style="margin-top: 3px; display: flex; align-items: center; gap: 4px;">${badgeVMA}${badgePL}${badgeEngagement}</div>` 
-    : '';
-
-
+        const ligneAlertes = (badgeVMA || badgePL || badgeEngagement) 
+            ? `<br><div style="margin-top: 3px; display: flex; align-items: center; gap: 4px;">${badgeVMA}${badgePL}${badgeEngagement}</div>` 
+            : '';
 
         corps.innerHTML += `
             <tr style="${styleLigne}" onclick="editerAgent(${agent.id})">
@@ -586,7 +565,6 @@ function editerAgent(id) {
     document.getElementById("agentGrade").value = agent.grade || "";
     document.getElementById("agentFonction").value = agent.fonction || "Equ";
     
-    // Formatting in % inside input
     document.getElementById("agentTempsPartiel").value = formaterPourcentageAffichage(agent.tempsPartiel);
     
     document.getElementById("agentEngagement").value = agent.engagement || "Complet";
@@ -655,7 +633,6 @@ function enregistrerAgent() {
         return;
     }
 
-    // Extraction et conversion inverse en nombre pur (ex: "70%" -> 0.7)
     const tempsPartielSaisi = document.getElementById("agentTempsPartiel").value;
     const tempsPartielNum = convertirTempsPartielEnNombre(tempsPartielSaisi);
 
@@ -670,7 +647,7 @@ function enregistrerAgent() {
         statut: document.getElementById("agentStatut").value,
         grade: document.getElementById("agentGrade").value,
         fonction: document.getElementById("agentFonction").value,
-        tempsPartiel: tempsPartielNum, // Stocké sous forme de nombre (1, 0.7, etc.)
+        tempsPartiel: tempsPartielNum,
         engagement: document.getElementById("agentEngagement").value,
         datePL: document.getElementById("agentDatePL").value,
         dateVMA: document.getElementById("agentDateVMA").value,
@@ -731,7 +708,6 @@ function supprimerAgent() {
 }
 
 async function supprimerAgentEtSauvegarder() {
-    // 1. Suppression de l'agent dans la liste locale
     const idVal = document.getElementById("agentId").value;
     if (!idVal) return;
 
@@ -747,7 +723,6 @@ async function supprimerAgentEtSauvegarder() {
         actualiserTableauRH();
         viderFormulaireRH();
 
-        // 2. Sauvegarde automatique dans le fichier Excel connecté sur le réseau
         if (window.fileHandleReseau && classeurXLSX) {
             await enregistrerFichierReseau();
         } else {
@@ -755,7 +730,6 @@ async function supprimerAgentEtSauvegarder() {
         }
     }
 }
-
 
 /* ==========================================================================
    5. LIEN AVEC FMPA-RH.xlsx — ONGLET baseAgents
@@ -939,7 +913,6 @@ async function connecterFichierReseau() {
         actualiserTableauRH();
         viderFormulaireRH();
 
-        // Passation du bouton au style bleu fixe "Connecté"
         const btn = document.getElementById("btn-connect-file");
         if (btn) {
             btn.classList.add("connecte");
@@ -956,7 +929,6 @@ async function connecterFichierReseau() {
         window.fileHandleReseau = null;
         classeurXLSX = null;
 
-        // Réinitialisation du bouton en cas d'échec
         const btn = document.getElementById("btn-connect-file");
         if (btn) {
             btn.classList.remove("connecte");
@@ -981,7 +953,7 @@ function convertirAgentEnLigneExcel(agent) {
         agent.specialites || "",
         agent.competences || "",
         agent.regime || "",
-        convertirTempsPartielEnNombre(agent.tempsPartiel), // S'assure d'exporter un NOMBRE pur
+        convertirTempsPartielEnNombre(agent.tempsPartiel),
         agent.engagement || "",
         agent.naissanceDate || "",
         agent.lieuNaissance || "",
@@ -1132,17 +1104,3 @@ function afficherListeAlertesVMA() {
 
     alert(message);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
