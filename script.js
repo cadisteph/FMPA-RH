@@ -7,7 +7,7 @@ let nomFichierXLSX = "FMPA-RH.xlsx";
 // Liste par défaut
 let listeAgents = [];
 
-// Nom exact des 23 colonnes de l'onglet baseAgents
+// Nom exact des colonnes de l'onglet baseAgents (avec DelaiPL et DelaiVMA)
 const HEADERS_BASE_AGENTS = [
     "Matricule",
     "Sexe",
@@ -26,7 +26,9 @@ const HEADERS_BASE_AGENTS = [
     "LieuNaissance",
     "DateEntreeSDIS",
     "DatePL",
+    "DelaiPL",
     "DateVMA",
+    "DelaiVMA",
     "Telephone",
     "Email",
     "Adresse",
@@ -40,32 +42,20 @@ const HEADERS_BASE_AGENTS = [
 
 function formaterPourcentageAffichage(valeur) {
     if (valeur === null || valeur === undefined || valeur === "") return "100%";
-    
     const str = String(valeur).trim();
     if (str.endsWith("%")) return str;
-
     const num = Number(str.replace(",", "."));
     if (isNaN(num)) return str;
-
-    if (num <= 1 && num > 0) {
-        return Math.round(num * 100) + "%";
-    }
-
+    if (num <= 1 && num > 0) return Math.round(num * 100) + "%";
     return Math.round(num) + "%";
 }
 
 function convertirTempsPartielEnNombre(valeur) {
     if (valeur === null || valeur === undefined || valeur === "") return 1;
-    
     let str = String(valeur).replace("%", "").replace(",", ".").trim();
     let num = Number(str);
-
     if (isNaN(num)) return 1;
-
-    if (num > 1 && num <= 100) {
-        return num / 100;
-    }
-
+    if (num > 1 && num <= 100) return num / 100;
     return num;
 }
 
@@ -130,7 +120,6 @@ function mettreAJourAffichageAge() {
 
 function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#2d3748") {
     if (chaineTxt === null || chaineTxt === undefined) return "-";
-
     const txt = String(chaineTxt).trim();
     if (txt === "") return "-";
 
@@ -145,30 +134,12 @@ function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#
         let bg = couleurBg;
         let txtColor = couleurTexte;
 
-        if (txtUpper === "COMPLET") {
-            bg = "#05fb5287";
-            txtColor = "#058148";
-        } 
-        else if (txtUpper === "100%" || txtUpper === "1") {
-            bg = "#05fb5233";
-            txtColor = "#058148";
-        }
-        else if (/^\d{2,3}\s*%$/.test(badge) || /^(0\.\d+)$/.test(badge)) { 
-            bg = "#feebc8"; 
-            txtColor = "#744210";
-        } 
-        else if (txtUpper === "SUAP") {
-            bg = "#f3bdd6"; 
-            txtColor = "#f218c9";
-        } 
-        else if (txtUpper === "SUAP/PPABE") {
-            bg = "#f39927"; 
-            txtColor = "#542b01";
-        } 
-        else if (txtUpper === "EN DISPO" || txtUpper === "DISPO") {
-            bg = "#ff6363"; 
-            txtColor = "#ffffff";
-        }
+        if (txtUpper === "COMPLET") { bg = "#05fb5287"; txtColor = "#058148"; } 
+        else if (txtUpper === "100%" || txtUpper === "1") { bg = "#05fb5233"; txtColor = "#058148"; }
+        else if (/^\d{2,3}\s*%$/.test(badge) || /^(0\.\d+)$/.test(badge)) { bg = "#feebc8"; txtColor = "#744210"; } 
+        else if (txtUpper === "SUAP") { bg = "#f3bdd6"; txtColor = "#f218c9"; } 
+        else if (txtUpper === "SUAP/PPABE") { bg = "#f39927"; txtColor = "#542b01"; } 
+        else if (txtUpper === "EN DISPO" || txtUpper === "DISPO") { bg = "#ff6363"; txtColor = "#ffffff"; }
 
         return `<span style="background:${bg}; color:${txtColor}; padding:2px 6px; border-radius:4px; font-size:0.75em; font-weight:bold; margin-right:3px; display:inline-block; margin-bottom:2px;">
             ${echapperHTML(badge)}
@@ -176,43 +147,43 @@ function genererBadgesTriés(chaineTxt, couleurBg = "#e2e8f0", couleurTexte = "#
     }).join("");
 }
 
-function doitRenouvelerVMA(dateVMAStr) {
+// Vérification VMA dynamisée avec délai personnalisé (en mois)
+function doitRenouvelerVMA(dateVMAStr, delaiMois = 24) {
     if (!dateVMAStr) return false;
     const isoDate = formaterDatePourInput(dateVMAStr);
     const dateVMA = new Date(isoDate);
     if (isNaN(dateVMA.getTime())) return false;
+    
     const aujourdhui = new Date();
     const moisEcoules = (aujourdhui.getFullYear() - dateVMA.getFullYear()) * 12 + (aujourdhui.getMonth() - dateVMA.getMonth());
-    return moisEcoules >= 10;
+    
+    const seuilAlert = parseInt(delaiMois, 10) - 2; // Alerte 2 mois avant terme
+    return moisEcoules >= seuilAlert;
 }
 
-function doitRenouvelerPL(datePLStr) {
+// Vérification Permis PL dynamisée avec délai personnalisé (en mois)
+function doitRenouvelerPL(datePLStr, delaiMois = 60) {
     if (!datePLStr) return false;
     const isoDate = formaterDatePourInput(datePLStr);
     const datePL = new Date(isoDate);
     if (isNaN(datePL.getTime())) return false;
+    
     const aujourdhui = new Date();
     const moisEcoules = (aujourdhui.getFullYear() - datePL.getFullYear()) * 12 + (aujourdhui.getMonth() - datePL.getMonth());
-    return moisEcoules >= 54;
+    
+    const seuilAlert = parseInt(delaiMois, 10) - 6; // Alerte 6 mois avant terme
+    return moisEcoules >= seuilAlert;
 }
 
-// Détection du renouvellement SPV (4e, 9e, 14e, 19e année...)
 function doitRenouvelerEngagement(datePriseFonctionStr) {
     if (!datePriseFonctionStr) return false;
-    
     const isoDate = formaterDatePourInput(datePriseFonctionStr);
     const dateEntree = new Date(isoDate);
-    
     if (isNaN(dateEntree.getTime())) return false;
 
     const aujourdhui = new Date();
-    
     let moisEcoules = (aujourdhui.getFullYear() - dateEntree.getFullYear()) * 12 + (aujourdhui.getMonth() - dateEntree.getMonth());
-    
-    if (aujourdhui.getDate() < dateEntree.getDate()) {
-        moisEcoules--;
-    }
-
+    if (aujourdhui.getDate() < dateEntree.getDate()) moisEcoules--;
     if (moisEcoules < 0) return false;
 
     const moisDansCycle = moisEcoules % 60;
@@ -225,7 +196,6 @@ function doitRenouvelerEngagement(datePriseFonctionStr) {
 
 function calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction) {
     let baseG24 = 0, baseG12 = 0;
-    
     if (!dateNaissanceStr || !dateEntreeStr) {
         if (regime === "G24") baseG24 = (fonction === "CDG") ? 74 : 92;
         else if (regime === "Mixte") { baseG24 = (fonction === "CDG") ? 67 : 83; baseG12 = (fonction === "CDG") ? 10 : 14; }
@@ -235,21 +205,14 @@ function calculerBasesGardes(dateNaissanceStr, dateEntreeStr, regime, fonction) 
 
     const dateEntree = new Date(formaterDatePourInput(dateEntreeStr));
     const dateNaissance = new Date(formaterDatePourInput(dateNaissanceStr));
-    
-    if (isNaN(dateNaissance.getTime()) || isNaN(dateEntree.getTime())) {
-        return { g24: 0, g12: 0 };
-    }
+    if (isNaN(dateNaissance.getTime()) || isNaN(dateEntree.getTime())) return { g24: 0, g12: 0 };
 
     const anneeEnCours = new Date().getFullYear();
     const age = anneeEnCours - dateNaissance.getFullYear();
     const estListe2 = (dateEntree < new Date("2013-10-01") && dateNaissance <= new Date("1976-12-31"));
 
     if (regime === "G12") {
-        if (age < 45) baseG12 = 133;
-        else if (age <= 49) baseG12 = 132;
-        else if (age <= 54) baseG12 = 131;
-        else if (age <= 59) baseG12 = 130;
-        else baseG12 = 129;
+        if (age < 45) baseG12 = 133; else if (age <= 49) baseG12 = 132; else if (age <= 54) baseG12 = 131; else if (age <= 59) baseG12 = 130; else baseG12 = 129;
     } else if (regime === "G24") {
         if (fonction === "CDG") {
             if (estListe2) {
@@ -284,44 +247,22 @@ function obtenirDetailsGardes(agent) {
     }
 
     const bases = calculerBasesGardes(agent.naissanceDate, agent.entreeSdis, agent.regime, agent.fonction);
-    
     let ratio = convertirTempsPartielEnNombre(agent.tempsPartiel);
-
     let g24 = Math.round(bases.g24 * ratio);
     let g12 = Math.round(bases.g12 * ratio);
 
     if (agent.regime === "G24") {
-        let s1 = Math.floor(g24 / 2);
-        let s2 = Math.ceil(g24 / 2);
-        let totalHeures = g24 * 17;
-        return {
-            total: `${g24}`,
-            repartition: `S1: ${s1} (${s1 * 17}h) | S2: ${s2} (${s2 * 17}h) <span class="total-annuel-highlight">[${totalHeures}h]</span>`
-        };
+        let s1 = Math.floor(g24 / 2), s2 = Math.ceil(g24 / 2);
+        return { total: `${g24}`, repartition: `S1: ${s1} (${s1 * 17}h) | S2: ${s2} (${s2 * 17}h) <span class="total-annuel-highlight">[${g24 * 17}h]</span>` };
     } else if (agent.regime === "G12") {
-        let s1 = Math.floor(g12 / 2);
-        let s2 = Math.ceil(g12 / 2);
-        let totalHeures = g12 * 12;
-        return {
-            total: `${g12}`,
-            repartition: `S1: ${s1} (${s1 * 12}h) | S2: ${s2} (${s2 * 12}h) <span class="total-annuel-highlight">[${totalHeures}h]</span>`
-        };
+        let s1 = Math.floor(g12 / 2), s2 = Math.ceil(g12 / 2);
+        return { total: `${g12}`, repartition: `S1: ${s1} (${s1 * 12}h) | S2: ${s2} (${s2 * 12}h) <span class="total-annuel-highlight">[${g12 * 12}h]</span>` };
     } else if (agent.regime === "Mixte") {
-        let g24_s1 = Math.floor(g24 / 2);
-        let g24_s2 = Math.ceil(g24 / 2);
-        let g12_s1 = Math.floor(g12 / 2);
-        let g12_s2 = Math.ceil(g12 / 2);
-
-        let heures_s1 = (g24_s1 * 17) + (g12_s1 * 12);
-        let heures_s2 = (g24_s2 * 17) + (g12_s2 * 12);
-        let totalHeures = heures_s1 + heures_s2;
-
-        return {
-            total: `${g24}/${g12}`,
-            repartition: `S1: ${g24_s1}/${g12_s1} (${heures_s1}h) | S2: ${g24_s2}/${g12_s2} (${heures_s2}h) <span class="total-annuel-highlight">[${totalHeures}h]</span>`
-        };
+        let g24_s1 = Math.floor(g24 / 2), g24_s2 = Math.ceil(g24 / 2);
+        let g12_s1 = Math.floor(g12 / 2), g12_s2 = Math.ceil(g12 / 2);
+        let h_s1 = (g24_s1 * 17) + (g12_s1 * 12), h_s2 = (g24_s2 * 17) + (g12_s2 * 12);
+        return { total: `${g24}/${g12}`, repartition: `S1: ${g24_s1}/${g12_s1} (${h_s1}h) | S2: ${g24_s2}/${g12_s2} (${h_s2}h) <span class="total-annuel-highlight">[${h_s1 + h_s2}h]</span>` };
     }
-
     return { total: "-", repartition: "-" };
 }
 
@@ -335,12 +276,10 @@ function actualiserIndicateurGardes() {
 
     const elValeur = document.getElementById("valeurGardes");
     const elRatio = document.getElementById("ratioSemestre");
-
     if (!elValeur || !elRatio) return;
 
     const dummyAgent = { regime, fonction, naissanceDate, entreeSdis, tempsPartiel, statut };
     const details = obtenirDetailsGardes(dummyAgent);
-
     elValeur.innerHTML = details.total;
     elRatio.innerHTML = details.repartition;
 }
@@ -363,7 +302,6 @@ function adapterFormulaireSelonStatut() {
             groupEngagement.style.display = 'none';
         }
     }
-
     actualiserIndicateurGardes();
 }
 
@@ -375,7 +313,6 @@ function gererChangementRegime() {
     if (regime === "SPV") { selectEquipe.value = "SPV"; selectStatut.value = "SPV"; }
     else if (regime === "G12") { selectEquipe.value = "Equipe G12"; if (selectStatut.value !== "PATS") selectStatut.value = "SPP"; }
     else if (regime === "SHR") { selectEquipe.value = "Encadrement"; if (selectStatut.value !== "PATS") selectStatut.value = "SPP"; }
-    
     adapterFormulaireSelonStatut();
 }
 
@@ -387,7 +324,6 @@ function gererChangementEquipe() {
     if (equipe === "SPV") { selectRegime.value = "SPV"; selectStatut.value = "SPV"; }
     else if (equipe === "Equipe G12") { selectRegime.value = "G12"; if (selectStatut.value !== "PATS") selectStatut.value = "SPP"; }
     else if (equipe === "Encadrement") { selectRegime.value = "SHR"; if (selectStatut.value !== "PATS") selectStatut.value = "SPP"; }
-    
     adapterFormulaireSelonStatut();
 }
 
@@ -396,8 +332,7 @@ function gererChangementEquipe() {
    ========================================================================== */
 
 function obtenirGardesTheoriques(agent) {
-    const details = obtenirDetailsGardes(agent);
-    return details.total;
+    return obtenirDetailsGardes(agent).total;
 }
 
 function actualiserTableauRH() {
@@ -409,12 +344,10 @@ function actualiserTableauRH() {
     const fEquipe = document.getElementById("rh_equipe") ? document.getElementById("rh_equipe").value : "";
     const fStatut = document.getElementById("rh_statut") ? document.getElementById("rh_statut").value : "";
     const fRecherche = document.getElementById("rh_recherche") ? document.getElementById("rh_recherche").value.toLowerCase().trim() : "";
-
     const fGrade = document.getElementById("filtreGrade") ? document.getElementById("filtreGrade").value : "";
     const fFonction = document.getElementById("filtreFonction") ? document.getElementById("filtreFonction").value : "";
     const fRegime = document.getElementById("filtreRegime") ? document.getElementById("filtreRegime").value : "";
     const fEngagement = document.getElementById("filtreEngagement") ? document.getElementById("filtreEngagement").value : "";
-    
     const fSpec = document.getElementById("rechercheSpecialite") ? document.getElementById("rechercheSpecialite").value.toLowerCase().trim() : "";
     const fComp = document.getElementById("rechercheCompetence") ? document.getElementById("rechercheCompetence").value.toLowerCase().trim() : "";
 
@@ -427,8 +360,8 @@ function actualiserTableauRH() {
         if (fRegime && agent.regime !== fRegime) return false;
 
         if (fEngagement) {
-            const valeurAgent = (agent.statut === "SPV") ? agent.engagement : formaterPourcentageAffichage(agent.tempsPartiel);
-            if (valeurAgent !== fEngagement) return false;
+            const val = (agent.statut === "SPV") ? agent.engagement : formaterPourcentageAffichage(agent.tempsPartiel);
+            if (val !== fEngagement) return false;
         }
 
         if (fRecherche) {
@@ -436,15 +369,8 @@ function actualiserTableauRH() {
             if (!terme.includes(fRecherche)) return false;
         }
 
-        if (fSpec) {
-            const specs = (agent.specialites || "").toLowerCase();
-            if (!specs.includes(fSpec)) return false;
-        }
-
-        if (fComp) {
-            const comps = (agent.competences || "").toLowerCase();
-            if (!comps.includes(fComp)) return false;
-        }
+        if (fSpec && !(agent.specialites || "").toLowerCase().includes(fSpec)) return false;
+        if (fComp && !(agent.competences || "").toLowerCase().includes(fComp)) return false;
 
         return true;
     });
@@ -452,27 +378,15 @@ function actualiserTableauRH() {
     agentsFiltres.sort((a, b) => {
         const nomA = (a.nom || "").toUpperCase();
         const nomB = (b.nom || "").toUpperCase();
-        const compNom = nomA.localeCompare(nomB, 'fr', { sensitivity: 'base' });
-        
-        if (compNom === 0) {
-            const prenomA = (a.prenom || "").toLowerCase();
-            const prenomB = (b.prenom || "").toLowerCase();
-            return prenomA.localeCompare(prenomB, 'fr', { sensitivity: 'base' });
-        }
-        
-        return compNom;
+        const comp = nomA.localeCompare(nomB, 'fr', { sensitivity: 'base' });
+        return comp !== 0 ? comp : (a.prenom || "").localeCompare(b.prenom || "", 'fr', { sensitivity: 'base' });
     });
 
     const compteur = document.getElementById("compteurAgentsRH");
     if (compteur) compteur.innerText = `${agentsFiltres.length} / ${listeAgents.length} agent(s)`;
 
     agentsFiltres.forEach(agent => {
-        let tpEngagement = "-";
-        if (agent.statut === "SPV") {
-            tpEngagement = agent.engagement || "Complet";
-        } else if (agent.statut === "SPP") {
-            tpEngagement = formaterPourcentageAffichage(agent.tempsPartiel);
-        }
+        let tpEngagement = (agent.statut === "SPV") ? (agent.engagement || "Complet") : formaterPourcentageAffichage(agent.tempsPartiel);
 
         let coords = [];
         if (agent.telephone) coords.push(echapperHTML(agent.telephone));
@@ -481,29 +395,21 @@ function actualiserTableauRH() {
         let coordsText = coords.join("<br>") || "-";
 
         const estSelectionne = (typeof agentSelectionneId !== 'undefined' && agent.id === agentSelectionneId);
-        
         const styleLigne = estSelectionne 
             ? "cursor:pointer; background-color: #dce7f3; border-bottom:2px solid #2b6cb0; font-weight: 500;" 
             : "cursor:pointer; border-bottom:1px solid #e2e8f0;";
 
-        const badgeVMA = (typeof doitRenouvelerVMA === 'function' && doitRenouvelerVMA(agent.dateVMA))
-            ? `<span style="background-color: none; border: 1px solid #ff1493; color: #ff1493; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🩺 VMA</span>` 
-            : '';
+        const badgeVMA = doitRenouvelerVMA(agent.dateVMA, agent.delaiVMA || 24)
+            ? `<span style="border: 1px solid #ff1493; color: #ff1493; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🩺 VMA</span>` : '';
 
-        const badgePL = (typeof doitRenouvelerPL === 'function' && doitRenouvelerPL(agent.datePL))
-            ? `<span style="background-color: none; border: 1px solid #8a2be2; color: #8a2be2; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🚒 Permis</span>` 
-            : '';
+        const badgePL = doitRenouvelerPL(agent.datePL, agent.delaiPL || 60)
+            ? `<span style="border: 1px solid #8a2be2; color: #8a2be2; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🚒 Permis</span>` : '';
 
-        const estSPV = (agent.statut === "SPV");
-        const valDateEntree = agent.entreeSdis;
-
-        const badgeEngagement = (estSPV && typeof doitRenouvelerEngagement === 'function' && doitRenouvelerEngagement(valDateEntree))
-            ? `<span style="background-color: none; border: 1px solid #d97706; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">📝 Renouv. SPV</span>`
-            : '';
+        const badgeEngagement = (agent.statut === "SPV" && doitRenouvelerEngagement(agent.entreeSdis))
+            ? `<span style="border: 1px solid #d97706; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">📝 Renouv. SPV</span>` : '';
 
         const ligneAlertes = (badgeVMA || badgePL || badgeEngagement) 
-            ? `<br><div style="margin-top: 3px; display: flex; align-items: center; gap: 4px;">${badgeVMA}${badgePL}${badgeEngagement}</div>` 
-            : '';
+            ? `<br><div style="margin-top: 3px; display: flex; align-items: center; gap: 4px;">${badgeVMA}${badgePL}${badgeEngagement}</div>` : '';
 
         corps.innerHTML += `
             <tr style="${styleLigne}" onclick="editerAgent(${agent.id})">
@@ -534,17 +440,10 @@ function actualiserTableauRH() {
 }
 
 function reinitialiserFiltres() {
-    const ids = [
-        "rh_sexe", "rh_equipe", "rh_statut", "rh_recherche",
-        "filtreGrade", "filtreFonction", "filtreRegime", "filtreEngagement",
-        "rechercheSpecialite", "rechercheCompetence"
-    ];
-
-    ids.forEach(id => {
+    ["rh_sexe", "rh_equipe", "rh_statut", "rh_recherche", "filtreGrade", "filtreFonction", "filtreRegime", "filtreEngagement", "rechercheSpecialite", "rechercheCompetence"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = "";
     });
-
     actualiserTableauRH();
 }
 
@@ -564,16 +463,18 @@ function editerAgent(id) {
     document.getElementById("agentStatut").value = agent.statut || "SPP";
     document.getElementById("agentGrade").value = agent.grade || "";
     document.getElementById("agentFonction").value = agent.fonction || "Equ";
-    
     document.getElementById("agentTempsPartiel").value = formaterPourcentageAffichage(agent.tempsPartiel);
-    
     document.getElementById("agentEngagement").value = agent.engagement || "Complet";
+    
     document.getElementById("agentDatePL").value = formaterDatePourInput(agent.datePL);
+    if (document.getElementById("agentDelaiPL")) document.getElementById("agentDelaiPL").value = agent.delaiPL || 60;
+    
     document.getElementById("agentDateVMA").value = formaterDatePourInput(agent.dateVMA);
+    if (document.getElementById("agentDelaiVMA")) document.getElementById("agentDelaiVMA").value = agent.delaiVMA || 24;
+
     document.getElementById("agentEntreeSdis").value = formaterDatePourInput(agent.entreeSdis);
     document.getElementById("agentNaissanceDate").value = formaterDatePourInput(agent.naissanceDate);
     document.getElementById("agentLieuNaissance").value = agent.lieuNaissance || "";
-    
     document.getElementById("agentTelephone").value = agent.telephone || "";
     document.getElementById("agentEmail").value = agent.email || "";
     document.getElementById("agentAdresse").value = agent.adresse || "";
@@ -594,6 +495,8 @@ function viderFormulaireRH() {
     document.getElementById("formRH").reset();
     document.getElementById("agentId").value = "";
     document.getElementById("agentTempsPartiel").value = "100%";
+    if (document.getElementById("agentDelaiPL")) document.getElementById("agentDelaiPL").value = "60";
+    if (document.getElementById("agentDelaiVMA")) document.getElementById("agentDelaiVMA").value = "24";
     document.getElementById("btnSupprimerAgent").style.display = "none";
     adapterFormulaireSelonStatut();
     mettreAJourAffichageAge();
@@ -604,7 +507,6 @@ function viderFormulaireRH() {
 function enregistrerAgent() {
     const idVal = document.getElementById("agentId").value;
     const currentId = idVal ? parseInt(idVal, 10) : null;
-
     const matricule = document.getElementById("agentMatricule").value.trim();
     const nom = document.getElementById("agentNom").value.trim().toUpperCase();
     const prenom = formaterPrenom(document.getElementById("agentPrenom").value);
@@ -614,29 +516,13 @@ function enregistrerAgent() {
         return;
     }
 
-    const doublonMatricule = listeAgents.find(a => 
-        a.id !== currentId && 
-        a.matricule.toLowerCase() === matricule.toLowerCase()
-    );
+    const doublonMatricule = listeAgents.find(a => a.id !== currentId && a.matricule.toLowerCase() === matricule.toLowerCase());
     if (doublonMatricule) {
         alert(`❌ Erreur : Le matricule "${matricule}" est déjà attribué à l'agent ${doublonMatricule.nom} ${doublonMatricule.prenom}.`);
         return;
     }
 
-    const doublonNomPrenom = listeAgents.find(a => 
-        a.id !== currentId && 
-        a.nom.toUpperCase() === nom.toUpperCase() && 
-        a.prenom.toLowerCase() === prenom.toLowerCase()
-    );
-    if (doublonNomPrenom) {
-        alert(`❌ Erreur : Un agent nommé "${nom} ${prenom}" existe déjà dans la base (Matricule : ${doublonNomPrenom.matricule}).`);
-        return;
-    }
-
-    const tempsPartielSaisi = document.getElementById("agentTempsPartiel").value;
-    const tempsPartielNum = convertirTempsPartielEnNombre(tempsPartielSaisi);
-
-    let agentObj = {
+    const agentObj = {
         id: currentId || Date.now(),
         matricule: matricule,
         sexe: document.getElementById("agentSexe").value,
@@ -647,10 +533,12 @@ function enregistrerAgent() {
         statut: document.getElementById("agentStatut").value,
         grade: document.getElementById("agentGrade").value,
         fonction: document.getElementById("agentFonction").value,
-        tempsPartiel: tempsPartielNum,
+        tempsPartiel: convertirTempsPartielEnNombre(document.getElementById("agentTempsPartiel").value),
         engagement: document.getElementById("agentEngagement").value,
         datePL: document.getElementById("agentDatePL").value,
+        delaiPL: parseInt(document.getElementById("agentDelaiPL") ? document.getElementById("agentDelaiPL").value : 60, 10),
         dateVMA: document.getElementById("agentDateVMA").value,
+        delaiVMA: parseInt(document.getElementById("agentDelaiVMA") ? document.getElementById("agentDelaiVMA").value : 24, 10),
         entreeSdis: document.getElementById("agentEntreeSdis").value,
         naissanceDate: document.getElementById("agentNaissanceDate").value,
         lieuNaissance: document.getElementById("agentLieuNaissance").value.toUpperCase(),
@@ -668,24 +556,18 @@ function enregistrerAgent() {
     } else {
         listeAgents.push(agentObj);
     }
-    localStorage.setItem("baseAgents", JSON.stringify(listeAgents));
 
+    localStorage.setItem("baseAgents", JSON.stringify(listeAgents));
     actualiserTableauRH();
     viderFormulaireRH();
 }
 
 async function enregistrerAgentEtSauvegarder() {
     enregistrerAgent();
-
     if (!window.fileHandleReseau || !classeurXLSX) {
-        alert(
-            "⚠️ Les données ont été modifiées dans la page, " +
-            "mais aucun fichier FMPA-RH.xlsx n'est chargé.\n\n" +
-            "Ouvrez d'abord le fichier Excel."
-        );
+        alert("⚠️ Les données ont été modifiées dans la page, mais aucun fichier FMPA-RH.xlsx n'est chargé.\n\nOuvrez d'abord le fichier Excel.");
         return;
     }
-
     await enregistrerFichierReseau();
 }
 
@@ -696,10 +578,7 @@ function supprimerAgent() {
     if (confirm("❓ Êtes-vous sûr de vouloir supprimer cet agent ?")) {
         const id = parseInt(idVal, 10);
         const index = listeAgents.findIndex(a => a.id === id);
-
-        if (index !== -1) {
-            listeAgents.splice(index, 1);
-        }
+        if (index !== -1) listeAgents.splice(index, 1);
 
         localStorage.setItem("baseAgents", JSON.stringify(listeAgents));
         actualiserTableauRH();
@@ -714,10 +593,7 @@ async function supprimerAgentEtSauvegarder() {
     if (confirm("❓ Êtes-vous sûr de vouloir supprimer cet agent ?")) {
         const id = parseInt(idVal, 10);
         const index = listeAgents.findIndex(a => a.id === id);
-
-        if (index !== -1) {
-            listeAgents.splice(index, 1);
-        }
+        if (index !== -1) listeAgents.splice(index, 1);
 
         localStorage.setItem("baseAgents", JSON.stringify(listeAgents));
         actualiserTableauRH();
@@ -726,7 +602,7 @@ async function supprimerAgentEtSauvegarder() {
         if (window.fileHandleReseau && classeurXLSX) {
             await enregistrerFichierReseau();
         } else {
-            alert("⚠️ L'agent a été supprimé de l'affichage, mais aucun fichier Excel n'est connecté pour sauvegarder la modification sur le réseau.");
+            alert("⚠️ L'agent a été supprimé de l'affichage, mais aucun fichier Excel n'est connecté.");
         }
     }
 }
@@ -744,25 +620,17 @@ function normaliserValeurExcel(valeur) {
 
 function normaliserDateExcel(valeur) {
     if (valeur === null || valeur === undefined || valeur === "") return "";
-
     if (valeur instanceof Date && !isNaN(valeur.getTime())) {
-        const annee = valeur.getFullYear();
-        const mois = String(valeur.getMonth() + 1).padStart(2, "0");
-        const jour = String(valeur.getDate()).padStart(2, "0");
-        return `${annee}-${mois}-${jour}`;
+        return `${valeur.getFullYear()}-${String(valeur.getMonth() + 1).padStart(2, "0")}-${String(valeur.getDate()).padStart(2, "0")}`;
     }
-
     if (typeof valeur === "number" && typeof XLSX !== "undefined" && XLSX.SSF) {
         try {
             const date = XLSX.SSF.parse_date_code(valeur);
             if (date && date.y && date.m && date.d) {
                 return `${date.y}-${String(date.m).padStart(2, "0")}-${String(date.d).padStart(2, "0")}`;
             }
-        } catch (e) {
-            console.warn("Date Excel non interprétable :", valeur, e);
-        }
+        } catch (e) {}
     }
-
     return formaterDatePourInput(String(valeur));
 }
 
@@ -782,10 +650,7 @@ function mettreAJourCompteurExcel() {
 
 function verifierSheetJS() {
     if (typeof XLSX === "undefined") {
-        alert(
-            "❌ La bibliothèque SheetJS n'est pas chargée.\n\n" +
-            "Ajoutez SheetJS dans index.html avant script.js."
-        );
+        alert("❌ La bibliothèque SheetJS n'est pas chargée.");
         return false;
     }
     return true;
@@ -793,54 +658,33 @@ function verifierSheetJS() {
 
 function verifierColonnesBaseAgents(ligneEntete) {
     if (!Array.isArray(ligneEntete)) return false;
-
-    const entetes = ligneEntete.map(valeur => normaliserValeurExcel(valeur));
-    const manquantes = HEADERS_BASE_AGENTS.filter(header => !entetes.includes(header));
-
+    const entetes = ligneEntete.map(v => normaliserValeurExcel(v));
+    const manquantes = HEADERS_BASE_AGENTS.filter(h => !entetes.includes(h));
     if (manquantes.length > 0) {
-        alert(
-            "❌ L'onglet baseAgents ne possède pas les colonnes attendues.\n\n" +
-            "Colonnes manquantes :\n" +
-            manquantes.join(", ")
-        );
+        alert("❌ Colonnes manquantes dans baseAgents :\n" + manquantes.join(", "));
         return false;
     }
     return true;
 }
 
 function trouverIndexEntete(entetes, nom) {
-    return entetes.findIndex(header => normaliserValeurExcel(header) === nom);
+    return entetes.findIndex(h => normaliserValeurExcel(h) === nom);
 }
 
 function lireAgentsDepuisFeuille(feuille) {
-    const lignes = XLSX.utils.sheet_to_json(feuille, {
-        header: 1,
-        defval: "",
-        raw: true,
-        blankrows: false
-    });
+    const lignes = XLSX.utils.sheet_to_json(feuille, { header: 1, defval: "", raw: true, blankrows: false });
+    if (!lignes.length) throw new Error("L'onglet baseAgents est vide.");
 
-    if (!lignes.length) {
-        throw new Error("L'onglet baseAgents est vide.");
-    }
-
-    const entetes = lignes[0].map(valeur => normaliserValeurExcel(valeur));
-
-    if (!verifierColonnesBaseAgents(entetes)) {
-        throw new Error("Colonnes de baseAgents invalides.");
-    }
+    const entetes = lignes[0].map(v => normaliserValeurExcel(v));
+    if (!verifierColonnesBaseAgents(entetes)) throw new Error("Colonnes de baseAgents invalides.");
 
     const index = {};
-    HEADERS_BASE_AGENTS.forEach(nom => {
-        index[nom] = trouverIndexEntete(entetes, nom);
-    });
+    HEADERS_BASE_AGENTS.forEach(nom => { index[nom] = trouverIndexEntete(entetes, nom); });
 
     const agents = [];
-
     for (let i = 1; i < lignes.length; i++) {
         const ligne = lignes[i] || [];
         const matricule = normaliserValeurExcel(ligne[index.Matricule]);
-
         if (!matricule) continue;
 
         agents.push({
@@ -862,7 +706,9 @@ function lireAgentsDepuisFeuille(feuille) {
             lieuNaissance: normaliserValeurExcel(ligne[index.LieuNaissance]).toUpperCase(),
             entreeSdis: normaliserDateExcel(ligne[index.DateEntreeSDIS]),
             datePL: normaliserDateExcel(ligne[index.DatePL]),
+            delaiPL: parseInt(ligne[index.DelaiPL], 10) || 60,
             dateVMA: normaliserDateExcel(ligne[index.DateVMA]),
+            delaiVMA: parseInt(ligne[index.DelaiVMA], 10) || 24,
             telephone: formaterTelephone(normaliserValeurExcel(ligne[index.Telephone])),
             email: normaliserValeurExcel(ligne[index.Email]),
             adresse: normaliserValeurExcel(ligne[index.Adresse]).toUpperCase(),
@@ -870,27 +716,19 @@ function lireAgentsDepuisFeuille(feuille) {
             commentaire: normaliserValeurExcel(ligne[index.Commentaire])
         });
     }
-
     return agents;
 }
 
 async function connecterFichierReseau() {
     if (!verifierSheetJS()) return;
-
     if (!window.showOpenFilePicker) {
-        alert(
-            "❌ Votre navigateur ne prend pas en charge l'ouverture directe des fichiers Excel.\n\n" +
-            "Utilisez Microsoft Edge ou Google Chrome."
-        );
+        alert("❌ Votre navigateur ne supporte pas l'ouverture directe. Utilisez Chrome ou Edge.");
         return;
     }
 
     try {
         const handles = await window.showOpenFilePicker({
-            types: [{
-                description: "Classeur Excel FMPA-RH",
-                accept: { "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"] }
-            }],
+            types: [{ description: "Classeur Excel FMPA-RH", accept: { "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"] } }],
             multiple: false
         });
 
@@ -902,12 +740,10 @@ async function connecterFichierReseau() {
         classeurXLSX = XLSX.read(buffer, { type: "array", cellDates: true });
 
         if (!classeurXLSX.SheetNames.includes(NOM_ONGLET_BASE_AGENTS)) {
-            throw new Error(`L'onglet "${NOM_ONGLET_BASE_AGENTS}" est introuvable dans ${nomFichierXLSX}.`);
+            throw new Error(`L'onglet "${NOM_ONGLET_BASE_AGENTS}" est introuvable.`);
         }
 
-        const feuilleBaseAgents = classeurXLSX.Sheets[NOM_ONGLET_BASE_AGENTS];
-        listeAgents = lireAgentsDepuisFeuille(feuilleBaseAgents);
-
+        listeAgents = lireAgentsDepuisFeuille(classeurXLSX.Sheets[NOM_ONGLET_BASE_AGENTS]);
         agentSelectionneId = null;
 
         actualiserTableauRH();
@@ -918,23 +754,13 @@ async function connecterFichierReseau() {
             btn.classList.add("connecte");
             btn.innerHTML = "🌐 Réseau connecté";
         }
-
         mettreAJourStatutExcel(`🌐 ${nomFichierXLSX} chargé — ${listeAgents.length} agent(s)`, "#38bdf8");
-        alert(`Chargement réussi : ${listeAgents.length} agent(s) importé(s) depuis l'onglet ${NOM_ONGLET_BASE_AGENTS}.`);
 
     } catch (err) {
         if (err && err.name === "AbortError") return;
-
-        console.error("Erreur d'ouverture du classeur Excel :", err);
+        console.error("Erreur ouverture :", err);
         window.fileHandleReseau = null;
         classeurXLSX = null;
-
-        const btn = document.getElementById("btn-connect-file");
-        if (btn) {
-            btn.classList.remove("connecte");
-            btn.innerHTML = "📂 Ouvrir FMPA-RH.xlsx";
-        }
-
         mettreAJourStatutExcel("🔴 Erreur : fichier Excel non chargé", "#c53030");
         alert("❌ Impossible de charger FMPA-RH.xlsx.\n\n" + (err.message || err));
     }
@@ -959,7 +785,9 @@ function convertirAgentEnLigneExcel(agent) {
         agent.lieuNaissance || "",
         agent.entreeSdis || "",
         agent.datePL || "",
+        agent.delaiPL || 60,
         agent.dateVMA || "",
+        agent.delaiVMA || 24,
         agent.telephone || "",
         agent.email || "",
         agent.adresse || "",
@@ -970,18 +798,16 @@ function convertirAgentEnLigneExcel(agent) {
 
 async function enregistrerFichierReseau() {
     if (!verifierSheetJS()) return false;
-
     if (!window.fileHandleReseau || !classeurXLSX) {
-        alert("⚠️ Aucun fichier Excel chargé.\n\nCliquez d'abord sur « Ouvrir / Connecter ».");
+        alert("⚠️ Aucun fichier Excel chargé.");
         return false;
     }
 
     try {
         const options = { mode: "readwrite" };
-
         if (await window.fileHandleReseau.queryPermission(options) !== "granted") {
             if (await window.fileHandleReseau.requestPermission(options) !== "granted") {
-                alert("❌ Autorisation refusée pour modifier le fichier Excel.");
+                alert("❌ Autorisation refusée.");
                 return false;
             }
         }
@@ -994,46 +820,28 @@ async function enregistrerFichierReseau() {
         const nouvelleFeuille = XLSX.utils.aoa_to_sheet(donneesBaseAgents);
         classeurXLSX.Sheets[NOM_ONGLET_BASE_AGENTS] = nouvelleFeuille;
 
-        if (!classeurXLSX.SheetNames.includes(NOM_ONGLET_BASE_AGENTS)) {
-            classeurXLSX.SheetNames.push(NOM_ONGLET_BASE_AGENTS);
-        }
-
-        const buffer = XLSX.write(classeurXLSX, {
-            bookType: "xlsx",
-            type: "array",
-            compression: true
-        });
-
+        const buffer = XLSX.write(classeurXLSX, { bookType: "xlsx", type: "array", compression: true });
         const writable = await window.fileHandleReseau.createWritable();
         await writable.write(buffer);
         await writable.close();
 
         mettreAJourCompteurExcel();
-        alert(`💾 ${nomFichierXLSX} sauvegardé avec succès.\n\nOnglet « ${NOM_ONGLET_BASE_AGENTS} » : ${listeAgents.length} agent(s).`);
+        alert(`💾 ${nomFichierXLSX} sauvegardé avec succès.`);
         return true;
 
     } catch (err) {
-        console.error("Erreur lors de la sauvegarde du classeur Excel :", err);
+        console.error("Erreur sauvegarde :", err);
         alert("❌ Erreur de sauvegarde de FMPA-RH.xlsx :\n\n" + (err.message || err));
         return false;
     }
 }
 
 /* ==========================================================================
-   6. ÉCOUTEURS D'ÉVÉNEMENTS & DOMCONTENTLOADED
+   6. ÉCOUTEURS D'ÉVÉNEMENTS & ALERTES
    ========================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
-    const idsAEcouter = [
-        "agentRegime", 
-        "agentFonction", 
-        "agentNaissanceDate", 
-        "agentEntreeSdis", 
-        "agentTempsPartiel", 
-        "agentStatut"
-    ];
-
-    idsAEcouter.forEach(id => {
+    ["agentRegime", "agentFonction", "agentNaissanceDate", "agentEntreeSdis", "agentTempsPartiel", "agentStatut"].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener('change', actualiserIndicateurGardes);
@@ -1060,46 +868,36 @@ window.onload = function() {
 };
 
 function afficherListeAlertesPL() {
-    const aRenouveler = listeAgents.filter(agent => doitRenouvelerPL(agent.datePL));
+    const aRenouveler = listeAgents.filter(agent => doitRenouvelerPL(agent.datePL, agent.delaiPL || 60));
 
     if (aRenouveler.length === 0) {
-        alert("🚒 Aucun permis PL à renouveler (tous les permis ont moins de 4,5 ans).");
+        alert("🚒 Aucun permis PL à renouveler.");
         return;
     }
 
-    aRenouveler.sort((a, b) => {
-        const dateA = new Date(formaterDatePourInput(a.datePL) || '9999-12-31');
-        const dateB = new Date(formaterDatePourInput(b.datePL) || '9999-12-31');
-        return dateA - dateB;
-    });
+    aRenouveler.sort((a, b) => new Date(formaterDatePourInput(a.datePL) || '9999-12-31') - new Date(formaterDatePourInput(b.datePL) || '9999-12-31'));
 
     let message = `🚒 LISTE DES PERMIS PL À RENOUVELER (${aRenouveler.length} agent(s)) :\n\n`;
     aRenouveler.forEach((agent, index) => {
-        const dateFormatee = formaterDateFR(agent.datePL) || 'Inconnue';
-        message += `${index + 1}. ${agent.nom.toUpperCase()} ${agent.prenom} - Date PL : ${dateFormatee}\n`;
+        message += `${index + 1}. ${agent.nom.toUpperCase()} ${agent.prenom} - Date PL : ${formaterDateFR(agent.datePL) || 'Inconnue'} (Période: ${agent.delaiPL || 60} mois)\n`;
     });
 
     alert(message);
 }
 
 function afficherListeAlertesVMA() {
-    const aRenouveler = listeAgents.filter(agent => doitRenouvelerVMA(agent.dateVMA));
+    const aRenouveler = listeAgents.filter(agent => doitRenouvelerVMA(agent.dateVMA, agent.delaiVMA || 24));
 
     if (aRenouveler.length === 0) {
-        alert("🩺 Aucune VMA à renouveler (toutes les VMA ont moins de 10 mois).");
+        alert("🩺 Aucune VMA à renouveler.");
         return;
     }
 
-    aRenouveler.sort((a, b) => {
-        const dateA = new Date(formaterDatePourInput(a.dateVMA) || '9999-12-31');
-        const dateB = new Date(formaterDatePourInput(b.dateVMA) || '9999-12-31');
-        return dateA - dateB;
-    });
+    aRenouveler.sort((a, b) => new Date(formaterDatePourInput(a.dateVMA) || '9999-12-31') - new Date(formaterDatePourInput(b.dateVMA) || '9999-12-31'));
 
     let message = `🩺 LISTE DES VMA À RENOUVELER (${aRenouveler.length} agent(s)) :\n\n`;
     aRenouveler.forEach((agent, index) => {
-        const dateFormatee = formaterDateFR(agent.dateVMA) || 'Inconnue';
-        message += `${index + 1}. ${agent.nom.toUpperCase()} ${agent.prenom} - Date VMA : ${dateFormatee}\n`;
+        message += `${index + 1}. ${agent.nom.toUpperCase()} ${agent.prenom} - Date VMA : ${formaterDateFR(agent.dateVMA) || 'Inconnue'} (Période: ${agent.delaiVMA || 24} mois)\n`;
     });
 
     alert(message);
