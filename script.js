@@ -406,7 +406,7 @@ function actualiserTableauRH() {
             ? `<span style="border: 1px solid #8a2be2; color: #8a2be2; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🚒 Permis</span>` : '';
 
         const badgeEngagement = (agent.statut === "SPV" && doitRenouvelerEngagement(agent.entreeSdis))
-            ? `<span style="border: 1px solid #d97706; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">📝 Renouv. SPV</span>` : '';
+            ? `<span style="border: 1px solid #d97706; color: #d97706; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">🪃 Renouv. SPV</span>` : '';
 
         const ligneAlertes = (badgeVMA || badgePL || badgeEngagement) 
             ? `<br><div style="margin-top: 3px; display: flex; align-items: center; gap: 4px;">${badgeVMA}${badgePL}${badgeEngagement}</div>` : '';
