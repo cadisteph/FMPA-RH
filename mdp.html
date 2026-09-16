@@ -151,7 +151,7 @@ document.getElementById("btn-ouvrir").addEventListener("click", async () => {
             classeurXLSX = XLSX.read(arrayBuffer, { type: 'array' });
             
             document.getElementById("nom-fichier").textContent = `Fichier chargé : ${file.name}`;
-            document.getElementById("form-mdp").style.display = "block";
+            document.getElementById("form-mdp").style.display = "none";
             afficherMessage("Fichier chargé avec succès.");
         } else {
             alert("Votre navigateur ne supporte pas la sauvegarde directe sur le fichier (utilisez Chrome, Edge ou Opera).");
