@@ -904,7 +904,30 @@ function afficherListeAlertesVMA() {
 }
 
 
+function afficherListeAlertesSPV() {
+    // Filtrage sur le statut SPV et l'alerte d'engagement basée sur la date d'entrée SDIS
+    const aRenouveler = listeAgents.filter(agent => 
+        agent.statut === "SPV" && doitRenouvelerEngagement(agent.entreeSdis)
+    );
 
+    if (aRenouveler.length === 0) {
+        alert("🪃 Aucun engagement SPV à renouveler.");
+        return;
+    }
+
+    // Tri par date d'entrée SDIS
+    aRenouveler.sort((a, b) => 
+        new Date(formaterDatePourInput(a.entreeSdis) || '9999-12-31') - 
+        new Date(formaterDatePourInput(b.entreeSdis) || '9999-12-31')
+    );
+
+    let message = `🪃 LISTE DES ENGAGEMENTS SPV À RENOUVELER (${aRenouveler.length} agent(s)) :\n\n`;
+    aRenouveler.forEach((agent, index) => {
+        message += `${index + 1}. ${agent.nom.toUpperCase()} ${agent.prenom} - Entrée SDIS : ${formaterDateFR(agent.entreeSdis) || 'Inconnue'}\n`;
+    });
+
+    alert(message);
+}
 
 
 
