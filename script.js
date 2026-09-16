@@ -902,3 +902,32 @@ function afficherListeAlertesVMA() {
 
     alert(message);
 }
+
+
+
+
+
+
+function afficherListeAlertesPL() {
+    const aRenouveler = listeAgents.filter(agent => doitRenouvelerEngagement(datePriseFonctionStr));
+
+    if (aRenouveler.length === 0) {
+        alert("🪃 Aucun SPV à renouveler.");
+        return;
+    }
+
+    aRenouveler.sort((a, b) => new Date(formaterDatePourInput(a.dateEntree) || '9999-12-31') - new Date(formaterDatePourInput(b.dateEntree) || '9999-12-31'));
+
+    let message = `🪃 LISTE DES SPV À RENOUVELER (${aRenouveler.length} agent(s)) :\n\n`;
+    aRenouveler.forEach((agent, index) => {
+        message += `${index + 1}. ${agent.nom.toUpperCase()} ${agent.prenom} - Date Entree : ${formaterDateFR(agent.dateEntree) || 'Inconnue'} (Période: ${agent.dateEntree || 60} mois)\n`;
+    });
+
+    alert(message);
+}
+
+
+
+
+
+
