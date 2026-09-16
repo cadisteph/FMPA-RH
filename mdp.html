@@ -123,7 +123,7 @@ const HASH_DEFAUT_SECOURS = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e1
 // Utilitaires UI
 function afficherMessage(texte, estErreur = false) {
     const box = document.getElementById("status-box");
-    box.style.display = "block";
+    box.style.display = "none";
     box.className = `status ${estErreur ? 'error' : 'success'}`;
     box.textContent = texte;
 }
@@ -151,7 +151,7 @@ document.getElementById("btn-ouvrir").addEventListener("click", async () => {
             classeurXLSX = XLSX.read(arrayBuffer, { type: 'array' });
             
             document.getElementById("nom-fichier").textContent = `Fichier chargé : ${file.name}`;
-            document.getElementById("form-mdp").style.display = "none";
+            document.getElementById("form-mdp").style.display = "block";
             afficherMessage("Fichier chargé avec succès.");
         } else {
             alert("Votre navigateur ne supporte pas la sauvegarde directe sur le fichier (utilisez Chrome, Edge ou Opera).");
