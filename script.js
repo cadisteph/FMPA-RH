@@ -908,7 +908,7 @@ function afficherListeAlertesVMA() {
 
 
 
-function afficherListeAlertesPL() {
+function afficherListeAlertesSPV() {
     const aRenouveler = listeAgents.filter(agent => doitRenouvelerEngagement(datePriseFonctionStr));
 
     if (aRenouveler.length === 0) {
