@@ -30,7 +30,7 @@
         .group { margin-bottom: 1.25rem; }
         label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.375rem; }
         input[type="file"], input[type="password"] {
-            width: 100%;
+            width: 70%;
             padding: 0.625rem;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
@@ -87,7 +87,7 @@
 
     <div class="group">
         <label>1. Sélectionner le fichier Excel (.xlsx)</label>
-        <button type="button" id="btn-ouvrir" style="background-color: #475569;">📁 Choisir le fichier</button>
+        <button type="button" id="btn-ouvrir" style="background-color: #03c74a;">📁 Choisir le fichier</button>
         <small id="nom-fichier" style="display:block; margin-top:0.25rem; color:#64748b;"></small>
     </div>
 
@@ -107,8 +107,9 @@
             <input type="password" id="confirm-pass" placeholder="Confirmer le mot de passe">
         </div>
 
-        <button type="button" id="btn-enregistrer">💾 Enregistrer dans le fichier</button>
-    </div>
+    <button type="button" id="btn-enregistrer" style="display: block;margin: 1rem auto;width: 40%;padding: 0.75rem;background-color: #2563eb;border: 2px solid #94a3b8;color: white;border-radius: 6px;font-weight: 600;cursor: pointer;transition: background-color 0.2s;">💾 Valider MDP</button>   
+    
+        </div>
 
     <div id="status-box" class="status"></div>
 </div>
