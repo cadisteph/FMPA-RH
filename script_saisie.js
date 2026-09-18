@@ -2220,13 +2220,15 @@ function mettreAJourBoutonVisibilite() {
     if (!btn) return;
 
     if (afficherOngletsSecurises) {
-        btn.style.backgroundColor = "#16a34a"; // Vert
-        btn.style.borderColor = "#15803d";
-        btn.innerText = "👁️ Onglets VISIBLES";
+        btn.style.backgroundColor = "#f3050500"; // transparent
+        btn.style.borderColor = "#f3050500";
+        btn.style.Color = "#11d219";
+        btn.innerText = "👁️ Onglets XL Visibles";
     } else {
-        btn.style.backgroundColor = "#dc2626"; // Rouge
-        btn.style.borderColor = "#b91c1c";
-        btn.innerText = "🙈 Onglets MASQUÉS";
+        btn.style.backgroundColor = "#f3050500"; // transparent
+        btn.style.borderColor = "#f3050500";
+        btn.style.Color = "#f51908";
+        btn.innerText = "🙈 Onglets XL Masqués";
     }
 }
 
