@@ -1137,9 +1137,15 @@ function ouvrirModalHistorique() {
     afficherHistorique();
 }
 
-async function fermerModaleHistorique() {
+function fermerModaleHistorique() {
+    // 1. Fermeture immédiate et inconditionnelle de la modale
+    const modale = document.getElementById("modale-historique");
+    if (modale) {
+        modale.style.display = "none";
+    }
+
+    // 2. Sauvegarde des commentaires en arrière-plan (sans await bloquant)
     try {
-        // 1. Récupération synchrone des commentaires saisis par les collaborateurs
         if (Array.isArray(historiqueSaisiesFMPA)) {
             historiqueSaisiesFMPA.forEach((row, index) => {
                 const input = document.getElementById(`input-comm-libre-${index}`);
@@ -1148,28 +1154,12 @@ async function fermerModaleHistorique() {
                 }
             });
         }
-    } catch (err) {
-        console.error("Erreur lors de la lecture des commentaires :", err);
-    }
 
-    // 2. Réinitialisation de l'index d'édition si besoin
-    if (typeof indexEnEdition !== "undefined") {
-        indexEnEdition = null;
-    }
-
-    // 3. FERMETURE IMMÉDIATE DE LA MODALE (ne bloque plus l'utilisateur)
-    const modale = document.getElementById("modale-historique");
-    if (modale) {
-        modale.style.display = "none";
-    }
-
-    // 4. Sauvegarde asynchrone sécurisée sur le fichier Excel (FMPA-RH.xlsx)
-    if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX && typeof enregistrerFichierXLSX === "function") {
-        try {
-            await enregistrerFichierXLSX();
-        } catch (err) {
-            console.error("Erreur lors de la sauvegarde Excel à la fermeture :", err);
+        if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX && typeof enregistrerFichierXLSX === "function") {
+            enregistrerFichierXLSX().catch(err => console.error("Erreur sauvegarde Excel :", err));
         }
+    } catch (err) {
+        console.error("Erreur secondaire lors de la fermeture :", err);
     }
 }
 
