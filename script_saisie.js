@@ -2234,7 +2234,7 @@ function appliquerMasquageFeuilles(workbook) {
     if (!workbook || !workbook.SheetNames) return;
 
     // Renseigne ici le nom EXACT de tes onglets sensibles (attention aux majuscules/espaces)
-    const feuillesACacher = ["Agents", "Parametres", "Donnees_Brutes"];
+    const feuillesACacher = ["baseAgents", "historiqueSuivi", "Parametres"];
 
     feuillesACacher.forEach(nomFeuille => {
         const sheetIndex = workbook.SheetNames.indexOf(nomFeuille);
@@ -2244,7 +2244,7 @@ function appliquerMasquageFeuilles(workbook) {
             if (!workbook.Workbook.Sheets[sheetIndex]) workbook.Workbook.Sheets[sheetIndex] = {};
             
             // Si afficherOngletsSecurises est vrai => 0 (Visible), sinon => 2 (VeryHidden)
-            workbook.Workbook.Sheets[sheetIndex].Hidden = afficherOngletsSecurises ? 0 : 2;
+            workbook.Workbook.Sheets[sheetIndex].Hidden = afficherOngletsSecurises ? 0 : 0;
         }
     });
 }
