@@ -1382,31 +1382,52 @@ function exporterHistoriquePDF() {
     }
 
     const { jsPDF } = window.jspdf;
-    // Orientation paysage ('l') indispensable pour 11 colonnes
     const doc = new jsPDF('l', 'mm', 'a4');
 
-    doc.setFontSize(14);
-    doc.text("Historique des Saisies FMPA", 14, 15);
-    doc.setFontSize(10);
-    doc.text(`Exporté le : ${new Date().toLocaleDateString('fr-FR')}`, 14, 22);
+    // --- EN-TÊTE DU DOCUMENT (Style Modale) ---
+    // Bandeau supérieur sombre
+    doc.setFillColor(15, 23, 42); // Slate 900
+    doc.rect(0, 0, 297, 24, 'F');
 
-    // Définition explicite des 11 en-têtes
+    // Titre principal
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255);
+    doc.text("Historique des Saisies FMPA", 14, 15);
+
+    // Date de génération
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(203, 213, 225); // Slate 300
+    const dateExport = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    doc.text(`Exporté le ${dateExport}`, 283, 15, { align: 'right' });
+
+    // --- PRÉPARATION DES DONNÉES ---
     const headers = [
-        ["Agent", "Équipe", "Date FMPA", "Date Saisie", "Activité", "Formation", "Début", "Fin", "Durée", "Statut", "Commentaires"]
+        ["Agent", "Équipe", "Date FMPA", "Saisie", "Activité", "Formation", "Début", "Fin", "Durée", "Statut", "Commentaires"]
     ];
 
-    // Extraction des données du tableau
     const data = [];
     if (Array.isArray(historiqueSaisiesFMPA)) {
         historiqueSaisiesFMPA.forEach(row => {
             const agent = Array.isArray(tableauAgentsRH) ? tableauAgentsRH.find(a => String(a.matricule) === String(row.matricule)) : null;
-            const nomAgentComplet = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule || "-"}`;
+            let nomAgentComplet = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule || "-"}`;
+            
+            // Détection du rôle de formateur : ajout discret de "(Formateur)"
+            const estFormateur = row.commentaires?.includes("(Animation / Formateur)") || 
+                (row.formateur && nomAgentComplet.toLowerCase().includes(row.formateur.toLowerCase()));
+            
+            if (estFormateur) {
+                nomAgentComplet += " (Formateur)";
+            }
+
             const equipeAgent = agent ? agent.equipe : "-";
             const formationObj = Array.isArray(catalogueInitial) ? catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation) : null;
             const activite = formationObj ? formationObj.activite : "-";
             const duree = typeof calculerDureeEntreHeures === "function" ? calculerDureeEntreHeures(row.heureDebut, row.heureFin) : "0";
             
-            const statut = (row.cloture || row.dateCloture || row.statut === "clôturé") ? "Clôturé" : "À saisir";
+            const estCloture = Boolean(row.cloture || row.dateCloture || row.statut === "clôturé");
+            const statutTxt = estCloture ? "Web@ct Saisi" : "À saisir";
 
             data.push([
                 nomAgentComplet,
@@ -1418,42 +1439,91 @@ function exporterHistoriquePDF() {
                 row.heureDebut || "-",
                 row.heureFin || "-",
                 `${duree} h`,
-                statut,
-                row.commentaires || "-" // 11e colonne
+                statutTxt,
+                row.commentaires || "-"
             ]);
         });
     }
 
-    // Génération du tableau autoTable
+    // --- GÉNÉRATION DU TABLEAU (Style Modale HTML) ---
     doc.autoTable({
         head: headers,
         body: data,
-        startY: 28,
-        theme: 'grid',
+        startY: 30,
+        margin: { left: 10, right: 10 },
+        theme: 'plain',
         styles: {
-            fontSize: 7,
-            cellPadding: 1.5,
+            font: "helvetica",
+            fontSize: 8,
+            textColor: [51, 65, 85], // Slate 700
+            cellPadding: { top: 3, bottom: 3, left: 2, right: 2 },
+            valign: 'middle',
             overflow: 'linebreak'
         },
         headStyles: {
-            fillColor: [15, 23, 42], // Couleur sombre (Slate 900)
-            textColor: [255, 255, 255],
-            fontStyle: 'bold'
+            fillColor: [241, 245, 249], // Slate 100 (fond d'en-tête léger)
+            textColor: [15, 23, 42], // Slate 900
+            fontStyle: 'bold',
+            fontSize: 8.5,
+            lineWidth: { bottom: 1 },
+            borderColor: [203, 213, 225] // Slate 300
         },
         columnStyles: {
-            0: { cellWidth: 28 }, // Agent
-            1: { cellWidth: 15 }, // Équipe
-            2: { cellWidth: 18 }, // Date FMPA
-            3: { cellWidth: 18 }, // Date Saisie
-            4: { cellWidth: 22 }, // Activité
-            5: { cellWidth: 35 }, // Formation
-            6: { cellWidth: 12 }, // Début
-            7: { cellWidth: 12 }, // Fin
-            8: { cellWidth: 12 }, // Durée
-            9: { cellWidth: 18 }, // Statut
-            10: { cellWidth: 'auto' } // Commentaires prend le reste de l'espace
+            0: { cellWidth: 38, fontStyle: 'bold' }, // Agent (+ mention Formateur)
+            1: { cellWidth: 16 },                    // Équipe
+            2: { cellWidth: 20 },                    // Date FMPA
+            3: { cellWidth: 20 },                    // Saisie
+            4: { cellWidth: 24, fontStyle: 'bold' }, // Activité
+            5: { cellWidth: 42 },                    // Formation
+            6: { cellWidth: 13, halign: 'center' },  // Début
+            7: { cellWidth: 13, halign: 'center' },  // Fin
+            8: { cellWidth: 14, halign: 'center', fontStyle: 'bold' }, // Durée
+            9: { cellWidth: 22, halign: 'center' },  // Statut
+            10: { cellWidth: 'auto' }                // Commentaires
+        },
+        // Personnalisation ligne par ligne (Mise en page modale & Badges)
+        didParseCell: function(data) {
+            // Lignes alternées (fond très léger)
+            if (data.section === 'body') {
+                if (data.row.index % 2 === 1) {
+                    data.cell.styles.fillColor = [248, 250, 252]; // Slate 50
+                }
+                
+                // Style spécifique pour la colonne Statut (colonne 9)
+                if (data.column.index === 9) {
+                    const val = data.cell.raw;
+                    if (val === "Web@ct Saisi") {
+                        data.cell.styles.textColor = [29, 78, 216]; // Bleu Web@ct
+                        data.cell.styles.fontStyle = 'bold';
+                    } else {
+                        data.cell.styles.textColor = [225, 29, 72]; // Rouge "À saisir"
+                    }
+                }
+            }
+        },
+        // Trait de séparation sous chaque ligne
+        didDrawCell: function(data) {
+            if (data.section === 'body' && data.column.index === 0) {
+                doc.setDrawColor(241, 245, 249);
+                doc.setLineWidth(0.3);
+                doc.line(
+                    data.settings.margin.left, 
+                    data.cell.y + data.cell.height, 
+                    297 - data.settings.margin.right, 
+                    data.cell.y + data.cell.height
+                );
+            }
         }
     });
+
+    // Numérotation des pages en bas
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184);
+        doc.text(`Page ${i} sur ${pageCount}`, 148, 203, { align: 'center' });
+    }
 
     doc.save(`Historique_FMPA_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
