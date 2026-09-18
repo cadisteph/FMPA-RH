@@ -324,10 +324,26 @@
 
 
 
+        
+
+
         <button type="button" id="btnFiltreSPV" onclick="filtrerUniquementSPV()">
   SPV uniquement
-</button>
+        </button>
+<script>
+function ouvrirRHSeulementSPV() {
+  // On indique à la session qu'on veut filtrer sur SPV
+  sessionStorage.setItem("filtreDepart", "SPV");
+  
+  // On redirige vers la page du tableau RH
+  window.location.href = "index.html";
+}
+</script>
 
+
+
+
+        
 
         
         <a class="plate plate--fmpa" href="https://cadisteph.github.io/FMPA-RH/saisie_fmpa.html" target="_blank" rel="noopener">
