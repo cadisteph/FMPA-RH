@@ -767,7 +767,7 @@ async function validerSaisieGroupee(e) {
     const idFormation = document.getElementById("saisie-theme")?.value;
     const formateur = document.getElementById("saisie-formateur")?.value.trim() || "";
     const commentaires = document.getElementById("saisie-commentaires")?.value.trim() || "";
-
+    
     if (!agentsSelectionnes.size) {
         alert("Veuillez sélectionner au moins un agent.");
         return;
@@ -829,7 +829,7 @@ async function validerSaisieGroupee(e) {
             heureFin,
             formation: formationObj.libelle,
             formateur,
-            commentaires,
+            commentaires: commentaires,
             dateSaisie
         });
 
