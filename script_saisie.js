@@ -27,40 +27,6 @@ let estAdminDeverrouille = false;
 const HASH_DEFAUT_SECOURS = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
 
 document.addEventListener("DOMContentLoaded", () => {
-
-
-
-
-
-
-
-    
-    // FILTRE SPV
-    const filtreDepart = sessionStorage.getItem("filtreDepart");
-
-  if (filtreDepart === "SPV") {
-    // On nettoie la session pour les accès futurs
-    sessionStorage.removeItem("filtreDepart");
-    
-    // On lance la fonction d'affichage
-    afficherUniquementSPV();
-  }
-});
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     const dateInput = document.getElementById("saisie-date");
     if (dateInput) dateInput.valueAsDate = new Date();
 
@@ -934,9 +900,6 @@ async function enregistrerFichierXLSX() {
     if (!classeurXLSX) return;
     reconstruireFeuilleHistorique();
 
-    // ➡️ LIGNE À AJOUTER ICI (avant la création du buffer)
-    appliquerMasquageFeuilles(classeurXLSX);
-
     const buffer = XLSX.write(classeurXLSX, { bookType: "xlsx", type: "array" });
 
     if (fichierHandleXLSX) {
@@ -1174,29 +1137,33 @@ function ouvrirModalHistorique() {
     afficherHistorique();
 }
 
-function fermerModalHistorique() {
-    // 1. Fermeture immédiate et inconditionnelle de la modale
+async function fermerModalHistorique() {
+    indexEnEdition = null;
+    
     const modal = document.getElementById("modal-historique");
-    if (modal) {
-        modal.style.display = "none";
-    }
+    if (modal) modal.style.display = "none";
 
-    // 2. Sauvegarde des commentaires en arrière-plan (sans await bloquant)
-    try {
-        if (Array.isArray(historiqueSaisiesFMPA)) {
-            historiqueSaisiesFMPA.forEach((row, index) => {
-                const input = document.getElementById(`input-comm-libre-${index}`);
-                if (input) {
-                    row.commentaires = input.value.trim();
-                }
-            });
+    const dateRefWact = document.getElementById("hist-ref-wact")?.value || "";
+
+    if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
+        if (!classeurXLSX.Sheets["Parametres"]) {
+            const hashActuel = obtenirHashAdminDepuisExcel();
+            const newSheet = XLSX.utils.aoa_to_sheet([
+                ["DateRefWact", dateRefWact],
+                ["CodeAdminHash", hashActuel]
+            ]);
+            XLSX.utils.book_append_sheet(classeurXLSX, newSheet, "Parametres");
+        } else {
+            XLSX.utils.sheet_add_aoa(
+                classeurXLSX.Sheets["Parametres"], 
+                [["DateRefWact", dateRefWact]], 
+                { origin: "A1" }
+            );
         }
 
-        if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX && typeof enregistrerFichierXLSX === "function") {
-            enregistrerFichierXLSX().catch(err => console.error("Erreur sauvegarde Excel :", err));
+        if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
+            await enregistrerFichierXLSX();
         }
-    } catch (err) {
-        console.error("Erreur secondaire lors de la fermeture :", err);
     }
 }
 
@@ -1211,16 +1178,20 @@ function afficherHistorique() {
     tbody.innerHTML = "";
 
     if (!Array.isArray(historiqueSaisiesFMPA) || historiqueSaisiesFMPA.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:20px;">Aucune donnée d'historique disponible.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:20px;">Aucune donnée d'historique disponible.</td></tr>`;
         return;
     }
 
+    // =========================================================================
+    // MODIFICATION ICI : On mappe le tableau avec son index réel dans historiqueSaisiesFMPA,
+    // puis on trie par dateSaisie de manière décroissante (plus récent d'abord).
+    // =========================================================================
     const historiqueTrie = historiqueSaisiesFMPA
         .map((row, realIndex) => ({ row, realIndex }))
         .sort((a, b) => {
             const dateA = String(a.row.dateSaisie || "");
             const dateB = String(b.row.dateSaisie || "");
-            return dateB.localeCompare(dateA);
+            return dateB.localeCompare(dateA); // Ordre décroissant
         });
 
     historiqueTrie.forEach(({ row, realIndex }) => {
@@ -1238,7 +1209,7 @@ function afficherHistorique() {
         const activite = formationObj ? formationObj.activite : "-";
         const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
 
-        const estClotureLigne = Boolean(row.cloture || row.dateCloture || row.statut === "clôturé" || row.statut === "Web@ct Saisi" || row.webact === true);
+        const estClotureLigne = Boolean(row.cloture || row.dateCloture || row.statut === "clôturé");
         const estClotureWact = Boolean(dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact);
         const estCloture = estClotureLigne || estClotureWact;
 
@@ -1250,9 +1221,7 @@ function afficherHistorique() {
             : `<strong>${escapeHtml(nomAgentComplet)}</strong>`;
 
         const duree = typeof calculerDureeEntreHeures === "function" ? calculerDureeEntreHeures(row.heureDebut, row.heureFin) : "0";
-        const commentaireTxt = row.commentaires ? escapeHtml(row.commentaires) : "";
 
-        // MODE ÉDITION ADMIN (Déverrouillé par code secret)
         if (indexEnEdition === realIndex && estAdminDeverrouille && !estCloture) {
             tr.classList.add("tr-editing");
 
@@ -1277,13 +1246,10 @@ function afficherHistorique() {
                 <td><strong id="edit-duree-${realIndex}">${duree} h</strong></td>
                 <td>
                     <button type="button" class="btn-act-save" onclick="sauvegarderLigneHistorique(${realIndex})">💾 Enregistrer</button>
-                    <button type="button" class="btn-act-cancel" onclick="annulerEditionHistorique()">✖ Annuler</button>
+                    <button type="button" class="btn-act-cancel" onclick="annulerEditionHistorique()">✖ Fermer</button>
                 </td>
-                <td><input type="text" id="edit-commentaires-${realIndex}" class="input-inline" value="${commentaireTxt}"></td>
             `;
-        } 
-        // MODE CONSULTATION / SAISIE LIBRE COMMENTAIRE COLLABORATEUR
-        else {
+        } else {
             let colActions = "";
             if (estCloture) {
                 colActions = `<span class="badge-cloture">🔒 Web@ct Saisi 🔵</span>`;
@@ -1296,14 +1262,6 @@ function afficherHistorique() {
                 `;
             }
 
-            // Si verrouillé Web@ct (clôturé), le commentaire est figé
-            let colCommentaireHtml = estCloture 
-                ? `<span style="font-size: 0.85rem; color: #475569;">${commentaireTxt || "-"}</span>`
-                : `<div style="display: flex; gap: 4px; align-items: center;">
-                    <input type="text" id="input-comm-libre-${realIndex}" class="input-inline" value="${commentaireTxt}" placeholder="Remarque..." style="font-size:0.85rem; padding: 2px 6px;">
-                    <button type="button" title="Sauvegarder la remarque" onclick="sauvegarderCommentaireSeul(${realIndex})" style="border:none; background:transparent; cursor:pointer; font-size:1.1rem;">💾</button>
-                   </div>`;
-
             tr.innerHTML = `
                 <td>${nomHtml}</td>
                 <td>${escapeHtml(equipeAgent)}</td>
@@ -1315,14 +1273,12 @@ function afficherHistorique() {
                 <td>${escapeHtml(row.heureFin)}</td>
                 <td><strong>${duree} h</strong></td>
                 <td>${colActions}</td>
-                <td>${colCommentaireHtml}</td>
             `;
         }
 
         tbody.appendChild(tr);
     });
 }
-
 
 function filtrerHistorique() {
     afficherHistorique();
@@ -1372,28 +1328,13 @@ function calculerDureeEdition(index) {
     }
 }
 
-// Sauvegarde réservée aux collaborateurs pour la remarque seule
-async function sauvegarderCommentaireSeul(index) {
-    const input = document.getElementById(`input-comm-libre-${index}`);
-    if (!input) return;
-
-    historiqueSaisiesFMPA[index].commentaires = input.value.trim();
-
-    // Enregistrement immédiat dans le fichier Excel actif (FMPA-RH.xlsx)
-    if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
-        await enregistrerFichierXLSX();
-    }
-}
-
-// Sauvegarde complète en mode Admin
 async function sauvegarderLigneHistorique(index) {
     const nFormation = document.getElementById(`edit-formation-${index}`)?.value;
     const nDebut = document.getElementById(`edit-hdebut-${index}`)?.value;
     const nFin = document.getElementById(`edit-hfin-${index}`)?.value;
-    const nCommentaires = document.getElementById(`edit-commentaires-${index}`)?.value;
 
     if (!nFormation || !nDebut || !nFin) {
-        alert("Veuillez renseigner tous les champs obligatoires.");
+        alert("Veuillez renseigner tous les champs.");
         return;
     }
 
@@ -1401,7 +1342,7 @@ async function sauvegarderLigneHistorique(index) {
     item.formation = nFormation;
     item.heureDebut = nDebut;
     item.heureFin = nFin;
-    item.commentaires = nCommentaires !== undefined ? nCommentaires.trim() : item.commentaires;
+    item.dateSaisie = typeof obtenirDateSaisie === "function" ? obtenirDateSaisie() : item.dateSaisie;
 
     indexEnEdition = null;
 
@@ -1409,12 +1350,10 @@ async function sauvegarderLigneHistorique(index) {
     if (typeof filtrerEtAfficherTableau === "function") filtrerEtAfficherTableau();
     afficherHistorique();
 
-    // Enregistrement dans FMPA-RH.xlsx
     if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
         await enregistrerFichierXLSX();
     }
 }
-
 
 async function supprimerLigneHistorique(index) {
     if (!estAdminDeverrouille) return;
@@ -1433,157 +1372,102 @@ async function supprimerLigneHistorique(index) {
 }
 
 function exporterHistoriquePDF() {
-    if (!window.jspdf) {
-        alert("La bibliothèque jsPDF n'est pas chargée.");
+    const tbody = document.getElementById("tbody-historique");
+    if (!tbody) {
+        alert("Impossible de trouver le tableau d'historique.");
         return;
     }
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'mm', 'a4');
+    // Récupération des lignes visibles
+    const trs = Array.from(tbody.querySelectorAll("tr"));
+    const lignesVisibles = trs.filter(tr => {
+        return tr.querySelectorAll("td").length > 1 && tr.style.display !== "none";
+    });
 
-    // Récupération de la date de référence Web@ct active dans la modale
-    const dateRefWact = document.getElementById("hist-ref-wact")?.value || "";
-
-    // --- EN-TÊTE DU DOCUMENT ---
-    doc.setFillColor(15, 23, 42); // Slate 900
-    doc.rect(0, 0, 297, 24, 'F');
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.setTextColor(255, 255, 255);
-    doc.text("Historique des Saisies FMPA", 14, 15);
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(203, 213, 225);
-    const dateExport = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    doc.text(`Exporté le ${dateExport}`, 283, 15, { align: 'right' });
-
-    // --- PRÉPARATION DES DONNÉES ---
-    const headers = [
-        ["Agent", "Équipe", "Date FMPA", "Saisie", "Activité", "Formation", "Début", "Fin", "Durée", "Statut Web@ct", "Commentaires"]
-    ];
-
-    const data = [];
-    if (Array.isArray(historiqueSaisiesFMPA)) {
-        historiqueSaisiesFMPA.forEach(row => {
-            const agent = Array.isArray(tableauAgentsRH) ? tableauAgentsRH.find(a => String(a.matricule) === String(row.matricule)) : null;
-            let nomAgentComplet = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule || "-"}`;
-            
-            // Détection du rôle de formateur
-            const estFormateur = row.commentaires?.includes("(Animation / Formateur)") || 
-                (row.formateur && nomAgentComplet.toLowerCase().includes(row.formateur.toLowerCase()));
-            
-            if (estFormateur) {
-                nomAgentComplet += " (Formateur)";
-            }
-
-            const equipeAgent = agent ? agent.equipe : "-";
-            const formationObj = Array.isArray(catalogueInitial) ? catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation) : null;
-            const activite = formationObj ? formationObj.activite : "-";
-            const duree = typeof calculerDureeEntreHeures === "function" ? calculerDureeEntreHeures(row.heureDebut, row.heureFin) : "0";
-            const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
-
-            // LOGIQUE DE CLÔTURE ALIGNÉE SUR LA MODALE HTML
-            const estClotureLigne = Boolean(row.cloture || row.dateCloture || row.statut === "clôturé" || row.statut === "Web@ct Saisi" || row.webact === true);
-            const estClotureWact = Boolean(dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact);
-            const estCloture = estClotureLigne || estClotureWact;
-
-            const statutTxt = estCloture ? "Web@ct Saisi" : "À saisir";
-
-            data.push([
-                nomAgentComplet,
-                equipeAgent,
-                row.date || "-",
-                dateSaisieSeule,
-                activite,
-                row.formation || "-",
-                row.heureDebut || "-",
-                row.heureFin || "-",
-                `${duree} h`,
-                statutTxt,
-                row.commentaires || "-"
-            ]);
-        });
+    if (lignesVisibles.length === 0) {
+        alert("Aucune donnée à exporter.");
+        return;
     }
 
-    // --- GÉNÉRATION DU TABLEAU ---
+    // Récupération de la Date Réf. W@ct
+    const inputRefWact = document.getElementById("hist-ref-wact");
+    const dateRefWact = inputRefWact ? inputRefWact.value : "";
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+    doc.setFontSize(16);
+    doc.text("Historique des Saisies FMPA-RH", 14, 15);
+
+    const colonnes = [
+        "Agent", "Équipe", "Date Formation", "Date Saisie", 
+        "Activité", "Thème / Module", "Début", "Fin", "Durée", "Statut"
+    ];
+
+    const lignes = lignesVisibles.map(tr => {
+        const tds = tr.querySelectorAll("td");
+
+        // 1. Nettoyage du nom de l'agent (suppression des emojis 🎓 et balises HTML/badges)
+        let rawAgentText = tds[0]?.innerText || tds[0]?.textContent || "-";
+        
+        // Retrait des émojis et caractères non standards
+        rawAgentText = rawAgentText.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').replace(/[^\x00-\x7FàâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ\s\[\]-]/g, '');
+
+        // Formatage propre : "NOM Prénom [Formateur]"
+        if (rawAgentText.includes("Formateur")) {
+            rawAgentText = rawAgentText.replace(/Formateur/gi, '').trim() + " [Formateur]";
+        }
+        const nomPropre = rawAgentText.replace(/\s+/g, ' ').trim();
+
+        const equipe = tds[1]?.textContent.trim() || "-";
+        const dateFormation = tds[2]?.textContent.trim() || "-";
+        const dateSaisie = tds[3]?.textContent.trim() || "-";
+        const activite = tds[4]?.textContent.trim() || "-";
+        const theme = tds[5]?.textContent.trim() || "-";
+        const debut = tds[6]?.textContent.trim() || "-";
+        const fin = tds[7]?.textContent.trim() || "-";
+        const duree = tds[8]?.textContent.trim() || "-";
+
+        // 2. Évaluation exacte du Statut (Web@ct Saisi vs Web@ct à Saisir)
+        const tdActionText = tds[9]?.textContent || "";
+        let estCloture = false;
+
+        if (tdActionText.includes("Saisi") && !tdActionText.includes("à Saisir")) {
+            estCloture = true;
+        } else if (dateRefWact && dateSaisie !== "-" && dateSaisie <= dateRefWact) {
+            estCloture = true;
+        } else if (tr.classList.contains("ligne-cloturee")) {
+            estCloture = true;
+        }
+
+        const statutTexte = estCloture ? "Web@ct Saisi" : "Web@ct à Saisir";
+
+        return [nomPropre, equipe, dateFormation, dateSaisie, activite, theme, debut, fin, duree, statutTexte];
+    });
+
+    // 3. Tri chronologique (du plus récent au plus ancien)
+    lignes.sort((a, b) => new Date(b[2]) - new Date(a[2]));
+
+    // 4. Rendu de la table PDF avec coloration conditionnelle
     doc.autoTable({
-        head: headers,
-        body: data,
-        startY: 30,
-        margin: { left: 10, right: 10 },
-        theme: 'plain',
-        styles: {
-            font: "helvetica",
-            fontSize: 8,
-            textColor: [51, 65, 85],
-            cellPadding: { top: 3, bottom: 3, left: 2, right: 2 },
-            valign: 'middle',
-            overflow: 'linebreak'
-        },
-        headStyles: {
-            fillColor: [241, 245, 249],
-            textColor: [15, 23, 42],
-            fontStyle: 'bold',
-            fontSize: 8.5,
-            lineWidth: { bottom: 1 },
-            borderColor: [203, 213, 225]
-        },
-        columnStyles: {
-            0: { cellWidth: 38, fontStyle: 'bold' },
-            1: { cellWidth: 16 },
-            2: { cellWidth: 20 },
-            3: { cellWidth: 20 },
-            4: { cellWidth: 24, fontStyle: 'bold' },
-            5: { cellWidth: 42 },
-            6: { cellWidth: 13, halign: 'center' },
-            7: { cellWidth: 13, halign: 'center' },
-            8: { cellWidth: 14, halign: 'center', fontStyle: 'bold' },
-            9: { cellWidth: 24, halign: 'center' },
-            10: { cellWidth: 'auto' }
-        },
+        startY: 22,
+        head: [colonnes],
+        body: lignes,
+        theme: "striped",
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [30, 41, 59] },
         didParseCell: function(data) {
-            if (data.section === 'body') {
-                if (data.row.index % 2 === 1) {
-                    data.cell.styles.fillColor = [248, 250, 252];
+            if (data.section === 'body' && data.column.index === 9) {
+                if (data.cell.raw === "Web@ct Saisi") {
+                    data.cell.styles.textColor = [22, 163, 74]; // Vert
+                    data.cell.styles.fontStyle = 'bold';
+                } else if (data.cell.raw === "Web@ct à Saisir") {
+                    data.cell.styles.textColor = [220, 38, 38]; // Rouge
+                    data.cell.styles.fontStyle = 'bold';
                 }
-                
-                // Coloration dynamique de la colonne Statut Web@ct (colonne 9)
-                if (data.column.index === 9) {
-                    const val = String(data.cell.raw);
-                    if (val === "Web@ct Saisi") {
-                        data.cell.styles.textColor = [29, 78, 216]; // Bleu
-                        data.cell.styles.fontStyle = 'bold';
-                    } else {
-                        data.cell.styles.textColor = [225, 29, 72]; // Rouge
-                        data.cell.styles.fontStyle = 'normal';
-                    }
-                }
-            }
-        },
-        didDrawCell: function(data) {
-            if (data.section === 'body' && data.column.index === 0) {
-                doc.setDrawColor(241, 245, 249);
-                doc.setLineWidth(0.3);
-                doc.line(
-                    data.settings.margin.left, 
-                    data.cell.y + data.cell.height, 
-                    297 - data.settings.margin.right, 
-                    data.cell.y + data.cell.height
-                );
             }
         }
     });
-
-    // Numérotation des pages
-    const pageCount = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(148, 163, 184);
-        doc.text(`Page ${i} sur ${pageCount}`, 148, 203, { align: 'center' });
-    }
 
     doc.save(`Historique_FMPA_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
@@ -2222,65 +2106,4 @@ function genererFicheAgent() {
     if (conteneurModules) {
         conteneurModules.innerHTML = htmlContenu || `<div style="text-align:center; padding: 20px; color: #64748b;">Aucune formation socle ou spécialité requise pour cet agent.</div>`;
     }
-}
-
-
-
-
-// Variable d'état globale
-let afficherOngletsSecurises = false;
-
-function basculerVisibiliteOngletsAdmin() {
-    if (!estAdminDeverrouille) {
-        alert("Accès réservé à l'administrateur.");
-        return;
-    }
-    
-    afficherOngletsSecurises = !afficherOngletsSecurises;
-    
-    // Mettre à jour l'apparence du bouton
-    mettreAJourBoutonVisibilite();
-
-    // Notification
-    if (afficherOngletsSecurises) {
-        alert("🟢 Mode Admin : Les onglets seront VISIBLES au prochain enregistrement.");
-    } else {
-        alert("🔴 Mode Admin : Les onglets seront MASQUÉS au prochain enregistrement.");
-    }
-}
-
-function mettreAJourBoutonVisibilite() {
-    const btn = document.getElementById("btn-toggle-onglets");
-    if (!btn) return;
-
-    if (afficherOngletsSecurises) {
-        btn.style.backgroundColor = "#f3050500"; // transparent
-        btn.style.borderColor = "#f3050500";
-        btn.style.Color = "#11d219";
-        btn.innerText = "👁️ Onglets XL Visibles";
-    } else {
-        btn.style.backgroundColor = "#f3050500"; // transparent
-        btn.style.borderColor = "#f3050500";
-        btn.style.Color = "#f51908";
-        btn.innerText = "🫣 Onglets XL Cachés";
-    }
-}
-
-function appliquerMasquageFeuilles(workbook) {
-    if (!workbook || !workbook.SheetNames) return;
-
-    // Renseigne ici le nom EXACT de tes onglets sensibles (attention aux majuscules/espaces)
-    const feuillesACacher = ["baseAgents", "historiqueSuivi", "Parametres"];
-
-    feuillesACacher.forEach(nomFeuille => {
-        const sheetIndex = workbook.SheetNames.indexOf(nomFeuille);
-        if (sheetIndex !== -1) {
-            if (!workbook.Workbook) workbook.Workbook = {};
-            if (!workbook.Workbook.Sheets) workbook.Workbook.Sheets = [];
-            if (!workbook.Workbook.Sheets[sheetIndex]) workbook.Workbook.Sheets[sheetIndex] = {};
-            
-            // Si afficherOngletsSecurises est vrai => 0 (Visible), sinon => 2 (VeryHidden)
-            workbook.Workbook.Sheets[sheetIndex].Hidden = afficherOngletsSecurises ? 0 : 2;
-        }
-    });
 }
