@@ -2193,12 +2193,9 @@ function genererFicheAgent() {
 
 
 
-// Variable d'état pour contrôler la visibilité des onglets lors du prochain enregistrement
+// Variable d'état globale
 let afficherOngletsSecurises = false;
 
-/**
- * Permet à l'administrateur de basculer la visibilité des onglets cachés.
- */
 function basculerVisibiliteOngletsAdmin() {
     if (!estAdminDeverrouille) {
         alert("Accès réservé à l'administrateur.");
@@ -2207,24 +2204,37 @@ function basculerVisibiliteOngletsAdmin() {
     
     afficherOngletsSecurises = !afficherOngletsSecurises;
     
+    // Mettre à jour l'apparence du bouton
+    mettreAJourBoutonVisibilite();
+
+    // Notification
     if (afficherOngletsSecurises) {
-        alert("🔓 Mode Admin : Les onglets seront VISIBLES dans Excel au prochain enregistrement.");
+        alert("🟢 Mode Admin : Les onglets seront VISIBLES au prochain enregistrement.");
     } else {
-        alert("🔒 Mode Admin : Les onglets seront MASQUÉS dans Excel au prochain enregistrement.");
+        alert("🔴 Mode Admin : Les onglets seront MASQUÉS au prochain enregistrement.");
     }
 }
 
-/**
- * Masque automatiquement les onglets sensibles dans le workbook avant l'écriture.
- */
+function mettreAJourBoutonVisibilite() {
+    const btn = document.getElementById("btn-toggle-onglets");
+    if (!btn) return;
+
+    if (afficherOngletsSecurises) {
+        btn.style.backgroundColor = "#16a34a"; // Vert
+        btn.style.borderColor = "#15803d";
+        btn.innerText = "👁️ Onglets VISIBLES";
+    } else {
+        btn.style.backgroundColor = "#dc2626"; // Rouge
+        btn.style.borderColor = "#b91c1c";
+        btn.innerText = "🙈 Onglets MASQUÉS";
+    }
+}
+
 function appliquerMasquageFeuilles(workbook) {
-    // Si l'administrateur a choisi d'afficher les onglets, on ne masque rien
-    if (afficherOngletsSecurises) return;
-
-    // Remplace par les noms EXACTS de tes onglets à masquer dans FMPA-RH.xlsx
-    const feuillesACacher = ["baseAgents", "catalogue", "historiqueSuivi","Parametres"];
-
     if (!workbook || !workbook.SheetNames) return;
+
+    // Renseigne ici le nom EXACT de tes onglets sensibles (attention aux majuscules/espaces)
+    const feuillesACacher = ["Agents", "Parametres", "Donnees_Brutes"];
 
     feuillesACacher.forEach(nomFeuille => {
         const sheetIndex = workbook.SheetNames.indexOf(nomFeuille);
@@ -2233,8 +2243,8 @@ function appliquerMasquageFeuilles(workbook) {
             if (!workbook.Workbook.Sheets) workbook.Workbook.Sheets = [];
             if (!workbook.Workbook.Sheets[sheetIndex]) workbook.Workbook.Sheets[sheetIndex] = {};
             
-            // 2 = VeryHidden (non affichable par simple clic droit dans Excel)
-            workbook.Workbook.Sheets[sheetIndex].Hidden = 2;
+            // Si afficherOngletsSecurises est vrai => 0 (Visible), sinon => 2 (VeryHidden)
+            workbook.Workbook.Sheets[sheetIndex].Hidden = afficherOngletsSecurises ? 0 : 2;
         }
     });
 }
