@@ -1137,33 +1137,24 @@ function ouvrirModalHistorique() {
     afficherHistorique();
 }
 
-async function fermerModalHistorique() {
-    indexEnEdition = null;
-    
-    const modal = document.getElementById("modal-historique");
-    if (modal) modal.style.display = "none";
+async function fermerModaleHistorique() {
+    // Balaye et enregistre tous les champs de commentaires ouverts
+    if (Array.isArray(historiqueSaisiesFMPA)) {
+        historiqueSaisiesFMPA.forEach((row, index) => {
+            const input = document.getElementById(`input-comm-libre-${index}`);
+            if (input) {
+                row.commentaires = input.value.trim();
+            }
+        });
+    }
 
-    const dateRefWact = document.getElementById("hist-ref-wact")?.value || "";
+    // Masque la modale
+    const modale = document.getElementById("modale-historique");
+    if (modale) modale.style.display = "none";
 
-    if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
-        if (!classeurXLSX.Sheets["Parametres"]) {
-            const hashActuel = obtenirHashAdminDepuisExcel();
-            const newSheet = XLSX.utils.aoa_to_sheet([
-                ["DateRefWact", dateRefWact],
-                ["CodeAdminHash", hashActuel]
-            ]);
-            XLSX.utils.book_append_sheet(classeurXLSX, newSheet, "Parametres");
-        } else {
-            XLSX.utils.sheet_add_aoa(
-                classeurXLSX.Sheets["Parametres"], 
-                [["DateRefWact", dateRefWact]], 
-                { origin: "A1" }
-            );
-        }
-
-        if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
-            await enregistrerFichierXLSX();
-        }
+    // Écriture finale sur le fichier Excel FMPA-RH.xlsx
+    if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
+        await enregistrerFichierXLSX();
     }
 }
 
@@ -1182,7 +1173,6 @@ function afficherHistorique() {
         return;
     }
 
-    // Tri par dateSaisie de manière décroissante (plus récent d'abord)
     const historiqueTrie = historiqueSaisiesFMPA
         .map((row, realIndex) => ({ row, realIndex }))
         .sort((a, b) => {
@@ -1206,7 +1196,7 @@ function afficherHistorique() {
         const activite = formationObj ? formationObj.activite : "-";
         const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
 
-        const estClotureLigne = Boolean(row.cloture || row.dateCloture || row.statut === "clôturé");
+        const estClotureLigne = Boolean(row.cloture || row.dateCloture || row.statut === "clôturé" || row.statut === "Web@ct Saisi" || row.webact === true);
         const estClotureWact = Boolean(dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact);
         const estCloture = estClotureLigne || estClotureWact;
 
@@ -1218,8 +1208,9 @@ function afficherHistorique() {
             : `<strong>${escapeHtml(nomAgentComplet)}</strong>`;
 
         const duree = typeof calculerDureeEntreHeures === "function" ? calculerDureeEntreHeures(row.heureDebut, row.heureFin) : "0";
-        const commentaireTxt = row.commentaires ? escapeHtml(row.commentaires) : "-";
+        const commentaireTxt = row.commentaires ? escapeHtml(row.commentaires) : "";
 
+        // MODE ÉDITION ADMIN (Déverrouillé par code secret)
         if (indexEnEdition === realIndex && estAdminDeverrouille && !estCloture) {
             tr.classList.add("tr-editing");
 
@@ -1244,11 +1235,13 @@ function afficherHistorique() {
                 <td><strong id="edit-duree-${realIndex}">${duree} h</strong></td>
                 <td>
                     <button type="button" class="btn-act-save" onclick="sauvegarderLigneHistorique(${realIndex})">💾 Enregistrer</button>
-                    <button type="button" class="btn-act-cancel" onclick="annulerEditionHistorique()">✖ Fermer</button>
+                    <button type="button" class="btn-act-cancel" onclick="annulerEditionHistorique()">✖ Annuler</button>
                 </td>
-                <td><input type="text" id="edit-commentaires-${realIndex}" class="input-inline" value="${escapeHtml(row.commentaires || '')}"></td>
+                <td><input type="text" id="edit-commentaires-${realIndex}" class="input-inline" value="${commentaireTxt}"></td>
             `;
-        } else {
+        } 
+        // MODE CONSULTATION / SAISIE LIBRE COMMENTAIRE COLLABORATEUR
+        else {
             let colActions = "";
             if (estCloture) {
                 colActions = `<span class="badge-cloture">🔒 Web@ct Saisi 🔵</span>`;
@@ -1261,6 +1254,14 @@ function afficherHistorique() {
                 `;
             }
 
+            // Si verrouillé Web@ct (clôturé), le commentaire est figé
+            let colCommentaireHtml = estCloture 
+                ? `<span style="font-size: 0.85rem; color: #475569;">${commentaireTxt || "-"}</span>`
+                : `<div style="display: flex; gap: 4px; align-items: center;">
+                    <input type="text" id="input-comm-libre-${realIndex}" class="input-inline" value="${commentaireTxt}" placeholder="Remarque..." style="font-size:0.85rem; padding: 2px 6px;">
+                    <button type="button" title="Sauvegarder la remarque" onclick="sauvegarderCommentaireSeul(${realIndex})" style="border:none; background:transparent; cursor:pointer; font-size:1.1rem;">💾</button>
+                   </div>`;
+
             tr.innerHTML = `
                 <td>${nomHtml}</td>
                 <td>${escapeHtml(equipeAgent)}</td>
@@ -1272,7 +1273,7 @@ function afficherHistorique() {
                 <td>${escapeHtml(row.heureFin)}</td>
                 <td><strong>${duree} h</strong></td>
                 <td>${colActions}</td>
-                <td><span style="font-size: 0.85rem; color: #475569;">${commentaireTxt}</span></td>
+                <td>${colCommentaireHtml}</td>
             `;
         }
 
@@ -1329,6 +1330,20 @@ function calculerDureeEdition(index) {
     }
 }
 
+// Sauvegarde réservée aux collaborateurs pour la remarque seule
+async function sauvegarderCommentaireSeul(index) {
+    const input = document.getElementById(`input-comm-libre-${index}`);
+    if (!input) return;
+
+    historiqueSaisiesFMPA[index].commentaires = input.value.trim();
+
+    // Enregistrement immédiat dans le fichier Excel actif (FMPA-RH.xlsx)
+    if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
+        await enregistrerFichierXLSX();
+    }
+}
+
+// Sauvegarde complète en mode Admin
 async function sauvegarderLigneHistorique(index) {
     const nFormation = document.getElementById(`edit-formation-${index}`)?.value;
     const nDebut = document.getElementById(`edit-hdebut-${index}`)?.value;
@@ -1345,7 +1360,6 @@ async function sauvegarderLigneHistorique(index) {
     item.heureDebut = nDebut;
     item.heureFin = nFin;
     item.commentaires = nCommentaires !== undefined ? nCommentaires.trim() : item.commentaires;
-    item.dateSaisie = typeof obtenirDateSaisie === "function" ? obtenirDateSaisie() : item.dateSaisie;
 
     indexEnEdition = null;
 
@@ -1353,6 +1367,7 @@ async function sauvegarderLigneHistorique(index) {
     if (typeof filtrerEtAfficherTableau === "function") filtrerEtAfficherTableau();
     afficherHistorique();
 
+    // Enregistrement dans FMPA-RH.xlsx
     if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
         await enregistrerFichierXLSX();
     }
