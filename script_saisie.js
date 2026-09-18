@@ -1384,27 +1384,27 @@ function exporterHistoriquePDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l', 'mm', 'a4');
 
-    // --- EN-TÊTE DU DOCUMENT (Style Modale) ---
-    // Bandeau supérieur sombre
+    // Récupération de la date de référence Web@ct active dans la modale
+    const dateRefWact = document.getElementById("hist-ref-wact")?.value || "";
+
+    // --- EN-TÊTE DU DOCUMENT ---
     doc.setFillColor(15, 23, 42); // Slate 900
     doc.rect(0, 0, 297, 24, 'F');
 
-    // Titre principal
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
     doc.setTextColor(255, 255, 255);
     doc.text("Historique des Saisies FMPA", 14, 15);
 
-    // Date de génération
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.setTextColor(203, 213, 225); // Slate 300
+    doc.setTextColor(203, 213, 225);
     const dateExport = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     doc.text(`Exporté le ${dateExport}`, 283, 15, { align: 'right' });
 
     // --- PRÉPARATION DES DONNÉES ---
     const headers = [
-        ["Agent", "Équipe", "Date FMPA", "Saisie", "Activité", "Formation", "Début", "Fin", "Durée", "Statut", "Commentaires"]
+        ["Agent", "Équipe", "Date FMPA", "Saisie", "Activité", "Formation", "Début", "Fin", "Durée", "Statut Web@ct", "Commentaires"]
     ];
 
     const data = [];
@@ -1413,7 +1413,7 @@ function exporterHistoriquePDF() {
             const agent = Array.isArray(tableauAgentsRH) ? tableauAgentsRH.find(a => String(a.matricule) === String(row.matricule)) : null;
             let nomAgentComplet = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule || "-"}`;
             
-            // Détection du rôle de formateur : ajout discret de "(Formateur)"
+            // Détection du rôle de formateur
             const estFormateur = row.commentaires?.includes("(Animation / Formateur)") || 
                 (row.formateur && nomAgentComplet.toLowerCase().includes(row.formateur.toLowerCase()));
             
@@ -1425,15 +1425,20 @@ function exporterHistoriquePDF() {
             const formationObj = Array.isArray(catalogueInitial) ? catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation) : null;
             const activite = formationObj ? formationObj.activite : "-";
             const duree = typeof calculerDureeEntreHeures === "function" ? calculerDureeEntreHeures(row.heureDebut, row.heureFin) : "0";
-            
-            const estCloture = Boolean(row.cloture || row.dateCloture || row.statut === "clôturé");
+            const dateSaisieSeule = (row.dateSaisie || "").split(" ")[0] || "-";
+
+            // LOGIQUE DE CLÔTURE ALIGNÉE SUR LA MODALE HTML
+            const estClotureLigne = Boolean(row.cloture || row.dateCloture || row.statut === "clôturé" || row.statut === "Web@ct Saisi" || row.webact === true);
+            const estClotureWact = Boolean(dateRefWact && dateSaisieSeule !== "-" && dateSaisieSeule <= dateRefWact);
+            const estCloture = estClotureLigne || estClotureWact;
+
             const statutTxt = estCloture ? "Web@ct Saisi" : "À saisir";
 
             data.push([
                 nomAgentComplet,
                 equipeAgent,
                 row.date || "-",
-                (row.dateSaisie || "").split(" ")[0] || "-",
+                dateSaisieSeule,
                 activite,
                 row.formation || "-",
                 row.heureDebut || "-",
@@ -1445,7 +1450,7 @@ function exporterHistoriquePDF() {
         });
     }
 
-    // --- GÉNÉRATION DU TABLEAU (Style Modale HTML) ---
+    // --- GÉNÉRATION DU TABLEAU ---
     doc.autoTable({
         head: headers,
         body: data,
@@ -1455,53 +1460,51 @@ function exporterHistoriquePDF() {
         styles: {
             font: "helvetica",
             fontSize: 8,
-            textColor: [51, 65, 85], // Slate 700
+            textColor: [51, 65, 85],
             cellPadding: { top: 3, bottom: 3, left: 2, right: 2 },
             valign: 'middle',
             overflow: 'linebreak'
         },
         headStyles: {
-            fillColor: [241, 245, 249], // Slate 100 (fond d'en-tête léger)
-            textColor: [15, 23, 42], // Slate 900
+            fillColor: [241, 245, 249],
+            textColor: [15, 23, 42],
             fontStyle: 'bold',
             fontSize: 8.5,
             lineWidth: { bottom: 1 },
-            borderColor: [203, 213, 225] // Slate 300
+            borderColor: [203, 213, 225]
         },
         columnStyles: {
-            0: { cellWidth: 38, fontStyle: 'bold' }, // Agent (+ mention Formateur)
-            1: { cellWidth: 16 },                    // Équipe
-            2: { cellWidth: 20 },                    // Date FMPA
-            3: { cellWidth: 20 },                    // Saisie
-            4: { cellWidth: 24, fontStyle: 'bold' }, // Activité
-            5: { cellWidth: 42 },                    // Formation
-            6: { cellWidth: 13, halign: 'center' },  // Début
-            7: { cellWidth: 13, halign: 'center' },  // Fin
-            8: { cellWidth: 14, halign: 'center', fontStyle: 'bold' }, // Durée
-            9: { cellWidth: 22, halign: 'center' },  // Statut
-            10: { cellWidth: 'auto' }                // Commentaires
+            0: { cellWidth: 38, fontStyle: 'bold' },
+            1: { cellWidth: 16 },
+            2: { cellWidth: 20 },
+            3: { cellWidth: 20 },
+            4: { cellWidth: 24, fontStyle: 'bold' },
+            5: { cellWidth: 42 },
+            6: { cellWidth: 13, halign: 'center' },
+            7: { cellWidth: 13, halign: 'center' },
+            8: { cellWidth: 14, halign: 'center', fontStyle: 'bold' },
+            9: { cellWidth: 24, halign: 'center' },
+            10: { cellWidth: 'auto' }
         },
-        // Personnalisation ligne par ligne (Mise en page modale & Badges)
         didParseCell: function(data) {
-            // Lignes alternées (fond très léger)
             if (data.section === 'body') {
                 if (data.row.index % 2 === 1) {
-                    data.cell.styles.fillColor = [248, 250, 252]; // Slate 50
+                    data.cell.styles.fillColor = [248, 250, 252];
                 }
                 
-                // Style spécifique pour la colonne Statut (colonne 9)
+                // Coloration dynamique de la colonne Statut Web@ct (colonne 9)
                 if (data.column.index === 9) {
-                    const val = data.cell.raw;
+                    const val = String(data.cell.raw);
                     if (val === "Web@ct Saisi") {
-                        data.cell.styles.textColor = [29, 78, 216]; // Bleu Web@ct
+                        data.cell.styles.textColor = [29, 78, 216]; // Bleu
                         data.cell.styles.fontStyle = 'bold';
                     } else {
-                        data.cell.styles.textColor = [225, 29, 72]; // Rouge "À saisir"
+                        data.cell.styles.textColor = [225, 29, 72]; // Rouge
+                        data.cell.styles.fontStyle = 'normal';
                     }
                 }
             }
         },
-        // Trait de séparation sous chaque ligne
         didDrawCell: function(data) {
             if (data.section === 'body' && data.column.index === 0) {
                 doc.setDrawColor(241, 245, 249);
@@ -1516,7 +1519,7 @@ function exporterHistoriquePDF() {
         }
     });
 
-    // Numérotation des pages en bas
+    // Numérotation des pages
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
