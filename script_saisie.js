@@ -1178,20 +1178,17 @@ function afficherHistorique() {
     tbody.innerHTML = "";
 
     if (!Array.isArray(historiqueSaisiesFMPA) || historiqueSaisiesFMPA.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:20px;">Aucune donnée d'historique disponible.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:20px;">Aucune donnée d'historique disponible.</td></tr>`;
         return;
     }
 
-    // =========================================================================
-    // MODIFICATION ICI : On mappe le tableau avec son index réel dans historiqueSaisiesFMPA,
-    // puis on trie par dateSaisie de manière décroissante (plus récent d'abord).
-    // =========================================================================
+    // Tri par dateSaisie de manière décroissante (plus récent d'abord)
     const historiqueTrie = historiqueSaisiesFMPA
         .map((row, realIndex) => ({ row, realIndex }))
         .sort((a, b) => {
             const dateA = String(a.row.dateSaisie || "");
             const dateB = String(b.row.dateSaisie || "");
-            return dateB.localeCompare(dateA); // Ordre décroissant
+            return dateB.localeCompare(dateA);
         });
 
     historiqueTrie.forEach(({ row, realIndex }) => {
@@ -1221,6 +1218,7 @@ function afficherHistorique() {
             : `<strong>${escapeHtml(nomAgentComplet)}</strong>`;
 
         const duree = typeof calculerDureeEntreHeures === "function" ? calculerDureeEntreHeures(row.heureDebut, row.heureFin) : "0";
+        const commentaireTxt = row.commentaires ? escapeHtml(row.commentaires) : "-";
 
         if (indexEnEdition === realIndex && estAdminDeverrouille && !estCloture) {
             tr.classList.add("tr-editing");
@@ -1248,6 +1246,7 @@ function afficherHistorique() {
                     <button type="button" class="btn-act-save" onclick="sauvegarderLigneHistorique(${realIndex})">💾 Enregistrer</button>
                     <button type="button" class="btn-act-cancel" onclick="annulerEditionHistorique()">✖ Fermer</button>
                 </td>
+                <td><input type="text" id="edit-commentaires-${realIndex}" class="input-inline" value="${escapeHtml(row.commentaires || '')}"></td>
             `;
         } else {
             let colActions = "";
@@ -1273,12 +1272,14 @@ function afficherHistorique() {
                 <td>${escapeHtml(row.heureFin)}</td>
                 <td><strong>${duree} h</strong></td>
                 <td>${colActions}</td>
+                <td><span style="font-size: 0.85rem; color: #475569;">${commentaireTxt}</span></td>
             `;
         }
 
         tbody.appendChild(tr);
     });
 }
+
 
 function filtrerHistorique() {
     afficherHistorique();
