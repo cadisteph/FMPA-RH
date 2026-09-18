@@ -930,28 +930,6 @@ function afficherListeAlertesSPV() {
 }
 
 
-// AFFICHAGE UNIQUEMENT SPV
-function afficherUniquementSPV() {
-  const corps = document.getElementById("corpsRH");
-  if (!corps || typeof listeAgents === "undefined") return;
-
-  corps.innerHTML = "";
-
-  const agentsSPV = listeAgents.filter(agent => agent.statut === "SPV");
-
-  agentsSPV.forEach(agent => {
-    corps.innerHTML += `
-      <tr>
-        <td>${echapperHTML(agent.matricule || '')}</td>
-        <td>${echapperHTML(agent.nom || '')}</td>
-        <td>${echapperHTML(agent.prenom || '')}</td>
-        <td>${echapperHTML(agent.grade || '')}</td>
-        <td>${echapperHTML(agent.statut || '')}</td>
-        <td>${echapperHTML(agent.equipe || '')}</td>
-      </tr>
-    `;
-  });
-}
 
 
 
