@@ -931,40 +931,17 @@ function afficherListeAlertesSPV() {
 
 
 // AFFICHAGE UNIQUEMENT SPV
-let filtreSPVActif = false;
-
-// Fonction appelée par le bouton pour basculer (ON/OFF)
-function filtrerUniquementSPV() {
-  filtreSPVActif = !filtreSPVActif;
-
-  if (filtreSPVActif) {
-    afficherUniquementSPV();
-  } else {
-    // Retour à l'affichage classique
-    if (typeof actualiserTableauRH === "function") {
-      actualiserTableauRH();
-    }
-  }
-}
-
-// Fonction d'affichage brute filtrée sur le statut SPV
 function afficherUniquementSPV() {
   const corps = document.getElementById("corpsRH");
-  if (!corps) return;
+  if (!corps || typeof listeAgents === "undefined") return;
 
   corps.innerHTML = "";
 
-  // Filtrage du tableau global
   const agentsSPV = listeAgents.filter(agent => agent.statut === "SPV");
 
   agentsSPV.forEach(agent => {
-    // Vérification du rôle pour désactiver l'édition si besoin
-    const actionClic = (typeof userRole !== "undefined" && userRole === "RESTREINT_SPV") 
-      ? "" 
-      : `onclick="editerAgent(${agent.id})"`;
-
     corps.innerHTML += `
-      <tr ${actionClic}>
+      <tr>
         <td>${echapperHTML(agent.matricule || '')}</td>
         <td>${echapperHTML(agent.nom || '')}</td>
         <td>${echapperHTML(agent.prenom || '')}</td>
