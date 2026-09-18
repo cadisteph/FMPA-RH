@@ -2228,7 +2228,7 @@ function mettreAJourBoutonVisibilite() {
         btn.style.backgroundColor = "#f3050500"; // transparent
         btn.style.borderColor = "#f3050500";
         btn.style.Color = "#f51908";
-        btn.innerText = "🙈 Onglets XL Masqués";
+        btn.innerText = "🫣 Onglets XL Cachés";
     }
 }
 
