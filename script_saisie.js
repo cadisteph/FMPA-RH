@@ -1137,7 +1137,7 @@ function ouvrirModalHistorique() {
     afficherHistorique();
 }
 
-function fermerModaleHistorique() {
+function fermerModalHistorique() {
     // 1. Fermeture immédiate et inconditionnelle de la modale
     const modale = document.getElementById("modale-historique");
     if (modale) {
