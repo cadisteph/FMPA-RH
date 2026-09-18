@@ -1139,9 +1139,9 @@ function ouvrirModalHistorique() {
 
 function fermerModalHistorique() {
     // 1. Fermeture immédiate et inconditionnelle de la modale
-    const modale = document.getElementById("modale-historique");
-    if (modale) {
-        modale.style.display = "none";
+    const modal = document.getElementById("modal-historique");
+    if (modal) {
+        modal.style.display = "none";
     }
 
     // 2. Sauvegarde des commentaires en arrière-plan (sans await bloquant)
