@@ -900,6 +900,9 @@ async function enregistrerFichierXLSX() {
     if (!classeurXLSX) return;
     reconstruireFeuilleHistorique();
 
+    // ➡️ LIGNE À AJOUTER ICI (avant la création du buffer)
+    appliquerMasquageFeuilles(classeurXLSX);
+
     const buffer = XLSX.write(classeurXLSX, { bookType: "xlsx", type: "array" });
 
     if (fichierHandleXLSX) {
@@ -2185,4 +2188,53 @@ function genererFicheAgent() {
     if (conteneurModules) {
         conteneurModules.innerHTML = htmlContenu || `<div style="text-align:center; padding: 20px; color: #64748b;">Aucune formation socle ou spécialité requise pour cet agent.</div>`;
     }
+}
+
+
+
+
+// Variable d'état pour contrôler la visibilité des onglets lors du prochain enregistrement
+let afficherOngletsSecurises = false;
+
+/**
+ * Permet à l'administrateur de basculer la visibilité des onglets cachés.
+ */
+function basculerVisibiliteOngletsAdmin() {
+    if (!estAdminDeverrouille) {
+        alert("Accès réservé à l'administrateur.");
+        return;
+    }
+    
+    afficherOngletsSecurises = !afficherOngletsSecurises;
+    
+    if (afficherOngletsSecurises) {
+        alert("🔓 Mode Admin : Les onglets seront VISIBLES dans Excel au prochain enregistrement.");
+    } else {
+        alert("🔒 Mode Admin : Les onglets seront MASQUÉS dans Excel au prochain enregistrement.");
+    }
+}
+
+/**
+ * Masque automatiquement les onglets sensibles dans le workbook avant l'écriture.
+ */
+function appliquerMasquageFeuilles(workbook) {
+    // Si l'administrateur a choisi d'afficher les onglets, on ne masque rien
+    if (afficherOngletsSecurises) return;
+
+    // Remplace par les noms EXACTS de tes onglets à masquer dans FMPA-RH.xlsx
+    const feuillesACacher = ["baseAgents", "catalogue", "historiqueSuivi","Parametres"];
+
+    if (!workbook || !workbook.SheetNames) return;
+
+    feuillesACacher.forEach(nomFeuille => {
+        const sheetIndex = workbook.SheetNames.indexOf(nomFeuille);
+        if (sheetIndex !== -1) {
+            if (!workbook.Workbook) workbook.Workbook = {};
+            if (!workbook.Workbook.Sheets) workbook.Workbook.Sheets = [];
+            if (!workbook.Workbook.Sheets[sheetIndex]) workbook.Workbook.Sheets[sheetIndex] = {};
+            
+            // 2 = VeryHidden (non affichable par simple clic droit dans Excel)
+            workbook.Workbook.Sheets[sheetIndex].Hidden = 2;
+        }
+    });
 }
