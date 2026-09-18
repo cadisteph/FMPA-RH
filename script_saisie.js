@@ -1333,9 +1333,10 @@ async function sauvegarderLigneHistorique(index) {
     const nFormation = document.getElementById(`edit-formation-${index}`)?.value;
     const nDebut = document.getElementById(`edit-hdebut-${index}`)?.value;
     const nFin = document.getElementById(`edit-hfin-${index}`)?.value;
+    const nCommentaires = document.getElementById(`edit-commentaires-${index}`)?.value;
 
     if (!nFormation || !nDebut || !nFin) {
-        alert("Veuillez renseigner tous les champs.");
+        alert("Veuillez renseigner tous les champs obligatoires.");
         return;
     }
 
@@ -1343,6 +1344,7 @@ async function sauvegarderLigneHistorique(index) {
     item.formation = nFormation;
     item.heureDebut = nDebut;
     item.heureFin = nFin;
+    item.commentaires = nCommentaires !== undefined ? nCommentaires.trim() : item.commentaires;
     item.dateSaisie = typeof obtenirDateSaisie === "function" ? obtenirDateSaisie() : item.dateSaisie;
 
     indexEnEdition = null;
@@ -1355,6 +1357,7 @@ async function sauvegarderLigneHistorique(index) {
         await enregistrerFichierXLSX();
     }
 }
+
 
 async function supprimerLigneHistorique(index) {
     if (!estAdminDeverrouille) return;
