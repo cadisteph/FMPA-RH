@@ -2244,7 +2244,7 @@ function appliquerMasquageFeuilles(workbook) {
             if (!workbook.Workbook.Sheets[sheetIndex]) workbook.Workbook.Sheets[sheetIndex] = {};
             
             // Si afficherOngletsSecurises est vrai => 0 (Visible), sinon => 2 (VeryHidden)
-            workbook.Workbook.Sheets[sheetIndex].Hidden = afficherOngletsSecurises ? 0 : 0;
+            workbook.Workbook.Sheets[sheetIndex].Hidden = afficherOngletsSecurises ? 0 : 2;
         }
     });
 }
