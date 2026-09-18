@@ -27,6 +27,33 @@ let estAdminDeverrouille = false;
 const HASH_DEFAUT_SECOURS = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
 
 document.addEventListener("DOMContentLoaded", () => {
+    
+    // FILTRE SPV
+    const filtreDepart = sessionStorage.getItem("filtreDepart");
+
+  if (filtreDepart === "SPV") {
+    // On nettoie la session pour les accès futurs
+    sessionStorage.removeItem("filtreDepart");
+    
+    // On lance la fonction d'affichage
+    afficherUniquementSPV();
+  }
+});
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     const dateInput = document.getElementById("saisie-date");
     if (dateInput) dateInput.valueAsDate = new Date();
 
