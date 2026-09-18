@@ -1376,100 +1376,82 @@ async function supprimerLigneHistorique(index) {
 }
 
 function exporterHistoriquePDF() {
-    const tbody = document.getElementById("tbody-historique");
-    if (!tbody) {
-        alert("Impossible de trouver le tableau d'historique.");
+    if (!window.jspdf) {
+        alert("La bibliothèque jsPDF n'est pas chargée.");
         return;
     }
-
-    // Récupération des lignes visibles
-    const trs = Array.from(tbody.querySelectorAll("tr"));
-    const lignesVisibles = trs.filter(tr => {
-        return tr.querySelectorAll("td").length > 1 && tr.style.display !== "none";
-    });
-
-    if (lignesVisibles.length === 0) {
-        alert("Aucune donnée à exporter.");
-        return;
-    }
-
-    // Récupération de la Date Réf. W@ct
-    const inputRefWact = document.getElementById("hist-ref-wact");
-    const dateRefWact = inputRefWact ? inputRefWact.value : "";
 
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    // Orientation paysage ('l') indispensable pour 11 colonnes
+    const doc = new jsPDF('l', 'mm', 'a4');
 
-    doc.setFontSize(16);
-    doc.text("Historique des Saisies FMPA-RH", 14, 15);
+    doc.setFontSize(14);
+    doc.text("Historique des Saisies FMPA", 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Exporté le : ${new Date().toLocaleDateString('fr-FR')}`, 14, 22);
 
-    const colonnes = [
-        "Agent", "Équipe", "Date Formation", "Date Saisie", 
-        "Activité", "Thème / Module", "Début", "Fin", "Durée", "Statut"
+    // Définition explicite des 11 en-têtes
+    const headers = [
+        ["Agent", "Équipe", "Date FMPA", "Date Saisie", "Activité", "Formation", "Début", "Fin", "Durée", "Statut", "Commentaires"]
     ];
 
-    const lignes = lignesVisibles.map(tr => {
-        const tds = tr.querySelectorAll("td");
+    // Extraction des données du tableau
+    const data = [];
+    if (Array.isArray(historiqueSaisiesFMPA)) {
+        historiqueSaisiesFMPA.forEach(row => {
+            const agent = Array.isArray(tableauAgentsRH) ? tableauAgentsRH.find(a => String(a.matricule) === String(row.matricule)) : null;
+            const nomAgentComplet = agent ? `${agent.nom} ${agent.prenom}` : `Matricule : ${row.matricule || "-"}`;
+            const equipeAgent = agent ? agent.equipe : "-";
+            const formationObj = Array.isArray(catalogueInitial) ? catalogueInitial.find(f => f.libelle === row.formation || f.id === row.formation) : null;
+            const activite = formationObj ? formationObj.activite : "-";
+            const duree = typeof calculerDureeEntreHeures === "function" ? calculerDureeEntreHeures(row.heureDebut, row.heureFin) : "0";
+            
+            const statut = (row.cloture || row.dateCloture || row.statut === "clôturé") ? "Clôturé" : "À saisir";
 
-        // 1. Nettoyage du nom de l'agent (suppression des emojis 🎓 et balises HTML/badges)
-        let rawAgentText = tds[0]?.innerText || tds[0]?.textContent || "-";
-        
-        // Retrait des émojis et caractères non standards
-        rawAgentText = rawAgentText.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').replace(/[^\x00-\x7FàâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ\s\[\]-]/g, '');
+            data.push([
+                nomAgentComplet,
+                equipeAgent,
+                row.date || "-",
+                (row.dateSaisie || "").split(" ")[0] || "-",
+                activite,
+                row.formation || "-",
+                row.heureDebut || "-",
+                row.heureFin || "-",
+                `${duree} h`,
+                statut,
+                row.commentaires || "-" // 11e colonne
+            ]);
+        });
+    }
 
-        // Formatage propre : "NOM Prénom [Formateur]"
-        if (rawAgentText.includes("Formateur")) {
-            rawAgentText = rawAgentText.replace(/Formateur/gi, '').trim() + " [Formateur]";
-        }
-        const nomPropre = rawAgentText.replace(/\s+/g, ' ').trim();
-
-        const equipe = tds[1]?.textContent.trim() || "-";
-        const dateFormation = tds[2]?.textContent.trim() || "-";
-        const dateSaisie = tds[3]?.textContent.trim() || "-";
-        const activite = tds[4]?.textContent.trim() || "-";
-        const theme = tds[5]?.textContent.trim() || "-";
-        const debut = tds[6]?.textContent.trim() || "-";
-        const fin = tds[7]?.textContent.trim() || "-";
-        const duree = tds[8]?.textContent.trim() || "-";
-
-        // 2. Évaluation exacte du Statut (Web@ct Saisi vs Web@ct à Saisir)
-        const tdActionText = tds[9]?.textContent || "";
-        let estCloture = false;
-
-        if (tdActionText.includes("Saisi") && !tdActionText.includes("à Saisir")) {
-            estCloture = true;
-        } else if (dateRefWact && dateSaisie !== "-" && dateSaisie <= dateRefWact) {
-            estCloture = true;
-        } else if (tr.classList.contains("ligne-cloturee")) {
-            estCloture = true;
-        }
-
-        const statutTexte = estCloture ? "Web@ct Saisi" : "Web@ct à Saisir";
-
-        return [nomPropre, equipe, dateFormation, dateSaisie, activite, theme, debut, fin, duree, statutTexte];
-    });
-
-    // 3. Tri chronologique (du plus récent au plus ancien)
-    lignes.sort((a, b) => new Date(b[2]) - new Date(a[2]));
-
-    // 4. Rendu de la table PDF avec coloration conditionnelle
+    // Génération du tableau autoTable
     doc.autoTable({
-        startY: 22,
-        head: [colonnes],
-        body: lignes,
-        theme: "striped",
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [30, 41, 59] },
-        didParseCell: function(data) {
-            if (data.section === 'body' && data.column.index === 9) {
-                if (data.cell.raw === "Web@ct Saisi") {
-                    data.cell.styles.textColor = [22, 163, 74]; // Vert
-                    data.cell.styles.fontStyle = 'bold';
-                } else if (data.cell.raw === "Web@ct à Saisir") {
-                    data.cell.styles.textColor = [220, 38, 38]; // Rouge
-                    data.cell.styles.fontStyle = 'bold';
-                }
-            }
+        head: headers,
+        body: data,
+        startY: 28,
+        theme: 'grid',
+        styles: {
+            fontSize: 7,
+            cellPadding: 1.5,
+            overflow: 'linebreak'
+        },
+        headStyles: {
+            fillColor: [15, 23, 42], // Couleur sombre (Slate 900)
+            textColor: [255, 255, 255],
+            fontStyle: 'bold'
+        },
+        columnStyles: {
+            0: { cellWidth: 28 }, // Agent
+            1: { cellWidth: 15 }, // Équipe
+            2: { cellWidth: 18 }, // Date FMPA
+            3: { cellWidth: 18 }, // Date Saisie
+            4: { cellWidth: 22 }, // Activité
+            5: { cellWidth: 35 }, // Formation
+            6: { cellWidth: 12 }, // Début
+            7: { cellWidth: 12 }, // Fin
+            8: { cellWidth: 12 }, // Durée
+            9: { cellWidth: 18 }, // Statut
+            10: { cellWidth: 'auto' } // Commentaires prend le reste de l'espace
         }
     });
 
