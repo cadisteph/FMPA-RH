@@ -1138,23 +1138,38 @@ function ouvrirModalHistorique() {
 }
 
 async function fermerModaleHistorique() {
-    // Balaye et enregistre tous les champs de commentaires ouverts
-    if (Array.isArray(historiqueSaisiesFMPA)) {
-        historiqueSaisiesFMPA.forEach((row, index) => {
-            const input = document.getElementById(`input-comm-libre-${index}`);
-            if (input) {
-                row.commentaires = input.value.trim();
-            }
-        });
+    try {
+        // 1. Récupération synchrone des commentaires saisis par les collaborateurs
+        if (Array.isArray(historiqueSaisiesFMPA)) {
+            historiqueSaisiesFMPA.forEach((row, index) => {
+                const input = document.getElementById(`input-comm-libre-${index}`);
+                if (input) {
+                    row.commentaires = input.value.trim();
+                }
+            });
+        }
+    } catch (err) {
+        console.error("Erreur lors de la lecture des commentaires :", err);
     }
 
-    // Masque la modale
-    const modale = document.getElementById("modale-historique");
-    if (modale) modale.style.display = "none";
+    // 2. Réinitialisation de l'index d'édition si besoin
+    if (typeof indexEnEdition !== "undefined") {
+        indexEnEdition = null;
+    }
 
-    // Écriture finale sur le fichier Excel FMPA-RH.xlsx
-    if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
-        await enregistrerFichierXLSX();
+    // 3. FERMETURE IMMÉDIATE DE LA MODALE (ne bloque plus l'utilisateur)
+    const modale = document.getElementById("modale-historique");
+    if (modale) {
+        modale.style.display = "none";
+    }
+
+    // 4. Sauvegarde asynchrone sécurisée sur le fichier Excel (FMPA-RH.xlsx)
+    if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX && typeof enregistrerFichierXLSX === "function") {
+        try {
+            await enregistrerFichierXLSX();
+        } catch (err) {
+            console.error("Erreur lors de la sauvegarde Excel à la fermeture :", err);
+        }
     }
 }
 
