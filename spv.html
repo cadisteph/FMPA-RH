@@ -22,8 +22,8 @@
     <button type="button" onclick="afficherListeAlertesVMA()" style="background: #f7d3e0; border: 1px solid #ff1493; color: #fb54ae; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size : 0.85em; display: flex; align-items: center; gap: 6px;">🩺 VMA à prévoir</button>
     <button type="button" onclick="afficherListeAlertesPL()" style="background: #f3cdf9; border: 1px solid #8a2be2; color: #d556f3; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size : 0.85em; display: flex; align-items: center; gap: 6px;">🚒 Renouvellement Permis</button>
     <button type="button" onclick="afficherListeAlertesSPV()" style="background: #f9deb6; border: 1px solid #dd6b20; color: #dd6b20; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size : 0.85em; display: flex; align-items: center; gap: 6px;">🪃 Renouvellement SPV</button>
-    <button type="button" onclick="window.open('organigramme.html', '_blank')" style="background: #27712a; border: 1px solid #46f108; color: #46f108; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size: 0.85em; display: flex; align-items: center; gap: 6px">🏢Structure Cis / ⚖️Equilibrage</button>
-    <button type="button" onclick="window.open('catalogue.html', '_blank')" style="background: #13457d; border: 1px solid #06dbf5; color: #4ac1f5; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size: 0.85em; display: flex; align-items: center; gap: 6px">📚 Catalogue des formations</button>
+    <button type="button" onclick="window.open('organigramme.html', '_blank')" style="background: #27712a; border: 1px solid #46f108; color: #46f108; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size: 0.85em; display: none; align-items: center; gap: 6px">🏢Structure Cis / ⚖️Equilibrage</button>
+    <button type="button" onclick="window.open('catalogue.html', '_blank')" style="background: #13457d; border: 1px solid #06dbf5; color: #4ac1f5; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size: 0.85em; display: none; align-items: center; gap: 6px">📚 Catalogue des formations</button>
     <button type="button" onclick="window.open('saisie_fmpa.html', '_blank')" style="background: #817508; border: 1px solid #f1d008; color: #f1d008; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size: 0.85em; display: flex; align-items: center; gap: 6px">👨‍🎓 Saisie FMPA</button>
    
   </div>
@@ -47,17 +47,12 @@
         <div class="filter-group">
           <label style="display:block; font-size:0.7em; font-weight:bold;">EQUIPE👨‍👨</label>
           <select id="rh_equipe" onchange="actualiserTableauRH()">
-            <option value="">Toutes</option>
-            <option value="Equipe A">Equipe A</option>
-            <option value="Equipe B">Equipe B</option>
-            <option value="Equipe C">Equipe C</option>
-            <option value="Equipe G12">Equipe G12</option>
-            <option value="Encadrement">Encadrement</option>
+
             <option value="SPV">SPV</option>
           </select>
         </div>
 
-        <div class="filter-group">
+        <div class="filter-group" style="display: none;">
           <label style="display:block; font-size:0.7em; font-weight:bold;">STATUT🏷️</label>
           <select id="rh_statut" onchange="actualiserTableauRH()">
             <option value="">Tous</option>
@@ -107,7 +102,7 @@
             </select>
         </div>
 
-        <div class="filter-group">
+        <div class="filter-group" style="display: none;">
             <label for="filtreRegime" style="display:block; font-size:0.7em; font-weight:bold;">REGIME🕒</label>
             <select id="filtreRegime" onchange="actualiserTableauRH()">
                 <option value="">Tous</option>
@@ -122,12 +117,7 @@
             <label for="filtreEngagement" style="display:block; font-size:0.7em; font-weight:bold;">Tps% / Eng.SPV⌛</label>
             <select id="filtreEngagement" onchange="actualiserTableauRH()">
                 <option value="">Tous</option>
-                <option value="100%">100%</option>
-                <option value="90%">90%</option>
-                <option value="80%">80%</option>
-                <option value="70%">70%</option>
-                <option value="60%">60%</option>
-                <option value="50%">50%</option>
+
                 <option value="Complet">Complet</option>
                 <option value="SUAP/PPABE">SUAP/PPABE</option>
                 <option value="SUAP">SUAP</option>
@@ -145,12 +135,12 @@
             <input type="text" id="rechercheCompetence" placeholder="ex: ASU, EAP..." oninput="actualiserTableauRH()">
         </div>
 
-        <div class="filter-group search-group" style="flex-grow: 1;">
+        <div class="filter-group search-group" style="flex-grow: 1;" style="display: none;">
           <label style="display:block; font-size:0.7em; font-weight:bold;">RECHERCHE🔍🪪</label>
           <input type="text" id="rh_recherche" placeholder="ex: Nom, Prénom, Matricule..." oninput="actualiserTableauRH()" style="width: 100%;">
         </div>
 
-        <div>
+        <div style="display: none;">
           <button type="button" class="btn-dark" onclick="reinitialiserFiltres()">♻️Réinitialiser</button>
         </div>
 
@@ -233,20 +223,14 @@
                 <label style="font-size:0.8em; font-weight:bold;">Statut🏷️*</label>
                 <select id="agentStatut" onchange="adapterFormulaireSelonStatut()" style="width:100%;">
                   <option value="">- A définir -</option>
-                  <option value="SPP">SPP</option>
                   <option value="SPV">SPV</option>
-                  <option value="PATS">PATS</option>
                 </select>
               </div>
               <div style="flex:1;">
                 <label style="font-size:0.8em; font-weight:bold;">Équipe👨‍👨*</label>
                 <select id="agentEquipe" onchange="gererChangementEquipe()" style="width:100%;">
                   <option value="">- Aucune -</option>
-                  <option value="Equipe A">Equipe A</option>
-                  <option value="Equipe B">Equipe B</option>
-                  <option value="Equipe C">Equipe C</option>
-                  <option value="Equipe G12">Equipe G12</option>
-                  <option value="Encadrement">Encadrement</option>
+
                   <option value="SPV">SPV</option>
                 </select>
               </div>
@@ -256,10 +240,7 @@
                 <label style="font-size:0.8em; font-weight:bold;">Régime🕑*</label>
                 <select id="agentRegime" onchange="gererChangementRegime()" style="width:100%;">
                   <option value="">- Aucun -</option>
-                  <option value="G24">G24</option>
-                  <option value="Mixte">Mixte</option>
-                  <option value="G12">G12</option>
-                  <option value="SHR">SHR</option>
+
                   <option value="SPV">SPV</option>
                 </select>
               </div>
