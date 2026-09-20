@@ -53,15 +53,7 @@
         </div>
 
 
-        <div class="filter-group">
-          <label style="display:none; font-size:0.7em; font-weight:bold;">STATUT🏷️</label> 
-          <select id="rh_statut" onchange="actualiserTableauRH()">
-            <option value="">Tous</option>
-            <option value="SPP">SPP</option>
-            <option value="SPV">SPV</option>
-            <option value="PATS">PATS</option>
-          </select>
-        </div>
+
 
         <!-- Nouveaux filtres de sélection -->
         <div class="filter-group">
@@ -103,16 +95,7 @@
             </select>
         </div>
 
-        <div class="filter-group">
-            <label for="filtreRegime" style="display:none; font-size:0.7em; font-weight:bold;">REGIME🕒</label>
-            <select id="filtreRegime" onchange="actualiserTableauRH()">
-                <option value="">Tous</option>
-                <option value="Mixte">Mixte</option>
-                <option value="G24">G24</option>
-                <option value="G12">G12</option>
-                <option value="SPV">SPV</option>
-            </select>
-        </div>
+
 
         <div class="filter-group">
             <label for="filtreEngagement" style="display:block; font-size:0.7em; font-weight:bold;">Tps% / Eng.SPV⌛</label>
@@ -136,14 +119,7 @@
             <input type="text" id="rechercheCompetence" placeholder="ex: ASU, EAP..." oninput="actualiserTableauRH()">
         </div>
 
-        <div class="filter-group search-group" style="flex-grow: 1;">
-          <label style="display:none; font-size:0.7em; font-weight:bold;">RECHERCHE🔍🪪</label>
-          <input type="text" id="rh_recherche" placeholder="ex: Nom, Prénom, Matricule..." oninput="actualiserTableauRH()" style="width: 100%;">
-        </div>
 
-        <div>
-          <button type="button" class="btn-dark" onclick="reinitialiserFiltres()" style="display: none" >♻️Réinitialiser</button>
-        </div>
 
         <div class="counter-badge" style="margin-left: auto; font-weight: bold; background: #edf2f7; padding: 6px 12px; border-radius: 4px;">
           <span id="compteurAgentsRH">0 / 0 agent(s)</span>
@@ -400,7 +376,6 @@
             <div style="display:flex; gap:5px; margin-top:10px;">
               <button type="button" class="btn-reseau" style="flex:1; background:#3cac74; color:white; padding:5px; border:none; border-radius:3px; cursor:pointer" onclick="enregistrerAgentEtSauvegarder()">💽 Edit.💾 Enreg.</button>
               <button type="button" class="btn btn-secondary" onclick="viderFormulaireRH()" style="background:#3cac74; color:white; padding:5px; border:none; border-radius:3px; cursor:pointer;">📩 Réinitialiser</button>
-              <button type="button" id="btnSupprimerAgent" class="btn btn-danger" onclick="supprimerAgentEtSauvegarder()" style="display:none; background:#e53e3e; color:white; padding:5px; border:none; border-radius:3px; cursor:pointer;">🗑️ Radier</button>
             </div>
 
           </div>
