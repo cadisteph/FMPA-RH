@@ -22,9 +22,7 @@
     <button type="button" onclick="afficherListeAlertesVMA()" style="background: #f7d3e0; border: 1px solid #ff1493; color: #fb54ae; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size : 0.85em; display: flex; align-items: center; gap: 6px;">🩺 VMA à prévoir</button>
     <button type="button" onclick="afficherListeAlertesPL()" style="background: #f3cdf9; border: 1px solid #8a2be2; color: #d556f3; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size : 0.85em; display: flex; align-items: center; gap: 6px;">🚒 Renouvellement Permis</button>
     <button type="button" onclick="afficherListeAlertesSPV()" style="background: #f9deb6; border: 1px solid #dd6b20; color: #dd6b20; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size : 0.85em; display: flex; align-items: center; gap: 6px;">🪃 Renouvellement SPV</button>
-
     <button type="button" onclick="window.open('saisie_fmpa.html', '_blank')" style="background: #817508; border: 1px solid #f1d008; color: #f1d008; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: normal; font-size: 0.85em; display: flex; align-items: center; gap: 6px">👨‍🎓 Saisie FMPA</button>
-
    
   </div>
 
@@ -55,9 +53,7 @@
         <div class="filter-group">
           <label style="display:block; font-size:0.7em; font-weight:bold;">STATUT🏷️</label>
           <select id="rh_statut" onchange="actualiserTableauRH()">
-
             <option value="SPV">SPV</option>
-
           </select>
         </div>
 
@@ -76,7 +72,7 @@
               <option value="LTN">LTN</option>
               <option value="CNE">CNE</option>
               <option value="CDT">CDT</option>
-
+              <option value="PATS">PATS</option>
             </select>
         </div>
 
@@ -91,15 +87,20 @@
               <option value="ACDG2">ACDG2</option>
               <option value="ACDG1">ACDG1</option>
               <option value="CDG">CDG</option>
+              <option value="SOFTECH">S/Off Tech</option>
+              <option value="SOFPAO">S/Off PAO</option>
+              <option value="OFTECH">Off Tech</option>
+              <option value="OFPAO">Off PAO</option>
               <option value="ACDC">ACDC</option>
-
+              <option value="CDC">CDC</option>
+              <option value="Assistante">Assistante</option>
             </select>
         </div>
 
         <div class="filter-group">
             <label for="filtreRegime" style="display:block; font-size:0.7em; font-weight:bold;">REGIME🕒</label>
             <select id="filtreRegime" onchange="actualiserTableauRH()">
-
+                <option value="">Tous</option>
                 <option value="SPV">SPV</option>
             </select>
         </div>
@@ -107,7 +108,8 @@
         <div class="filter-group">
             <label for="filtreEngagement" style="display:block; font-size:0.7em; font-weight:bold;">Tps% / Eng.SPV⌛</label>
             <select id="filtreEngagement" onchange="actualiserTableauRH()">
-                <option value="Complet">Tous</option>
+                <option value="">Tous</option>
+               
                 <option value="Complet">Complet</option>
                 <option value="SUAP/PPABE">SUAP/PPABE</option>
                 <option value="SUAP">SUAP</option>
@@ -209,16 +211,21 @@
               <div style="flex:1;">
                 <label style="font-size:0.8em; font-weight:bold;">Statut🏷️*</label>
                 <select id="agentStatut" onchange="adapterFormulaireSelonStatut()" style="width:100%;">
-
+                  <option value="">- A définir -</option>
+                  <option value="SPP">SPP</option>
                   <option value="SPV">SPV</option>
-       
+                  <option value="PATS">PATS</option>
                 </select>
               </div>
               <div style="flex:1;">
                 <label style="font-size:0.8em; font-weight:bold;">Équipe👨‍👨*</label>
                 <select id="agentEquipe" onchange="gererChangementEquipe()" style="width:100%;">
                   <option value="">- Aucune -</option>
-
+                  <option value="Equipe A">Equipe A</option>
+                  <option value="Equipe B">Equipe B</option>
+                  <option value="Equipe C">Equipe C</option>
+                  <option value="Equipe G12">Equipe G12</option>
+                  <option value="Encadrement">Encadrement</option>
                   <option value="SPV">SPV</option>
                 </select>
               </div>
@@ -228,7 +235,10 @@
                 <label style="font-size:0.8em; font-weight:bold;">Régime🕑*</label>
                 <select id="agentRegime" onchange="gererChangementRegime()" style="width:100%;">
                   <option value="">- Aucun -</option>
-
+                  <option value="G24">G24</option>
+                  <option value="Mixte">Mixte</option>
+                  <option value="G12">G12</option>
+                  <option value="SHR">SHR</option>
                   <option value="SPV">SPV</option>
                 </select>
               </div>
@@ -246,7 +256,7 @@
                   <option value="LTN">LTN</option>
                   <option value="CNE">CNE</option>
                   <option value="CDT">CDT</option>
-          
+                  <option value="PATS">PATS</option>
                 </select>
               </div>
             </div>
@@ -267,7 +277,8 @@
                   <option value="OFTECH">Officier Technique</option>
                   <option value="OFPAO">Officier PAO</option>
                   <option value="ACDC">Adjoint au chef de centre</option>
-
+                  <option value="CDC">Chef de Centre</option>
+                  <option value="Assistante">Assistante</option>
                 </select>
               </div>
               
@@ -386,7 +397,6 @@
             <div style="display:flex; gap:5px; margin-top:10px;">
               <button type="button" class="btn-reseau" style="flex:1; background:#3cac74; color:white; padding:5px; border:none; border-radius:3px; cursor:pointer" onclick="enregistrerAgentEtSauvegarder()">💽 Edit.💾 Enreg.</button>
               <button type="button" class="btn btn-secondary" onclick="viderFormulaireRH()" style="background:#3cac74; color:white; padding:5px; border:none; border-radius:3px; cursor:pointer;">📩 Réinitialiser</button>
-              <button type="button" id="btnSupprimerAgent" class="btn btn-danger" onclick="supprimerAgentEtSauvegarder()" style="display:none; background:#e53e3e; color:white; padding:5px; border:none; border-radius:3px; cursor:pointer;">🗑️ Radier</button>
             </div>
 
           </div>
