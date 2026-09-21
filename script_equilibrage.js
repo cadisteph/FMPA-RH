@@ -415,9 +415,10 @@ if (statsEl) {
             <div class="stat-badge-container">${genererBadgesHTML(s.dicComps, '#34d399')}</div>
 
         <!-- Section Infos Générales & Régimes -->
+        <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Profils / Régimes : </div>
         <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;">
-            <span class="stat-badge"><span class="stat-label">Femmes : </span> <span class="stat-value" style="color:#f400ff; margin-left: 2px;">${s.nbF}</span></span>
-            <span class="stat-badge"><span class="stat-label">Âge : </span> <span class="stat-value" style="color:#ffffff; margin-left: 2px;">${s.ageMoy} ans</span></span>
+            <span class="stat-badge"><span class="stat-label">Moy. Âge : </span> <span class="stat-value" style="color:#ffffff; margin-left: 2px;">${s.ageMoy} ans</span></span>
+            <span class="stat-badge"><span class="stat-label"> Nbre Femmes : </span> <span class="stat-value" style="color:#f400ff; margin-left: 2px;">${s.nbF}</span></span>
             <span class="stat-badge"><span class="stat-label">G24 : </span> <span class="stat-value" style="color:#60a5fa; margin-left: 2px;">${s.nbG24}</span></span>
             <span class="stat-badge"><span class="stat-label">Mixte : </span> <span class="stat-value" style="color:#60a5fa; margin-left: 2px;">${s.nbMixte}</span></span>
         </div>
