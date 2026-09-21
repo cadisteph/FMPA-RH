@@ -22,7 +22,7 @@ html, body {
     overflow: hidden;
     background-color: var(--bg-color);
     color: var(--text-color);
-    line-height: 1.5;
+    line-height: 1.15;
 }
 
 body {
@@ -307,8 +307,8 @@ body {
 
 .form-card::-webkit-scrollbar,
 .table-container::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+    width: 8px;
+    height: 15px;
 }
 
 .form-card::-webkit-scrollbar-thumb,
