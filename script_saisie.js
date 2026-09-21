@@ -674,7 +674,6 @@ function genererAvancementSpecialites(agent) {
     };
 }
 
-
 function extraireValeurs(champ) {
     if (!champ) return [];
     if (Array.isArray(champ)) {
@@ -1838,8 +1837,6 @@ window.addEventListener('click', function(event) {
     if (event.target === modalHist) fermerModalHistorique();
     if (event.target === modalEq) fermerModalEquipe();
 });
-
-
 
 
 // --- OUVERTURE / FERMETURE DE LA MODALE AGENT ---
