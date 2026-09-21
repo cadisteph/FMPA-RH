@@ -164,7 +164,7 @@ body {
 }
 
 .form-card {
-    width: 320px;
+    width: 450px;
     flex-shrink: 0;
     overflow-y: auto;
 }
