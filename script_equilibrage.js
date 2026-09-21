@@ -186,57 +186,69 @@ function calculerAge(dateNaissance) {
 /**
  * Calcul des statistiques d'équipe
  */
-function calculerStatsEquipe(membres, conserverNiveaux = true) {
-    const nb = membres.length;
-    
-    const nbF = membres.filter(a => estFemme(a)).length;
-    const pctF = nb > 0 ? Math.round((nbF / nb) * 100) : 0;
-    
-    const agentsAvecAge = membres.map(a => calculerAge(a.dateNaissance)).filter(age => age > 0);
-    const ageMoy = agentsAvecAge.length > 0 
-        ? Math.round(agentsAvecAge.reduce((sum, age) => sum + age, 0) / agentsAvecAge.length) 
-        : 0;
-    
-    const compteFnStricte = (fn) => membres.filter(a => String(a?.fonction || '').trim().toUpperCase() === fn.toUpperCase()).length;
+function calculerStatsEquipe(equipe, conserverNiveaux = true) {
+    const stats = {
+        nb: equipe.length,
+        nbF: 0,
+        cdg: 0,
+        acdgCate: 0,
+        cequ: 0,
+        equ: 0,
+        dicSpecs: {},
+        dicComps: {},
+        nbG24: 0,
+        ageMoy: 0,
+        dicDept: {}
+    };
 
-    const cdg = compteFnStricte('CDG');
-    const acdg = compteFnStricte('ACDG1') + compteFnStricte('ACDG2');
-    const cate = compteFnStricte('CATE');
-    const ca1e = compteFnStricte('CA1E');
-    const cequ = compteFnStricte('CEQU');
-    const equ = compteFnStricte('EQU');
+    if (equipe.length === 0) return stats;
 
-    const getRegime = (a) => String(a?.regime || '').toLowerCase();
-    const nbG24 = membres.filter(a => getRegime(a).includes('g24')).length;
-    const nbMixte = membres.filter(a => getRegime(a).includes('mixte')).length;
+    let sommeAges = 0;
 
-    const dicSpecs = {};
-    const dicComps = {};
-    const dicDept = {};
+    equipe.forEach(agent => {
+        // Genre
+        if (agent.sexe === 'F' || agent.genre === 'F') stats.nbF++;
 
-    membres.forEach(a => {
-        extraireItems(a.specialites).forEach(s => {
-            const cle = traiterNomItem(s, conserverNiveaux);
-            if (cle) dicSpecs[cle] = (dicSpecs[cle] || 0) + 1;
-        });
-        
-        extraireItems(a.competences).forEach(c => {
-            const cle = traiterNomItem(c, conserverNiveaux);
-            if (cle) dicComps[cle] = (dicComps[cle] || 0) + 1;
-        });
-        
-        const dep = extraireDepartement(a);
-        if (dep) dicDept[dep] = (dicDept[dep] || 0) + 1;
+        // Fonctions / Grades (Dissociation CEQU et EQU)
+        const fonction = (agent.fonction || agent.grade || '').toUpperCase();
+        if (fonction.includes('CDG')) {
+            stats.cdg++;
+        } else if (fonction.includes('ACDG') || fonction.includes('CATE')) {
+            stats.acdgCate++;
+        } else if (fonction.includes('CEQU')) {
+            stats.cequ++;
+        } else if (fonction.includes('EQU')) {
+            stats.equ++;
+        }
+
+        // Spécialités
+        if (Array.isArray(agent.specialites)) {
+            agent.specialites.forEach(spec => {
+                stats.dicSpecs[spec] = (stats.dicSpecs[spec] || 0) + 1;
+            });
+        }
+
+        // Compétences / Permis
+        if (Array.isArray(agent.competences)) {
+            agent.competences.forEach(comp => {
+                stats.dicComps[comp] = (stats.dicComps[comp] || 0) + 1;
+            });
+        }
+
+        // Régimes
+        if (agent.regime === 'G24') stats.nbG24++;
+
+        // Âge
+        if (agent.age) sommeAges += parseInt(agent.age, 10);
+
+        // Département de résidence
+        if (agent.departement) {
+            stats.dicDept[agent.departement] = (stats.dicDept[agent.departement] || 0) + 1;
+        }
     });
 
-    return { 
-        nb, nbF, pctF, ageMoy,
-        nbG24, nbMixte,
-        cdg,
-        acdgCate: acdg + cate,
-        ca1e, cequ, equ,
-        dicSpecs, dicComps, dicDept
-    };
+    stats.ageMoy = (sommeAges / equipe.length).toFixed(1);
+    return stats;
 }
 
 function extraireDepartement(agent) {
@@ -426,51 +438,59 @@ function rendreEquipes() {
 function calculerScorePenalite(equipes, conserverNiveaux = true) {
     const stats = equipes.map(e => calculerStatsEquipe(e, conserverNiveaux));
     
+    // Variance des écarts
     const evaluerEcart = (getValeur) => {
         const vals = stats.map(getValeur);
-        const moy = vals.reduce((a, b) => a + b, 0) / 3;
+        const moy = vals.reduce((a, b) => a + b, 0) / (vals.length || 1);
         return vals.reduce((sum, v) => sum + Math.pow(v - moy, 2), 0);
     };
 
+    // Récupération des 11 curseurs P1 à P11
     const p1 = parseInt(document.getElementById("poids-effectif")?.value || 10, 10);
-    const p2 = parseInt(document.getElementById("poids-genre")?.value || 9, 10);
-    const p3 = parseInt(document.getElementById("poids-cdg")?.value || 8, 10);
-    const p4 = parseInt(document.getElementById("poids-cate")?.value || 7, 10);
-    const p5 = parseInt(document.getElementById("poids-equ")?.value || 6, 10);
-    const p6 = parseInt(document.getElementById("poids-specs")?.value || 5, 10);
-    const p7 = parseInt(document.getElementById("poids-comps")?.value || 4, 10);
-    const p8 = parseInt(document.getElementById("poids-regimes")?.value || 3, 10);
-    const p9 = parseInt(document.getElementById("poids-age")?.value || 2, 10);
-    const p10 = parseInt(document.getElementById("poids-dept")?.value || 1, 10);
+    const p2 = parseInt(document.getElementById("poids-genre")?.value || 10, 10);
+    const p3 = parseInt(document.getElementById("poids-cdg")?.value || 10, 10);
+    const p4 = parseInt(document.getElementById("poids-cate")?.value || 10, 10);
+    const p5 = parseInt(document.getElementById("poids-cequ")?.value || 10, 10);
+    const p6 = parseInt(document.getElementById("poids-equ")?.value || 10, 10);
+    const p7 = parseInt(document.getElementById("poids-specs")?.value || 10, 10);
+    const p8 = parseInt(document.getElementById("poids-comps")?.value || 10, 10);
+    const p9 = parseInt(document.getElementById("poids-regimes")?.value || 10, 10);
+    const p10 = parseInt(document.getElementById("poids-age")?.value || 10, 10);
+    const p11 = parseInt(document.getElementById("poids-dept")?.value || 10, 10);
 
     let scorePena = 0;
 
-    scorePena += evaluerEcart(s => s.nb) * (p1 * 10);
-    scorePena += evaluerEcart(s => s.nbF) * (p2 * 10);
-    scorePena += evaluerEcart(s => s.cdg) * (p3 * 10);
-    scorePena += evaluerEcart(s => s.acdgCate) * (p4 * 10);
-    scorePena += evaluerEcart(s => s.cequ + s.equ) * (p5 * 10);
+    // Coefficents internes dégressifs pour maintenir la hiérarchie d'importance
+    scorePena += evaluerEcart(s => s.nb) * (p1 * 100);
+    scorePena += evaluerEcart(s => s.nbF) * (p2 * 25);
+    scorePena += evaluerEcart(s => s.cdg) * (p3 * 20);
+    scorePena += evaluerEcart(s => s.acdgCate) * (p4 * 15);
+    scorePena += evaluerEcart(s => s.cequ) * (p5 * 12);
+    scorePena += evaluerEcart(s => s.equ) * (p6 * 10);
     
+    // Spécialités
     const toutesSpecs = new Set(stats.flatMap(s => Object.keys(s.dicSpecs)));
     toutesSpecs.forEach(spec => {
         const el = document.getElementById(`poids-spec-${spec}`);
         const pDyn = el ? parseInt(el.value, 10) : 1;
-        scorePena += evaluerEcart(s => s.dicSpecs[spec] || 0) * (p6 * pDyn);
+        scorePena += evaluerEcart(s => s.dicSpecs[spec] || 0) * (p7 * pDyn);
     });
 
+    // Compétences & Permis
     const toutesComps = new Set(stats.flatMap(s => Object.keys(s.dicComps)));
     toutesComps.forEach(comp => {
         const el = document.getElementById(`poids-comp-${comp}`);
         const pDyn = el ? parseInt(el.value, 10) : 1;
-        scorePena += evaluerEcart(s => s.dicComps[comp] || 0) * (p7 * pDyn);
+        scorePena += evaluerEcart(s => s.dicComps[comp] || 0) * (p8 * pDyn);
     });
 
-    scorePena += evaluerEcart(s => s.nbG24) * (p8 * 10);
-    scorePena += evaluerEcart(s => parseFloat(s.ageMoy)) * (p9 * 10);
+    // Profils secondaires
+    scorePena += evaluerEcart(s => s.nbG24) * (p9 * 5);
+    scorePena += evaluerEcart(s => parseFloat(s.ageMoy)) * (p10 * 2);
 
     const tousDepts = new Set(stats.flatMap(s => Object.keys(s.dicDept)));
     tousDepts.forEach(dep => {
-        scorePena += evaluerEcart(s => s.dicDept[dep] || 0) * (p10 * 10);
+        scorePena += evaluerEcart(s => s.dicDept[dep] || 0) * (p11 * 2);
     });
 
     return scorePena;
