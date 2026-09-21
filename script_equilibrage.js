@@ -192,6 +192,7 @@ function calculerStatsEquipe(equipe, conserverNiveaux = true) {
         nbF: 0,
         cdg: 0,
         acdgCate: 0,
+        ca1e: 0,
         cequ: 0,
         equ: 0,
         dicSpecs: {},
@@ -216,6 +217,8 @@ function calculerStatsEquipe(equipe, conserverNiveaux = true) {
         stats.acdgCate++;
         } else if (fonction.includes('CDG')) {
         stats.cdg++;
+        } else if (fonction.includes('CA1E')) { 
+        stats.ca1e++;
         } else if (fonction.includes('CEQU')) {
         stats.cequ++;
         } else if (fonction.includes('EQU')) {
@@ -403,8 +406,9 @@ function rendreEquipes() {
 
                 <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Encadrement & Grades :</div>
                 <div style="display:flex; gap:4px; flex-wrap:wrap; margin-bottom:8px;">
-                    <span class="stat-badge"><span class="stat-label">CDG : </span> <span class="stat-value" style="color:#f9e54a;">${s.cdg}</span></span>
+                    <span class="stat-badge"><span class="stat-label">CDG : </span> <span class="stat-value" style="color:#f59e0b;">${s.cdg}</span></span>
                     <span class="stat-badge"><span class="stat-label">ACDG/CATE : </span> <span class="stat-value" style="color:#c9c07c;">${s.acdgCate}</span></span>
+                    <span class="stat-badge"><span class="stat-label">CA1E : </span> <span class="stat-value" style="color:#c9c07c;">${s.ca1e}</span></span>
                     <span class="stat-badge"><span class="stat-label">CEqu : </span> <span class="stat-value" style="color:#60a5fa;">${s.cequ}</span></span>
                     <span class="stat-badge"><span class="stat-label">Equ : </span> <span class="stat-value" style="color:#8dbcf5;">${s.equ}</span></span>
                 </div>
@@ -483,9 +487,10 @@ function calculerScorePenalite(equipes, conserverNiveaux = true) {
 
     // Coefficients internes adoucis pour vous laisser le contrôle via les curseurs
     scorePena += evaluerEcart(s => s.nb) * (p1 * 15);
-    scorePena += evaluerEcart(s => s.nbF) * (p2 * 8);
-    scorePena += evaluerEcart(s => s.cdg) * (p3 * 7);
-    scorePena += evaluerEcart(s => s.acdgCate) * (p4 * 6);
+    scorePena += evaluerEcart(s => s.nbF) * (p2 * 9);
+    scorePena += evaluerEcart(s => s.cdg) * (p3 * 8);
+    scorePena += evaluerEcart(s => s.acdgCate) * (p4 * 7);
+    scorePena += evaluerEcart(s => s.ca1e) * (p5 * 6);
     scorePena += evaluerEcart(s => s.cequ) * (p5 * 5);
     scorePena += evaluerEcart(s => s.equ) * (p6 * 4);
     
