@@ -82,7 +82,7 @@ body {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 12px;
+    gap: 26px;
     background: var(--card-bg);
     padding: 10px 14px;
     border-radius: 8px;
