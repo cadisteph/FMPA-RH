@@ -397,7 +397,7 @@ function rendreEquipes() {
         const statsEl = document.getElementById(`stats-${lettre}`);
         if (statsEl) {
             statsEl.innerHTML = `
-                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
+                <div style="display:flex; gap:4px; flex-wrap:nowrap; overflow-x:auto; margin-bottom:8px;">
                     <div class="stat-badge"><span class="stat-label">Femmes : </span> <span class="stat-value" style="color:#d210f3;">${s.nbF}</span></div>
                     <div class="stat-badge"><span class="stat-label">Âge moy. : </span> <span class="stat-value" style="color:#ffffff;">${s.ageMoy} ans</span></div>
                     <div class="stat-badge"><span class="stat-label">G24 : </span> <span class="stat-value" style="color:#60a5fa;">${s.nbG24}</span></div>
