@@ -227,11 +227,6 @@
 }
 
 
-
-
-
-        
-
         /* Panneau de configuration à gauche */
         .panneau-reglages {
             background: #1e293b;
@@ -455,55 +450,61 @@
                 </label>
             </div>
 
-            <div class="section-titre-reglage">Effectifs & Hiérarchie des Grades</div>
-            <div class="reglage-group">
-                <label>P1 - Effectif global : <span id="val-poids-effectif">10</span></label>
-                <input type="range" id="poids-effectif" min="0" max="10" value="10" oninput="document.getElementById('val-poids-effectif').innerText=this.value">
-            </div>
-            <div class="reglage-group">
-                <label>P2 - Effectif Femmes : <span id="val-poids-genre">10</span></label>
-                <input type="range" id="poids-genre" min="0" max="10" value="10" oninput="document.getElementById('val-poids-genre').innerText=this.value">
-            </div>
-            <div class="reglage-group">
-                <label>P3 - CDG : <span id="val-poids-cdg">10</span></label>
-                <input type="range" id="poids-cdg" min="0" max="10" value="10" oninput="document.getElementById('val-poids-cdg').innerText=this.value">
-            </div>
-            <div class="reglage-group">
-                <label>P4 - ACDG / CATE : <span id="val-poids-cate">10</span></label>
-                <input type="range" id="poids-cate" min="0" max="10" value="10" oninput="document.getElementById('val-poids-cate').innerText=this.value">
-            </div>
-            <div class="reglage-group">
-                <label>P5 - CEQU / EQU : <span id="val-poids-equ">10</span></label>
-                <input type="range" id="poids-equ" min="0" max="10" value="10" oninput="document.getElementById('val-poids-equ').innerText=this.value">
-            </div>
+            <!-- Début de la section P1 à P11 mise à jour -->
+<div class="section-titre-reglage">Effectifs & Hiérarchie des Grades</div>
+<div class="reglage-group">
+    <label>P1 - Effectif global : <span id="val-poids-effectif">10</span></label>
+    <input type="range" id="poids-effectif" min="0" max="10" value="10" oninput="document.getElementById('val-poids-effectif').innerText=this.value">
+</div>
+<div class="reglage-group">
+    <label>P2 - Effectif Femmes : <span id="val-poids-genre">10</span></label>
+    <input type="range" id="poids-genre" min="0" max="10" value="10" oninput="document.getElementById('val-poids-genre').innerText=this.value">
+</div>
+<div class="reglage-group">
+    <label>P3 - CDG : <span id="val-poids-cdg">10</span></label>
+    <input type="range" id="poids-cdg" min="0" max="10" value="10" oninput="document.getElementById('val-poids-cdg').innerText=this.value">
+</div>
+<div class="reglage-group">
+    <label>P4 - ACDG / CATE : <span id="val-poids-cate">10</span></label>
+    <input type="range" id="poids-cate" min="0" max="10" value="10" oninput="document.getElementById('val-poids-cate').innerText=this.value">
+</div>
+<div class="reglage-group">
+    <label>P5 - CEQU : <span id="val-poids-cequ">10</span></label>
+    <input type="range" id="poids-cequ" min="0" max="10" value="10" oninput="document.getElementById('val-poids-cequ').innerText=this.value">
+</div>
+<div class="reglage-group">
+    <label>P6 - EQU : <span id="val-poids-equ">10</span></label>
+    <input type="range" id="poids-equ" min="0" max="10" value="10" oninput="document.getElementById('val-poids-equ').innerText=this.value">
+</div>
 
-            <div class="section-titre-reglage" style="color:#60a5fa;">Spécialités & Compétences</div>
-            <div class="reglage-group">
-                <label>P6 - Spécialités : <span id="val-poids-specs">10</span></label>
-                <input type="range" id="poids-specs" min="0" max="10" value="10" oninput="document.getElementById('val-poids-specs').innerText=this.value">
-            </div>
-            <div id="container-reglages-specs"></div>
+<div class="section-titre-reglage" style="color:#60a5fa;">Spécialités & Compétences</div>
+<div class="reglage-group">
+    <label>P7 - Spécialités : <span id="val-poids-specs">10</span></label>
+    <input type="range" id="poids-specs" min="0" max="10" value="10" oninput="document.getElementById('val-poids-specs').innerText=this.value">
+</div>
+<div id="container-reglages-specs"></div>
 
-            <div class="reglage-group">
-                <label>P7 - Compétences : <span id="val-poids-comps">10</span></label>
-                <input type="range" id="poids-comps" min="0" max="10" value="10" oninput="document.getElementById('val-poids-comps').innerText=this.value">
-            </div>
-            <div id="container-reglages-comps"></div>
+<div class="reglage-group">
+    <label>P8 - Compétences : <span id="val-poids-comps">10</span></label>
+    <input type="range" id="poids-comps" min="0" max="10" value="10" oninput="document.getElementById('val-poids-comps').innerText=this.value">
+</div>
+<div id="container-reglages-comps"></div>
 
-            <div class="section-titre-reglage" style="color:#f59e0b;">Régimes & Informations Profil</div>
-            <div class="reglage-group">
-                <label>P8 - Régimes (G24/Mixte) : <span id="val-poids-regimes">10</span></label>
-                <input type="range" id="poids-regimes" min="0" max="10" value="10" oninput="document.getElementById('val-poids-regimes').innerText=this.value">
-            </div>
-            <div class="reglage-group">
-                <label>P9 - Âge moyen : <span id="val-poids-age">10</span></label>
-                <input type="range" id="poids-age" min="0" max="10" value="10" oninput="document.getElementById('val-poids-age').innerText=this.value">
-            </div>
-            <div class="reglage-group">
-                <label>P10 - Domiciliation (Dép.) : <span id="val-poids-dept">10</span></label>
-                <input type="range" id="poids-dept" min="0" max="10" value="10" oninput="document.getElementById('val-poids-dept').innerText=this.value">
-            </div>
-
+<div class="section-titre-reglage" style="color:#f59e0b;">Régimes & Informations Profil</div>
+<div class="reglage-group">
+    <label>P9 - Régimes (G24/Mixte) : <span id="val-poids-regimes">10</span></label>
+    <input type="range" id="poids-regimes" min="0" max="10" value="10" oninput="document.getElementById('val-poids-regimes').innerText=this.value">
+</div>
+<div class="reglage-group">
+    <label>P10 - Âge moyen : <span id="val-poids-age">10</span></label>
+    <input type="range" id="poids-age" min="0" max="10" value="10" oninput="document.getElementById('val-poids-age').innerText=this.value">
+</div>
+<div class="reglage-group">
+    <label>P11 - Domiciliation (Dép.) : <span id="val-poids-dept">10</span></label>
+    <input type="range" id="poids-dept" min="0" max="10" value="10" oninput="document.getElementById('val-poids-dept').innerText=this.value">
+</div>
+<!-- Fin de la section P1 à P11 -->
+            
             <button class="btn-algo" onclick="suggererReequilibrage()" style="margin-top: 15px; width: 100%;">⚡ Suggérer un Rééquilibrage</button>
         </aside>
 
