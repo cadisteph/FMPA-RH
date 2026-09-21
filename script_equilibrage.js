@@ -481,20 +481,20 @@ function calculerScorePenalite(equipes, conserverNiveaux = true) {
 
     let scorePena = 0;
 
-    // Coefficents internes dégressifs pour maintenir la hiérarchie d'importance
-    scorePena += evaluerEcart(s => s.nb) * (p1 * 100);
-    scorePena += evaluerEcart(s => s.nbF) * (p2 * 25);
-    scorePena += evaluerEcart(s => s.cdg) * (p3 * 20);
-    scorePena += evaluerEcart(s => s.acdgCate) * (p4 * 15);
-    scorePena += evaluerEcart(s => s.cequ) * (p5 * 12);
-    scorePena += evaluerEcart(s => s.equ) * (p6 * 10);
+    // Coefficients internes adoucis pour vous laisser le contrôle via les curseurs
+    scorePena += evaluerEcart(s => s.nb) * (p1 * 15);
+    scorePena += evaluerEcart(s => s.nbF) * (p2 * 8);
+    scorePena += evaluerEcart(s => s.cdg) * (p3 * 7);
+    scorePena += evaluerEcart(s => s.acdgCate) * (p4 * 6);
+    scorePena += evaluerEcart(s => s.cequ) * (p5 * 5);
+    scorePena += evaluerEcart(s => s.equ) * (p6 * 4);
     
     // Spécialités
     const toutesSpecs = new Set(stats.flatMap(s => Object.keys(s.dicSpecs)));
     toutesSpecs.forEach(spec => {
         const el = document.getElementById(`poids-spec-${spec}`);
         const pDyn = el ? parseInt(el.value, 10) : 1;
-        scorePena += evaluerEcart(s => s.dicSpecs[spec] || 0) * (p7 * pDyn);
+        scorePena += evaluerEcart(s => s.dicSpecs[spec] || 0) * (p7 * pDyn * 3);
     });
 
     // Compétences & Permis
@@ -502,22 +502,23 @@ function calculerScorePenalite(equipes, conserverNiveaux = true) {
     toutesComps.forEach(comp => {
         const el = document.getElementById(`poids-comp-${comp}`);
         const pDyn = el ? parseInt(el.value, 10) : 1;
-        scorePena += evaluerEcart(s => s.dicComps[comp] || 0) * (p8 * pDyn);
+        scorePena += evaluerEcart(s => s.dicComps[comp] || 0) * (p8 * pDyn * 3);
     });
 
-    // Profils secondaires
-    scorePena += evaluerEcart(s => s.nbG24) * (p9 * 5);
-    scorePena += evaluerEcart(s => s.nbMixte) * (p9 * 5);
-    scorePena += evaluerEcart(s => parseFloat(s.ageMoy)) * (p10 * 2);
+    // Profils secondaires (Régimes, Âge, Domiciliation)
+    scorePena += evaluerEcart(s => s.nbG24) * (p9 * 2);
+    scorePena += evaluerEcart(s => s.nbMixte) * (p9 * 2);
+    scorePena += evaluerEcart(s => parseFloat(s.ageMoy)) * (p10 * 1);
 
     const tousDepts = new Set(stats.flatMap(s => Object.keys(s.dicDept)));
     tousDepts.forEach(dep => {
-        scorePena += evaluerEcart(s => s.dicDept[dep] || 0) * (p11 * 2);
+        scorePena += evaluerEcart(s => s.dicDept[dep] || 0) * (p11 * 1);
     });
 
     return scorePena;
-}
+    }
 
+    
 function suggererReequilibrage() {
     if (agentsLocaux.length === 0) {
         alert("⚠️ Veuillez d'abord charger votre fichier Excel.");
