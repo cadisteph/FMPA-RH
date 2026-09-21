@@ -303,6 +303,20 @@
     .plate{flex:1 1 auto;width:100%;}
   }
 </style>
+
+
+
+  
+<script>
+// Verification immédiate au chargement de la page
+if (sessionStorage.getItem("accesAutorise") !== "true") {
+  // Redirection automatique vers la page de connexion si non autorisé
+  window.location.href = "ouverture.html";
+}
+</script>
+
+
+  
 </head>
 <body>
 
@@ -321,6 +335,15 @@
         <button type="button" class="plate plate--rh" id="btn-rh">
           <span class="icon" aria-hidden="true">🔒</span> Gestion RH
         </button>
+
+
+<input type="password" id="codeSecret" placeholder="Saisir le code secret">
+<button type="button" onclick="verifierCodeSecret()">Valider</button>
+
+
+
+
+        
         <a class="plate plate--fmpa" href="https://cadisteph.github.io/FMPA-RH/saisie_fmpa.html" target="_blank" rel="noopener">
           <span class="icon" aria-hidden="true">📝</span> Saisie FMPA
         </a>
@@ -378,7 +401,33 @@
     setTimeout(() => input.focus(), 50);
   }
 
-  function closeModal(){
+
+
+
+function verifierCodeSecret() {
+  const codeSaisi = document.getElementById("codeSecret").value;
+  const CODE_VALIDE = "acdcspv";
+
+  if (codeSaisi === CODE_VALIDE) {
+    // 1. On enregistre le jeton d'autorisation dans la session du navigateur
+    sessionStorage.setItem("accesAutorise", "true");
+    
+    // 2. Redirection vers la page restreinte (ex: spv.html ou index.html)
+    window.location.href = "spv.html";
+  } else {
+    alert("❌ Code secret incorrect.");
+    document.getElementById("codeSecret").value = "";
+  }
+}
+
+
+
+
+
+
+
+  
+function closeModal(){
     overlay.classList.remove('is-open');
     btnRh.focus();
   }
