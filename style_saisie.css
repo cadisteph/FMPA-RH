@@ -37,8 +37,6 @@ body {
     flex-shrink: 0;
 }
 
-
-
 .header-title-bar {
     display: flex;
     justify-content: space-between; /* Pousse le titre à gauche et les actions à droite */
@@ -49,7 +47,6 @@ body {
     align-items: center;
     gap: 2px; /* Espace entre le bouton et l'indication de statut */
 }
-
 
 .app-header h1 {
     color: var(--primary-color);
@@ -425,10 +422,6 @@ body {
     background-color: #b91c1c;
 }
 
-
-
-
-
 /* Layout général modale */
 .modal-overlay {
     position: fixed;
@@ -590,12 +583,6 @@ body {
 .btn-act-cancel:hover { background-color: #1e293b; }
 
 
-
-
-
-
-
-
 /* Animation de clignotement rouge / jaune pour le bouton d'ouverture */
 @keyframes clignotement-alerte {
     0% {
@@ -621,9 +608,6 @@ body {
     background-color: #0284c7 !important; /* Bleu */
     color: #ffffff !important;
 }
-
-
-
 
 
 /* ==========================================
