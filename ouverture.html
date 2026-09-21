@@ -380,6 +380,33 @@
     return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
+
+
+
+
+
+
+
+function verifierCodeSecret() {
+  const codeSaisi = document.getElementById("codeSecret").value;
+  const CODE_VALIDE = "acdcspv";
+
+  if (codeSaisi === CODE_VALIDE) {
+    // 1. On enregistre le jeton d'autorisation dans la session du navigateur
+    sessionStorage.setItem("accesAutorise", "true");
+    
+    // 2. Redirection vers la page restreinte (ex: spv.html ou index.html)
+    window.location.href = "spv.html";
+  } else {
+    alert("❌ Code secret incorrect.");
+    document.getElementById("codeSecret").value = "";
+  }
+}
+
+
+
+
+  
   function openModal(){
     overlay.classList.add('is-open');
     errorMsg.textContent = '';
