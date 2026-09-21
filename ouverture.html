@@ -303,14 +303,6 @@
     .plate{flex:1 1 auto;width:100%;}
   }
 </style>
-
-
-
-  
-
-
-
-  
 </head>
 <body>
 
@@ -329,15 +321,6 @@
         <button type="button" class="plate plate--rh" id="btn-rh">
           <span class="icon" aria-hidden="true">🔒</span> Gestion RH
         </button>
-
-
-<input type="password" id="codeSecret" placeholder="Saisir le code secret">
-<button type="button" onclick="verifierCodeSecret()">Valider</button>
-
-
-
-
-        
         <a class="plate plate--fmpa" href="https://cadisteph.github.io/FMPA-RH/saisie_fmpa.html" target="_blank" rel="noopener">
           <span class="icon" aria-hidden="true">📝</span> Saisie FMPA
         </a>
@@ -395,19 +378,7 @@
     setTimeout(() => input.focus(), 50);
   }
 
-
-
-
-
-
-
-
-
-
-
-
-  
-function closeModal(){
+  function closeModal(){
     overlay.classList.remove('is-open');
     btnRh.focus();
   }
