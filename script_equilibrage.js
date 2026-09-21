@@ -399,10 +399,10 @@ if (statsEl) {
     statsEl.innerHTML = `
         <!-- Section Infos Générales & Régimes -->
         <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;">
-            <span class="stat-badge"><span class="stat-label">Femmes : </span> <span class="stat-value" style="color:#94a3b8;">${s.nbF}</span></span>
-            <span class="stat-badge"><span class="stat-label">Âge : </span> <span class="stat-value" style="color:#94a3b8;">${s.ageMoy} ans</span></span>
-            <span class="stat-badge"><span class="stat-label">G24 : </span> <span class="stat-value" style="color:#60a5fa;">${s.nbG24}</span></span>
-            <span class="stat-badge"><span class="stat-label">Mixte : </span> <span class="stat-value" style="color:#a78bfa;">${s.nbMixte}</span></span>
+            <span class="stat-badge"><span class="stat-label">Femmes : </span> <span class="stat-value" style="color:#94a3b8; margin-left: 2px;">${s.nbF}</span></span>
+            <span class="stat-badge"><span class="stat-label">Âge : </span> <span class="stat-value" style="color:#94a3b8; margin-left: 2px;">${s.ageMoy} ans</span></span>
+            <span class="stat-badge"><span class="stat-label">G24 : </span> <span class="stat-value" style="color:#60a5fa; margin-left: 2px;">${s.nbG24}</span></span>
+            <span class="stat-badge"><span class="stat-label">Mixte : </span> <span class="stat-value" style="color:#a78bfa; margin-left: 2px;">${s.nbMixte}</span></span>
         </div>
 
         <!-- Section Encadrement -->
