@@ -395,27 +395,27 @@ function rendreEquipes() {
         if (statsEl) {
             statsEl.innerHTML = `
                 <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
-                    <div class="stat-badge"><span class="stat-label">Femmes : </span> <span class="stat-value">${s.nbF}</span></div>
-                    <div class="stat-badge"><span class="stat-label">Âge moy. : </span> <span class="stat-value">${s.ageMoy} ans</span></div>
+                    <div class="stat-badge"><span class="stat-label">Femmes : </span> <span class="stat-value" style="color:#d210f3;">${s.nbF}</span></div>
+                    <div class="stat-badge"><span class="stat-label">Âge moy. : </span> <span class="stat-value" style="color:#ffffff;">${s.ageMoy} ans</span></div>
                     <div class="stat-badge"><span class="stat-label">G24 : </span> <span class="stat-value" style="color:#60a5fa;">${s.nbG24}</span></div>
-                    <div class="stat-badge"><span class="stat-label">Mixte : </span> <span class="stat-value" style="color:#a78bfa;">${s.nbMixte}</span></div>
+                    <div class="stat-badge"><span class="stat-label">Mixte : </span> <span class="stat-value" style="color:#60a5fa;">${s.nbMixte}</span></div>
                 </div>
 
                 <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Encadrement & Grades :</div>
                 <div style="display:flex; gap:4px; flex-wrap:wrap; margin-bottom:8px;">
-                    <span class="stat-badge"><span class="stat-label">CDG : </span> <span class="stat-value">${s.cdg}</span></span>
-                    <span class="stat-badge"><span class="stat-label">ACDG/CATE : </span> <span class="stat-value">${s.acdgCate}</span></span>
-                    <span class="stat-badge"><span class="stat-label">CEqu : </span> <span class="stat-value" style="color:#38bdf8;">${s.cequ}</span></span>
-                    <span class="stat-badge"><span class="stat-label">Equ : </span> <span class="stat-value" style="color:#94a3b8;">${s.equ}</span></span>
+                    <span class="stat-badge"><span class="stat-label">CDG : </span> <span class="stat-value" style="color:#f9e54a;">${s.cdg}</span></span>
+                    <span class="stat-badge"><span class="stat-label">ACDG/CATE : </span> <span class="stat-value" style="color:#c9c07c;">${s.acdgCate}</span></span>
+                    <span class="stat-badge"><span class="stat-label">CEqu : </span> <span class="stat-value" style="color:#60a5fa;">${s.cequ}</span></span>
+                    <span class="stat-badge"><span class="stat-label">Equ : </span> <span class="stat-value" style="color:#8dbcf5;">${s.equ}</span></span>
                 </div>
 
-                <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Spécialités :</div>
+                <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Spécialités : </div>
                 <div class="stat-badge-container">${genererBadgesHTML(s.dicSpecs, '#60a5fa')}</div>
 
-                <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Compétences / Permis :</div>
+                <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Compétences / Permis : </div>
                 <div class="stat-badge-container">${genererBadgesHTML(s.dicComps, '#34d399')}</div>
 
-                <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Départements Domicile :</div>
+                <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Départements Domicile : </div>
                 <div class="stat-badge-container">${genererBadgesHTML(s.dicDept, '#f59e0b')}</div>`;
         }
 
