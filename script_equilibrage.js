@@ -184,7 +184,7 @@ function calculerAge(dateNaissance) {
 }
 
 /**
- * Calcul des statistiques d'équipe
+ * Calcul des statistiques d'équipe (CORRIGÉ POUR COMPTER TOUTES LES SPÉCIALITÉS ET COMPÉTENCES)
  */
 function calculerStatsEquipe(equipe, conserverNiveaux = true) {
     const stats = {
@@ -207,9 +207,9 @@ function calculerStatsEquipe(equipe, conserverNiveaux = true) {
 
     equipe.forEach(agent => {
         // Genre
-        if (agent.sexe === 'F' || agent.genre === 'F') stats.nbF++;
+        if (agent.sexe === 'F' || agent.genre === 'F' || estFemme(agent)) stats.nbF++;
 
-        // Fonctions / Grades (Dissociation CEQU et EQU)
+        // Fonctions / Grades (Dissociation CDG, ACDG/CATE, CEQU et EQU)
         const fonction = (agent.fonction || agent.grade || '').toUpperCase();
         if (fonction.includes('CDG')) {
             stats.cdg++;
@@ -221,29 +221,37 @@ function calculerStatsEquipe(equipe, conserverNiveaux = true) {
             stats.equ++;
         }
 
-        // Spécialités
-        if (Array.isArray(agent.specialites)) {
-            agent.specialites.forEach(spec => {
-                stats.dicSpecs[spec] = (stats.dicSpecs[spec] || 0) + 1;
-            });
-        }
+        // Spécialités (Extraction propre depuis tableau ou chaîne séparée)
+        const listeSpecs = Array.isArray(agent.specialites) 
+            ? agent.specialites 
+            : extraireItems(agent.specialites);
+            
+        listeSpecs.forEach(spec => {
+            const nomSpec = traiterNomItem(spec, conserverNiveaux);
+            if (nomSpec) stats.dicSpecs[nomSpec] = (stats.dicSpecs[nomSpec] || 0) + 1;
+        });
 
-        // Compétences / Permis
-        if (Array.isArray(agent.competences)) {
-            agent.competences.forEach(comp => {
-                stats.dicComps[comp] = (stats.dicComps[comp] || 0) + 1;
-            });
-        }
+        // Compétences / Permis (Extraction propre depuis tableau ou chaîne séparée)
+        const listeComps = Array.isArray(agent.competences) 
+            ? agent.competences 
+            : extraireItems(agent.competences);
+            
+        listeComps.forEach(comp => {
+            const nomComp = traiterNomItem(comp, conserverNiveaux);
+            if (nomComp) stats.dicComps[nomComp] = (stats.dicComps[nomComp] || 0) + 1;
+        });
 
         // Régimes
-        if (agent.regime === 'G24') stats.nbG24++;
+        if (agent.regime === 'G24' || (agent.regime && agent.regime.includes('24'))) stats.nbG24++;
 
         // Âge
-        if (agent.age) sommeAges += parseInt(agent.age, 10);
+        const ageAgent = agent.age || calculerAge(agent.dateNaissance);
+        if (ageAgent) sommeAges += parseInt(ageAgent, 10);
 
         // Département de résidence
-        if (agent.departement) {
-            stats.dicDept[agent.departement] = (stats.dicDept[agent.departement] || 0) + 1;
+        const dep = extraireDepartement(agent);
+        if (dep) {
+            stats.dicDept[dep] = (stats.dicDept[dep] || 0) + 1;
         }
     });
 
@@ -352,14 +360,17 @@ function genererBadgesHTML(dictionnaire, couleurHex) {
             padding: 2px 6px;
             margin: 2px;
             border-radius: 4px;
-            font-size: 0.6rem;
+            font-size: 0.7rem;
             border: 1px solid ${couleurHex};
             background-color: ${couleurHex}20;
             color: #ffffff;
-        ">${cle}:<strong style="color:${couleurHex}; margin-left:2px;">${val}</strong></span>`;
+        ">${cle}:<strong style="color:${couleurHex}; margin-left:3px;">${val}</strong></span>`;
     }).join('');
 }
 
+/**
+ * Génération du rendu HTML complet avec affichage détaillé des en-têtes (Grades, Spécialités, Compétences)
+ */
 function rendreEquipes() {
     const lettresEquipes = ['A', 'B', 'C'];
     const chkNiveaux = document.getElementById("chk-conserver-niveaux");
@@ -377,24 +388,27 @@ function rendreEquipes() {
         const statsEl = document.getElementById(`stats-${lettre}`);
         if (statsEl) {
             statsEl.innerHTML = `
-                <div class="stat-badge"><span class="stat-label">Femmes:</span> <span class="stat-value">${s.nbF}</span></div>
-                <div class="stat-badge"><span class="stat-label">Âge moy:</span> <span class="stat-value">${s.ageMoy} ans</span></div>
-                <div class="stat-badge"><span class="stat-label">CDG:</span> <span class="stat-value">${s.cdg}</span></div>
-                <div class="stat-badge"><span class="stat-label">ACDG/CATE:</span> <span class="stat-value">${s.acdgCate}</span></div>
-                <div class="stat-badge"><span class="stat-label">CA1E:</span> <span class="stat-value">${s.ca1e}</span></div>
-                <div class="stat-badge"><span class="stat-label">CEqu:</span> <span class="stat-value">${s.cequ}</span></div>
-                <div class="stat-badge"><span class="stat-label">Equ:</span> <span class="stat-value">${s.equ}</span></div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
+                    <div class="stat-badge"><span class="stat-label">Femmes:</span> <span class="stat-value">${s.nbF}</span></div>
+                    <div class="stat-badge"><span class="stat-label">Âge moy:</span> <span class="stat-value">${s.ageMoy} ans</span></div>
+                    <div class="stat-badge"><span class="stat-label">G24:</span> <span class="stat-value" style="color:#60a5fa;">${s.nbG24}</span></div>
+                </div>
 
-                <div class="stat-badge"><span class="stat-label">G24:</span> <span class="stat-value" style="color:#60a5fa;">${s.nbG24}</span></div>
-                <div class="stat-badge"><span class="stat-label">Mixte:</span> <span class="stat-value" style="color:#f59e0b;">${s.nbMixte}</span></div>
+                <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Encadrement & Grades :</div>
+                <div style="display:flex; gap:4px; flex-wrap:wrap; margin-bottom:8px;">
+                    <span class="stat-badge"><span class="stat-label">CDG:</span> <span class="stat-value">${s.cdg}</span></span>
+                    <span class="stat-badge"><span class="stat-label">ACDG/CATE:</span> <span class="stat-value">${s.acdgCate}</span></span>
+                    <span class="stat-badge"><span class="stat-label">CEqu:</span> <span class="stat-value" style="color:#38bdf8;">${s.cequ}</span></span>
+                    <span class="stat-badge"><span class="stat-label">Equ:</span> <span class="stat-value" style="color:#94a3b8;">${s.equ}</span></span>
+                </div>
 
-                <div class="stat-section-title">Spécialités :</div>
+                <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Spécialités :</div>
                 <div class="stat-badge-container">${genererBadgesHTML(s.dicSpecs, '#60a5fa')}</div>
 
-                <div class="stat-section-title">Compétences :</div>
+                <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Compétences / Permis :</div>
                 <div class="stat-badge-container">${genererBadgesHTML(s.dicComps, '#34d399')}</div>
 
-                <div class="stat-section-title">Départements Domicile :</div>
+                <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Départements Domicile :</div>
                 <div class="stat-badge-container">${genererBadgesHTML(s.dicDept, '#f59e0b')}</div>`;
         }
 
@@ -643,20 +657,18 @@ function afficherPropositions() {
     const modal = document.getElementById("modal-transferts");
     if (modal) {
         modal.style.display = "flex";
-        document.body.classList.add("modal-ouverte"); // Active le mode impression modale
+        document.body.classList.add("modal-ouverte");
     }
 }
 
 function imprimerRecommandations() {
-    // Déclenche la boîte de dialogue d'impression native (sauvegarde en PDF disponible)
     window.print();
 }
-
 
 function fermerModal() {
     const modal = document.getElementById("modal-transferts");
     if (modal) modal.style.display = "none";
-    document.body.classList.remove("modal-ouverte"); // Réactive le mode impression simulation
+    document.body.classList.remove("modal-ouverte");
 }
 
 function appliquerPropositions() {
@@ -676,7 +688,7 @@ function appliquerPropositions() {
     });
 
     propositionsEnAttente = [];
-    fermerModal(); // Ferme et retire la classe
+    fermerModal();
     rendreEquipes();
 }
 
