@@ -317,24 +317,120 @@
         <span class="bar"></span>
       </div>
 
-      <nav class="actions" aria-label="Accès rapide">
-        <button type="button" class="plate plate--rh" id="btn-rh">
-          <span class="icon" aria-hidden="true">🔒</span> Gestion RH
-        </button>
-
-
-<input type="password" id="codeSecret" placeholder="Saisir le code secret">
-<button type="button" onclick="verifierCodeSecret()">Valider</button>
 
 
 
 
 
-        
-        <a class="plate plate--fmpa" href="https://cadisteph.github.io/FMPA-RH/saisie_fmpa.html" target="_blank" rel="noopener">
-          <span class="icon" aria-hidden="true">📝</span> Saisie FMPA
-        </a>
-      </nav>
+
+      
+<style>
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  /* Style de base des cartes / boutons */
+  .plate, .plate-form {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px 22px;
+    background: var(--navy-800, #1c2947);
+    border: 2px solid var(--gold, #f4c400);
+    border-radius: 8px;
+    color: var(--paper, #f5f6f8);
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+    box-sizing: border-box;
+  }
+
+  /* Bloc Saisie FMPA sur toute la largeur de la 2ème ligne */
+  .plate--fmpa {
+    grid-column: 1 / -1;
+  }
+
+  /* Conteneur champ + bouton (alignés à l'intérieur) */
+  .plate-form {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .plate-form input[type="password"] {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 12px;
+    background: rgba(10, 15, 26, 0.6);
+    border: 1px solid rgba(244, 196, 0, 0.4);
+    border-radius: 6px;
+    color: var(--paper, #f5f6f8);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+  }
+
+  .plate-form input[type="password"]:focus {
+    border-color: var(--gold, #f4c400);
+  }
+
+  .plate-form button {
+    padding: 8px 16px;
+    background: var(--gold, #f4c400);
+    color: var(--navy-950, #0a0f1a);
+    border: none;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .plate-form button:hover {
+    background: var(--gold-bright, #ffd93d);
+  }
+</style>
+
+<nav class="actions" aria-label="Accès rapide">
+  <!-- Ligne 1 - Colonne 1 -->
+  <button type="button" class="plate plate--rh" id="btn-rh">
+    <span class="icon" aria-hidden="true">🔒</span>
+    Gestion RH
+  </button>
+
+  <!-- Ligne 1 - Colonne 2 (Champ + Bouton regroupés) -->
+  <div class="plate-form">
+    <input type="password" id="codeSecret" placeholder="Saisir le code secret" aria-label="Code secret">
+    <button type="button" onclick="verifierCodeSecret()">Valider</button>
+  </div>
+
+  <!-- Ligne 2 - Pleine largeur -->
+  <a class="plate plate--fmpa" href="https://cadisteph.github.io/FMPA-RH/saisie_fmpa.html" target="_blank" rel="noopener">
+    <span class="icon" aria-hidden="true">📝</span>
+    Saisie FMPA
+  </a>
+</nav>
+
+
+
+
+
+
+
+
+      
     </div>
   </main>
 
