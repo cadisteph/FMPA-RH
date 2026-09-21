@@ -399,20 +399,20 @@ if (statsEl) {
     statsEl.innerHTML = `
         <!-- Section Infos Générales & Régimes -->
         <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;">
-            <span class="stat-badge"><span class="stat-label">Femmes : </span> <span class="stat-value" style="color:#94a3b8; margin-left: 2px;">${s.nbF}</span></span>
-            <span class="stat-badge"><span class="stat-label">Âge : </span> <span class="stat-value" style="color:#94a3b8; margin-left: 2px;">${s.ageMoy} ans</span></span>
+            <span class="stat-badge"><span class="stat-label">Femmes : </span> <span class="stat-value" style="color:#f400ff; margin-left: 2px;">${s.nbF}</span></span>
+            <span class="stat-badge"><span class="stat-label">Âge : </span> <span class="stat-value" style="color:#ffffff; margin-left: 2px;">${s.ageMoy} ans</span></span>
             <span class="stat-badge"><span class="stat-label">G24 : </span> <span class="stat-value" style="color:#60a5fa; margin-left: 2px;">${s.nbG24}</span></span>
-            <span class="stat-badge"><span class="stat-label">Mixte : </span> <span class="stat-value" style="color:#a78bfa; margin-left: 2px;">${s.nbMixte}</span></span>
+            <span class="stat-badge"><span class="stat-label">Mixte : </span> <span class="stat-value" style="color:#60a5fa; margin-left: 2px;">${s.nbMixte}</span></span>
         </div>
 
         <!-- Section Encadrement -->
         <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px; margin-bottom:3px;">ENCADREMENT & GRADES :</div>
         <div style="display:flex; flex-wrap:wrap; gap:3px; margin-bottom:8px;">
-            <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">CDG : </span> <span class="stat-value" style="color:#94a3b8;">${s.cdg}</span></span>
-            <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">CATE : </span> <span class="stat-value" style="color:#94a3b8;">${s.acdgCate}</span></span>
-            <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">CA1E : </span> <span class="stat-value" style="color:#94a3b8;">${s.ca1e}</span></span>
-            <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">CEqu : </span> <span class="stat-value" style="color:#38bdf8;">${s.cequ}</span></span>
-            <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">Equ : </span> <span class="stat-value" style="color:#94a3b8;">${s.equ}</span></span>
+            <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">CDG : </span> <span class="stat-value" style="color:#ffe500; margin-left: 2px;">${s.cdg}</span></span>
+            <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">CATE : </span> <span class="stat-value" style="color:#0ce205; margin-left: 2px;">${s.acdgCate}</span></span>
+            <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">CA1E : </span> <span class="stat-value" style="color:#079302; margin-left: 2px;">${s.ca1e}</span></span>
+            <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">CEqu : </span> <span class="stat-value" style="color:#058cf8; margin-left: 2px;">${s.cequ}</span></span>
+            <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">Equ : </span> <span class="stat-value" style="color:#0568b8; margin-left: 2px;">${s.equ}</span></span>
         </div>
 
                 <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Spécialités : </div>
