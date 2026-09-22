@@ -288,14 +288,14 @@ calculerBesoins();
 
 
 /**
- * Calcule les besoins avec glissement de fonctions :
- * Ne consomme l'excédent QUE pour combler un manque sous-jacent.
+ * Calcule les besoins avec cascade de compétences :
+ * Gère correctement les transferts partiels et le reliquat de manque.
  */
 function calculerBesoins() {
     const fonctionsCibles = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
     const compts = { CDG: 0, ACDG1: 0, ACDG2: 0, CATE: 0, CA1E: 0, CEQU: 0, EQU: 0 };
 
-    // 1. Comptage des agents dans les colonnes de garde (A, B, C, G12)
+    // 1. Comptage des cartes dans les colonnes de garde (A, B, C, G12)
     const colonnes = document.querySelectorAll('.colonne-equipe');
 
     colonnes.forEach(col => {
@@ -324,9 +324,9 @@ function calculerBesoins() {
         });
     });
 
-    // 2. Traitement hors cascade (CDG, ACDG1, ACDG2)
     let manqueTotalGlobal = 0;
 
+    // 2. Traitement hors cascade (CDG, ACDG1, ACDG2)
     ['CDG', 'ACDG1', 'ACDG2'].forEach(code => {
         const dispo = compts[code] || 0;
         const elDisp = document.getElementById(`disp-${code}`);
@@ -339,15 +339,14 @@ function calculerBesoins() {
             const delta = dispo - cible;
 
             if (delta < 0) manqueTotalGlobal += Math.abs(delta);
-            afficherResultatCase(code, { status: delta < 0 ? 'manque' : (delta === 0 ? 'ok' : 'surplus'), val: delta });
+            afficherResultatCase(code, { status: delta < 0 ? 'manque' : (delta === 0 ? 'ok' : 'surplus'), val: Math.abs(delta) });
         }
     });
 
-    // 3. Calcul de la cascade CATE -> CA1E -> CEQU -> EQU
+    // 3. Traitement avec cascade : CATE -> CA1E -> CEQU -> EQU
     const ordreCascade = ['CATE', 'CA1E', 'CEQU', 'EQU'];
     const etats = {};
 
-    // Étape A : Calcul des deltas bruts
     ordreCascade.forEach(code => {
         const dispo = compts[code] || 0;
         const elDisp = document.getElementById(`disp-${code}`);
@@ -364,67 +363,75 @@ function calculerBesoins() {
             dispo: dispo,
             cible: cible,
             deltaBrut: dispo - cible,
-            comblePar: null,
-            transfereVers: null
+            recu: 0,           // Quantité de renfort reçue
+            sourceRecu: null,  // Nom de la fonction source du renfort
+            donne: 0,          // Quantité de renfort transmise vers le bas
+            destDonne: null    // Nom de la fonction destinataire
         };
     });
 
-    // Étape B : Application des transferts de haut en bas
+    // Cascade de haut en bas
     for (let i = 0; i < ordreCascade.length; i++) {
         const srcCode = ordreCascade[i];
         
-        // S'il y a un surplus sur cette fonction
-        if (etats[srcCode].deltaBrut > 0) {
-            let surplusDisponible = etats[srcCode].deltaBrut;
+        // Calcul du surplus réel disponible à ce niveau (dispo + reçu - besoin)
+        const surplusTotal = etats[srcCode].dispo + etats[srcCode].recu - etats[srcCode].cible;
 
-            // Chercher une fonction en dessous qui a besoin de renfort
+        if (surplusTotal > 0) {
+            let resteAQuitter = surplusTotal;
+
+            // Parcours des niveaux inférieurs pour consommer le surplus
             for (let j = i + 1; j < ordreCascade.length; j++) {
                 const destCode = ordreCascade[j];
-                const besDest = etats[destCode].cible - etats[destCode].dispo;
+                const besoinDest = etats[destCode].cible - (etats[destCode].dispo + etats[destCode].recu);
 
-                if (besDest > 0 && !etats[destCode].comblePar) {
-                    // On comble le besoin au maximum du surplus disponible
-                    etats[destCode].comblePar = srcCode;
-                    etats[srcCode].transfereVers = destCode;
-                    
-                    // Ajustement du surplus disponible si consommé
-                    if (surplusDisponible >= besDest) {
-                        surplusDisponible -= besDest;
-                        break; // Le besoin de la cible est totalement couvert
-                    } else {
-                        break;
-                    }
+                if (besoinDest > 0) {
+                    const transfert = Math.min(resteAQuitter, besoinDest);
+
+                    etats[srcCode].donne += transfert;
+                    etats[srcCode].destDonne = destCode;
+
+                    etats[destCode].recu += transfert;
+                    etats[destCode].sourceRecu = srcCode;
+
+                    resteAQuitter -= transfert;
+                    if (resteAQuitter <= 0) break;
                 }
             }
         }
     }
 
-    // Étape C : Affichage dynamique des résultats
+    // 4. Affichage pour la chaîne de cascade
     ordreCascade.forEach(code => {
         const item = etats[code];
-        const deltaBrut = item.deltaBrut;
+        const dispoFinale = item.dispo + item.recu - item.donne;
+        const deltaFinal = dispoFinale - item.cible;
 
-        if (deltaBrut < 0) {
-            if (item.comblePar) {
-                // Le déficit local est couvert par un rang supérieur
-                afficherResultatCase(code, { status: 'comble', source: item.comblePar });
+        if (deltaFinal < 0) {
+            const manque = Math.abs(deltaFinal);
+            manqueTotalGlobal += manque;
+            afficherResultatCase(code, {
+                status: 'manque_partiel',
+                val: manque,
+                source: item.sourceRecu,
+                recuVal: item.recu
+            });
+        } else if (deltaFinal === 0) {
+            if (item.sourceRecu && item.recu > 0) {
+                afficherResultatCase(code, { status: 'comble', source: item.sourceRecu });
             } else {
-                // Il manque toujours des agents
-                manqueTotalGlobal += Math.abs(deltaBrut);
-                afficherResultatCase(code, { status: 'manque', val: Math.abs(deltaBrut) });
+                afficherResultatCase(code, { status: 'ok' });
             }
-        } else if (deltaBrut === 0) {
-            afficherResultatCase(code, { status: 'ok' });
-        } else { // deltaBrut > 0
-            if (item.transfereVers) {
-                afficherResultatCase(code, { status: 'transfere', val: deltaBrut, dest: item.transfereVers });
+        } else { // deltaFinal > 0
+            if (item.destDonne && item.donne > 0) {
+                afficherResultatCase(code, { status: 'transfere', val: item.donne, dest: item.destDonne });
             } else {
-                afficherResultatCase(code, { status: 'surplus', val: deltaBrut });
+                afficherResultatCase(code, { status: 'surplus', val: deltaFinal });
             }
         }
     });
 
-    // 4. Récapitulatif global
+    // 5. Récapitulatif global
     const elRecap = document.getElementById("recap-besoins-global");
     if (elRecap) {
         if (manqueTotalGlobal > 0) {
@@ -436,7 +443,7 @@ function calculerBesoins() {
 }
 
 /**
- * Gestion précise des libellés d'affichage
+ * Mise à jour de l'affichage avec prise en compte des déficits partiels
  */
 function afficherResultatCase(code, res) {
     const elRes = document.getElementById(`res-${code}`);
@@ -445,6 +452,13 @@ function afficherResultatCase(code, res) {
     switch (res.status) {
         case 'manque':
             elRes.innerHTML = `<span style="color:#ef4444; font-weight:bold;">Manque ${res.val}</span>`;
+            break;
+        case 'manque_partiel':
+            if (res.source && res.recuVal > 0) {
+                elRes.innerHTML = `<span style="color:#ef4444; font-weight:bold;">Manque ${res.val} <small style="font-weight:normal; color:#f87171;">(+${res.recuVal} via ${res.source})</small></span>`;
+            } else {
+                elRes.innerHTML = `<span style="color:#ef4444; font-weight:bold;">Manque ${res.val}</span>`;
+            }
             break;
         case 'ok':
             elRes.innerHTML = `<span style="color:#38bdf8; font-weight:bold;">OK (Complet)</span>`;
