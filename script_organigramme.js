@@ -292,45 +292,46 @@ calculerBesoins();
 
 
 /**
- * Calcule et affiche les besoins en personnels et les deltas
- * (Uniquement pour le personnel SPP en garde - hors SPV et hors Encadrement/PATS)
+ * Calcule et affiche les besoins en personnels
+ * en se basant EXCLUSIVEMENT sur les cartes affichées dans les équipes de garde (A, B, C, G12)
  */
 function calculerBesoins() {
     const fonctionsCibles = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
     const compts = { CDG: 0, ACDG1: 0, ACDG2: 0, CATE: 0, CA1E: 0, CEQU: 0, EQU: 0 };
 
-    tousLesAgents.forEach(agent => {
-        const statut = normaliserTexte(agent.statut || '');
-        
-        // 1. Exclusion des SPV et de l'encadrement/PATS
-        if (statut.includes('SPV') || estAgentEncadrement(agent)) {
+    // 1. On cible uniquement les colonnes d'équipes de garde (A, B, C, G12)
+    // On exclut explicitement la colonne Encadrement et la colonne SPV
+    const colonnesGarde = document.querySelectorAll('.grille-equipes .colonne-equipe');
+
+    colonnesGarde.forEach(colonne => {
+        const titreColonne = colonne.querySelector('h3, .titre-colonne, .header-colonne')?.innerText || '';
+        const titreNorm = titreColonne.toUpperCase();
+
+        // Sécurité : ignorer si c'est la colonne Encadrement ou SPV
+        if (titreNorm.includes('ENCADREMENT') || titreNorm.includes('SPV')) {
             return;
         }
 
-        // 2. Nettoyage strict de la fonction (Majuscules, sans espaces aux extrémités)
-        const fn = (agent.fonction || '').toUpperCase().trim();
+        // 2. On récupère les badges de fonction (.badge-fonction, .fonction, etc.) dans cette colonne
+        const badges = colonne.querySelectorAll('.badge-fonction, [class*="fonction"]');
+        
+        badges.forEach(badge => {
+            const fn = badge.innerText.trim().toUpperCase();
 
-        // 3. Identification exacte pour éviter qu'ACDG1 ne soit compté dans CDG
-        if (fn === 'CDG' || fn === 'CHEF DE GARDE') {
-            compts.CDG++;
-        } else if (fn === 'ACDG1' || fn === 'ACDG 1' || fn === 'ADJOINT CHEF DE GARDE 1') {
-            compts.ACDG1++;
-        } else if (fn === 'ACDG2' || fn === 'ACDG 2' || fn === 'ADJOINT CHEF DE GARDE 2') {
-            compts.ACDG2++;
-        } else if (fn === 'CATE' || fn === 'CHEF ATELIER' || fn === 'CHEF D\'ATELIER') {
-            compts.CATE++;
-        } else if (fn === 'CA1E' || fn === 'CA1É' || fn === 'CHEF AGRES' || fn === 'CHEF AGRÈS') {
-            compts.CA1E++;
-        } else if (fn === 'CEQU' || fn === 'CEQU' || fn === 'CHEF EQUIPE' || fn === 'CHEF ÉQUIPE') {
-            compts.CEQU++;
-        } else if (fn === 'EQU' || fn === 'ÉQUIPiER' || fn === 'EQUIPIER') {
-            compts.EQU++;
-        }
+            // Comptage strict sur le texte exact du badge
+            if (fn === 'CDG' || fn === 'CHEF DE GARDE') compts.CDG++;
+            else if (fn === 'ACDG1' || fn === 'ACDG 1') compts.ACDG1++;
+            else if (fn === 'ACDG2' || fn === 'ACDG 2') compts.ACDG2++;
+            else if (fn === 'CATE' || fn === 'CHEF ATELIER') compts.CATE++;
+            else if (fn === 'CA1E' || fn === 'CA1É' || fn === 'CHEF AGRES') compts.CA1E++;
+            else if (fn === 'CEQU' || fn === 'CHEF EQUIPE') compts.CEQU++;
+            else if (fn === 'EQU' || fn === 'ÉQUIPiER' || fn === 'EQUIPIER') compts.EQU++;
+        });
     });
 
     let manqueTotal = 0;
 
-    // Update du DOM...
+    // 3. Mise à jour des compteurs et calculs des deltas
     fonctionsCibles.forEach(code => {
         const dispo = compts[code] || 0;
         
@@ -338,26 +339,31 @@ function calculerBesoins() {
         if (elDisp) elDisp.innerText = dispo;
 
         const inputCible = document.getElementById(`cible-${code}`);
-        const cible = inputCible ? (parseInt(inputCible.value, 10) || 0) : 0;
+        if (inputCible) {
+            // Sauvegarde de la valeur saisie
+            localStorage.setItem(`cible_${code}`, inputCible.value);
 
-        const delta = dispo - cible;
-        const elRes = document.getElementById(`res-${code}`);
+            const cible = parseInt(inputCible.value, 10) || 0;
+            const delta = dispo - cible;
+            const elRes = document.getElementById(`res-${code}`);
 
-        if (elRes) {
-            if (cible === 0) {
-                elRes.innerHTML = `<span style="color:#94a3b8;">-</span>`;
-            } else if (delta < 0) {
-                const manque = Math.abs(delta);
-                manqueTotal += manque;
-                elRes.innerHTML = `<span style="color:#ef4444; font-weight:bold;">Manque ${manque}</span>`;
-            } else if (delta > 0) {
-                elRes.innerHTML = `<span style="color:#22c55e; font-weight:bold;">+${delta} en rabe</span>`;
-            } else {
-                elRes.innerHTML = `<span style="color:#38bdf8; font-weight:bold;">OK (Complet)</span>`;
+            if (elRes) {
+                if (cible === 0) {
+                    elRes.innerHTML = `<span style="color:#94a3b8;">-</span>`;
+                } else if (delta < 0) {
+                    const manque = Math.abs(delta);
+                    manqueTotal += manque;
+                    elRes.innerHTML = `<span style="color:#ef4444; font-weight:bold;">Manque ${manque}</span>`;
+                } else if (delta > 0) {
+                    elRes.innerHTML = `<span style="color:#22c55e; font-weight:bold;">+${delta} en rabe</span>`;
+                } else {
+                    elRes.innerHTML = `<span style="color:#38bdf8; font-weight:bold;">OK (Complet)</span>`;
+                }
             }
         }
     });
 
+    // Récapitulatif
     const elRecap = document.getElementById("recap-besoins-global");
     if (elRecap) {
         if (manqueTotal > 0) {
