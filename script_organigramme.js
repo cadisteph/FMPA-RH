@@ -292,45 +292,48 @@ calculerBesoins();
 
 
 /**
- * Calcule les besoins en ne comptant chaque agent DE GARDE qu'UNE SEULE FOIS.
- * Total garanti : 57 agents (18A + 18B + 18C + 3G12)
+ * Calcule les besoins en inspectant directement les éléments du DOM
+ * Uniquement pour les équipes de garde (hors Encadrement et SPV)
  */
 function calculerBesoins() {
     const fonctionsCibles = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
     const compts = { CDG: 0, ACDG1: 0, ACDG2: 0, CATE: 0, CA1E: 0, CEQU: 0, EQU: 0 };
 
-    // 1. On cible les cartes d'agents uniques uniquement dans les équipes A, B, C et G12
-    const colonnesGarde = document.querySelectorAll('.grille-equipes .colonne-equipe');
+    // 1. On récupère les colonnes de garde uniquement
+    const colonnes = document.querySelectorAll('.colonne-equipe');
 
-    colonnesGarde.forEach(colonne => {
-        const titre = (colonne.querySelector('h3, .titre-colonne, .header-colonne')?.innerText || '').toUpperCase();
+    colonnes.forEach(col => {
+        const titreEl = col.querySelector('.colonne-titre');
+        const titreText = titreEl ? titreEl.innerText.toUpperCase() : '';
 
-        // On ignore totalement les colonnes Encadrement et SPV
-        if (titre.includes('ENCADREMENT') || titre.includes('SPV')) {
+        // Exclure explicitement Encadrement et SPV
+        if (titreText.includes('ENCADREMENT') || titreText.includes('SPV')) {
             return;
         }
 
-        // 2. On récupère chaque CARTE AGENT (.carte-agent ou .agent)
-        const cartesAgents = colonne.querySelectorAll('.carte-agent, .agent-card, [class*="agent"]');
+        // 2. Parcourir chaque carte d'agent de la colonne
+        const cartes = col.querySelectorAll('.carte-agent');
 
-        cartesAgents.forEach(carte => {
-            // Sécurité : éviter de traiter un élément parent s'il y a imbrication
-            if (carte.children.length === 0 && !carte.classList.contains('badge-fonction')) return;
+        cartes.forEach(carte => {
+            // Exclure si la carte est marquée SPV ou PATS
+            if (carte.classList.contains('spv') || carte.classList.contains('pats')) {
+                return;
+            }
 
-            // On cherche le badge de fonction principal dans la carte
-            const badge = carte.querySelector('.badge-fonction, [class*="fonction"]');
-            if (!badge) return;
+            // Récupérer uniquement la balise spécifique de la fonction (.fonction-tag)
+            const elFonction = carte.querySelector('.fonction-tag');
+            if (!elFonction) return;
 
-            const fn = badge.innerText.trim().toUpperCase();
+            const fn = elFonction.innerText.trim().toUpperCase();
 
-            // Mappage strict : 1 agent = 1 seule catégorie
-            if (fn === 'CDG' || fn === 'CHEF DE GARDE') compts.CDG++;
+            // Comptage strict sur le code de fonction exact
+            if (fn === 'CDG' || fn === 'CDC') compts.CDG++;
             else if (fn === 'ACDG1' || fn === 'ACDG 1') compts.ACDG1++;
             else if (fn === 'ACDG2' || fn === 'ACDG 2') compts.ACDG2++;
-            else if (fn === 'CATE' || fn === 'CHEF ATELIER') compts.CATE++;
-            else if (fn === 'CA1E' || fn === 'CA1É' || fn === 'CHEF AGRES') compts.CA1E++;
-            else if (fn === 'CEQU' || fn === 'CHEF EQUIPE' || fn === 'CEQU') compts.CEQU++;
-            else if (fn === 'EQU' || fn === 'ÉQUIPiER' || fn === 'EQUIPIER') compts.EQU++;
+            else if (fn === 'CATE') compts.CATE++;
+            else if (fn === 'CA1E') compts.CA1E++;
+            else if (fn === 'CEQU' || fn === 'CEQU') compts.CEQU++;
+            else if (fn === 'EQU') compts.EQU++;
         });
     });
 
@@ -366,6 +369,7 @@ function calculerBesoins() {
         }
     });
 
+    // Récapitulatif global
     const elRecap = document.getElementById("recap-besoins-global");
     if (elRecap) {
         if (manqueTotal > 0) {
