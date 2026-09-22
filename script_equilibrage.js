@@ -444,7 +444,7 @@ function rendreEquipes() {
                 }
                 
                 const compsHTML = listeComps.length > 0 
-                    ? listeComps.map(c => `<span style="background-color: #064e3b00; color: #10b981; padding: 1px 4px; border-radius: 3px; font-size: 0.65rem; font-weight: 500; margin-left: 2px;">${c}</span>`).join('')
+                    ? listeComps.map(c => `<span style="background-color: #064e3b00; color: #10b981; padding: 1px 4px; border-radius: 3px; font-size: 0.65rem; font-weight: 500; margin-left: 0.5px;">${c}</span>`).join('')
                     : '';
 
                 const dep = extraireDepartement(agent);
