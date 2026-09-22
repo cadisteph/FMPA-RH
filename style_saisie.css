@@ -171,7 +171,7 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
-    border-bottom: 2px solid var(--bg-color);
+    border-bottom: 2px solid #2c5177;
     padding-bottom: 4px;
     flex-shrink: 0;
 }
@@ -396,8 +396,8 @@ body {
 
 /* --- BOUTON VALIDER (Spécifique) --- */
 .btn-primary {
-    flex: 0.6;               /* Donne plus de largeur (ex: 60% de l'espace) */
-    height: 35px;            /* Hauteur spécifique */
+    flex: 1.5;               /* Donne plus de largeur */
+    height: 30px;            /* Hauteur spécifique */
     font-size: 0.8rem;       /* Taille de texte spécifique */
     background-color: #2563eb;
     color: #ffffff;
@@ -412,7 +412,7 @@ body {
 /* --- BOUTON ANNULER (Spécifique) --- */
 .btn-secondary {
     flex: 0.7;               /* Donne moins de largeur (ex: 40% de l'espace) */
-    height: 23px;            /* Hauteur plus petite si souhaitée */
+    height: 25px;            /* Hauteur plus petite si souhaitée */
     font-size: 0.8rem;       /* Texte un peu plus discret */
     background-color: #dc2626;
     color: #ffffff;
