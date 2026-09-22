@@ -274,4 +274,84 @@ function afficherColonnes() {
         col.innerHTML = html;
         conteneur.appendChild(col);
     });
+
+calculerBesoins();
+    
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Calcule et affiche les besoins en personnels et les deltas pour chaque fonction
+ */
+function calculerBesoins() {
+    const fonctionsCibles = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
+    
+    // 1. Comptage des agents disponibles actuellement dans tousLesAgents
+    const compts = { CDG: 0, ACDG1: 0, ACDG2: 0, CATE: 0, CA1E: 0, CEQU: 0, EQU: 0 };
+
+    tousLesAgents.forEach(agent => {
+        const fn = normaliserTexte(agent.fonction);
+        
+        // Correspondances précises pour éviter qu'ACDG1 soit compté en CDG
+        if (fn === 'CDG' || fn.includes('CHEF DE GARDE')) compts.CDG++;
+        else if (fn === 'ACDG1' || fn.includes('ACDG 1')) compts.ACDG1++;
+        else if (fn === 'ACDG2' || fn.includes('ACDG 2')) compts.ACDG2++;
+        else if (fn === 'CATE' || fn.includes('CHEF ATELIER')) compts.CATE++;
+        else if (fn === 'CA1E' || fn.includes('CHEF AGRÈS')) compts.CA1E++;
+        else if (fn === 'CEQU' || fn.includes('CHEF EQUIPE')) compts.CEQU++;
+        else if (fn === 'EQU' || fn.includes('EQUIPIER')) compts.EQU++;
+    });
+
+    let manqueTotal = 0;
+
+    // 2. Mise à jour des valeurs et calcul des écarts
+    fonctionsCibles.forEach(code => {
+        const dispo = compts[code] || 0;
+        
+        // Mettre à jour le nombre dispo affiché
+        const elDisp = document.getElementById(`disp-${code}`);
+        if (elDisp) elDisp.innerText = dispo;
+
+        // Récupérer la cible saisie par l'utilisateur
+        const inputCible = document.getElementById(`cible-${code}`);
+        const cible = inputCible ? (parseInt(inputCible.value, 10) || 0) : 0;
+
+        const delta = dispo - cible;
+        const elRes = document.getElementById(`res-${code}`);
+
+        if (elRes) {
+            if (cible === 0) {
+                elRes.innerHTML = `<span style="color:#94a3b8;">-</span>`;
+            } else if (delta < 0) {
+                const manque = Math.abs(delta);
+                manqueTotal += manque;
+                elRes.innerHTML = `<span style="color:#ef4444; font-weight:bold;">Manque ${manque}</span>`;
+            } else if (delta > 0) {
+                elRes.innerHTML = `<span style="color:#22c55e; font-weight:bold;">+${delta} en rabe</span>`;
+            } else {
+                elRes.innerHTML = `<span style="color:#38bdf8; font-weight:bold;">OK (Complet)</span>`;
+            }
+        }
+    });
+
+    // Optionnel : récapitulatif global
+    const elRecap = document.getElementById("recap-besoins-global");
+    if (elRecap) {
+        if (manqueTotal > 0) {
+            elRecap.innerHTML = `<span style="color:#ef4444; font-weight:bold;">Déficit global : ${manqueTotal} agent(s) manquant(s)</span>`;
+        } else {
+            elRecap.innerHTML = `<span style="color:#22c55e; font-weight:bold;">Toutes les cibles sont atteintes</span>`;
+        }
+    }
 }
