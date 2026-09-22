@@ -18,9 +18,6 @@ function importerFichierExcelManuel(event) {
     reader.readAsArrayBuffer(file);
 }
 
-/**
- * Recherche dynamique d'une clé dans un objet (tolérant à la casse et aux espaces)
- */
 function obtenirValeurChamp(item, clesPossibles) {
     const clesObjet = Object.keys(item);
     for (const cle of clesObjet) {
@@ -34,9 +31,6 @@ function obtenirValeurChamp(item, clesPossibles) {
     return "";
 }
 
-/**
- * Traitement Excel avec détection complète des entêtes
- */
 function traiterDonneesExcel(arrayBuffer, nomFichier = "") {
     try {
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
@@ -505,7 +499,58 @@ function calculerScorePenalite(equipes, conserverNiveaux = true) {
 }
 
 /**
- * Algorithme de Rééquilibrage
+ * Génération du motif explicite de déplacement
+ */
+function analyserRaisonMouvement(agent, eqSource, eqCible, statsS, statsC) {
+    let motifs = [];
+
+    // 1. Effectif
+    if (statsS.nb > statsC.nb) {
+        motifs.push(`Rééquilibrage d'effectif (${statsS.nb} ➡️ ${statsC.nb})`);
+    }
+
+    // 2. Fonctions / Encadrement
+    const fn = normaliserTexte(agent.fonction || agent.grade || '');
+    if (fn.includes('CDG') && statsS.cdg > statsC.cdg) {
+        motifs.push(`Ajustement CDG (${statsS.cdg} vs ${statsC.cdg})`);
+    } else if ((fn.includes('ACDG') || fn.includes('CATE')) && statsS.acdgCate > statsC.acdgCate) {
+        motifs.push(`Ajustement Chef d'Agrès/CATE (${statsS.acdgCate} vs ${statsC.acdgCate})`);
+    }
+
+    // 3. Spécialités
+    const specs = extraireItems(agent.specialites);
+    specs.forEach(spec => {
+        const countS = statsS.dicSpecs[spec] || 0;
+        const countC = statsC.dicSpecs[spec] || 0;
+        if (countS > countC) {
+            motifs.push(`Répartition spé. [${spec}] (${countS} vs ${countC})`);
+        }
+    });
+
+    // 4. Compétences / Permis
+    const comps = extraireItems(agent.competences);
+    comps.forEach(comp => {
+        const countS = statsS.dicComps[comp] || 0;
+        const countC = statsC.dicComps[comp] || 0;
+        if (countS > countC) {
+            motifs.push(`Répartition permis/comp. [${comp}] (${countS} vs ${countC})`);
+        }
+    });
+
+    // 5. Parité / Femmes
+    if (estFemme(agent) && statsS.nbF > statsC.nbF) {
+        motifs.push(`Équilibrage effectif féminin (${statsS.nbF} vs ${statsC.nbF})`);
+    }
+
+    if (motifs.length === 0) {
+        motifs.push(`Optimisation globale de la balance de garde`);
+    }
+
+    return motifs.join(' • ');
+}
+
+/**
+ * Algorithme de Rééquilibrage optimisé sans redondances
  */
 function suggererReequilibrage() {
     if (!agentsLocaux || agentsLocaux.length === 0) {
@@ -514,138 +559,97 @@ function suggererReequilibrage() {
     }
 
     propositionsEnAttente = [];
-
     const chkNiveaux = document.getElementById("chk-conserver-niveaux");
     const conserverNiveaux = chkNiveaux ? chkNiveaux.checked : true;
 
-    // Simulation basée sur les identifiants
-    let etatSimule = agentsLocaux.map(a => ({
-        idUnique: a.idUnique,
-        nom: a.nom,
-        prenom: a.prenom,
-        equipeActuelle: extraireLettreEquipe(a.equipe),
-        verrouille: a.verrouille,
-        agentRef: a
-    }));
+    // Représentation virtuelle des affectations actuelles
+    let affectations = {};
+    const equipeOrigine = {};
+
+    agentsLocaux.forEach(a => {
+        const eq = extraireLettreEquipe(a.equipe);
+        affectations[a.idUnique] = eq;
+        equipeOrigine[a.idUnique] = eq;
+    });
 
     const lettres = ['A', 'B', 'C'];
-    const maxIterations = 20;
+    const maxIterations = 15;
 
-    try {
-        for (let iter = 0; iter < maxIterations; iter++) {
-            let eqA = etatSimule.filter(a => a.equipeActuelle === 'A').map(a => a.agentRef);
-            let eqB = etatSimule.filter(a => a.equipeActuelle === 'B').map(a => a.agentRef);
-            let eqC = etatSimule.filter(a => a.equipeActuelle === 'C').map(a => a.agentRef);
+    for (let iter = 0; iter < maxIterations; iter++) {
+        let eqA = agentsLocaux.filter(a => affectations[a.idUnique] === 'A');
+        let eqB = agentsLocaux.filter(a => affectations[a.idUnique] === 'B');
+        let eqC = agentsLocaux.filter(a => affectations[a.idUnique] === 'C');
 
-            let scoreActuel = calculerScorePenalite([eqA, eqB, eqC], conserverNiveaux);
-            let meilleurScore = scoreActuel;
-            let meilleurMouvement = null;
+        let scoreActuel = calculerScorePenalite([eqA, eqB, eqC], conserverNiveaux);
+        let meilleurScore = scoreActuel;
+        let meilleurMouvement = null;
 
-            // 1. Tester les transferts simples
-            for (const source of lettres) {
-                for (const cible of lettres) {
-                    if (source === cible) continue;
+        // Évaluation des transferts simples
+        for (const source of lettres) {
+            for (const cible of lettres) {
+                if (source === cible) continue;
 
-                    const candidats = etatSimule.filter(a => a.equipeActuelle === source && !a.verrouille);
-                    
-                    for (const cand of candidats) {
-                        const simA = etatSimule.filter(a => (a.idUnique === cand.idUnique ? cible : a.equipeActuelle) === 'A').map(a => a.agentRef);
-                        const simB = etatSimule.filter(a => (a.idUnique === cand.idUnique ? cible : a.equipeActuelle) === 'B').map(a => a.agentRef);
-                        const simC = etatSimule.filter(a => (a.idUnique === cand.idUnique ? cible : a.equipeActuelle) === 'C').map(a => a.agentRef);
+                const candidats = agentsLocaux.filter(a => affectations[a.idUnique] === source && !a.verrouille);
 
-                        const testScore = calculerScorePenalite([simA, simB, simC], conserverNiveaux);
+                for (const cand of candidats) {
+                    affectations[cand.idUnique] = cible;
 
-                        if (testScore < meilleurScore - 0.05) {
-                            meilleurScore = testScore;
-                            meilleurMouvement = {
-                                type: 'TRANSFERT',
-                                cand: cand,
-                                eqSource: source,
-                                eqCible: cible
-                            };
-                        }
+                    const tA = agentsLocaux.filter(a => affectations[a.idUnique] === 'A');
+                    const tB = agentsLocaux.filter(a => affectations[a.idUnique] === 'B');
+                    const tC = agentsLocaux.filter(a => affectations[a.idUnique] === 'C');
+
+                    const testScore = calculerScorePenalite([tA, tB, tC], conserverNiveaux);
+
+                    if (testScore < meilleurScore - 0.1) {
+                        meilleurScore = testScore;
+                        
+                        const statsS = calculerStatsEquipe(eqA.concat(eqB, eqC).filter(a => affectations[a.idUnique] === source), conserverNiveaux);
+                        const statsC = calculerStatsEquipe(eqA.concat(eqB, eqC).filter(a => affectations[a.idUnique] === cible), conserverNiveaux);
+                        
+                        meilleurMouvement = {
+                            agent: cand,
+                            source: source,
+                            cible: cible,
+                            motif: analyserRaisonMouvement(cand, source, cible, statsS, statsC)
+                        };
                     }
+
+                    // Rétablissement pour test suivant
+                    affectations[cand.idUnique] = source;
                 }
-            }
-
-            // 2. Si pas de transfert direct, tester les échanges 1 contre 1
-            if (!meilleurMouvement) {
-                const paires = [['A', 'B'], ['B', 'C'], ['A', 'C']];
-                for (const [eq1, eq2] of paires) {
-                    const mob1 = etatSimule.filter(a => a.equipeActuelle === eq1 && !a.verrouille);
-                    const mob2 = etatSimule.filter(a => a.equipeActuelle === eq2 && !a.verrouille);
-
-                    for (const a1 of mob1) {
-                        for (const a2 of mob2) {
-                            const simA = etatSimule.filter(a => {
-                                let eq = a.equipeActuelle;
-                                if (a.idUnique === a1.idUnique) eq = eq2;
-                                else if (a.idUnique === a2.idUnique) eq = eq1;
-                                return eq === 'A';
-                            }).map(a => a.agentRef);
-
-                            const simB = etatSimule.filter(a => {
-                                let eq = a.equipeActuelle;
-                                if (a.idUnique === a1.idUnique) eq = eq2;
-                                else if (a.idUnique === a2.idUnique) eq = eq1;
-                                return eq === 'B';
-                            }).map(a => a.agentRef);
-
-                            const simC = etatSimule.filter(a => {
-                                let eq = a.equipeActuelle;
-                                if (a.idUnique === a1.idUnique) eq = eq2;
-                                else if (a.idUnique === a2.idUnique) eq = eq1;
-                                return eq === 'C';
-                            }).map(a => a.agentRef);
-
-                            const testScore = calculerScorePenalite([simA, simB, simC], conserverNiveaux);
-
-                            if (testScore < meilleurScore - 0.05) {
-                                meilleurScore = testScore;
-                                meilleurMouvement = {
-                                    type: 'ECHANGE',
-                                    a1: a1,
-                                    a2: a2,
-                                    eq1: eq1,
-                                    eq2: eq2
-                                };
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Application du mouvement retenu dans la simulation
-            if (meilleurMouvement) {
-                if (meilleurMouvement.type === 'TRANSFERT') {
-                    meilleurMouvement.cand.equipeActuelle = meilleurMouvement.eqCible;
-                    propositionsEnAttente.push({
-                        type: 'TRANSFERT',
-                        a1: meilleurMouvement.cand.agentRef,
-                        eqCible: meilleurMouvement.eqCible,
-                        motif: `Transfert Équipe ${meilleurMouvement.eqSource} ➡️ Équipe ${meilleurMouvement.eqCible}`
-                    });
-                } else if (meilleurMouvement.type === 'ECHANGE') {
-                    meilleurMouvement.a1.equipeActuelle = meilleurMouvement.eq2;
-                    meilleurMouvement.a2.equipeActuelle = meilleurMouvement.eq1;
-                    propositionsEnAttente.push({
-                        type: 'ECHANGE',
-                        a1: meilleurMouvement.a1.agentRef,
-                        a2: meilleurMouvement.a2.agentRef,
-                        motif: `Échange Équipe ${meilleurMouvement.eq1} 🔄 Équipe ${meilleurMouvement.eq2}`
-                    });
-                }
-            } else {
-                break;
             }
         }
 
-        afficherPropositions();
-
-    } catch (err) {
-        console.error("Erreur durant la simulation de rééquilibrage :", err);
-        alert("Une erreur de calcul est survenue. Vérifiez la console F12.");
+        if (meilleurMouvement) {
+            affectations[meilleurMouvement.agent.idUnique] = meilleurMouvement.cible;
+        } else {
+            break; 
+        }
     }
+
+    // Consolidation finale des mouvements (suppression des aller-retours ou détours)
+    agentsLocaux.forEach(a => {
+        const depart = equipeOrigine[a.idUnique];
+        const arrivee = affectations[a.idUnique];
+
+        if (depart !== arrivee) {
+            const eqSourceMembres = agentsLocaux.filter(x => equipeOrigine[x.idUnique] === depart);
+            const eqCibleMembres = agentsLocaux.filter(x => equipeOrigine[x.idUnique] === arrivee);
+
+            const statsS = calculerStatsEquipe(eqSourceMembres, conserverNiveaux);
+            const statsC = calculerStatsEquipe(eqCibleMembres, conserverNiveaux);
+
+            propositionsEnAttente.push({
+                type: 'TRANSFERT',
+                a1: a,
+                eqSource: depart,
+                eqCible: arrivee,
+                motif: analyserRaisonMouvement(a, depart, arrivee, statsS, statsC)
+            });
+        }
+    });
+
+    afficherPropositions();
 }
 
 function afficherPropositions() {
@@ -658,11 +662,17 @@ function afficherPropositions() {
     if (!listeUI) return;
 
     listeUI.innerHTML = propositionsEnAttente.map((p, index) => {
-        if (p.type === 'TRANSFERT') {
-            return `<li style="margin-bottom:10px;"><b>#${index + 1}</b> ➡️ Transférer <b>${p.a1.nom} ${p.a1.prenom}</b> vers l'<b>Équipe ${p.eqCible}</b><br><span style="font-size:0.75rem; color:#94a3b8;">${p.motif}</span></li>`;
-        } else {
-            return `<li style="margin-bottom:10px;"><b>#${index + 1}</b> 🔄 Échanger <b>${p.a1.nom} ${p.a1.prenom}</b> avec <b>${p.a2.nom} ${p.a2.prenom}</b><br><span style="font-size:0.75rem; color:#94a3b8;">${p.motif}</span></li>`;
-        }
+        return `
+            <li style="margin-bottom:12px; padding:8px; background-color:rgba(255,255,255,0.05); border-left:3px solid #60a5fa; border-radius:4px;">
+                <div style="font-weight:bold; font-size:0.9rem; color:#f8fafc;">
+                    #${index + 1} ➡️ Transférer <span style="color:#60a5fa;">${p.a1.nom.toUpperCase()} ${p.a1.prenom}</span> 
+                    (<span style="color:#cbd5e1;">Équipe ${p.eqSource}</span> ➔ <span style="color:#34d399;">Équipe ${p.eqCible}</span>)
+                </div>
+                <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">
+                    💡 <b>Raison :</b> ${p.motif}
+                </div>
+            </li>
+        `;
     }).join("");
 
     const modal = document.getElementById("modal-transferts");
@@ -684,18 +694,8 @@ function fermerModal() {
 
 function appliquerPropositions() {
     propositionsEnAttente.forEach(p => {
-        if (p.type === 'TRANSFERT') {
-            const ag = agentsLocaux.find(a => a.idUnique === p.a1.idUnique);
-            if (ag) ag.equipe = `Équipe ${p.eqCible}`;
-        } else if (p.type === 'ECHANGE') {
-            const ag1 = agentsLocaux.find(a => a.idUnique === p.a1.idUnique);
-            const ag2 = agentsLocaux.find(a => a.idUnique === p.a2.idUnique);
-            if (ag1 && ag2) {
-                const eqTemp = ag1.equipe;
-                ag1.equipe = ag2.equipe;
-                ag2.equipe = eqTemp;
-            }
-        }
+        const ag = agentsLocaux.find(a => a.idUnique === p.a1.idUnique);
+        if (ag) ag.equipe = `Équipe ${p.eqCible}`;
     });
 
     propositionsEnAttente = [];
