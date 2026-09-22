@@ -297,33 +297,40 @@ calculerBesoins();
  */
 function calculerBesoins() {
     const fonctionsCibles = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
-    
-    // 1. Comptage des agents SPP en garde
     const compts = { CDG: 0, ACDG1: 0, ACDG2: 0, CATE: 0, CA1E: 0, CEQU: 0, EQU: 0 };
 
     tousLesAgents.forEach(agent => {
-        const statut = normaliserTexte(agent.statut);
+        const statut = normaliserTexte(agent.statut || '');
         
-        // Exclusion des SPV et de l'encadrement/PATS
+        // 1. Exclusion des SPV et de l'encadrement/PATS
         if (statut.includes('SPV') || estAgentEncadrement(agent)) {
-            return; // On passe à l'agent suivant
+            return;
         }
 
-        const fn = normaliserTexte(agent.fonction);
-        
-        // Correspondances précises par fonction
-        if (fn === 'CDG' || fn.includes('CHEF DE GARDE')) compts.CDG++;
-        else if (fn === 'ACDG1' || fn.includes('ACDG 1')) compts.ACDG1++;
-        else if (fn === 'ACDG2' || fn.includes('ACDG 2')) compts.ACDG2++;
-        else if (fn === 'CATE' || fn.includes('CHEF ATELIER')) compts.CATE++;
-        else if (fn === 'CA1E' || fn.includes('CHEF AGRES') || fn.includes('CHEF AGRÈS')) compts.CA1E++;
-        else if (fn === 'CEQU' || fn.includes('CHEF EQUIPE') || fn.includes('CHEF ÉQUIPE')) compts.CEQU++;
-        else if (fn === 'EQU' || fn.includes('EQUIPIER') || fn.includes('ÉQUIPIER')) compts.EQU++;
+        // 2. Nettoyage strict de la fonction (Majuscules, sans espaces aux extrémités)
+        const fn = (agent.fonction || '').toUpperCase().trim();
+
+        // 3. Identification exacte pour éviter qu'ACDG1 ne soit compté dans CDG
+        if (fn === 'CDG' || fn === 'CHEF DE GARDE') {
+            compts.CDG++;
+        } else if (fn === 'ACDG1' || fn === 'ACDG 1' || fn === 'ADJOINT CHEF DE GARDE 1') {
+            compts.ACDG1++;
+        } else if (fn === 'ACDG2' || fn === 'ACDG 2' || fn === 'ADJOINT CHEF DE GARDE 2') {
+            compts.ACDG2++;
+        } else if (fn === 'CATE' || fn === 'CHEF ATELIER' || fn === 'CHEF D\'ATELIER') {
+            compts.CATE++;
+        } else if (fn === 'CA1E' || fn === 'CA1É' || fn === 'CHEF AGRES' || fn === 'CHEF AGRÈS') {
+            compts.CA1E++;
+        } else if (fn === 'CEQU' || fn === 'CEQU' || fn === 'CHEF EQUIPE' || fn === 'CHEF ÉQUIPE') {
+            compts.CEQU++;
+        } else if (fn === 'EQU' || fn === 'ÉQUIPiER' || fn === 'EQUIPIER') {
+            compts.EQU++;
+        }
     });
 
     let manqueTotal = 0;
 
-    // 2. Mise à jour des valeurs et calcul des écarts
+    // Update du DOM...
     fonctionsCibles.forEach(code => {
         const dispo = compts[code] || 0;
         
@@ -351,7 +358,6 @@ function calculerBesoins() {
         }
     });
 
-    // Mise à jour du récapitulatif global
     const elRecap = document.getElementById("recap-besoins-global");
     if (elRecap) {
         if (manqueTotal > 0) {
