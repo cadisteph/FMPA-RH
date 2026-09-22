@@ -395,44 +395,58 @@ function rendreEquipes() {
         if (countEl) countEl.innerText = s.nb;
 
         const statsEl = document.getElementById(`stats-${lettre}`);
-if (statsEl) {
-    statsEl.innerHTML = `
-        
-        <!-- Section Encadrement -->
-        <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px; margin-bottom:3px;">ENCADREMENT & GRADES :</div>
-        <div style="display:flex; flex-wrap:wrap; gap:3px; margin-bottom:8px;">
-            <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">CDG : </span> <span class="stat-value" style="color:#ffe500; margin-left: 2px;">${s.cdg}</span></span>
-            <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">CATE : </span> <span class="stat-value" style="color:#0ce205; margin-left: 2px;">${s.acdgCate}</span></span>
-            <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">CA1E : </span> <span class="stat-value" style="color:#079302; margin-left: 2px;">${s.ca1e}</span></span>
-            <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">CEqu : </span> <span class="stat-value" style="color:#058cf8; margin-left: 2px;">${s.cequ}</span></span>
-            <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">Equ : </span> <span class="stat-value" style="color:#0568b8; margin-left: 2px;">${s.equ}</span></span>
-        </div>
+        if (statsEl) {
+            statsEl.innerHTML = `
+                <!-- Section Encadrement -->
+                <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px; margin-bottom:3px;">ENCADREMENT & GRADES :</div>
+                <div style="display:flex; flex-wrap:wrap; gap:3px; margin-bottom:8px;">
+                    <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">CDG : </span> <span class="stat-value" style="color:#ffe500; margin-left: 2px;">${s.cdg}</span></span>
+                    <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">CATE : </span> <span class="stat-value" style="color:#0ce205; margin-left: 2px;">${s.acdgCate}</span></span>
+                    <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">CA1E : </span> <span class="stat-value" style="color:#079302; margin-left: 2px;">${s.ca1e}</span></span>
+                    <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">CEqu : </span> <span class="stat-value" style="color:#058cf8; margin-left: 2px;">${s.cequ}</span></span>
+                    <span class="stat-badge" style="padding: 2px 4px; font-size: 0.7rem;"><span class="stat-label">Equ : </span> <span class="stat-value" style="color:#0568b8; margin-left: 2px;">${s.equ}</span></span>
+                </div>
 
-        <!-- Section Spé / Compétences -->
-            <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Spécialités : </div>
-            <div class="stat-badge-container">${genererBadgesHTML(s.dicSpecs, '#60a5fa')}</div>
-            <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Compétences / Permis : </div>
-            <div class="stat-badge-container">${genererBadgesHTML(s.dicComps, '#34d399')}</div>
+                <!-- Section Spé / Compétences -->
+                <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Spécialités : </div>
+                <div class="stat-badge-container">${genererBadgesHTML(s.dicSpecs, '#60a5fa')}</div>
+                <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Compétences / Permis : </div>
+                <div class="stat-badge-container">${genererBadgesHTML(s.dicComps, '#34d399')}</div>
 
-        <!-- Section Infos Générales & Régimes -->
-        <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Profils / Régimes : </div>
-        <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;">
-            <span class="stat-badge"><span class="stat-label">Moy. Âge : </span> <span class="stat-value" style="color:#ffffff; margin-left: 2px;">${s.ageMoy} ans</span></span>
-            <span class="stat-badge"><span class="stat-label"> Nbre Femmes : </span> <span class="stat-value" style="color:#f400ff; margin-left: 2px;">${s.nbF}</span></span>
-            <span class="stat-badge"><span class="stat-label">G24 : </span> <span class="stat-value" style="color:#60a5fa; margin-left: 2px;">${s.nbG24}</span></span>
-            <span class="stat-badge"><span class="stat-label">Mixte : </span> <span class="stat-value" style="color:#60a5fa; margin-left: 2px;">${s.nbMixte}</span></span>
-        </div>
+                <!-- Section Infos Générales & Régimes -->
+                <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Profils / Régimes : </div>
+                <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;">
+                    <span class="stat-badge"><span class="stat-label">Moy. Âge : </span> <span class="stat-value" style="color:#ffffff; margin-left: 2px;">${s.ageMoy} ans</span></span>
+                    <span class="stat-badge"><span class="stat-label"> Nbre Femmes : </span> <span class="stat-value" style="color:#f400ff; margin-left: 2px;">${s.nbF}</span></span>
+                    <span class="stat-badge"><span class="stat-label">G24 : </span> <span class="stat-value" style="color:#60a5fa; margin-left: 2px;">${s.nbG24}</span></span>
+                    <span class="stat-badge"><span class="stat-label">Mixte : </span> <span class="stat-value" style="color:#60a5fa; margin-left: 2px;">${s.nbMixte}</span></span>
+                </div>
 
-        <!-- Section CoVoit' -->
-            <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Départements Domicile : </div>
-            <div class="stat-badge-container">${genererBadgesHTML(s.dicDept, '#f59e0b')}</div>`;
+                <!-- Section CoVoit' -->
+                <div class="stat-section-title" style="font-weight:bold; color:#94a3b8; font-size:0.75rem; margin-top:6px;">Départements Domicile : </div>
+                <div class="stat-badge-container">${genererBadgesHTML(s.dicDept, '#f59e0b')}</div>`;
         }
 
         const container = document.getElementById(`container-${lettre}`);
         if (container) {
             container.innerHTML = "";
             membres.forEach(agent => {
-                const specs = agent.specialites ? `<span class="agent-spec">[${agent.specialites}]</span>` : '';
+                const specs = agent.specialites ? `<span class="agent-spec" style="color:#60a5fa;">[${agent.specialites}]</span>` : '';
+                
+                // Récupération et formatage des compétences/permis de l'agent
+                let listeComps = [];
+                if (Array.isArray(agent.competences)) {
+                    listeComps = agent.competences;
+                } else if (typeof agent.competences === 'string' && agent.competences.trim() !== '') {
+                    listeComps = agent.competences.split(',').map(c => c.trim());
+                } else if (agent.dicComps) {
+                    listeComps = Object.keys(agent.dicComps);
+                }
+                
+                const compsHTML = listeComps.length > 0 
+                    ? listeComps.map(c => `<span style="background-color: #064e3b; color: #10b981; padding: 1px 4px; border-radius: 3px; font-size: 0.7rem; font-weight: bold; margin-left: 3px;">${c}</span>`).join('')
+                    : '';
+
                 const dep = extraireDepartement(agent);
                 
                 const optionsDeplacement = lettresEquipes
@@ -444,11 +458,12 @@ if (statsEl) {
                     <div class="carte-agent-simu ${agent.verrouille ? 'locked' : ''}">
                         <div class="agent-info-compact">
                             <span class="agent-nom">${(agent.nom || '').toUpperCase()} ${agent.prenom || ''}</span>
-                            <div class="agent-details">
+                            <div class="agent-details" style="display:flex; flex-wrap:wrap; align-items:center; gap:3px;">
                                 <span>${agent.fonction || 'Agent'}</span>
                                 <span>${agent.grade || '-'}</span>
                                 <span style="color:#f59e0b;">Dép:${dep}</span>
                                 ${specs}
+                                ${compsHTML}
                             </div>
                         </div>
                         <div style="display:flex; align-items:center; gap:4px;">
