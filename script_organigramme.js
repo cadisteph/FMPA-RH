@@ -287,19 +287,15 @@ calculerBesoins();
 
 
 
-
-
-
-
 /**
- * Calcule les besoins avec cascade descendant : CATE -> CA1E -> CEQU -> EQU
- * Indique clairement l'origine du surplus (ex: "comblé par CATE")
+ * Calcule les besoins avec glissement de fonctions :
+ * Ne consomme l'excédent QUE pour combler un manque sous-jacent.
  */
 function calculerBesoins() {
     const fonctionsCibles = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
     const compts = { CDG: 0, ACDG1: 0, ACDG2: 0, CATE: 0, CA1E: 0, CEQU: 0, EQU: 0 };
 
-    // 1. Comptage des cartes dans les colonnes de garde (A, B, C, G12)
+    // 1. Comptage des agents dans les colonnes de garde (A, B, C, G12)
     const colonnes = document.querySelectorAll('.colonne-equipe');
 
     colonnes.forEach(col => {
@@ -328,7 +324,7 @@ function calculerBesoins() {
         });
     });
 
-    // 2. Traitement des besoins hors cascade (CDG, ACDG1, ACDG2)
+    // 2. Traitement hors cascade (CDG, ACDG1, ACDG2)
     let manqueTotalGlobal = 0;
 
     ['CDG', 'ACDG1', 'ACDG2'].forEach(code => {
@@ -343,53 +339,92 @@ function calculerBesoins() {
             const delta = dispo - cible;
 
             if (delta < 0) manqueTotalGlobal += Math.abs(delta);
-            afficherResultatCase(code, delta, null);
+            afficherResultatCase(code, { status: delta < 0 ? 'manque' : (delta === 0 ? 'ok' : 'surplus'), val: delta });
         }
     });
 
-    // 3. Cascade de compétences : CATE -> CA1E -> CEQU -> EQU
+    // 3. Calcul de la cascade CATE -> CA1E -> CEQU -> EQU
     const ordreCascade = ['CATE', 'CA1E', 'CEQU', 'EQU'];
-    let excedentReporte = 0;
-    let sourceExcedent = null; // Enregistre quelle fonction supérieure à fourni le renfort
+    const etats = {};
 
+    // Étape A : Calcul des deltas bruts
     ordreCascade.forEach(code => {
         const dispo = compts[code] || 0;
         const elDisp = document.getElementById(`disp-${code}`);
         if (elDisp) elDisp.innerText = dispo;
 
         const inputCible = document.getElementById(`cible-${code}`);
+        let cible = 0;
         if (inputCible) {
             localStorage.setItem(`cible_${code}`, inputCible.value);
-            const cible = parseInt(inputCible.value, 10) || 0;
+            cible = parseInt(inputCible.value, 10) || 0;
+        }
 
-            const dispoTotale = dispo + excedentReporte;
-            const deltaAjuste = dispoTotale - cible;
+        etats[code] = {
+            dispo: dispo,
+            cible: cible,
+            deltaBrut: dispo - cible,
+            comblePar: null,
+            transfereVers: null
+        };
+    });
 
-            let sourceUtiliseePourCetteCase = null;
+    // Étape B : Application des transferts de haut en bas
+    for (let i = 0; i < ordreCascade.length; i++) {
+        const srcCode = ordreCascade[i];
+        
+        // S'il y a un surplus sur cette fonction
+        if (etats[srcCode].deltaBrut > 0) {
+            let surplusDisponible = etats[srcCode].deltaBrut;
 
-            if (deltaAjuste < 0) {
-                // Déficit malgré le renfort
-                manqueTotalGlobal += Math.abs(deltaAjuste);
-                excedentReporte = 0;
-                sourceExcedent = null;
-            } else {
-                // Si du renfort du niveau supérieur a été utilisé
-                if (excedentReporte > 0 && dispo < cible) {
-                    sourceUtiliseePourCetteCase = sourceExcedent;
-                }
+            // Chercher une fonction en dessous qui a besoin de renfort
+            for (let j = i + 1; j < ordreCascade.length; j++) {
+                const destCode = ordreCascade[j];
+                const besDest = etats[destCode].cible - etats[destCode].dispo;
 
-                // Préparation du surplus à transmettre au rang inférieur
-                excedentReporte = deltaAjuste;
-                if (deltaAjuste > 0 && !sourceExcedent) {
-                    sourceExcedent = code; // Première fonction qui génère le surplus
+                if (besDest > 0 && !etats[destCode].comblePar) {
+                    // On comble le besoin au maximum du surplus disponible
+                    etats[destCode].comblePar = srcCode;
+                    etats[srcCode].transfereVers = destCode;
+                    
+                    // Ajustement du surplus disponible si consommé
+                    if (surplusDisponible >= besDest) {
+                        surplusDisponible -= besDest;
+                        break; // Le besoin de la cible est totalement couvert
+                    } else {
+                        break;
+                    }
                 }
             }
+        }
+    }
 
-            afficherResultatCase(code, deltaAjuste, sourceUtiliseePourCetteCase);
+    // Étape C : Affichage dynamique des résultats
+    ordreCascade.forEach(code => {
+        const item = etats[code];
+        const deltaBrut = item.deltaBrut;
+
+        if (deltaBrut < 0) {
+            if (item.comblePar) {
+                // Le déficit local est couvert par un rang supérieur
+                afficherResultatCase(code, { status: 'comble', source: item.comblePar });
+            } else {
+                // Il manque toujours des agents
+                manqueTotalGlobal += Math.abs(deltaBrut);
+                afficherResultatCase(code, { status: 'manque', val: Math.abs(deltaBrut) });
+            }
+        } else if (deltaBrut === 0) {
+            afficherResultatCase(code, { status: 'ok' });
+        } else { // deltaBrut > 0
+            if (item.transfereVers) {
+                afficherResultatCase(code, { status: 'transfere', val: deltaBrut, dest: item.transfereVers });
+            } else {
+                afficherResultatCase(code, { status: 'surplus', val: deltaBrut });
+            }
         }
     });
 
-    // 4. Récapitulatif
+    // 4. Récapitulatif global
     const elRecap = document.getElementById("recap-besoins-global");
     if (elRecap) {
         if (manqueTotalGlobal > 0) {
@@ -401,26 +436,27 @@ function calculerBesoins() {
 }
 
 /**
- * Affichage enrichi avec indication du rôle d'origine
+ * Gestion précise des libellés d'affichage
  */
-function afficherResultatCase(code, delta, sourceGlissement) {
+function afficherResultatCase(code, res) {
     const elRes = document.getElementById(`res-${code}`);
     if (!elRes) return;
 
-    if (delta < 0) {
-        const manque = Math.abs(delta);
-        elRes.innerHTML = `<span style="color:#ef4444; font-weight:bold;">Manque ${manque}</span>`;
-    } else if (delta === 0) {
-        if (sourceGlissement) {
-            elRes.innerHTML = `<span style="color:#38bdf8; font-weight:bold;">OK (comblé par ${sourceGlissement})</span>`;
-        } else {
+    switch (res.status) {
+        case 'manque':
+            elRes.innerHTML = `<span style="color:#ef4444; font-weight:bold;">Manque ${res.val}</span>`;
+            break;
+        case 'ok':
             elRes.innerHTML = `<span style="color:#38bdf8; font-weight:bold;">OK (Complet)</span>`;
-        }
-    } else { // delta > 0
-        if (sourceGlissement) {
-            elRes.innerHTML = `<span style="color:#22c55e; font-weight:bold;">+${delta} (dont ${sourceGlissement})</span>`;
-        } else {
-            elRes.innerHTML = `<span style="color:#22c55e; font-weight:bold;">+${delta} en rabe</span>`;
-        }
+            break;
+        case 'comble':
+            elRes.innerHTML = `<span style="color:#38bdf8; font-weight:bold;">OK (comblé par ${res.source})</span>`;
+            break;
+        case 'transfere':
+            elRes.innerHTML = `<span style="color:#22c55e; font-weight:bold;">+${res.val} (transfert vers ${res.dest})</span>`;
+            break;
+        case 'surplus':
+            elRes.innerHTML = `<span style="color:#22c55e; font-weight:bold;">+${res.val} en rabe</span>`;
+            break;
     }
 }
