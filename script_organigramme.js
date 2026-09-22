@@ -292,46 +292,51 @@ calculerBesoins();
 
 
 /**
- * Calcule et affiche les besoins en personnels
- * en se basant EXCLUSIVEMENT sur les cartes affichées dans les équipes de garde (A, B, C, G12)
+ * Calcule les besoins en ne comptant chaque agent DE GARDE qu'UNE SEULE FOIS.
+ * Total garanti : 57 agents (18A + 18B + 18C + 3G12)
  */
 function calculerBesoins() {
     const fonctionsCibles = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
     const compts = { CDG: 0, ACDG1: 0, ACDG2: 0, CATE: 0, CA1E: 0, CEQU: 0, EQU: 0 };
 
-    // 1. On cible uniquement les colonnes d'équipes de garde (A, B, C, G12)
-    // On exclut explicitement la colonne Encadrement et la colonne SPV
+    // 1. On cible les cartes d'agents uniques uniquement dans les équipes A, B, C et G12
     const colonnesGarde = document.querySelectorAll('.grille-equipes .colonne-equipe');
 
     colonnesGarde.forEach(colonne => {
-        const titreColonne = colonne.querySelector('h3, .titre-colonne, .header-colonne')?.innerText || '';
-        const titreNorm = titreColonne.toUpperCase();
+        const titre = (colonne.querySelector('h3, .titre-colonne, .header-colonne')?.innerText || '').toUpperCase();
 
-        // Sécurité : ignorer si c'est la colonne Encadrement ou SPV
-        if (titreNorm.includes('ENCADREMENT') || titreNorm.includes('SPV')) {
+        // On ignore totalement les colonnes Encadrement et SPV
+        if (titre.includes('ENCADREMENT') || titre.includes('SPV')) {
             return;
         }
 
-        // 2. On récupère les badges de fonction (.badge-fonction, .fonction, etc.) dans cette colonne
-        const badges = colonne.querySelectorAll('.badge-fonction, [class*="fonction"]');
-        
-        badges.forEach(badge => {
+        // 2. On récupère chaque CARTE AGENT (.carte-agent ou .agent)
+        const cartesAgents = colonne.querySelectorAll('.carte-agent, .agent-card, [class*="agent"]');
+
+        cartesAgents.forEach(carte => {
+            // Sécurité : éviter de traiter un élément parent s'il y a imbrication
+            if (carte.children.length === 0 && !carte.classList.contains('badge-fonction')) return;
+
+            // On cherche le badge de fonction principal dans la carte
+            const badge = carte.querySelector('.badge-fonction, [class*="fonction"]');
+            if (!badge) return;
+
             const fn = badge.innerText.trim().toUpperCase();
 
-            // Comptage strict sur le texte exact du badge
+            // Mappage strict : 1 agent = 1 seule catégorie
             if (fn === 'CDG' || fn === 'CHEF DE GARDE') compts.CDG++;
             else if (fn === 'ACDG1' || fn === 'ACDG 1') compts.ACDG1++;
             else if (fn === 'ACDG2' || fn === 'ACDG 2') compts.ACDG2++;
             else if (fn === 'CATE' || fn === 'CHEF ATELIER') compts.CATE++;
             else if (fn === 'CA1E' || fn === 'CA1É' || fn === 'CHEF AGRES') compts.CA1E++;
-            else if (fn === 'CEQU' || fn === 'CHEF EQUIPE') compts.CEQU++;
+            else if (fn === 'CEQU' || fn === 'CHEF EQUIPE' || fn === 'CEQU') compts.CEQU++;
             else if (fn === 'EQU' || fn === 'ÉQUIPiER' || fn === 'EQUIPIER') compts.EQU++;
         });
     });
 
     let manqueTotal = 0;
 
-    // 3. Mise à jour des compteurs et calculs des deltas
+    // 3. Mise à jour de l'affichage
     fonctionsCibles.forEach(code => {
         const dispo = compts[code] || 0;
         
@@ -340,9 +345,7 @@ function calculerBesoins() {
 
         const inputCible = document.getElementById(`cible-${code}`);
         if (inputCible) {
-            // Sauvegarde de la valeur saisie
             localStorage.setItem(`cible_${code}`, inputCible.value);
-
             const cible = parseInt(inputCible.value, 10) || 0;
             const delta = dispo - cible;
             const elRes = document.getElementById(`res-${code}`);
@@ -363,7 +366,6 @@ function calculerBesoins() {
         }
     });
 
-    // Récapitulatif
     const elRecap = document.getElementById("recap-besoins-global");
     if (elRecap) {
         if (manqueTotal > 0) {
