@@ -292,57 +292,47 @@ calculerBesoins();
 
 
 /**
- * Calcule les besoins en inspectant directement les éléments du DOM
- * Uniquement pour les équipes de garde (hors Encadrement et SPV)
+ * Calcule les besoins avec cascade descendant : CATE -> CA1E -> CEQU -> EQU
+ * Indique clairement l'origine du surplus (ex: "comblé par CATE")
  */
 function calculerBesoins() {
     const fonctionsCibles = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
     const compts = { CDG: 0, ACDG1: 0, ACDG2: 0, CATE: 0, CA1E: 0, CEQU: 0, EQU: 0 };
 
-    // 1. On récupère les colonnes de garde uniquement
+    // 1. Comptage des cartes dans les colonnes de garde (A, B, C, G12)
     const colonnes = document.querySelectorAll('.colonne-equipe');
 
     colonnes.forEach(col => {
         const titreEl = col.querySelector('.colonne-titre');
         const titreText = titreEl ? titreEl.innerText.toUpperCase() : '';
 
-        // Exclure explicitement Encadrement et SPV
-        if (titreText.includes('ENCADREMENT') || titreText.includes('SPV')) {
-            return;
-        }
+        if (titreText.includes('ENCADREMENT') || titreText.includes('SPV')) return;
 
-        // 2. Parcourir chaque carte d'agent de la colonne
         const cartes = col.querySelectorAll('.carte-agent');
 
         cartes.forEach(carte => {
-            // Exclure si la carte est marquée SPV ou PATS
-            if (carte.classList.contains('spv') || carte.classList.contains('pats')) {
-                return;
-            }
+            if (carte.classList.contains('spv') || carte.classList.contains('pats')) return;
 
-            // Récupérer uniquement la balise spécifique de la fonction (.fonction-tag)
             const elFonction = carte.querySelector('.fonction-tag');
             if (!elFonction) return;
 
             const fn = elFonction.innerText.trim().toUpperCase();
 
-            // Comptage strict sur le code de fonction exact
             if (fn === 'CDG' || fn === 'CDC') compts.CDG++;
             else if (fn === 'ACDG1' || fn === 'ACDG 1') compts.ACDG1++;
             else if (fn === 'ACDG2' || fn === 'ACDG 2') compts.ACDG2++;
             else if (fn === 'CATE') compts.CATE++;
             else if (fn === 'CA1E') compts.CA1E++;
-            else if (fn === 'CEQU' || fn === 'CEQU') compts.CEQU++;
+            else if (fn === 'CEQU') compts.CEQU++;
             else if (fn === 'EQU') compts.EQU++;
         });
     });
 
-    let manqueTotal = 0;
+    // 2. Traitement des besoins hors cascade (CDG, ACDG1, ACDG2)
+    let manqueTotalGlobal = 0;
 
-    // 3. Mise à jour de l'affichage
-    fonctionsCibles.forEach(code => {
+    ['CDG', 'ACDG1', 'ACDG2'].forEach(code => {
         const dispo = compts[code] || 0;
-        
         const elDisp = document.getElementById(`disp-${code}`);
         if (elDisp) elDisp.innerText = dispo;
 
@@ -351,31 +341,86 @@ function calculerBesoins() {
             localStorage.setItem(`cible_${code}`, inputCible.value);
             const cible = parseInt(inputCible.value, 10) || 0;
             const delta = dispo - cible;
-            const elRes = document.getElementById(`res-${code}`);
 
-            if (elRes) {
-                if (cible === 0) {
-                    elRes.innerHTML = `<span style="color:#94a3b8;">-</span>`;
-                } else if (delta < 0) {
-                    const manque = Math.abs(delta);
-                    manqueTotal += manque;
-                    elRes.innerHTML = `<span style="color:#ef4444; font-weight:bold;">Manque ${manque}</span>`;
-                } else if (delta > 0) {
-                    elRes.innerHTML = `<span style="color:#22c55e; font-weight:bold;">+${delta} en rabe</span>`;
-                } else {
-                    elRes.innerHTML = `<span style="color:#38bdf8; font-weight:bold;">OK (Complet)</span>`;
-                }
-            }
+            if (delta < 0) manqueTotalGlobal += Math.abs(delta);
+            afficherResultatCase(code, delta, null);
         }
     });
 
-    // Récapitulatif global
+    // 3. Cascade de compétences : CATE -> CA1E -> CEQU -> EQU
+    const ordreCascade = ['CATE', 'CA1E', 'CEQU', 'EQU'];
+    let excedentReporte = 0;
+    let sourceExcedent = null; // Enregistre quelle fonction supérieure à fourni le renfort
+
+    ordreCascade.forEach(code => {
+        const dispo = compts[code] || 0;
+        const elDisp = document.getElementById(`disp-${code}`);
+        if (elDisp) elDisp.innerText = dispo;
+
+        const inputCible = document.getElementById(`cible-${code}`);
+        if (inputCible) {
+            localStorage.setItem(`cible_${code}`, inputCible.value);
+            const cible = parseInt(inputCible.value, 10) || 0;
+
+            const dispoTotale = dispo + excedentReporte;
+            const deltaAjuste = dispoTotale - cible;
+
+            let sourceUtiliseePourCetteCase = null;
+
+            if (deltaAjuste < 0) {
+                // Déficit malgré le renfort
+                manqueTotalGlobal += Math.abs(deltaAjuste);
+                excedentReporte = 0;
+                sourceExcedent = null;
+            } else {
+                // Si du renfort du niveau supérieur a été utilisé
+                if (excedentReporte > 0 && dispo < cible) {
+                    sourceUtiliseePourCetteCase = sourceExcedent;
+                }
+
+                // Préparation du surplus à transmettre au rang inférieur
+                excedentReporte = deltaAjuste;
+                if (deltaAjuste > 0 && !sourceExcedent) {
+                    sourceExcedent = code; // Première fonction qui génère le surplus
+                }
+            }
+
+            afficherResultatCase(code, deltaAjuste, sourceUtiliseePourCetteCase);
+        }
+    });
+
+    // 4. Récapitulatif
     const elRecap = document.getElementById("recap-besoins-global");
     if (elRecap) {
-        if (manqueTotal > 0) {
-            elRecap.innerHTML = `<span style="color:#ef4444; font-weight:bold;">Déficit SPP Garde : ${manqueTotal} agent(s) manquant(s)</span>`;
+        if (manqueTotalGlobal > 0) {
+            elRecap.innerHTML = `<span style="color:#ef4444; font-weight:bold;">Déficit SPP Garde : ${manqueTotalGlobal} agent(s) manquant(s)</span>`;
         } else {
-            elRecap.innerHTML = `<span style="color:#22c55e; font-weight:bold;">Toutes les cibles SPP Garde sont atteintes</span>`;
+            elRecap.innerHTML = `<span style="color:#22c55e; font-weight:bold;">Toutes les cibles sont couvertes</span>`;
+        }
+    }
+}
+
+/**
+ * Affichage enrichi avec indication du rôle d'origine
+ */
+function afficherResultatCase(code, delta, sourceGlissement) {
+    const elRes = document.getElementById(`res-${code}`);
+    if (!elRes) return;
+
+    if (delta < 0) {
+        const manque = Math.abs(delta);
+        elRes.innerHTML = `<span style="color:#ef4444; font-weight:bold;">Manque ${manque}</span>`;
+    } else if (delta === 0) {
+        if (sourceGlissement) {
+            elRes.innerHTML = `<span style="color:#38bdf8; font-weight:bold;">OK (comblé par ${sourceGlissement})</span>`;
+        } else {
+            elRes.innerHTML = `<span style="color:#38bdf8; font-weight:bold;">OK (Complet)</span>`;
+        }
+    } else { // delta > 0
+        if (sourceGlissement) {
+            elRes.innerHTML = `<span style="color:#22c55e; font-weight:bold;">+${delta} (dont ${sourceGlissement})</span>`;
+        } else {
+            elRes.innerHTML = `<span style="color:#22c55e; font-weight:bold;">+${delta} en rabe</span>`;
         }
     }
 }
