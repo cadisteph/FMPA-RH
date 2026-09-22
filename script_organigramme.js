@@ -292,25 +292,33 @@ calculerBesoins();
 
 
 /**
- * Calcule et affiche les besoins en personnels et les deltas pour chaque fonction
+ * Calcule et affiche les besoins en personnels et les deltas
+ * (Uniquement pour le personnel SPP en garde - hors SPV et hors Encadrement/PATS)
  */
 function calculerBesoins() {
     const fonctionsCibles = ['CDG', 'ACDG1', 'ACDG2', 'CATE', 'CA1E', 'CEQU', 'EQU'];
     
-    // 1. Comptage des agents disponibles actuellement dans tousLesAgents
+    // 1. Comptage des agents SPP en garde
     const compts = { CDG: 0, ACDG1: 0, ACDG2: 0, CATE: 0, CA1E: 0, CEQU: 0, EQU: 0 };
 
     tousLesAgents.forEach(agent => {
+        const statut = normaliserTexte(agent.statut);
+        
+        // Exclusion des SPV et de l'encadrement/PATS
+        if (statut.includes('SPV') || estAgentEncadrement(agent)) {
+            return; // On passe à l'agent suivant
+        }
+
         const fn = normaliserTexte(agent.fonction);
         
-        // Correspondances précises pour éviter qu'ACDG1 soit compté en CDG
+        // Correspondances précises par fonction
         if (fn === 'CDG' || fn.includes('CHEF DE GARDE')) compts.CDG++;
         else if (fn === 'ACDG1' || fn.includes('ACDG 1')) compts.ACDG1++;
         else if (fn === 'ACDG2' || fn.includes('ACDG 2')) compts.ACDG2++;
         else if (fn === 'CATE' || fn.includes('CHEF ATELIER')) compts.CATE++;
-        else if (fn === 'CA1E' || fn.includes('CHEF AGRÈS')) compts.CA1E++;
-        else if (fn === 'CEQU' || fn.includes('CHEF EQUIPE')) compts.CEQU++;
-        else if (fn === 'EQU' || fn.includes('EQUIPIER')) compts.EQU++;
+        else if (fn === 'CA1E' || fn.includes('CHEF AGRES') || fn.includes('CHEF AGRÈS')) compts.CA1E++;
+        else if (fn === 'CEQU' || fn.includes('CHEF EQUIPE') || fn.includes('CHEF ÉQUIPE')) compts.CEQU++;
+        else if (fn === 'EQU' || fn.includes('EQUIPIER') || fn.includes('ÉQUIPIER')) compts.EQU++;
     });
 
     let manqueTotal = 0;
@@ -319,11 +327,9 @@ function calculerBesoins() {
     fonctionsCibles.forEach(code => {
         const dispo = compts[code] || 0;
         
-        // Mettre à jour le nombre dispo affiché
         const elDisp = document.getElementById(`disp-${code}`);
         if (elDisp) elDisp.innerText = dispo;
 
-        // Récupérer la cible saisie par l'utilisateur
         const inputCible = document.getElementById(`cible-${code}`);
         const cible = inputCible ? (parseInt(inputCible.value, 10) || 0) : 0;
 
@@ -345,13 +351,13 @@ function calculerBesoins() {
         }
     });
 
-    // Optionnel : récapitulatif global
+    // Mise à jour du récapitulatif global
     const elRecap = document.getElementById("recap-besoins-global");
     if (elRecap) {
         if (manqueTotal > 0) {
-            elRecap.innerHTML = `<span style="color:#ef4444; font-weight:bold;">Déficit global : ${manqueTotal} agent(s) manquant(s)</span>`;
+            elRecap.innerHTML = `<span style="color:#ef4444; font-weight:bold;">Déficit SPP Garde : ${manqueTotal} agent(s) manquant(s)</span>`;
         } else {
-            elRecap.innerHTML = `<span style="color:#22c55e; font-weight:bold;">Toutes les cibles sont atteintes</span>`;
+            elRecap.innerHTML = `<span style="color:#22c55e; font-weight:bold;">Toutes les cibles SPP Garde sont atteintes</span>`;
         }
     }
 }
