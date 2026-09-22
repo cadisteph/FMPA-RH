@@ -281,12 +281,6 @@ calculerBesoins();
 }
 
 
-
-
-
-
-
-
 /**
  * Calcule les besoins avec cascade de compétences :
  * Gère correctement les transferts partiels et le reliquat de manque.
