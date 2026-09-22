@@ -551,19 +551,24 @@ function suggererReequilibrage() {
     }
 
     propositionsEnAttente = [];
-
     const chkNiveaux = document.getElementById("chk-conserver-niveaux");
     const conserverNiveaux = chkNiveaux ? chkNiveaux.checked : true;
 
-    let etatSimule = JSON.parse(JSON.stringify(agentsLocaux));
+    // Simulation de l'état des agents avec sauvegarde de l'équipe d'origine
+    let etatSimule = agentsLocaux.map(a => ({
+        ...a,
+        equipeInitiale: extraireLettreEquipe(a.equipe),
+        equipeActuelle: extraireLettreEquipe(a.equipe),
+        raisonsCumulees: []
+    }));
 
     const lettres = ['A', 'B', 'C'];
     const maxIterations = 20;
 
     for (let iter = 0; iter < maxIterations; iter++) {
-        let eqA = etatSimule.filter(a => extraireLettreEquipe(a.equipe) === 'A');
-        let eqB = etatSimule.filter(a => extraireLettreEquipe(a.equipe) === 'B');
-        let eqC = etatSimule.filter(a => extraireLettreEquipe(a.equipe) === 'C');
+        let eqA = etatSimule.filter(a => a.equipeActuelle === 'A');
+        let eqB = etatSimule.filter(a => a.equipeActuelle === 'B');
+        let eqC = etatSimule.filter(a => a.equipeActuelle === 'C');
 
         let scoreActuel = calculerScorePenalite([eqA, eqB, eqC], conserverNiveaux);
         let meilleurScore = scoreActuel;
@@ -571,19 +576,19 @@ function suggererReequilibrage() {
 
         const dics = { 'A': eqA, 'B': eqB, 'C': eqC };
 
-        // TESTER LES TRANSFERTS DIRECTS
+        // 1. TESTER LES TRANSFERTS DIRECTS
         lettres.forEach(source => {
             lettres.forEach(cible => {
                 if (source !== cible) {
                     const candidats = dics[source].filter(a => !a.verrouille);
                     candidats.forEach(agent => {
-                        const simA = eqA.map(a => a.idUnique === agent.idUnique ? { ...a, equipe: `Équipe ${cible}` } : a);
-                        const simB = eqB.map(a => a.idUnique === agent.idUnique ? { ...a, equipe: `Équipe ${cible}` } : a);
-                        const simC = eqC.map(a => a.idUnique === agent.idUnique ? { ...a, equipe: `Équipe ${cible}` } : a);
+                        const simA = eqA.map(a => a.idUnique === agent.idUnique ? { ...a, equipeActuelle: cible } : a);
+                        const simB = eqB.map(a => a.idUnique === agent.idUnique ? { ...a, equipeActuelle: cible } : a);
+                        const simC = eqC.map(a => a.idUnique === agent.idUnique ? { ...a, equipeActuelle: cible } : a);
 
-                        const testA = source === 'A' ? simA.filter(a => a.idUnique !== agent.idUnique) : (cible === 'A' ? [...simA, { ...agent, equipe: 'Équipe A' }] : simA);
-                        const testB = source === 'B' ? simB.filter(a => a.idUnique !== agent.idUnique) : (cible === 'B' ? [...simB, { ...agent, equipe: 'Équipe B' }] : simB);
-                        const testC = source === 'C' ? simC.filter(a => a.idUnique !== agent.idUnique) : (cible === 'C' ? [...simC, { ...agent, equipe: 'Équipe C' }] : simC);
+                        const testA = source === 'A' ? simA.filter(a => a.idUnique !== agent.idUnique) : (cible === 'A' ? [...simA, { ...agent, equipeActuelle: 'A' }] : simA);
+                        const testB = source === 'B' ? simB.filter(a => a.idUnique !== agent.idUnique) : (cible === 'B' ? [...simB, { ...agent, equipeActuelle: 'B' }] : simB);
+                        const testC = source === 'C' ? simC.filter(a => a.idUnique !== agent.idUnique) : (cible === 'C' ? [...simC, { ...agent, equipeActuelle: 'C' }] : simC);
 
                         const testScore = calculerScorePenalite([testA, testB, testC], conserverNiveaux);
 
@@ -594,7 +599,9 @@ function suggererReequilibrage() {
                                 agent: agent,
                                 eqSource: source,
                                 eqCible: cible,
-                                gain: scoreActuel - testScore
+                                gain: scoreActuel - testScore,
+                                eqSrcObj: dics[source],
+                                eqCibObj: dics[cible]
                             };
                         }
                     });
@@ -602,7 +609,7 @@ function suggererReequilibrage() {
             });
         });
 
-        // TESTER LES ÉCHANGES 1 CONTRE 1
+        // 2. TESTER LES ÉCHANGES 1 CONTRE 1
         if (!meilleurMouvement) {
             const testerPaireEchange = (eq1, eq2, nom1, nom2) => {
                 const mob1 = eq1.filter(a => !a.verrouille);
@@ -610,9 +617,9 @@ function suggererReequilibrage() {
 
                 mob1.forEach(a1 => {
                     mob2.forEach(a2 => {
-                        const simA = eqA.map(a => a.idUnique === a1.idUnique ? a2 : (a.idUnique === a2.idUnique ? a1 : a));
-                        const simB = eqB.map(a => a.idUnique === a1.idUnique ? a2 : (a.idUnique === a2.idUnique ? a1 : a));
-                        const simC = eqC.map(a => a.idUnique === a1.idUnique ? a2 : (a.idUnique === a2.idUnique ? a1 : a));
+                        const simA = eqA.map(a => a.idUnique === a1.idUnique ? { ...a2, equipeActuelle: a1.equipeActuelle } : (a.idUnique === a2.idUnique ? { ...a1, equipeActuelle: a2.equipeActuelle } : a));
+                        const simB = eqB.map(a => a.idUnique === a1.idUnique ? { ...a2, equipeActuelle: a1.equipeActuelle } : (a.idUnique === a2.idUnique ? { ...a1, equipeActuelle: a2.equipeActuelle } : a));
+                        const simC = eqC.map(a => a.idUnique === a1.idUnique ? { ...a2, equipeActuelle: a1.equipeActuelle } : (a.idUnique === a2.idUnique ? { ...a1, equipeActuelle: a2.equipeActuelle } : a));
 
                         const testScore = calculerScorePenalite([simA, simB, simC], conserverNiveaux);
 
@@ -624,7 +631,9 @@ function suggererReequilibrage() {
                                 a2: a2,
                                 eq1: nom1,
                                 eq2: nom2,
-                                gain: scoreActuel - testScore
+                                gain: scoreActuel - testScore,
+                                eqSrcObj: eq1,
+                                eqCibObj: eq2
                             };
                         }
                     });
@@ -636,40 +645,96 @@ function suggererReequilibrage() {
             testerPaireEchange(eqA, eqC, 'A', 'C');
         }
 
+        // APPLICATION DU MOUVEMENT ET DÉDUCTION DE LA RAISON
         if (meilleurMouvement) {
             if (meilleurMouvement.type === 'TRANSFERT') {
                 const target = etatSimule.find(a => a.idUnique === meilleurMouvement.agent.idUnique);
-                if (target) target.equipe = `Équipe ${meilleurMouvement.eqCible}`;
-
-                propositionsEnAttente.push({
-                    type: 'TRANSFERT',
-                    a1: meilleurMouvement.agent,
-                    eqCible: meilleurMouvement.eqCible,
-                    motif: `Transfert Équipe ${meilleurMouvement.eqSource} ➡️ Équipe ${meilleurMouvement.eqCible}`
-                });
+                if (target) {
+                    target.equipeActuelle = meilleurMouvement.eqCible;
+                    const raison = identifierRaisonMouvement(meilleurMouvement.eqSrcObj, meilleurMouvement.eqCibObj, meilleurMouvement.agent, null, conserverNiveaux);
+                    if (!target.raisonsCumulees.includes(raison)) target.raisonsCumulees.push(raison);
+                }
             } else if (meilleurMouvement.type === 'ECHANGE') {
                 const target1 = etatSimule.find(a => a.idUnique === meilleurMouvement.a1.idUnique);
                 const target2 = etatSimule.find(a => a.idUnique === meilleurMouvement.a2.idUnique);
                 if (target1 && target2) {
-                    const temp = target1.equipe;
-                    target1.equipe = target2.equipe;
-                    target2.equipe = temp;
-                }
+                    const temp = target1.equipeActuelle;
+                    target1.equipeActuelle = target2.equipeActuelle;
+                    target2.equipeActuelle = temp;
 
-                propositionsEnAttente.push({
-                    type: 'ECHANGE',
-                    a1: meilleurMouvement.a1,
-                    a2: meilleurMouvement.a2,
-                    motif: `Échange Équipe ${meilleurMouvement.eq1} 🔄 Équipe ${meilleurMouvement.eq2}`
-                });
+                    const raison = identifierRaisonMouvement(meilleurMouvement.eqSrcObj, meilleurMouvement.eqCibObj, meilleurMouvement.a1, meilleurMouvement.a2, conserverNiveaux);
+                    if (!target1.raisonsCumulees.includes(raison)) target1.raisonsCumulees.push(raison);
+                    if (!target2.raisonsCumulees.includes(raison)) target2.raisonsCumulees.push(raison);
+                }
             }
         } else {
-            break;
+            break; // Plus de gain significatif
         }
     }
 
+    // CONSOLIDATION ET SYNTHÈSE DES PROPOSITIONS FINALES
+    propositionsEnAttente = CONSOLIDERSyntheseMouvements(etatSimule);
     afficherPropositions();
 }
+
+
+
+/**
+ * Synthetise les mouvements en comparant uniquement l'état initial et final
+ */
+function CONSOLIDERSyntheseMouvements(etatSimule) {
+    const limitesModifiees = etatSimule.filter(a => a.equipeInitiale !== a.equipeActuelle);
+    const resultats = [];
+    const traites = new Set();
+
+    limitesModifiees.forEach(a1 => {
+        if (traites.has(a1.idUnique)) return;
+
+        // Chercher s'il existe un échange direct croisé (A -> B et B -> A)
+        const a2 = limitesModifiees.find(a => 
+            !traites.has(a.idUnique) &&
+            a.idUnique !== a1.idUnique &&
+            a.equipeInitiale === a1.equipeActuelle &&
+            a.equipeActuelle === a1.equipeInitiale
+        );
+
+        if (a2) {
+            // Échange consolidé
+            traites.add(a1.idUnique);
+            traites.add(a2.idUnique);
+            const raisonsUniques = [...new Set([...a1.raisonsCumulees, ...a2.raisonsCumulees])];
+
+            resultats.push({
+                type: 'ECHANGE',
+                a1: a1,
+                a2: a2,
+                eq1: a1.equipeInitiale,
+                eq2: a2.equipeInitiale,
+                motif: `Échange Équipe ${a1.equipeInitiale} 🔄 Équipe ${a2.equipeInitiale}`,
+                raison: raisonsUniques.join(" + ") || "Optimisation globale des effectifs"
+            });
+        } else {
+            // Transfert direct consolidé
+            traites.add(a1.idUnique);
+
+            resultats.push({
+                type: 'TRANSFERT',
+                a1: a1,
+                eqSource: a1.equipeInitiale,
+                eqCible: a1.equipeActuelle,
+                motif: `Transfert Équipe ${a1.equipeInitiale} ➡️ Équipe ${a1.equipeActuelle}`,
+                raison: a1.raisonsCumulees.join(" + ") || "Rééquilibrage d'effectif"
+            });
+        }
+    });
+
+    return resultats;
+}
+
+
+
+
+
 
 function afficherPropositions() {
     if (propositionsEnAttente.length === 0) {
