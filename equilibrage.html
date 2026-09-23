@@ -41,193 +41,179 @@
             align-items: start;
         }
 
+        @keyframes clignotementAlerte {
+            0% { background-color: #eac40c; box-shadow: 0 0 4px #ea580c; color: #1e293b; }
+            100% { background-color: #f80404; box-shadow: 0 0 10px #dc2626; color: #1e293b; }
+        }
 
-/* Animation de clignotement rouge / jaune */
-@keyframes clignotementAlerte {
-    0% { background-color: #eac40c; box-shadow: 0 0 4px #ea580c;; color: #1e293b; }
-    100% { background-color: #f80404; box-shadow: 0 0 10px #dc2626; color: #1e293b; }
-}
+        .btn-reseau-deconnecte {
+            animation: clignotementAlerte 0.75s infinite;
+            transition: background-color 0.3s, color 0.3s;
+            font-weight: bold;
+            color: #1e293b;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+        }
 
-.btn-reseau-deconnecte {
-    animation: clignotementAlerte 0.75s infinite;
-    transition: background-color 0.3s, color 0.3s;
-    font-weight: bold;
-    color: #1e293b;
-    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
-}
+        .btn-reseau-connecte {
+            background-color: #334155 !important;
+            border: 1.5px solid #4ac1f5 !important;
+            color: #4ac1f5 !important;
+            animation: none !important;
+            box-shadow: none !important;
+        }
 
-.btn-reseau-connecte {
-    background-color: #334155 !important;
-    border: 1.5px solid #4ac1f5 !important;
-    color: #4ac1f5 !important;
-    animation: none !important;
-    box-shadow: none !important;
-}
+        .btn-imprimer-modale {
+            background-color: #4b5563;
+            color: #ffffff;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
 
+        .btn-imprimer-modale:hover {
+            background-color: #374151;
+        }
 
-/* Style du bouton imprimer */
-.btn-imprimer-modale {
-    background-color: #4b5563;
-    color: #ffffff;
-    border: none;
-    padding: 10px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: background-color 0.2s;
-}
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 5mm;
+            }
 
-.btn-imprimer-modale:hover {
-    background-color: #374151;
-}
+            body.modal-ouverte {
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
 
-/* Règle CSS pour l'impression / export PDF */
-/* Ajustements automatiques lors de l'impression */
-@media print {
-    @page {
-        size: A4 landscape;
-        margin: 5mm;
-    }
+            body.modal-ouverte * {
+                visibility: hidden !important;
+            }
 
-    /* -------------------------------------------------------------
-       MODE 1 : IMPRESSION DE LA MODALE (Propositions uniquement)
-       ------------------------------------------------------------- */
-    body.modal-ouverte {
-        background: #ffffff !important;
-        color: #000000 !important;
-    }
+            body.modal-ouverte #modal-transferts,
+            body.modal-ouverte #modal-transferts * {
+                visibility: visible !important;
+            }
 
-    body.modal-ouverte * {
-        visibility: hidden !important;
-    }
+            body.modal-ouverte #modal-transferts {
+                position: absolute !important;
+                inset: 0 !important;
+                background: #ffffff !important;
+                display: block !important;
+            }
 
-    body.modal-ouverte #modal-transferts,
-    body.modal-ouverte #modal-transferts * {
-        visibility: visible !important;
-    }
+            body.modal-ouverte .modal-content {
+                background: #ffffff !important;
+                color: #000000 !important;
+                border: none !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+            }
 
-    body.modal-ouverte #modal-transferts {
-        position: absolute !important;
-        inset: 0 !important;
-        background: #ffffff !important;
-        display: block !important;
-    }
+            body.modal-ouverte #liste-propositions {
+                max-height: none !important;
+                overflow: visible !important;
+                color: #000000 !important;
+            }
 
-    body.modal-ouverte .modal-content {
-        background: #ffffff !important;
-        color: #000000 !important;
-        border: none !important;
-        max-width: 100% !important;
-        width: 100% !important;
-        padding: 0 !important;
-        box-shadow: none !important;
-    }
+            body.modal-ouverte #liste-propositions li {
+                color: #000000 !important;
+                page-break-inside: avoid;
+                margin-bottom: 8px !important;
+            }
 
-    body.modal-ouverte #liste-propositions {
-        max-height: none !important;
-        overflow: visible !important;
-        color: #000000 !important;
-    }
+            body.modal-ouverte #liste-propositions span {
+                color: #475569 !important;
+            }
 
-    body.modal-ouverte #liste-propositions li {
-        color: #000000 !important;
-        page-break-inside: avoid;
-        margin-bottom: 8px !important;
-    }
+            body.modal-ouverte .modal-content button,
+            body.modal-ouverte .modal-content .btn-action {
+                display: none !important;
+            }
 
-    body.modal-ouverte #liste-propositions span {
-        color: #475569 !important;
-    }
+            body:not(.modal-ouverte) {
+                background: white !important;
+                color: black !important;
+                height: auto !important;
+                overflow: visible !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
 
-    body.modal-ouverte .modal-content button,
-    body.modal-ouverte .modal-content .btn-action {
-        display: none !important;
-    }
+            body:not(.modal-ouverte) .panneau-reglages, 
+            body:not(.modal-ouverte) .btn-action, 
+            body:not(.modal-ouverte) .header-bar,
+            body:not(.modal-ouverte) .select-equipe-deplacement, 
+            body:not(.modal-ouverte) #modal-transferts,
+            body:not(.modal-ouverte) input[type="checkbox"] {
+                display: none !important;
+            }
 
-    /* -------------------------------------------------------------
-       MODE 2 : IMPRESSION DE LA SIMULATION (Les 3 équipes)
-       ------------------------------------------------------------- */
-    body:not(.modal-ouverte) {
-        background: white !important;
-        color: black !important;
-        height: auto !important;
-        overflow: visible !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
+            body:not(.modal-ouverte) .layout-grid {
+                display: block !important;
+            }
 
-    body:not(.modal-ouverte) .panneau-reglages, 
-    body:not(.modal-ouverte) .btn-action, 
-    body:not(.modal-ouverte) .header-bar,
-    body:not(.modal-ouverte) .select-equipe-deplacement, 
-    body:not(.modal-ouverte) #modal-transferts,
-    body:not(.modal-ouverte) input[type="checkbox"] {
-        display: none !important;
-    }
+            body:not(.modal-ouverte) .grille-equipes {
+                display: grid !important;
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 6px !important;
+                width: 100% !important;
+            }
 
-    body:not(.modal-ouverte) .layout-grid {
-        display: block !important;
-    }
+            body:not(.modal-ouverte) .colonne-equipe {
+                background: white !important;
+                border: 1px solid #64748b !important;
+                max-height: none !important;
+                height: auto !important;
+                overflow: visible !important;
+                padding: 4px !important;
+            }
 
-    body:not(.modal-ouverte) .grille-equipes {
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 6px !important;
-        width: 100% !important;
-    }
+            body:not(.modal-ouverte) .liste-agents {
+                max-height: none !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
 
-    body:not(.modal-ouverte) .colonne-equipe {
-        background: white !important;
-        border: 1px solid #64748b !important;
-        max-height: none !important;
-        height: auto !important;
-        overflow: visible !important;
-        padding: 4px !important;
-    }
+            body:not(.modal-ouverte) .dashboard-stats {
+                background: #f8fafc !important;
+                border: 1px solid #cbd5e1 !important;
+                padding: 3px !important;
+                font-size: 0.62rem !important;
+            }
 
-    body:not(.modal-ouverte) .liste-agents {
-        max-height: none !important;
-        height: auto !important;
-        overflow: visible !important;
-    }
+            body:not(.modal-ouverte) .stat-badge {
+                background: #ffffff !important;
+                border-color: #cbd5e1 !important;
+                color: black !important;
+            }
 
-    body:not(.modal-ouverte) .dashboard-stats {
-        background: #f8fafc !important;
-        border: 1px solid #cbd5e1 !important;
-        padding: 3px !important;
-        font-size: 0.62rem !important;
-    }
+            body:not(.modal-ouverte) .stat-badge-container {
+                max-height: none !important;
+            }
 
-    body:not(.modal-ouverte) .stat-badge {
-        background: #ffffff !important;
-        border-color: #cbd5e1 !important;
-        color: black !important;
-    }
+            body:not(.modal-ouverte) .carte-agent-simu {
+                background: white !important;
+                border: 1px solid #cbd5e1 !important;
+                padding: 3px 5px !important;
+                margin-bottom: 2px !important;
+                page-break-inside: avoid;
+            }
 
-    body:not(.modal-ouverte) .stat-badge-container {
-        max-height: none !important;
-    }
+            body:not(.modal-ouverte) .agent-nom, 
+            body:not(.modal-ouverte) .stat-value { color: black !important; }
 
-    body:not(.modal-ouverte) .carte-agent-simu {
-        background: white !important;
-        border: 1px solid #cbd5e1 !important;
-        padding: 3px 5px !important;
-        margin-bottom: 2px !important;
-        page-break-inside: avoid;
-    }
+            body:not(.modal-ouverte) .agent-details, 
+            body:not(.modal-ouverte) .stat-label { color: #334155 !important; }
+        }
 
-    body:not(.modal-ouverte) .agent-nom, 
-    body:not(.modal-ouverte) .stat-value { color: black !important; }
-
-    body:not(.modal-ouverte) .agent-details, 
-    body:not(.modal-ouverte) .stat-label { color: #334155 !important; }
-}
-
-
-        /* Panneau de configuration à gauche */
         .panneau-reglages {
             background: #1e293b;
             padding: 12px;
@@ -278,7 +264,6 @@
         }
         .btn-algo:hover { background: #7c3aed; }
 
-        /* Grille des 3 Équipes */
         .grille-equipes {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -305,7 +290,6 @@
             padding-bottom: 4px;
         }
 
-        /* Dashboard statistique d'équipe */
         .dashboard-stats {
             background: #0f172a;
             padding: 3px;
@@ -346,7 +330,6 @@
             overflow-y: auto;
         }
 
-        /* Liste des cartes d'agents */
         .liste-agents {
             flex: 1;
             overflow-y: auto;
@@ -387,7 +370,6 @@
             cursor: pointer;
         }
 
-        /* Modal des suggestions */
         .modal-suggestions {
             display: none;
             position: fixed;
@@ -402,9 +384,7 @@
             padding: 18px;
             border-radius: 8px;
             max-width: 900px;
-            max-heigth: 750px;
-            width: 90%;
-            height: 90%
+            height: 90%;
             border: 1px solid #334155;
         }
 
@@ -423,8 +403,6 @@
             gap: 6px;
         }
         .btn-action:hover { background: #1d4ed8; }
-
-             
     </style>
 </head>
 <body>
@@ -433,14 +411,13 @@
         <h2 style="margin: 0; font-size: 1.2rem;">⚖️ Optimisation & Équilibrage des Équipes</h2>
         <div class="header-actions">
             <label id="btn-charger-excel" class="btn-action btn-reseau-deconnecte" style="cursor: pointer;">📲 Charger FMPA-RH.xlsx
-    <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
-</label>
+                <input type="file" id="input-excel" accept=".xlsx, .xls" style="display: none;" onchange="importerFichierExcelManuel(event)">
+            </label>
             <button onclick="window.print()" class="btn-action" style="background: #334155; border-color: #475569;">🖨️ Imprimer la simulation</button>
         </div>
     </div>
 
     <div class="layout-grid">
-        <!-- Panneau des Réglages -->
         <aside class="panneau-reglages">
             <h3 style="margin: 0; font-size: 0.95rem;">⚙️ Calibrage des priorités d'équilibrage</h3>
             <p style="font-size: 0.7rem; color: #94a3b8; margin: 0 0 8px 0;">Ajuste l'importance de chaque critère (0 = ignoré, 10 = prioritaire).</p>
@@ -452,65 +429,62 @@
                 </label>
             </div>
 
-            <!-- Début de la section P1 à P11 mise à jour -->
-<div class="section-titre-reglage">Effectifs & Hiérarchie des Grades</div>
-<div class="reglage-group">
-    <label>P1 - Effectif global : <span id="val-poids-effectif">10</span></label>
-    <input type="range" id="poids-effectif" min="0" max="10" value="10" oninput="document.getElementById('val-poids-effectif').innerText=this.value">
-</div>
-<div class="reglage-group">
-    <label>P2 - Effectif Femmes : <span id="val-poids-genre">10</span></label>
-    <input type="range" id="poids-genre" min="0" max="10" value="10" oninput="document.getElementById('val-poids-genre').innerText=this.value">
-</div>
-<div class="reglage-group">
-    <label>P3 - CDG : <span id="val-poids-cdg">10</span></label>
-    <input type="range" id="poids-cdg" min="0" max="10" value="10" oninput="document.getElementById('val-poids-cdg').innerText=this.value">
-</div>
-<div class="reglage-group">
-    <label>P4 - ACDG / CATE : <span id="val-poids-cate">10</span></label>
-    <input type="range" id="poids-cate" min="0" max="10" value="10" oninput="document.getElementById('val-poids-cate').innerText=this.value">
-</div>
-<div class="reglage-group">
-    <label>P5 - CEQU : <span id="val-poids-cequ">10</span></label>
-    <input type="range" id="poids-cequ" min="0" max="10" value="10" oninput="document.getElementById('val-poids-cequ').innerText=this.value">
-</div>
-<div class="reglage-group">
-    <label>P6 - EQU : <span id="val-poids-equ">10</span></label>
-    <input type="range" id="poids-equ" min="0" max="10" value="10" oninput="document.getElementById('val-poids-equ').innerText=this.value">
-</div>
+            <div class="section-titre-reglage">Effectifs & Hiérarchie des Grades</div>
+            <div class="reglage-group">
+                <label>P1 - Effectif global : <span id="val-poids-effectif">10</span></label>
+                <input type="range" id="poids-effectif" min="0" max="10" value="10" oninput="document.getElementById('val-poids-effectif').innerText=this.value">
+            </div>
+            <div class="reglage-group">
+                <label>P2 - Effectif Femmes : <span id="val-poids-genre">10</span></label>
+                <input type="range" id="poids-genre" min="0" max="10" value="10" oninput="document.getElementById('val-poids-genre').innerText=this.value">
+            </div>
+            <div class="reglage-group">
+                <label>P3 - CDG : <span id="val-poids-cdg">10</span></label>
+                <input type="range" id="poids-cdg" min="0" max="10" value="10" oninput="document.getElementById('val-poids-cdg').innerText=this.value">
+            </div>
+            <div class="reglage-group">
+                <label>P4 - ACDG / CATE : <span id="val-poids-cate">10</span></label>
+                <input type="range" id="poids-cate" min="0" max="10" value="10" oninput="document.getElementById('val-poids-cate').innerText=this.value">
+            </div>
+            <div class="reglage-group">
+                <label>P5 - CEQU : <span id="val-poids-cequ">10</span></label>
+                <input type="range" id="poids-cequ" min="0" max="10" value="10" oninput="document.getElementById('val-poids-cequ').innerText=this.value">
+            </div>
+            <div class="reglage-group">
+                <label>P6 - EQU : <span id="val-poids-equ">10</span></label>
+                <input type="range" id="poids-equ" min="0" max="10" value="10" oninput="document.getElementById('val-poids-equ').innerText=this.value">
+            </div>
 
-<div class="section-titre-reglage" style="color:#60a5fa;">Spécialités & Compétences</div>
-<div class="reglage-group">
-    <label>P7 - Spécialités : <span id="val-poids-specs">10</span></label>
-    <input type="range" id="poids-specs" min="0" max="10" value="10" oninput="document.getElementById('val-poids-specs').innerText=this.value">
-</div>
-<div id="container-reglages-specs"></div>
+            <div class="section-titre-reglage" style="color:#60a5fa;">Spécialités & Compétences</div>
+            <div class="reglage-group">
+                <label>P7 - Spécialités : <span id="val-poids-specs">10</span></label>
+                <input type="range" id="poids-specs" min="0" max="10" value="10" oninput="document.getElementById('val-poids-specs').innerText=this.value">
+            </div>
+            <div id="container-reglages-specs"></div>
 
-<div class="reglage-group">
-    <label>P8 - Compétences : <span id="val-poids-comps">10</span></label>
-    <input type="range" id="poids-comps" min="0" max="10" value="10" oninput="document.getElementById('val-poids-comps').innerText=this.value">
-</div>
-<div id="container-reglages-comps"></div>
+            <div class="reglage-group">
+                <label>P8 - Compétences : <span id="val-poids-comps">10</span></label>
+                <input type="range" id="poids-comps" min="0" max="10" value="10" oninput="document.getElementById('val-poids-comps').innerText=this.value">
+            </div>
+            <div id="container-reglages-comps"></div>
 
-<div class="section-titre-reglage" style="color:#f59e0b;">Régimes & Informations Profil</div>
-<div class="reglage-group">
-    <label>P9 - Régimes (G24/Mixte) : <span id="val-poids-regimes">10</span></label>
-    <input type="range" id="poids-regimes" min="0" max="10" value="10" oninput="document.getElementById('val-poids-regimes').innerText=this.value">
-</div>
-<div class="reglage-group">
-    <label>P10 - Âge moyen : <span id="val-poids-age">10</span></label>
-    <input type="range" id="poids-age" min="0" max="10" value="10" oninput="document.getElementById('val-poids-age').innerText=this.value">
-</div>
-<div class="reglage-group">
-    <label>P11 - Domiciliation (Dép.) : <span id="val-poids-dept">10</span></label>
-    <input type="range" id="poids-dept" min="0" max="10" value="10" oninput="document.getElementById('val-poids-dept').innerText=this.value">
-</div>
-<!-- Fin de la section P1 à P11 -->
+            <div class="section-titre-reglage" style="color:#f59e0b;">Régimes & Informations Profil</div>
+            <div class="reglage-group">
+                <label>P9 - Régimes (G24/Mixte) : <span id="val-poids-regimes">10</span></label>
+                <input type="range" id="poids-regimes" min="0" max="10" value="10" oninput="document.getElementById('val-poids-regimes').innerText=this.value">
+            </div>
+            <div class="reglage-group">
+                <label>P10 - Âge moyen : <span id="val-poids-age">10</span></label>
+                <input type="range" id="poids-age" min="0" max="10" value="10" oninput="document.getElementById('val-poids-age').innerText=this.value">
+            </div>
+            <div class="reglage-group">
+                <label>P11 - Domiciliation (Dép.) : <span id="val-poids-dept">10</span></label>
+                <input type="range" id="poids-dept" min="0" max="10" value="10" oninput="document.getElementById('val-poids-dept').innerText=this.value">
+            </div>
             
-            <button class="btn-algo" onclick="suggererReequilibrage()" style="margin-top: 15px; width: 100%;">⚡ Suggérer un Rééquilibrage</button>
+            <button class="btn-algo" onclick="suggererReequilibrage()">⚡ Suggérer un Rééquilibrage</button>
         </aside>
 
-        <!-- Grille des 3 Équipes -->
         <main class="grille-equipes">
             <div class="colonne-equipe">
                 <div class="titre-equipe">Équipe A <span id="count-A" style="font-size: 0.85rem; color: white; background: #334155; padding: 1px 7px; border-radius: 8px;">0</span></div>
@@ -536,27 +510,27 @@
         </main>
     </div>
 
-    <!-- Modal des Propositions -->
     <div id="modal-transferts" class="modal-suggestions">
         <div class="modal-content">
             <h3 style="margin-top:0; font-size:1.1rem;">⚡ Recommandations d'Ajustements Multi-Mouvements</h3>
             <p style="font-size: 0.78rem; color: #cbd5e1;">L'algorithme suggère les ajustements suivants :</p>
             <ul id="liste-propositions" style="font-size: 0.82rem; line-height: 1.4; color: #60a5fa; max-height: 580px; overflow-y: auto; padding-left: 18px; margin-bottom: 12px;"></ul>
 
-<div style="display: flex; gap: 8px; margin-top: 15px;">
-    <button onclick="window.print()" style="padding: 8px 12px; background: #475569; border: none; color: white; border-radius: 5px; cursor: pointer; font-weight: bold;">
-        🖨️ Imprimer / PDF
-    </button>
-    <button onclick="appliquerPropositions()" style="flex: 1; padding: 8px; background: #22c55e; border: none; color: white; border-radius: 5px; font-weight: bold; cursor: pointer;">
-        Valider les changements
-    </button>
-    <button onclick="fermerModal()" style="padding: 8px 12px; background: #e91e63; border: none; color: white; border-radius: 5px; cursor: pointer;">
-        Annuler
-    </button>
-</div>
+            <div style="display: flex; gap: 8px; margin-top: 15px;">
+                <button onclick="window.print()" style="padding: 8px 12px; background: #475569; border: none; color: white; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                    🖨️ Imprimer / PDF
+                </button>
+                <button onclick="appliquerPropositions()" style="flex: 1; padding: 8px; background: #22c55e; border: none; color: white; border-radius: 5px; font-weight: bold; cursor: pointer;">
+                    Valider les changements
+                </button>
+                <button onclick="fermerModal()" style="padding: 8px 12px; background: #e91e63; border: none; color: white; border-radius: 5px; cursor: pointer;">
+                    Annuler
+                </button>
+            </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="script_equilibrage.js?v=1.0.2"></script></body>
+    <script src="script_equilibrage.js?v=1.0.2"></script>
+</body>
 </html>
