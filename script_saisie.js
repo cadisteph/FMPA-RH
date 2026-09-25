@@ -1139,6 +1139,28 @@ function ouvrirModalHistorique() {
 async function fermerModalHistorique() {
     indexEnEdition = null;
     
+    // --- RAZ ÉTAT ADMIN ---
+    estAdminDeverrouille = false; 
+    
+    const inputCode = document.getElementById("hist-code-admin");
+    const inputWact = document.getElementById("hist-ref-wact");
+    const btnChangerCode = document.getElementById("btn-changer-code-admin");
+
+    if (inputCode) {
+        inputCode.value = "";
+        inputCode.style.border = "";
+        inputCode.style.backgroundColor = "";
+    }
+
+    if (inputWact) {
+        inputWact.disabled = true;
+        inputWact.style.backgroundColor = "#e2e8f0";
+        inputWact.style.cursor = "not-allowed";
+    }
+
+    if (btnChangerCode) btnChangerCode.style.display = "none";
+    // ----------------------
+
     const modal = document.getElementById("modal-historique");
     if (modal) modal.style.display = "none";
 
