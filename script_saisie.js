@@ -2126,3 +2126,53 @@ function genererFicheAgent() {
         conteneurModules.innerHTML = htmlContenu || `<div style="text-align:center; padding: 20px; color: #64748b;">Aucune formation socle ou spécialité requise pour cet agent.</div>`;
     }
 }
+
+
+// Variable globale pour suivre l'état des onglets (à placer avec tes autres let/const en haut du script)
+let ongletsMasques = true;
+
+/**
+ * Active ou désactive la visibilité des onglets cachés dans le fichier Excel
+ */
+function basculerVisibiliteOngletsAdmin() {
+    // 1. Contrôle d'accès : on vérifie que le code admin est déverrouillé
+    if (!estAdminDeverrouille) {
+        alert("🔒 Veuillez d'abord saisir le code Administrateur valide.");
+        return;
+    }
+
+    // 2. Inversion de l'état
+    ongletsMasques = !ongletsMasques;
+
+    // 3. Mise à jour de l'apparence du bouton
+    const btn = document.getElementById("btn-toggle-onglets");
+    if (btn) {
+        if (ongletsMasques) {
+            btn.innerHTML = "🫣 Onglets XL Cachés";
+            btn.style.color = "blue";
+        } else {
+            btn.innerHTML = "👁️ Onglets XL Visibles";
+            btn.style.color = "green";
+        }
+    }
+
+    // 4. Action sur le classeur SheetJS (si chargé)
+    if (typeof classeurXLSX !== "undefined" && classeurXLSX.Workbook && classeurXLSX.Workbook.Sheets) {
+        classeurXLSX.Workbook.Sheets.forEach(sheet => {
+            // Si l'onglet n'est pas l'onglet principal ("FMPA" ou "Saisie"), on modifie sa visibilité
+            if (sheet.name !== "FMPA" && sheet.name !== "Donnees") {
+                sheet.Hidden = ongletsMasques ? 1 : 0;
+            }
+        });
+
+        // Message de confirmation
+        if (ongletsMasques) {
+            alert("🙈 Les onglets d'administration sont maintenant cachés pour l'enregistrement Excel.");
+        } else {
+            alert("👁️ Les onglets d'administration sont maintenant visibles dans le fichier Excel !");
+        }
+    } else {
+        alert("⚠️ Aucun fichier Excel n'est actuellement chargé.");
+    }
+}
+
