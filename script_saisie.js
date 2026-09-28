@@ -2111,16 +2111,30 @@ function basculerVisibiliteOngletsAdmin() {
     }
 
     if (classeurXLSX && classeurXLSX.Workbook && Array.isArray(classeurXLSX.Workbook.Sheets)) {
+        
+        // 1. Appliquer le masquage/démasquage
         classeurXLSX.Workbook.Sheets.forEach(sheet => {
-            if (sheet.name !== "FMPA" && sheet.name !== "Donnees") {
-                sheet.Hidden = ongletsMasques ? 1 : 0;
+            // Seul "Message Alerte" reste visible quand ongletsMasques est vrai
+            if (sheet.name === "Message Alerte") {
+                sheet.Hidden = 0; // Toujours visible
+            } else {
+                // Si masque = 2 (VeryHidden), sinon 0 (Visible)
+                sheet.Hidden = ongletsMasques ? 2 : 0;
             }
         });
 
+        // 2. OBLIGATOIRE : Définir "Message Alerte" comme onglet actif à l'ouverture
+        const indexMessageAlerte = classeurXLSX.Workbook.Sheets.findIndex(s => s.name === "Message Alerte");
+        if (indexMessageAlerte !== -1) {
+            classeurXLSX.Workbook.Views = classeurXLSX.Workbook.Views || [{}];
+            classeurXLSX.Workbook.Views[0] = classeurXLSX.Workbook.Views[0] || {};
+            classeurXLSX.Workbook.Views[0].activeTab = indexMessageAlerte;
+        }
+
         if (ongletsMasques) {
-            alert("🙈 Les onglets d'administration sont maintenant cachés pour l'enregistrement Excel.");
+            alert("🙈 Seul l'onglet 'Message Alerte' sera visible dans le fichier Excel.");
         } else {
-            alert("👁️ Les onglets d'administration sont maintenant visibles dans le fichier Excel !");
+            alert("👁️ Tous les onglets sont maintenant visibles dans le fichier Excel !");
         }
     } else {
         alert("⚠️ Aucun fichier Excel n'est actuellement chargé ou la structure des onglets n'est pas disponible.");
