@@ -22,6 +22,7 @@ const HEADERS_HISTORIQUE = [
 // --- GESTION DU MAPPING & CONSTANTES ADMIN ---
 let indexEnEdition = null;
 let estAdminDeverrouille = false;
+let estOngletsCaches = false;
 
 // Empreinte SHA-256 par défaut si absente d'Excel ("1234")
 const HASH_DEFAUT_SECOURS = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
@@ -67,7 +68,7 @@ function afficherMessageAccueil() {
     tbody.innerHTML = `
         <tr>
             <td colspan="8" style="text-align:left; padding:40px; color:#64748b; display: none">
-                <div style="font-size:1.1rem; color: #bd1e1e; margin-bottom:8px;"><strong>Aucun fichier Excel chargé</strong></div>
+                <div style="font-size:1.1rem; color: #bd1e1e; margin-bottom:8px;"><strong>Aucun fichier Excel charged</strong></div>
                 Cliquez sur <strong>📂 Ouvrir FMPA-RH.xlsx</strong>.
             </td>
         </tr>
@@ -132,7 +133,6 @@ async function chargerClasseur(file) {
     catalogueInitial = convertirCatalogue(classeurXLSX.Sheets.catalogue);
     historiqueSaisiesFMPA = convertirHistorique(classeurXLSX.Sheets.historiqueSuivi);
 
-    // --- LECTURE DE LA DATE RÉF W@CT DEPUIS L'ONGLET PARAMETRES ---
     if (classeurXLSX.Sheets["Parametres"]) {
         const sheetParam = classeurXLSX.Sheets["Parametres"];
         let valWact = null;
@@ -727,9 +727,11 @@ function basculerToutSelectionner(e) {
 
 function majStatutSelection() {
     const count = agentsSelectionnes.size;
-    const statusEl = document.getElementById("selection-status");
+    const statusEls = document.querySelectorAll("#selection-status, #selection-status-card");
     const btnValider = document.getElementById("btn-valider-groupe");
-    if (statusEl) statusEl.textContent = `👥 ${count} agent(s) sélectionné(s)`;
+    statusEls.forEach(el => {
+        if (el) el.textContent = `👥 ${count} agent(s) sélectionné(s)`;
+    });
     if (btnValider) btnValider.disabled = count === 0 || !classeurXLSX;
 }
 
@@ -1081,6 +1083,76 @@ async function modifierMotDePasseAdmin() {
     }
 }
 
+// --- BASCULE DE LA VISIBILITÉ DES ONGLETS DANS LE CLASSEUR EXCEL ---
+async function basculerVisibiliteOngletsAdmin() {
+    if (!classeurXLSX) {
+        alert("Veuillez charger le fichier FMPA-RH.xlsx avant d'effectuer cette action.");
+        return;
+    }
+
+    if (!estAdminDeverrouille) {
+        alert("🔒 Saisissez le code administrateur valide pour modifier la visibilité des onglets Excel.");
+        return;
+    }
+
+    estOngletsCaches = !estOngletsCaches;
+    const btnToggle = document.getElementById("btn-toggle-onglets");
+
+    if (!classeurXLSX.Workbook) {
+        classeurXLSX.Workbook = { Sheets: [] };
+    }
+    if (!classeurXLSX.Workbook.Sheets) {
+        classeurXLSX.Workbook.Sheets = [];
+    }
+
+    // Nom de l'onglet de garde/alerte à laisser visible
+    const NOM_ONGLET_ALERTE = "Message Alerte";
+
+    // Si l'onglet Alerte n'existe pas, on le crée
+    if (!classeurXLSX.Sheets[NOM_ONGLET_ALERTE]) {
+        const sheetAlerte = XLSX.utils.aoa_to_sheet([
+            ["ATTENTION"],
+            ["Accès restreint. Veuillez passer par l'application Web pour manipuler ces données."]
+        ]);
+        XLSX.utils.book_append_sheet(classeurXLSX, sheetAlerte, NOM_ONGLET_ALERTE);
+    }
+
+    const sheetNames = classeurXLSX.SheetNames;
+
+    sheetNames.forEach((sheetName, index) => {
+        if (!classeurXLSX.Workbook.Sheets[index]) {
+            classeurXLSX.Workbook.Sheets[index] = { name: sheetName };
+        }
+
+        if (estOngletsCaches) {
+            // Cacher tous les onglets SAUF "Message Alerte"
+            if (sheetName === NOM_ONGLET_ALERTE) {
+                classeurXLSX.Workbook.Sheets[index].Hidden = 0;
+            } else {
+                classeurXLSX.Workbook.Sheets[index].Hidden = 1; // 1 = Caché dans Excel
+            }
+        } else {
+            // Afficher TOUS les onglets
+            classeurXLSX.Workbook.Sheets[index].Hidden = 0;
+        }
+    });
+
+    if (btnToggle) {
+        btnToggle.textContent = estOngletsCaches ? "👁️ Onglets XL Visibles" : "🫣 Onglets XL Cachés";
+    }
+
+    try {
+        await enregistrerFichierXLSX();
+        const statutTxt = estOngletsCaches 
+            ? "Tous les onglets (sauf 'Message Alerte') sont désormais cachés." 
+            : "Tous les onglets sont désormais visibles.";
+        alert(`✅ Configuration sauvegardée dans le fichier Excel !\n${statutTxt}`);
+    } catch (err) {
+        console.error(err);
+        alert(`⚠️ Masquage appliqué mais échec d'écriture Excel : ${err.message}`);
+    }
+}
+
 async function enregistrerChangementDateWact(e) {
     const nouvelleDate = e.target.value;
     afficherHistorique();
@@ -1139,28 +1211,6 @@ function ouvrirModalHistorique() {
 async function fermerModalHistorique() {
     indexEnEdition = null;
     
-    // --- RAZ ÉTAT ADMIN ---
-    estAdminDeverrouille = false; 
-    
-    const inputCode = document.getElementById("hist-code-admin");
-    const inputWact = document.getElementById("hist-ref-wact");
-    const btnChangerCode = document.getElementById("btn-changer-code-admin");
-
-    if (inputCode) {
-        inputCode.value = "";
-        inputCode.style.border = "";
-        inputCode.style.backgroundColor = "";
-    }
-
-    if (inputWact) {
-        inputWact.disabled = true;
-        inputWact.style.backgroundColor = "#e2e8f0";
-        inputWact.style.cursor = "not-allowed";
-    }
-
-    if (btnChangerCode) btnChangerCode.style.display = "none";
-    // ----------------------
-
     const modal = document.getElementById("modal-historique");
     if (modal) modal.style.display = "none";
 
@@ -1203,16 +1253,12 @@ function afficherHistorique() {
         return;
     }
 
-    // =========================================================================
-    // MODIFICATION ICI : On mappe le tableau avec son index réel dans historiqueSaisiesFMPA,
-    // puis on trie par dateSaisie de manière décroissante (plus récent d'abord).
-    // =========================================================================
     const historiqueTrie = historiqueSaisiesFMPA
         .map((row, realIndex) => ({ row, realIndex }))
         .sort((a, b) => {
             const dateA = String(a.row.dateSaisie || "");
             const dateB = String(b.row.dateSaisie || "");
-            return dateB.localeCompare(dateA); // Ordre décroissant
+            return dateB.localeCompare(dateA);
         });
 
     historiqueTrie.forEach(({ row, realIndex }) => {
@@ -1269,6 +1315,7 @@ function afficherHistorique() {
                     <button type="button" class="btn-act-save" onclick="sauvegarderLigneHistorique(${realIndex})">💾 Enregistrer</button>
                     <button type="button" class="btn-act-cancel" onclick="annulerEditionHistorique()">✖ Fermer</button>
                 </td>
+                <td>${escapeHtml(row.commentaires || "")}</td>
             `;
         } else {
             let colActions = "";
@@ -1294,6 +1341,7 @@ function afficherHistorique() {
                 <td>${escapeHtml(row.heureFin)}</td>
                 <td><strong>${duree} h</strong></td>
                 <td>${colActions}</td>
+                <td>${escapeHtml(row.commentaires || "")}</td>
             `;
         }
 
@@ -1399,7 +1447,6 @@ function exporterHistoriquePDF() {
         return;
     }
 
-    // Récupération des lignes visibles
     const trs = Array.from(tbody.querySelectorAll("tr"));
     const lignesVisibles = trs.filter(tr => {
         return tr.querySelectorAll("td").length > 1 && tr.style.display !== "none";
@@ -1410,7 +1457,6 @@ function exporterHistoriquePDF() {
         return;
     }
 
-    // Récupération de la Date Réf. W@ct
     const inputRefWact = document.getElementById("hist-ref-wact");
     const dateRefWact = inputRefWact ? inputRefWact.value : "";
 
@@ -1428,13 +1474,9 @@ function exporterHistoriquePDF() {
     const lignes = lignesVisibles.map(tr => {
         const tds = tr.querySelectorAll("td");
 
-        // 1. Nettoyage du nom de l'agent (suppression des emojis 🎓 et balises HTML/badges)
         let rawAgentText = tds[0]?.innerText || tds[0]?.textContent || "-";
-        
-        // Retrait des émojis et caractères non standards
         rawAgentText = rawAgentText.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').replace(/[^\x00-\x7FàâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ\s\[\]-]/g, '');
 
-        // Formatage propre : "NOM Prénom [Formateur]"
         if (rawAgentText.includes("Formateur")) {
             rawAgentText = rawAgentText.replace(/Formateur/gi, '').trim() + " [Formateur]";
         }
@@ -1449,7 +1491,6 @@ function exporterHistoriquePDF() {
         const fin = tds[7]?.textContent.trim() || "-";
         const duree = tds[8]?.textContent.trim() || "-";
 
-        // 2. Évaluation exacte du Statut (Web@ct Saisi vs Web@ct à Saisir)
         const tdActionText = tds[9]?.textContent || "";
         let estCloture = false;
 
@@ -1466,10 +1507,8 @@ function exporterHistoriquePDF() {
         return [nomPropre, equipe, dateFormation, dateSaisie, activite, theme, debut, fin, duree, statutTexte];
     });
 
-    // 3. Tri chronologique (du plus récent au plus ancien)
     lignes.sort((a, b) => new Date(b[2]) - new Date(a[2]));
 
-    // 4. Rendu de la table PDF avec coloration conditionnelle
     doc.autoTable({
         startY: 22,
         head: [colonnes],
@@ -1480,10 +1519,10 @@ function exporterHistoriquePDF() {
         didParseCell: function(data) {
             if (data.section === 'body' && data.column.index === 9) {
                 if (data.cell.raw === "Web@ct Saisi") {
-                    data.cell.styles.textColor = [22, 163, 74]; // Vert
+                    data.cell.styles.textColor = [22, 163, 74];
                     data.cell.styles.fontStyle = 'bold';
                 } else if (data.cell.raw === "Web@ct à Saisir") {
-                    data.cell.styles.textColor = [220, 38, 38]; // Rouge
+                    data.cell.styles.textColor = [220, 38, 38];
                     data.cell.styles.fontStyle = 'bold';
                 }
             }
@@ -1494,7 +1533,7 @@ function exporterHistoriquePDF() {
 }
 
 // ==========================================
-// GESTION DU BILAN & FICHE ÉQUIPE
+// GESTION DU BILAN & FICHE ÉQUIPE / AGENT
 // ==========================================
 
 function ouvrirModalEquipe() {
@@ -1537,642 +1576,4 @@ function alimenterSelectEquipeModal() {
     if (valeurActuelle) select.value = valeurActuelle;
 }
 
-/**
- * Filtre une liste d'agents en fonction d'un module/domaine de formation requis.
- * @param {Array} listeAgents - La liste complète des agents
- * @param {string} filtreModule - Le nom ou l'ID du module/domaine à filtrer
- * @returns {Array} La liste des agents filtrés
- */
-function filtrerAgentsPourModale(listeAgents, filtreModule) {
-    if (!Array.isArray(listeAgents)) return [];
-    if (!filtreModule || filtreModule.trim() === "") return listeAgents;
-
-    const recherche = filtreModule.toLowerCase().trim();
-
-    return listeAgents.filter(agent => {
-        const specialites = Array.isArray(agent.specialites) ? agent.specialites.join(" ") : String(agent.specialites || agent.Specialites || "");
-        const competences = Array.isArray(agent.competences) ? agent.competences.join(" ") : String(agent.competences || agent.Competences || "");
-        const nomComplet = `${agent.nom || agent.Nom || ''} ${agent.prenom || agent.Prenom || ''}`;
-        const infosAgent = `${agent.equipe || agent.Equipe || ""} ${specialites} ${competences} ${nomComplet}`.toLowerCase();
-
-        return infosAgent.includes(recherche);
-    });
-}
-
-function genererFicheEquipe() {
-    const selectEquipe = document.getElementById('modal-select-equipe');
-    const conteneurModules = document.getElementById('conteneur-modules-equipe');
-    const nomEquipe = selectEquipe ? selectEquipe.value.trim() : '';
-
-    const dateEd = document.getElementById('fiche-equipe-date-edition');
-    if (dateEd) dateEd.textContent = new Date().toLocaleDateString('fr-FR');
-
-    if (!nomEquipe) {
-        const elNom = document.getElementById('fiche-equipe-nom');
-        const elInfos = document.getElementById('fiche-equipe-infos');
-        if (elNom) elNom.textContent = "FICHE ÉQUIPE FMA";
-        if (elInfos) elInfos.textContent = "Sélectionnez une équipe...";
-        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Veuillez sélectionner une équipe dans la liste.</div>`;
-        mettreAJourJauge('barre-equipe-global', 'txt-pct-equipe-global', 'txt-heures-equipe-global', 0, 0);
-        mettreAJourJauge('barre-equipe-socle', 'txt-pct-equipe-socle', null, 0, 0);
-        mettreAJourJauge('barre-equipe-spe', 'txt-pct-equipe-spe', null, 0, 0);
-        return;
-    }
-
-    const epurer = (str) => String(str || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
-
-    // Comparaison souple pour correspondre au nom d'équipe sans risquer de problème de casse/format
-    const agentsEquipe = (tableauAgentsRH || []).filter(a => {
-        const eqAgent = String(a.equipe || 'Sans équipe').trim();
-        return epurer(eqAgent) === epurer(nomEquipe) || eqAgent.toUpperCase() === nomEquipe.toUpperCase();
-    });
-
-    const elNom = document.getElementById('fiche-equipe-nom');
-    const elInfos = document.getElementById('fiche-equipe-infos');
-    if (elNom) elNom.textContent = `BILAN FMA - ÉQUIPE : ${nomEquipe.toUpperCase()}`;
-    if (elInfos) elInfos.textContent = `Effectif : ${agentsEquipe.length} agent(s)`;
-
-    const catalogue = catalogueInitial || [];
-    if (catalogue.length === 0 || agentsEquipe.length === 0) {
-        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Aucune donnée ou effectif vide pour cette équipe.</div>`;
-        mettreAJourJauge('barre-equipe-global', 'txt-pct-equipe-global', 'txt-heures-equipe-global', 0, 0);
-        mettreAJourJauge('barre-equipe-socle', 'txt-pct-equipe-socle', null, 0, 0);
-        mettreAJourJauge('barre-equipe-spe', 'txt-pct-equipe-spe', null, 0, 0);
-        return;
-    }
-
-    const calculerDureesSaisie = (saisie) => {
-        if (saisie.duree || saisie.Duree || saisie.heures || saisie.Heures) {
-            return parseFloat(saisie.duree || saisie.Duree || saisie.heures || saisie.Heures || 0);
-        }
-        if (saisie.heureDebut && saisie.heureFin) {
-            return calculerDureeEntreHeures(saisie.heureDebut, saisie.heureFin);
-        }
-        return 0;
-    };
-
-    const mapAgentsProps = agentsEquipe.map(agent => {
-        const specBrutes = (agent.specialites || []).map(s => String(s).trim().toUpperCase()).filter(Boolean);
-        const specBase = specBrutes.map(s => s.replace(/\s*\d+$/, ""));
-        const profils = new Set([
-            ...extraireValeurs(agent.statut),
-            ...extraireValeurs(agent.grade),
-            ...extraireValeurs(agent.fonction),
-            ...extraireValeurs(agent.specialites),
-            ...extraireValeurs(agent.competences),
-            ...extraireValeurs(agent.engagement),
-            ...extraireValeurs(agent.regime)
-        ]);
-
-        return {
-            agent,
-            matricule: String(agent.matricule || agent.id || ''),
-            nomPrenom: `${agent.nom || ''} ${agent.prenom || ''}`.trim(),
-            specBrutes,
-            specBase,
-            profils
-        };
-    });
-
-    const inputFiltre = document.getElementById('filter-module-equipe');
-    const termeFiltre = epurer(inputFiltre ? inputFiltre.value : '');
-
-    const activitesMap = {};
-    catalogue.forEach(item => {
-        const nomActivite = item.activite || "Général";
-        const nomFormation = item.libelle || item.fmpa || item.sequence || "Formation";
-        const typeAct = String(item.type || '').toUpperCase();
-
-        if (!activitesMap[nomActivite]) {
-            activitesMap[nomActivite] = {
-                nom: nomActivite,
-                formations: [],
-                type: typeAct
-            };
-        }
-
-        activitesMap[nomActivite].formations.push({
-            id: item.id || '',
-            nom: nomFormation,
-            quotaDefaut: parseFloat(item.quota || 0),
-            modulations: item.modulations || [],
-            type: typeAct,
-            profils: item.profils || []
-        });
-    });
-
-    let totalUtileGlobal = 0, totalCibleGlobal = 0;
-    let totalSocleUtile = 0, totalSocleCible = 0;
-    let totalSpeUtile = 0, totalSpeCible = 0;
-
-    let htmlContenu = '';
-
-    Object.values(activitesMap).forEach(act => {
-        const estSocle = act.type.includes('SOCLE') || act.type.includes('COMMUN');
-        const estSpe = act.type.includes('SPEC') || act.type.includes('SPÉCIALITÉ');
-
-        let actUtile = 0, actCible = 0;
-        let htmlFormations = '';
-
-        act.formations.forEach(f => {
-            const keyForm = epurer(f.nom);
-
-            if (termeFiltre && !epurer(act.nom).includes(termeFiltre) && !keyForm.includes(termeFiltre)) {
-                return;
-            }
-
-            let formCibleEquipe = 0;
-            let formUtileEquipe = 0;
-            const detailsAgents = [];
-
-            mapAgentsProps.forEach(ap => {
-                if (!estSocle) {
-                    const activiteF = (act.nom || "").trim().toUpperCase();
-                    const matchActivite = activiteF && ap.specBase.some(s => s === activiteF || activiteF.includes(s) || s.includes(activiteF));
-
-                    const profilsForm = [
-                        ...(Array.isArray(f.profils) ? f.profils : []),
-                        ...extraireValeurs(f.modulations?.map(m => m?.profil).filter(Boolean) || [])
-                    ].map(v => String(v).trim().toUpperCase());
-
-                    const matchProfil = profilsForm.some(p => ap.specBrutes.includes(p) || ap.specBase.includes(p));
-
-                    if (!matchActivite && !matchProfil) return;
-                }
-
-                let quotaAgent = f.quotaDefaut;
-                let estDispense = false;
-
-                if (Array.isArray(f.modulations) && f.modulations.length > 0) {
-                    const matchMod = f.modulations.find(m => {
-                        const profilMod = String(m.profil || "").trim().toUpperCase();
-                        return ap.profils.has(profilMod);
-                    });
-
-                    if (matchMod) {
-                        if (matchMod.dispense === true || matchMod.quota === 0) {
-                            estDispense = true;
-                        } else {
-                            quotaAgent = Number(matchMod.quota);
-                        }
-                    }
-                }
-
-                if (estDispense || quotaAgent === 0) return;
-
-                let hFaites = 0;
-                if (Array.isArray(historiqueSaisiesFMPA)) {
-                    hFaites = historiqueSaisiesFMPA
-                        .filter(s => {
-                            const sMat = String(s.matricule || '');
-                            const sForm = epurer(s.formation || '');
-                            return (sMat === ap.matricule) && 
-                                   (sForm === keyForm || sForm.includes(keyForm) || keyForm.includes(sForm) || (f.id && s.formation === f.id));
-                        })
-                        .reduce((sum, s) => sum + calculerDureesSaisie(s), 0);
-                }
-
-                hFaites = Math.round(hFaites * 10) / 10;
-                quotaAgent = Math.round(quotaAgent * 10) / 10;
-
-                const hUtilesAgent = Math.min(hFaites, quotaAgent);
-                const hRestantes = Math.max(0, Math.round((quotaAgent - hFaites) * 10) / 10);
-
-                formCibleEquipe += quotaAgent;
-                formUtileEquipe += hUtilesAgent;
-
-                detailsAgents.push({
-                    nomPrenom: ap.nomPrenom,
-                    hFaites,
-                    quotaAgent,
-                    hRestantes
-                });
-            });
-
-            if (formCibleEquipe === 0 && formUtileEquipe === 0) return;
-
-            formUtileEquipe = Math.round(formUtileEquipe * 10) / 10;
-            formCibleEquipe = Math.round(formCibleEquipe * 10) / 10;
-
-            detailsAgents.sort((a, b) => b.hRestantes - a.hRestantes);
-
-            const pctForm = formCibleEquipe > 0 ? Math.min(100, Math.round((formUtileEquipe / formCibleEquipe) * 100)) : 100;
-            const aJour = formUtileEquipe >= formCibleEquipe;
-
-            actUtile = Math.round((actUtile + formUtileEquipe) * 10) / 10;
-            actCible = Math.round((actCible + formCibleEquipe) * 10) / 10;
-
-            let htmlListeAgents = '';
-            detailsAgents.forEach(ag => {
-                const agFait = ag.hRestantes === 0;
-                htmlListeAgents += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; margin-top: 4px; background: ${agFait ? '#f1f5f9' : '#ffffff'}; border-left: 3px solid ${agFait ? '#22c55e' : '#f59e0b'}; border-radius: 4px; font-size: 0.82rem;">
-                        <span style="color: #334155; font-weight: 500;">${escapeHtml(ag.nomPrenom)}</span>
-                        <span style="color: ${agFait ? '#15803d' : '#b45309'}; font-weight: 600;">
-                            ${agFait ? 'OK' : 'Reste ' + ag.hRestantes + ' h'} (${ag.hFaites}/${ag.quotaAgent}h)
-                        </span>
-                    </div>
-                `;
-            });
-
-            htmlFormations += `
-                <div style="background: ${aJour ? '#f0fdf4' : '#ffffff'}; border: 1px solid ${aJour ? '#bbf7d0' : '#cbd5e1'}; border-radius: 6px; padding: 10px 14px; margin-top: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <div>
-                            <strong style="color: #1e293b; font-size: 0.95rem;">${escapeHtml(f.nom)}</strong>
-                            <span style="font-size: 0.8rem; color: #64748b; margin-left: 6px;">(Cible Équipe : ${formCibleEquipe}h)</span>
-                        </div>
-                        <div style="font-weight: bold; color: ${aJour ? '#16a34a' : '#dc2626'}; font-size: 0.95rem;">
-                            ${formUtileEquipe}h / ${formCibleEquipe}h
-                        </div>
-                    </div>
-                    <div style="width: 100%; background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
-                        <div style="width: ${pctForm}%; background: ${aJour ? '#16a34a' : '#d97706'}; height: 100%;"></div>
-                    </div>
-                    <details style="margin-top: 6px; font-size: 0.85rem; color: #475569;">
-                        <summary style="cursor: pointer; font-weight: 600; color: #0284c7;">
-                            Détail par agent (${detailsAgents.length})
-                        </summary>
-                        <div style="margin-top: 6px;">
-                            ${htmlListeAgents}
-                        </div>
-                    </details>
-                </div>
-            `;
-        });
-
-        if (htmlFormations === '') return;
-
-        totalUtileGlobal = Math.round((totalUtileGlobal + actUtile) * 10) / 10;
-        totalCibleGlobal = Math.round((totalCibleGlobal + actCible) * 10) / 10;
-
-        if (estSpe) {
-            totalSpeUtile = Math.round((totalSpeUtile + actUtile) * 10) / 10;
-            totalSpeCible = Math.round((totalSpeCible + actCible) * 10) / 10;
-        } else {
-            totalSocleUtile = Math.round((totalSocleUtile + actUtile) * 10) / 10;
-            totalSocleCible = Math.round((totalSocleCible + actCible) * 10) / 10;
-        }
-
-        const pctAct = actCible > 0 ? Math.min(100, Math.round((actUtile / actCible) * 100)) : 0;
-
-        htmlContenu += `
-            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px; margin-bottom: 6px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <h3 style="margin: 0; color: #0f172a; font-size: 0.95rem;">📂 ${escapeHtml(act.nom)} ${estSpe ? '<span style="font-size: 0.75rem; background:#e0e7ff; color:#4338ca; padding: 2px 6px; border-radius:4px;">Spécialité</span>' : ''}</h3>
-                    <span style="font-size: 0.85rem; font-weight: bold; color: ${pctAct >= 100 ? '#16a34a' : '#0284c7'};">${pctAct}% (${actUtile}h / ${actCible}h)</span>
-                </div>
-                ${htmlFormations}
-            </div>
-        `;
-    });
-
-    // Mettre à jour les jauges en haut du bilan
-    mettreAJourJauge('barre-equipe-global', 'txt-pct-equipe-global', 'txt-heures-equipe-global', totalUtileGlobal, totalCibleGlobal);
-    mettreAJourJauge('barre-equipe-socle', 'txt-pct-equipe-socle', null, totalSocleUtile, totalSocleCible);
-    mettreAJourJauge('barre-equipe-spe', 'txt-pct-equipe-spe', null, totalSpeUtile, totalSpeCible);
-
-    if (conteneurModules) {
-        conteneurModules.innerHTML = htmlContenu || `<div style="text-align:center; padding: 20px; color: #64748b;">Aucune formation socle ou spécialité pour cette équipe.</div>`;
-    }
-}
-
-function mettreAJourJauge(idBarre, idTxtPct, idTxtHeures, fait, total) {
-    const pct = total > 0 ? Math.min(100, Math.round((fait / total) * 100)) : 0;
-    
-    // Arrondi propre à 1 décimale pour l'affichage du texte dans la modale
-    const faitPropre = Math.round((Number(fait) || 0) * 10) / 10;
-    const totalPropre = Math.round((Number(total) || 0) * 10) / 10;
-
-    const barre = document.getElementById(idBarre);
-    const txtPct = document.getElementById(idTxtPct);
-    const txtHeures = document.getElementById(idTxtHeures);
-
-    if (barre) barre.style.width = `${pct}%`;
-    if (txtPct) txtPct.textContent = `${pct}%`;
-    if (txtHeures) txtHeures.textContent = `${faitPropre}h / ${totalPropre}h`;
-}
-
-window.addEventListener('click', function(event) {
-    const modalHist = document.getElementById('modal-historique');
-    const modalEq = document.getElementById('modal-equipe');
-    if (event.target === modalHist) fermerModalHistorique();
-    if (event.target === modalEq) fermerModalEquipe();
-});
-
-
-// --- OUVERTURE / FERMETURE DE LA MODALE AGENT ---
-function ouvrirModalAgent() {
-    const modal = document.getElementById('modal-agent');
-    const select = document.getElementById('modal-select-agent');
-    if (!modal || !select) return;
-
-    // Écouteur pour le filtre texte interne à la modale agent si présent
-    const inputFiltre = document.getElementById('filter-module-agent');
-    if (inputFiltre && !inputFiltre.dataset.hasListener) {
-        inputFiltre.addEventListener('input', genererFicheAgent);
-        inputFiltre.dataset.hasListener = "true";
-    }
-
-    // Remplir la liste déroulante des agents
-    select.innerHTML = '<option value="">-- Choisir un agent --</option>';
-    const agents = (tableauAgentsRH || []).slice().sort((a, b) => {
-        const nomA = (a.nom || '').toUpperCase();
-        const nomB = (b.nom || '').toUpperCase();
-        return nomA.localeCompare(nomB, 'fr');
-    });
-
-    agents.forEach(a => {
-        const mat = a.matricule || a.id || '';
-        const nomPrenom = `${a.nom || ''} ${a.prenom || ''}`.trim();
-        const eq = a.equipe || 'Sans équipe';
-        const option = document.createElement('option');
-        option.value = mat;
-        option.textContent = `${nomPrenom} (${eq})`;
-        select.appendChild(option);
-    });
-
-    modal.style.display = 'flex';
-    genererFicheAgent();
-}
-
-function fermerModalAgent() {
-    const modal = document.getElementById('modal-agent');
-    if (modal) modal.style.display = 'none';
-}
-
-// --- GÉNÉRATION DYNAMIQUE DE LA FICHE AGENT ---
-function genererFicheAgent() {
-    const selectAgent = document.getElementById('modal-select-agent');
-    const conteneurModules = document.getElementById('conteneur-modules-agent');
-    const matriculeAgent = selectAgent ? selectAgent.value : '';
-
-    const dateEd = document.getElementById('fiche-agent-date-edition');
-    if (dateEd) dateEd.textContent = new Date().toLocaleDateString('fr-FR');
-
-    // 1. Cas où aucun agent n'est sélectionné
-    if (!matriculeAgent) {
-        const elNom = document.getElementById('fiche-agent-nom');
-        const elInfos = document.getElementById('fiche-agent-infos');
-        if (elNom) elNom.textContent = "FICHE INDIVIDUELLE FMA";
-        if (elInfos) elInfos.textContent = "Sélectionnez un agent...";
-        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Veuillez sélectionner un agent dans la liste.</div>`;
-        
-        // Utilisation des ID exacts de la Modal Agent
-        mettreAJourJauge('barre-agent-global', 'txt-pct-agent-global', 'txt-heures-agent-global', 0, 0);
-        mettreAJourJauge('barre-agent-socle', 'txt-pct-agent-socle', null, 0, 0);
-        mettreAJourJauge('barre-agent-spe', 'txt-pct-agent-spe', null, 0, 0);
-        return;
-    }
-
-    const agent = (tableauAgentsRH || []).find(a => String(a.matricule || a.id || '') === String(matriculeAgent));
-    if (!agent) return;
-
-    const nomPrenom = `${agent.nom || ''} ${agent.prenom || ''}`.trim();
-    const eq = agent.equipe || 'Sans équipe';
-    const speListRaw = Array.isArray(agent.specialites) ? agent.specialites.join(', ') : String(agent.specialites || 'Aucune');
-
-    const elNom = document.getElementById('fiche-agent-nom');
-    const elInfos = document.getElementById('fiche-agent-infos');
-    if (elNom) elNom.textContent = nomPrenom.toUpperCase();
-    if (elInfos) elInfos.textContent = `Équipe : ${eq} | Spécialités : ${speListRaw}`;
-
-    const catalogue = catalogueInitial || [];
-    if (catalogue.length === 0) {
-        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Catalogue vide. Chargez d'abord FMPA-RH.xlsx.</div>`;
-        return;
-    }
-
-    const epurer = (str) => String(str || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
-
-    const profilsAgent = new Set([
-        ...extraireValeurs(agent.statut),
-        ...extraireValeurs(agent.grade),
-        ...extraireValeurs(agent.fonction),
-        ...extraireValeurs(agent.specialites),
-        ...extraireValeurs(agent.competences),
-        ...extraireValeurs(agent.engagement),
-        ...extraireValeurs(agent.regime)
-    ]);
-
-    const calculerDureesSaisie = (saisie) => {
-        if (saisie.duree || saisie.Duree || saisie.heures || saisie.Heures) {
-            return parseFloat(saisie.duree || saisie.Duree || saisie.heures || saisie.Heures || 0);
-        }
-        if (saisie.heureDebut && saisie.heureFin) {
-            return calculerDureeEntreHeures(saisie.heureDebut, saisie.heureFin);
-        }
-        return 0;
-    };
-
-    const specAgentBrutes = (agent.specialites || []).map(s => String(s).trim().toUpperCase()).filter(Boolean);
-    const specAgentBase = specAgentBrutes.map(s => s.replace(/\s*\d+$/, ""));
-
-    const inputFiltre = document.getElementById('filter-module-agent');
-    const termeFiltre = epurer(inputFiltre ? inputFiltre.value : '');
-
-    const activitesMap = {};
-
-    catalogue.forEach(item => {
-        const nomActivite = item.activite || "Général";
-        const nomFormation = item.libelle || item.fmpa || item.sequence || "Formation";
-        const typeAct = String(item.type || '').toUpperCase();
-
-        if (!activitesMap[nomActivite]) {
-            activitesMap[nomActivite] = {
-                nom: nomActivite,
-                formations: [],
-                type: typeAct
-            };
-        }
-
-        activitesMap[nomActivite].formations.push({
-            id: item.id || '',
-            nom: nomFormation,
-            quotaDefaut: parseFloat(item.quota || 0),
-            modulations: item.modulations || [],
-            type: typeAct,
-            profils: item.profils || []
-        });
-    });
-
-    let totalUtileGlobal = 0, totalCibleGlobal = 0;
-    let totalSocleUtile = 0, totalSocleCible = 0;
-    let totalSpeUtile = 0, totalSpeCible = 0;
-
-    let htmlContenu = '';
-
-    Object.values(activitesMap).forEach(act => {
-        const estSocle = act.type.includes('SOCLE') || act.type.includes('COMMUN');
-        const estSpe = act.type.includes('SPEC') || act.type.includes('SPÉCIALITÉ');
-
-        let actUtile = 0, actCible = 0;
-        let htmlFormations = '';
-
-        act.formations.forEach(f => {
-            const keyForm = epurer(f.nom);
-
-            if (!estSocle) {
-                const activiteF = (act.nom || "").trim().toUpperCase();
-                const matchActivite = activiteF && specAgentBase.some(s => s === activiteF || activiteF.includes(s) || s.includes(activiteF));
-
-                const profilsForm = [
-                    ...(Array.isArray(f.profils) ? f.profils : []),
-                    ...extraireValeurs(f.modulations?.map(m => m?.profil).filter(Boolean) || [])
-                ].map(v => String(v).trim().toUpperCase());
-
-                const matchProfil = profilsForm.some(p => specAgentBrutes.includes(p) || specAgentBase.includes(p));
-
-                if (!matchActivite && !matchProfil) return;
-            }
-
-            if (termeFiltre && !epurer(act.nom).includes(termeFiltre) && !keyForm.includes(termeFiltre)) {
-                return;
-            }
-
-            let quotaRequis = f.quotaDefaut;
-            let estDispense = false;
-
-            if (Array.isArray(f.modulations) && f.modulations.length > 0) {
-                const matchMod = f.modulations.find(m => {
-                    const profilMod = String(m.profil || "").trim().toUpperCase();
-                    return profilsAgent.has(profilMod);
-                });
-
-                if (matchMod) {
-                    if (matchMod.dispense === true || matchMod.quota === 0) {
-                        estDispense = true;
-                    } else {
-                        quotaRequis = Number(matchMod.quota);
-                    }
-                }
-            }
-
-            if (estDispense || quotaRequis === 0) return;
-
-            let hFaites = 0;
-            if (Array.isArray(historiqueSaisiesFMPA)) {
-                hFaites = historiqueSaisiesFMPA
-                    .filter(s => {
-                        const sMat = String(s.matricule || '');
-                        const sForm = epurer(s.formation || '');
-                        return (sMat === String(matriculeAgent)) && 
-                               (sForm === keyForm || sForm.includes(keyForm) || keyForm.includes(sForm) || (f.id && s.formation === f.id));
-                    })
-                    .reduce((sum, s) => sum + calculerDureesSaisie(s), 0);
-            }
-
-            hFaites = Math.round(hFaites * 10) / 10;
-            quotaRequis = Math.round(quotaRequis * 10) / 10;
-
-            // CAPAGE : Les heures utiles ne dépassent pas le quota requis
-            const hUtiles = Math.min(hFaites, quotaRequis);
-
-            const pctForm = quotaRequis > 0 ? Math.min(100, Math.round((hUtiles / quotaRequis) * 100)) : 100;
-            const aJour = hFaites >= quotaRequis;
-
-            actUtile = Math.round((actUtile + hUtiles) * 10) / 10;
-            actCible = Math.round((actCible + quotaRequis) * 10) / 10;
-
-            htmlFormations += `
-                <div style="background: ${aJour ? '#f0fdf4' : '#ffffff'}; border: 1px solid ${aJour ? '#bbf7d0' : '#cbd5e1'}; border-radius: 6px; padding: 10px 14px; margin-top: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <div>
-                            <strong style="color: #1e293b; font-size: 0.95rem;">${escapeHtml(f.nom)}</strong>
-                            <span style="font-size: 0.8rem; color: #64748b; margin-left: 6px;">(Objectif : ${quotaRequis}h)</span>
-                        </div>
-                        <div style="font-weight: bold; color: ${aJour ? '#16a34a' : '#dc2626'}; font-size: 0.95rem;">
-                            ${hFaites}h / ${quotaRequis}h ${hFaites > quotaRequis ? `<span style="font-size:0.75rem; color:#64748b;">(dont ${quotaRequis}h utiles)</span>` : ''}
-                        </div>
-                    </div>
-                    <div style="width: 100%; background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden;">
-                        <div style="width: ${pctForm}%; background: ${aJour ? '#16a34a' : '#d97706'}; height: 100%;"></div>
-                    </div>
-                </div>
-            `;
-        });
-
-        if (htmlFormations === '') return;
-
-        totalUtileGlobal = Math.round((totalUtileGlobal + actUtile) * 10) / 10;
-        totalCibleGlobal = Math.round((totalCibleGlobal + actCible) * 10) / 10;
-
-        if (estSpe) {
-            totalSpeUtile = Math.round((totalSpeUtile + actUtile) * 10) / 10;
-            totalSpeCible = Math.round((totalSpeCible + actCible) * 10) / 10;
-        } else {
-            totalSocleUtile = Math.round((totalSocleUtile + actUtile) * 10) / 10;
-            totalSocleCible = Math.round((totalSocleCible + actCible) * 10) / 10;
-        }
-
-        const pctAct = actCible > 0 ? Math.min(100, Math.round((actUtile / actCible) * 100)) : 0;
-
-        htmlContenu += `
-            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px; margin-bottom: 6px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <h3 style="margin: 0; color: #0f172a; font-size: 0.95rem;">📂 ${escapeHtml(act.nom)} ${estSpe ? '<span style="font-size: 0.75rem; background:#e0e7ff; color:#4338ca; padding: 2px 6px; border-radius:4px;">Spécialité</span>' : ''}</h3>
-                    <span style="font-size: 0.85rem; font-weight: bold; color: ${pctAct >= 100 ? '#16a34a' : '#0284c7'};">${pctAct}% (${actUtile}h / ${actCible}h)</span>
-                </div>
-                ${htmlFormations}
-            </div>
-        `;
-    });
-
-    mettreAJourJauge('barre-agent-global', 'txt-pct-agent-global', 'txt-heures-agent-global', totalUtileGlobal, totalCibleGlobal);
-    mettreAJourJauge('barre-agent-socle', 'txt-pct-agent-socle', null, totalSocleUtile, totalSocleCible);
-    mettreAJourJauge('barre-agent-spe', 'txt-pct-agent-spe', null, totalSpeUtile, totalSpeCible);
-
-    if (conteneurModules) {
-        conteneurModules.innerHTML = htmlContenu || `<div style="text-align:center; padding: 20px; color: #64748b;">Aucune formation socle ou spécialité requise pour cet agent.</div>`;
-    }
-}
-
-
-// Variable globale pour suivre l'état des onglets (à placer avec tes autres let/const en haut du script)
-let ongletsMasques = true;
-
-/**
- * Active ou désactive la visibilité des onglets cachés dans le fichier Excel
- */
-function basculerVisibiliteOngletsAdmin() {
-    // 1. Contrôle d'accès : on vérifie que le code admin est déverrouillé
-    if (!estAdminDeverrouille) {
-        alert("🔒 Veuillez d'abord saisir le code Administrateur valide.");
-        return;
-    }
-
-    // 2. Inversion de l'état
-    ongletsMasques = !ongletsMasques;
-
-    // 3. Mise à jour de l'apparence du bouton
-    const btn = document.getElementById("btn-toggle-onglets");
-    if (btn) {
-        if (ongletsMasques) {
-            btn.innerHTML = "🫣 Onglets XL Cachés";
-            btn.style.color = "blue";
-        } else {
-            btn.innerHTML = "👁️ Onglets XL Visibles";
-            btn.style.color = "green";
-        }
-    }
-
-    // 4. Action sur le classeur SheetJS (si chargé)
-    if (typeof classeurXLSX !== "undefined" && classeurXLSX.Workbook && classeurXLSX.Workbook.Sheets) {
-        classeurXLSX.Workbook.Sheets.forEach(sheet => {
-            // Si l'onglet n'est pas l'onglet principal ("FMPA" ou "Saisie"), on modifie sa visibilité
-            if (sheet.name !== "FMPA" && sheet.name !== "Donnees") {
-                sheet.Hidden = ongletsMasques ? 1 : 0;
-            }
-        });
-
-        // Message de confirmation
-        if (ongletsMasques) {
-            alert("🙈 Les onglets d'administration sont maintenant cachés pour l'enregistrement Excel.");
-        } else {
-            alert("👁️ Les onglets d'administration sont maintenant visibles dans le fichier Excel !");
-        }
-    } else {
-        alert("⚠️ Aucun fichier Excel n'est actuellement chargé.");
-    }
-}
-
+function me
