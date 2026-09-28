@@ -2132,7 +2132,7 @@ function basculerVisibiliteOngletsAdmin() {
         }
 
         if (ongletsMasques) {
-            alert("🙈 Seul l'onglet 'Message Alerte' sera visible dans le fichier Excel.");
+            alert("🫣 Seul l'onglet 'Message Alerte' sera visible dans le fichier Excel.");
         } else {
             alert("👁️ Tous les onglets sont maintenant visibles dans le fichier Excel !");
         }
