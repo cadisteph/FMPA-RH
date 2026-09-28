@@ -22,7 +22,7 @@ const HEADERS_HISTORIQUE = [
 // --- GESTION DU MAPPING & CONSTANTES ADMIN ---
 let indexEnEdition = null;
 let estAdminDeverrouille = false;
-let estOngletsCaches = false;
+let ongletsMasques = true;
 
 // Empreinte SHA-256 par défaut si absente d'Excel ("1234")
 const HASH_DEFAUT_SECOURS = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
@@ -33,7 +33,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     afficherMessageAccueil();
 
-    document.getElementById('filter-module')?.addEventListener('input', genererFicheEquipe);
+    // Correction des IDs d'écouteurs d'événements pour les modales
+    document.getElementById('filter-module-equipe')?.addEventListener('input', genererFicheEquipe);
+    document.getElementById('filter-module-agent')?.addEventListener('input', genererFicheAgent);
     document.getElementById('filter-recherche')?.addEventListener('input', genererFicheEquipe);
 
     document.getElementById("btn-open-xlsx")?.addEventListener("click", ouvrirFichierXLSX);
@@ -68,7 +70,7 @@ function afficherMessageAccueil() {
     tbody.innerHTML = `
         <tr>
             <td colspan="8" style="text-align:left; padding:40px; color:#64748b; display: none">
-                <div style="font-size:1.1rem; color: #bd1e1e; margin-bottom:8px;"><strong>Aucun fichier Excel charged</strong></div>
+                <div style="font-size:1.1rem; color: #bd1e1e; margin-bottom:8px;"><strong>Aucun fichier Excel chargé</strong></div>
                 Cliquez sur <strong>📂 Ouvrir FMPA-RH.xlsx</strong>.
             </td>
         </tr>
@@ -133,6 +135,7 @@ async function chargerClasseur(file) {
     catalogueInitial = convertirCatalogue(classeurXLSX.Sheets.catalogue);
     historiqueSaisiesFMPA = convertirHistorique(classeurXLSX.Sheets.historiqueSuivi);
 
+    // LECTURE DE LA DATE RÉF W@CT DEPUIS L'ONGLET PARAMETRES
     if (classeurXLSX.Sheets["Parametres"]) {
         const sheetParam = classeurXLSX.Sheets["Parametres"];
         let valWact = null;
@@ -727,11 +730,9 @@ function basculerToutSelectionner(e) {
 
 function majStatutSelection() {
     const count = agentsSelectionnes.size;
-    const statusEls = document.querySelectorAll("#selection-status, #selection-status-card");
+    const statusEl = document.getElementById("selection-status");
     const btnValider = document.getElementById("btn-valider-groupe");
-    statusEls.forEach(el => {
-        if (el) el.textContent = `👥 ${count} agent(s) sélectionné(s)`;
-    });
+    if (statusEl) statusEl.textContent = `👥 ${count} agent(s) sélectionné(s)`;
     if (btnValider) btnValider.disabled = count === 0 || !classeurXLSX;
 }
 
@@ -963,7 +964,6 @@ function annulerSaisie() {
     filtrerEtAfficherTableau();
 }
 
-// --- FONCTION UTILITAIRE DE HACHAGE SHA-256 ---
 async function hacherTexte(texte) {
     const encoder = new TextEncoder();
     const data = encoder.encode(texte);
@@ -972,7 +972,6 @@ async function hacherTexte(texte) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// --- RÉCUPÉRATION DU HASH DEPUIS EXCEL ---
 function obtenirHashAdminDepuisExcel() {
     try {
         if (typeof classeurXLSX !== "undefined" && classeurXLSX?.Sheets?.["Parametres"]) {
@@ -994,7 +993,6 @@ function obtenirHashAdminDepuisExcel() {
     return HASH_DEFAUT_SECOURS;
 }
 
-// --- VÉRIFICATION DU CODE ADMIN ---
 async function verifierCodeAdmin() {
     const inputCode = document.getElementById("hist-code-admin");
     const inputWact = document.getElementById("hist-ref-wact");
@@ -1035,7 +1033,6 @@ async function verifierCodeAdmin() {
     afficherHistorique();
 }
 
-// --- MODIFICATION DU CODE ADMIN DEPUIS L'INTERFACE ---
 async function modifierMotDePasseAdmin() {
     if (!estAdminDeverrouille) {
         alert("Veuillez d'abord déverrouiller l'accès administrateur.");
@@ -1080,76 +1077,6 @@ async function modifierMotDePasseAdmin() {
         } else {
             alert("⚠️ Nouveau mot de passe pris en compte pour la session, mais le fichier Excel n'a pas pu être sauvegardé sur le disque.");
         }
-    }
-}
-
-// --- BASCULE DE LA VISIBILITÉ DES ONGLETS DANS LE CLASSEUR EXCEL ---
-async function basculerVisibiliteOngletsAdmin() {
-    if (!classeurXLSX) {
-        alert("Veuillez charger le fichier FMPA-RH.xlsx avant d'effectuer cette action.");
-        return;
-    }
-
-    if (!estAdminDeverrouille) {
-        alert("🔒 Saisissez le code administrateur valide pour modifier la visibilité des onglets Excel.");
-        return;
-    }
-
-    estOngletsCaches = !estOngletsCaches;
-    const btnToggle = document.getElementById("btn-toggle-onglets");
-
-    if (!classeurXLSX.Workbook) {
-        classeurXLSX.Workbook = { Sheets: [] };
-    }
-    if (!classeurXLSX.Workbook.Sheets) {
-        classeurXLSX.Workbook.Sheets = [];
-    }
-
-    // Nom de l'onglet de garde/alerte à laisser visible
-    const NOM_ONGLET_ALERTE = "Message Alerte";
-
-    // Si l'onglet Alerte n'existe pas, on le crée
-    if (!classeurXLSX.Sheets[NOM_ONGLET_ALERTE]) {
-        const sheetAlerte = XLSX.utils.aoa_to_sheet([
-            ["ATTENTION"],
-            ["Accès restreint. Veuillez passer par l'application Web pour manipuler ces données."]
-        ]);
-        XLSX.utils.book_append_sheet(classeurXLSX, sheetAlerte, NOM_ONGLET_ALERTE);
-    }
-
-    const sheetNames = classeurXLSX.SheetNames;
-
-    sheetNames.forEach((sheetName, index) => {
-        if (!classeurXLSX.Workbook.Sheets[index]) {
-            classeurXLSX.Workbook.Sheets[index] = { name: sheetName };
-        }
-
-        if (estOngletsCaches) {
-            // Cacher tous les onglets SAUF "Message Alerte"
-            if (sheetName === NOM_ONGLET_ALERTE) {
-                classeurXLSX.Workbook.Sheets[index].Hidden = 0;
-            } else {
-                classeurXLSX.Workbook.Sheets[index].Hidden = 1; // 1 = Caché dans Excel
-            }
-        } else {
-            // Afficher TOUS les onglets
-            classeurXLSX.Workbook.Sheets[index].Hidden = 0;
-        }
-    });
-
-    if (btnToggle) {
-        btnToggle.textContent = estOngletsCaches ? "👁️ Onglets XL Visibles" : "🫣 Onglets XL Cachés";
-    }
-
-    try {
-        await enregistrerFichierXLSX();
-        const statutTxt = estOngletsCaches 
-            ? "Tous les onglets (sauf 'Message Alerte') sont désormais cachés." 
-            : "Tous les onglets sont désormais visibles.";
-        alert(`✅ Configuration sauvegardée dans le fichier Excel !\n${statutTxt}`);
-    } catch (err) {
-        console.error(err);
-        alert(`⚠️ Masquage appliqué mais échec d'écriture Excel : ${err.message}`);
     }
 }
 
@@ -1210,7 +1137,26 @@ function ouvrirModalHistorique() {
 
 async function fermerModalHistorique() {
     indexEnEdition = null;
+    estAdminDeverrouille = false; 
     
+    const inputCode = document.getElementById("hist-code-admin");
+    const inputWact = document.getElementById("hist-ref-wact");
+    const btnChangerCode = document.getElementById("btn-changer-code-admin");
+
+    if (inputCode) {
+        inputCode.value = "";
+        inputCode.style.border = "";
+        inputCode.style.backgroundColor = "";
+    }
+
+    if (inputWact) {
+        inputWact.disabled = true;
+        inputWact.style.backgroundColor = "#e2e8f0";
+        inputWact.style.cursor = "not-allowed";
+    }
+
+    if (btnChangerCode) btnChangerCode.style.display = "none";
+
     const modal = document.getElementById("modal-historique");
     if (modal) modal.style.display = "none";
 
@@ -1315,7 +1261,6 @@ function afficherHistorique() {
                     <button type="button" class="btn-act-save" onclick="sauvegarderLigneHistorique(${realIndex})">💾 Enregistrer</button>
                     <button type="button" class="btn-act-cancel" onclick="annulerEditionHistorique()">✖ Fermer</button>
                 </td>
-                <td>${escapeHtml(row.commentaires || "")}</td>
             `;
         } else {
             let colActions = "";
@@ -1341,7 +1286,6 @@ function afficherHistorique() {
                 <td>${escapeHtml(row.heureFin)}</td>
                 <td><strong>${duree} h</strong></td>
                 <td>${colActions}</td>
-                <td>${escapeHtml(row.commentaires || "")}</td>
             `;
         }
 
@@ -1532,9 +1476,7 @@ function exporterHistoriquePDF() {
     doc.save(`Historique_FMPA_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
-// ==========================================
-// GESTION DU BILAN & FICHE ÉQUIPE / AGENT
-// ==========================================
+// --- GESTION DU BILAN & FICHE ÉQUIPE ---
 
 function ouvrirModalEquipe() {
     const modal = document.getElementById('modal-equipe');
@@ -1576,4 +1518,611 @@ function alimenterSelectEquipeModal() {
     if (valeurActuelle) select.value = valeurActuelle;
 }
 
-function me
+function filtrerAgentsPourModale(listeAgents, filtreModule) {
+    if (!Array.isArray(listeAgents)) return [];
+    if (!filtreModule || filtreModule.trim() === "") return listeAgents;
+
+    const recherche = filtreModule.toLowerCase().trim();
+
+    return listeAgents.filter(agent => {
+        const specialites = Array.isArray(agent.specialites) ? agent.specialites.join(" ") : String(agent.specialites || agent.Specialites || "");
+        const competences = Array.isArray(agent.competences) ? agent.competences.join(" ") : String(agent.competences || agent.Competences || "");
+        const nomComplet = `${agent.nom || agent.Nom || ''} ${agent.prenom || agent.Prenom || ''}`;
+        const infosAgent = `${agent.equipe || agent.Equipe || ""} ${specialites} ${competences} ${nomComplet}`.toLowerCase();
+
+        return infosAgent.includes(recherche);
+    });
+}
+
+function genererFicheEquipe() {
+    const selectEquipe = document.getElementById('modal-select-equipe');
+    const conteneurModules = document.getElementById('conteneur-modules-equipe');
+    const nomEquipe = selectEquipe ? selectEquipe.value.trim() : '';
+
+    const dateEd = document.getElementById('fiche-equipe-date-edition');
+    if (dateEd) dateEd.textContent = new Date().toLocaleDateString('fr-FR');
+
+    if (!nomEquipe) {
+        const elNom = document.getElementById('fiche-equipe-nom');
+        const elInfos = document.getElementById('fiche-equipe-infos');
+        if (elNom) elNom.textContent = "FICHE ÉQUIPE FMA";
+        if (elInfos) elInfos.textContent = "Sélectionnez une équipe...";
+        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Veuillez sélectionner une équipe dans la liste.</div>`;
+        mettreAJourJauge('barre-equipe-global', 'txt-pct-equipe-global', 'txt-heures-equipe-global', 0, 0);
+        mettreAJourJauge('barre-equipe-socle', 'txt-pct-equipe-socle', null, 0, 0);
+        mettreAJourJauge('barre-equipe-spe', 'txt-pct-equipe-spe', null, 0, 0);
+        return;
+    }
+
+    const epurer = (str) => String(str || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
+
+    const agentsEquipe = (tableauAgentsRH || []).filter(a => {
+        const eqAgent = String(a.equipe || 'Sans équipe').trim();
+        return epurer(eqAgent) === epurer(nomEquipe) || eqAgent.toUpperCase() === nomEquipe.toUpperCase();
+    });
+
+    const elNom = document.getElementById('fiche-equipe-nom');
+    const elInfos = document.getElementById('fiche-equipe-infos');
+    if (elNom) elNom.textContent = `BILAN FMA - ÉQUIPE : ${nomEquipe.toUpperCase()}`;
+    if (elInfos) elInfos.textContent = `Effectif : ${agentsEquipe.length} agent(s)`;
+
+    const catalogue = catalogueInitial || [];
+    if (catalogue.length === 0 || agentsEquipe.length === 0) {
+        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Aucune donnée ou effectif vide pour cette équipe.</div>`;
+        mettreAJourJauge('barre-equipe-global', 'txt-pct-equipe-global', 'txt-heures-equipe-global', 0, 0);
+        mettreAJourJauge('barre-equipe-socle', 'txt-pct-equipe-socle', null, 0, 0);
+        mettreAJourJauge('barre-equipe-spe', 'txt-pct-equipe-spe', null, 0, 0);
+        return;
+    }
+
+    const calculerDureesSaisie = (saisie) => {
+        if (saisie.duree || saisie.Duree || saisie.heures || saisie.Heures) {
+            return parseFloat(saisie.duree || saisie.Duree || saisie.heures || saisie.Heures || 0);
+        }
+        if (saisie.heureDebut && saisie.heureFin) {
+            return calculerDureeEntreHeures(saisie.heureDebut, saisie.heureFin);
+        }
+        return 0;
+    };
+
+    const mapAgentsProps = agentsEquipe.map(agent => {
+        const specBrutes = (agent.specialites || []).map(s => String(s).trim().toUpperCase()).filter(Boolean);
+        const specBase = specBrutes.map(s => s.replace(/\s*\d+$/, ""));
+        const profils = new Set([
+            ...extraireValeurs(agent.statut),
+            ...extraireValeurs(agent.grade),
+            ...extraireValeurs(agent.fonction),
+            ...extraireValeurs(agent.specialites),
+            ...extraireValeurs(agent.competences),
+            ...extraireValeurs(agent.engagement),
+            ...extraireValeurs(agent.regime)
+        ]);
+
+        return {
+            agent,
+            matricule: String(agent.matricule || agent.id || ''),
+            nomPrenom: `${agent.nom || ''} ${agent.prenom || ''}`.trim(),
+            specBrutes,
+            specBase,
+            profils
+        };
+    });
+
+    const inputFiltre = document.getElementById('filter-module-equipe');
+    const termeFiltre = epurer(inputFiltre ? inputFiltre.value : '');
+
+    const activitesMap = {};
+    catalogue.forEach(item => {
+        const nomActivite = item.activite || "Général";
+        const nomFormation = item.libelle || item.fmpa || item.sequence || "Formation";
+        const typeAct = String(item.type || '').toUpperCase();
+
+        if (!activitesMap[nomActivite]) {
+            activitesMap[nomActivite] = {
+                nom: nomActivite,
+                formations: [],
+                type: typeAct
+            };
+        }
+
+        activitesMap[nomActivite].formations.push({
+            id: item.id || '',
+            nom: nomFormation,
+            quotaDefaut: parseFloat(item.quota || 0),
+            modulations: item.modulations || [],
+            type: typeAct,
+            profils: item.profils || []
+        });
+    });
+
+    let totalUtileGlobal = 0, totalCibleGlobal = 0;
+    let totalSocleUtile = 0, totalSocleCible = 0;
+    let totalSpeUtile = 0, totalSpeCible = 0;
+
+    let htmlContenu = '';
+
+    Object.values(activitesMap).forEach(act => {
+        const estSocle = act.type.includes('SOCLE') || act.type.includes('COMMUN');
+        const estSpe = act.type.includes('SPEC') || act.type.includes('SPÉCIALITÉ');
+
+        let actUtile = 0, actCible = 0;
+        let htmlFormations = '';
+
+        act.formations.forEach(f => {
+            const keyForm = epurer(f.nom);
+
+            if (termeFiltre && !epurer(act.nom).includes(termeFiltre) && !keyForm.includes(termeFiltre)) {
+                return;
+            }
+
+            let formCibleEquipe = 0;
+            let formUtileEquipe = 0;
+            const detailsAgents = [];
+
+            mapAgentsProps.forEach(ap => {
+                if (!estSocle) {
+                    const activiteF = (act.nom || "").trim().toUpperCase();
+                    const matchActivite = activiteF && ap.specBase.some(s => s === activiteF || activiteF.includes(s) || s.includes(activiteF));
+
+                    const profilsForm = [
+                        ...(Array.isArray(f.profils) ? f.profils : []),
+                        ...extraireValeurs(f.modulations?.map(m => m?.profil).filter(Boolean) || [])
+                    ].map(v => String(v).trim().toUpperCase());
+
+                    const matchProfil = profilsForm.some(p => ap.specBrutes.includes(p) || ap.specBase.includes(p));
+
+                    if (!matchActivite && !matchProfil) return;
+                }
+
+                let quotaAgent = f.quotaDefaut;
+                let estDispense = false;
+
+                if (Array.isArray(f.modulations) && f.modulations.length > 0) {
+                    const matchMod = f.modulations.find(m => {
+                        const profilMod = String(m.profil || "").trim().toUpperCase();
+                        return ap.profils.has(profilMod);
+                    });
+
+                    if (matchMod) {
+                        if (matchMod.dispense === true || matchMod.quota === 0) {
+                            estDispense = true;
+                        } else {
+                            quotaAgent = Number(matchMod.quota);
+                        }
+                    }
+                }
+
+                if (estDispense || quotaAgent === 0) return;
+
+                let hFaites = 0;
+                if (Array.isArray(historiqueSaisiesFMPA)) {
+                    hFaites = historiqueSaisiesFMPA
+                        .filter(s => {
+                            const sMat = String(s.matricule || '');
+                            const sForm = epurer(s.formation || '');
+                            return (sMat === ap.matricule) && 
+                                   (sForm === keyForm || sForm.includes(keyForm) || keyForm.includes(sForm) || (f.id && s.formation === f.id));
+                        })
+                        .reduce((sum, s) => sum + calculerDureesSaisie(s), 0);
+                }
+
+                hFaites = Math.round(hFaites * 10) / 10;
+                quotaAgent = Math.round(quotaAgent * 10) / 10;
+
+                const hUtilesAgent = Math.min(hFaites, quotaAgent);
+                const hRestantes = Math.max(0, Math.round((quotaAgent - hFaites) * 10) / 10);
+
+                formCibleEquipe += quotaAgent;
+                formUtileEquipe += hUtilesAgent;
+
+                detailsAgents.push({
+                    nomPrenom: ap.nomPrenom,
+                    hFaites,
+                    quotaAgent,
+                    hRestantes
+                });
+            });
+
+            if (formCibleEquipe === 0 && formUtileEquipe === 0) return;
+
+            formUtileEquipe = Math.round(formUtileEquipe * 10) / 10;
+            formCibleEquipe = Math.round(formCibleEquipe * 10) / 10;
+
+            detailsAgents.sort((a, b) => b.hRestantes - a.hRestantes);
+
+            const pctForm = formCibleEquipe > 0 ? Math.min(100, Math.round((formUtileEquipe / formCibleEquipe) * 100)) : 100;
+            const aJour = formUtileEquipe >= formCibleEquipe;
+
+            actUtile = Math.round((actUtile + formUtileEquipe) * 10) / 10;
+            actCible = Math.round((actCible + formCibleEquipe) * 10) / 10;
+
+            let htmlListeAgents = '';
+            detailsAgents.forEach(ag => {
+                const agFait = ag.hRestantes === 0;
+                htmlListeAgents += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; margin-top: 4px; background: ${agFait ? '#f1f5f9' : '#ffffff'}; border-left: 3px solid ${agFait ? '#22c55e' : '#f59e0b'}; border-radius: 4px; font-size: 0.82rem;">
+                        <span style="color: #334155; font-weight: 500;">${escapeHtml(ag.nomPrenom)}</span>
+                        <span style="color: ${agFait ? '#15803d' : '#b45309'}; font-weight: 600;">
+                            ${agFait ? 'OK' : 'Reste ' + ag.hRestantes + ' h'} (${ag.hFaites}/${ag.quotaAgent}h)
+                        </span>
+                    </div>
+                `;
+            });
+
+            htmlFormations += `
+                <div style="background: ${aJour ? '#f0fdf4' : '#ffffff'}; border: 1px solid ${aJour ? '#bbf7d0' : '#cbd5e1'}; border-radius: 6px; padding: 10px 14px; margin-top: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <div>
+                            <strong style="color: #1e293b; font-size: 0.95rem;">${escapeHtml(f.nom)}</strong>
+                            <span style="font-size: 0.8rem; color: #64748b; margin-left: 6px;">(Cible Équipe : ${formCibleEquipe}h)</span>
+                        </div>
+                        <div style="font-weight: bold; color: ${aJour ? '#16a34a' : '#dc2626'}; font-size: 0.95rem;">
+                            ${formUtileEquipe}h / ${formCibleEquipe}h
+                        </div>
+                    </div>
+                    <div style="width: 100%; background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
+                        <div style="width: ${pctForm}%; background: ${aJour ? '#16a34a' : '#d97706'}; height: 100%;"></div>
+                    </div>
+                    <details style="margin-top: 6px; font-size: 0.85rem; color: #475569;">
+                        <summary style="cursor: pointer; font-weight: 600; color: #0284c7;">
+                            Détail par agent (${detailsAgents.length})
+                        </summary>
+                        <div style="margin-top: 6px;">
+                            ${htmlListeAgents}
+                        </div>
+                    </details>
+                </div>
+            `;
+        });
+
+        if (htmlFormations === '') return;
+
+        totalUtileGlobal = Math.round((totalUtileGlobal + actUtile) * 10) / 10;
+        totalCibleGlobal = Math.round((totalCibleGlobal + actCible) * 10) / 10;
+
+        if (estSpe) {
+            totalSpeUtile = Math.round((totalSpeUtile + actUtile) * 10) / 10;
+            totalSpeCible = Math.round((totalSpeCible + actCible) * 10) / 10;
+        } else {
+            totalSocleUtile = Math.round((totalSocleUtile + actUtile) * 10) / 10;
+            totalSocleCible = Math.round((totalSocleCible + actCible) * 10) / 10;
+        }
+
+        const pctAct = actCible > 0 ? Math.min(100, Math.round((actUtile / actCible) * 100)) : 0;
+
+        htmlContenu += `
+            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px; margin-bottom: 6px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <h3 style="margin: 0; color: #0f172a; font-size: 0.95rem;">📂 ${escapeHtml(act.nom)} ${estSpe ? '<span style="font-size: 0.75rem; background:#e0e7ff; color:#4338ca; padding: 2px 6px; border-radius:4px;">Spécialité</span>' : ''}</h3>
+                    <span style="font-size: 0.85rem; font-weight: bold; color: ${pctAct >= 100 ? '#16a34a' : '#0284c7'};">${pctAct}% (${actUtile}h / ${actCible}h)</span>
+                </div>
+                ${htmlFormations}
+            </div>
+        `;
+    });
+
+    mettreAJourJauge('barre-equipe-global', 'txt-pct-equipe-global', 'txt-heures-equipe-global', totalUtileGlobal, totalCibleGlobal);
+    mettreAJourJauge('barre-equipe-socle', 'txt-pct-equipe-socle', null, totalSocleUtile, totalSocleCible);
+    mettreAJourJauge('barre-equipe-spe', 'txt-pct-equipe-spe', null, totalSpeUtile, totalSpeCible);
+
+    if (conteneurModules) {
+        conteneurModules.innerHTML = htmlContenu || `<div style="text-align:center; padding: 20px; color: #64748b;">Aucune formation socle ou spécialité pour cette équipe.</div>`;
+    }
+}
+
+function mettreAJourJauge(idBarre, idTxtPct, idTxtHeures, fait, total) {
+    const pct = total > 0 ? Math.min(100, Math.round((fait / total) * 100)) : 0;
+    
+    const faitPropre = Math.round((Number(fait) || 0) * 10) / 10;
+    const totalPropre = Math.round((Number(total) || 0) * 10) / 10;
+
+    const barre = document.getElementById(idBarre);
+    const txtPct = document.getElementById(idTxtPct);
+    const txtHeures = document.getElementById(idTxtHeures);
+
+    if (barre) barre.style.width = `${pct}%`;
+    if (txtPct) txtPct.textContent = `${pct}%`;
+    if (txtHeures) txtHeures.textContent = `${faitPropre}h / ${totalPropre}h`;
+}
+
+window.addEventListener('click', function(event) {
+    const modalHist = document.getElementById('modal-historique');
+    const modalEq = document.getElementById('modal-equipe');
+    const modalAg = document.getElementById('modal-agent');
+    if (event.target === modalHist) fermerModalHistorique();
+    if (event.target === modalEq) fermerModalEquipe();
+    if (event.target === modalAg) fermerModalAgent();
+});
+
+// --- OUVERTURE / FERMETURE DE LA MODALE AGENT ---
+function ouvrirModalAgent() {
+    const modal = document.getElementById('modal-agent');
+    const select = document.getElementById('modal-select-agent');
+    if (!modal || !select) return;
+
+    select.innerHTML = '<option value="">-- Choisir un agent --</option>';
+    const agents = (tableauAgentsRH || []).slice().sort((a, b) => {
+        const nomA = (a.nom || '').toUpperCase();
+        const nomB = (b.nom || '').toUpperCase();
+        return nomA.localeCompare(nomB, 'fr');
+    });
+
+    agents.forEach(a => {
+        const mat = a.matricule || a.id || '';
+        const nomPrenom = `${a.nom || ''} ${a.prenom || ''}`.trim();
+        const eq = a.equipe || 'Sans équipe';
+        const option = document.createElement('option');
+        option.value = mat;
+        option.textContent = `${nomPrenom} (${eq})`;
+        select.appendChild(option);
+    });
+
+    modal.style.display = 'flex';
+    genererFicheAgent();
+}
+
+function fermerModalAgent() {
+    const modal = document.getElementById('modal-agent');
+    if (modal) modal.style.display = 'none';
+}
+
+// --- GÉNÉRATION DYNAMIQUE DE LA FICHE AGENT ---
+function genererFicheAgent() {
+    const selectAgent = document.getElementById('modal-select-agent');
+    const conteneurModules = document.getElementById('conteneur-modules-agent');
+    const matriculeAgent = selectAgent ? selectAgent.value : '';
+
+    const dateEd = document.getElementById('fiche-agent-date-edition');
+    if (dateEd) dateEd.textContent = new Date().toLocaleDateString('fr-FR');
+
+    if (!matriculeAgent) {
+        const elNom = document.getElementById('fiche-agent-nom');
+        const elInfos = document.getElementById('fiche-agent-infos');
+        if (elNom) elNom.textContent = "FICHE INDIVIDUELLE FMA";
+        if (elInfos) elInfos.textContent = "Sélectionnez un agent...";
+        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Veuillez sélectionner un agent dans la liste.</div>`;
+        
+        mettreAJourJauge('barre-agent-global', 'txt-pct-agent-global', 'txt-heures-agent-global', 0, 0);
+        mettreAJourJauge('barre-agent-socle', 'txt-pct-agent-socle', null, 0, 0);
+        mettreAJourJauge('barre-agent-spe', 'txt-pct-agent-spe', null, 0, 0);
+        return;
+    }
+
+    const agent = (tableauAgentsRH || []).find(a => String(a.matricule || a.id || '') === String(matriculeAgent));
+    if (!agent) return;
+
+    const nomPrenom = `${agent.nom || ''} ${agent.prenom || ''}`.trim();
+    const eq = agent.equipe || 'Sans équipe';
+    const speListRaw = Array.isArray(agent.specialites) ? agent.specialites.join(', ') : String(agent.specialites || 'Aucune');
+
+    const elNom = document.getElementById('fiche-agent-nom');
+    const elInfos = document.getElementById('fiche-agent-infos');
+    if (elNom) elNom.textContent = nomPrenom.toUpperCase();
+    if (elInfos) elInfos.textContent = `Équipe : ${eq} | Spécialités : ${speListRaw}`;
+
+    const catalogue = catalogueInitial || [];
+    if (catalogue.length === 0) {
+        if (conteneurModules) conteneurModules.innerHTML = `<div style="text-align:center; padding: 20px; color: #64748b;">Catalogue vide. Chargez d'abord FMPA-RH.xlsx.</div>`;
+        return;
+    }
+
+    const epurer = (str) => String(str || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^a-z0-9]/g, '');
+
+    const profilsAgent = new Set([
+        ...extraireValeurs(agent.statut),
+        ...extraireValeurs(agent.grade),
+        ...extraireValeurs(agent.fonction),
+        ...extraireValeurs(agent.specialites),
+        ...extraireValeurs(agent.competences),
+        ...extraireValeurs(agent.engagement),
+        ...extraireValeurs(agent.regime)
+    ]);
+
+    const calculerDureesSaisie = (saisie) => {
+        if (saisie.duree || saisie.Duree || saisie.heures || saisie.Heures) {
+            return parseFloat(saisie.duree || saisie.Duree || saisie.heures || saisie.Heures || 0);
+        }
+        if (saisie.heureDebut && saisie.heureFin) {
+            return calculerDureeEntreHeures(saisie.heureDebut, saisie.heureFin);
+        }
+        return 0;
+    };
+
+    const specAgentBrutes = (agent.specialites || []).map(s => String(s).trim().toUpperCase()).filter(Boolean);
+    const specAgentBase = specAgentBrutes.map(s => s.replace(/\s*\d+$/, ""));
+
+    const inputFiltre = document.getElementById('filter-module-agent');
+    const termeFiltre = epurer(inputFiltre ? inputFiltre.value : '');
+
+    const activitesMap = {};
+
+    catalogue.forEach(item => {
+        const nomActivite = item.activite || "Général";
+        const nomFormation = item.libelle || item.fmpa || item.sequence || "Formation";
+        const typeAct = String(item.type || '').toUpperCase();
+
+        if (!activitesMap[nomActivite]) {
+            activitesMap[nomActivite] = {
+                nom: nomActivite,
+                formations: [],
+                type: typeAct
+            };
+        }
+
+        activitesMap[nomActivite].formations.push({
+            id: item.id || '',
+            nom: nomFormation,
+            quotaDefaut: parseFloat(item.quota || 0),
+            modulations: item.modulations || [],
+            type: typeAct,
+            profils: item.profils || []
+        });
+    });
+
+    let totalUtileGlobal = 0, totalCibleGlobal = 0;
+    let totalSocleUtile = 0, totalSocleCible = 0;
+    let totalSpeUtile = 0, totalSpeCible = 0;
+
+    let htmlContenu = '';
+
+    Object.values(activitesMap).forEach(act => {
+        const estSocle = act.type.includes('SOCLE') || act.type.includes('COMMUN');
+        const estSpe = act.type.includes('SPEC') || act.type.includes('SPÉCIALITÉ');
+
+        let actUtile = 0, actCible = 0;
+        let htmlFormations = '';
+
+        act.formations.forEach(f => {
+            const keyForm = epurer(f.nom);
+
+            if (!estSocle) {
+                const activiteF = (act.nom || "").trim().toUpperCase();
+                const matchActivite = activiteF && specAgentBase.some(s => s === activiteF || activiteF.includes(s) || s.includes(activiteF));
+
+                const profilsForm = [
+                    ...(Array.isArray(f.profils) ? f.profils : []),
+                    ...extraireValeurs(f.modulations?.map(m => m?.profil).filter(Boolean) || [])
+                ].map(v => String(v).trim().toUpperCase());
+
+                const matchProfil = profilsForm.some(p => specAgentBrutes.includes(p) || specAgentBase.includes(p));
+
+                if (!matchActivite && !matchProfil) return;
+            }
+
+            if (termeFiltre && !epurer(act.nom).includes(termeFiltre) && !keyForm.includes(termeFiltre)) {
+                return;
+            }
+
+            let quotaRequis = f.quotaDefaut;
+            let estDispense = false;
+
+            if (Array.isArray(f.modulations) && f.modulations.length > 0) {
+                const matchMod = f.modulations.find(m => {
+                    const profilMod = String(m.profil || "").trim().toUpperCase();
+                    return profilsAgent.has(profilMod);
+                });
+
+                if (matchMod) {
+                    if (matchMod.dispense === true || matchMod.quota === 0) {
+                        estDispense = true;
+                    } else {
+                        quotaRequis = Number(matchMod.quota);
+                    }
+                }
+            }
+
+            if (estDispense || quotaRequis === 0) return;
+
+            let hFaites = 0;
+            if (Array.isArray(historiqueSaisiesFMPA)) {
+                hFaites = historiqueSaisiesFMPA
+                    .filter(s => {
+                        const sMat = String(s.matricule || '');
+                        const sForm = epurer(s.formation || '');
+                        return (sMat === String(matriculeAgent)) && 
+                               (sForm === keyForm || sForm.includes(keyForm) || keyForm.includes(sForm) || (f.id && s.formation === f.id));
+                    })
+                    .reduce((sum, s) => sum + calculerDureesSaisie(s), 0);
+            }
+
+            hFaites = Math.round(hFaites * 10) / 10;
+            quotaRequis = Math.round(quotaRequis * 10) / 10;
+
+            const hUtiles = Math.min(hFaites, quotaRequis);
+            const pctForm = quotaRequis > 0 ? Math.min(100, Math.round((hUtiles / quotaRequis) * 100)) : 100;
+            const aJour = hFaites >= quotaRequis;
+
+            actUtile = Math.round((actUtile + hUtiles) * 10) / 10;
+            actCible = Math.round((actCible + quotaRequis) * 10) / 10;
+
+            htmlFormations += `
+                <div style="background: ${aJour ? '#f0fdf4' : '#ffffff'}; border: 1px solid ${aJour ? '#bbf7d0' : '#cbd5e1'}; border-radius: 6px; padding: 10px 14px; margin-top: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <div>
+                            <strong style="color: #1e293b; font-size: 0.95rem;">${escapeHtml(f.nom)}</strong>
+                            <span style="font-size: 0.8rem; color: #64748b; margin-left: 6px;">(Objectif : ${quotaRequis}h)</span>
+                        </div>
+                        <div style="font-weight: bold; color: ${aJour ? '#16a34a' : '#dc2626'}; font-size: 0.95rem;">
+                            ${hFaites}h / ${quotaRequis}h ${hFaites > quotaRequis ? `<span style="font-size:0.75rem; color:#64748b;">(dont ${quotaRequis}h utiles)</span>` : ''}
+                        </div>
+                    </div>
+                    <div style="width: 100%; background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden;">
+                        <div style="width: ${pctForm}%; background: ${aJour ? '#16a34a' : '#d97706'}; height: 100%;"></div>
+                    </div>
+                </div>
+            `;
+        });
+
+        if (htmlFormations === '') return;
+
+        totalUtileGlobal = Math.round((totalUtileGlobal + actUtile) * 10) / 10;
+        totalCibleGlobal = Math.round((totalCibleGlobal + actCible) * 10) / 10;
+
+        if (estSpe) {
+            totalSpeUtile = Math.round((totalSpeUtile + actUtile) * 10) / 10;
+            totalSpeCible = Math.round((totalSpeCible + actCible) * 10) / 10;
+        } else {
+            totalSocleUtile = Math.round((totalSocleUtile + actUtile) * 10) / 10;
+            totalSocleCible = Math.round((totalSocleCible + actCible) * 10) / 10;
+        }
+
+        const pctAct = actCible > 0 ? Math.min(100, Math.round((actUtile / actCible) * 100)) : 0;
+
+        htmlContenu += `
+            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px; margin-bottom: 6px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <h3 style="margin: 0; color: #0f172a; font-size: 0.95rem;">📂 ${escapeHtml(act.nom)} ${estSpe ? '<span style="font-size: 0.75rem; background:#e0e7ff; color:#4338ca; padding: 2px 6px; border-radius:4px;">Spécialité</span>' : ''}</h3>
+                    <span style="font-size: 0.85rem; font-weight: bold; color: ${pctAct >= 100 ? '#16a34a' : '#0284c7'};">${pctAct}% (${actUtile}h / ${actCible}h)</span>
+                </div>
+                ${htmlFormations}
+            </div>
+        `;
+    });
+
+    mettreAJourJauge('barre-agent-global', 'txt-pct-agent-global', 'txt-heures-agent-global', totalUtileGlobal, totalCibleGlobal);
+    mettreAJourJauge('barre-agent-socle', 'txt-pct-agent-socle', null, totalSocleUtile, totalSocleCible);
+    mettreAJourJauge('barre-agent-spe', 'txt-pct-agent-spe', null, totalSpeUtile, totalSpeCible);
+
+    if (conteneurModules) {
+        conteneurModules.innerHTML = htmlContenu || `<div style="text-align:center; padding: 20px; color: #64748b;">Aucune formation socle ou spécialité requise pour cet agent.</div>`;
+    }
+}
+
+/**
+ * Active ou désactive la visibilité des onglets cachés dans le fichier Excel
+ */
+function basculerVisibiliteOngletsAdmin() {
+    if (!estAdminDeverrouille) {
+        alert("🔒 Veuillez d'abord saisir le code Administrateur valide.");
+        return;
+    }
+
+    ongletsMasques = !ongletsMasques;
+
+    const btn = document.getElementById("btn-toggle-onglets");
+    if (btn) {
+        if (ongletsMasques) {
+            btn.innerHTML = "🫣 Onglets XL Cachés";
+            btn.style.color = "blue";
+        } else {
+            btn.innerHTML = "👁️ Onglets XL Visibles";
+            btn.style.color = "green";
+        }
+    }
+
+    if (classeurXLSX && classeurXLSX.Workbook && Array.isArray(classeurXLSX.Workbook.Sheets)) {
+        classeurXLSX.Workbook.Sheets.forEach(sheet => {
+            if (sheet.name !== "FMPA" && sheet.name !== "Donnees") {
+                sheet.Hidden = ongletsMasques ? 1 : 0;
+            }
+        });
+
+        if (ongletsMasques) {
+            alert("🙈 Les onglets d'administration sont maintenant cachés pour l'enregistrement Excel.");
+        } else {
+            alert("👁️ Les onglets d'administration sont maintenant visibles dans le fichier Excel !");
+        }
+    } else {
+        alert("⚠️ Aucun fichier Excel n'est actuellement chargé ou la structure des onglets n'est pas disponible.");
+    }
+}
