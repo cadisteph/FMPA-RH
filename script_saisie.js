@@ -2140,3 +2140,34 @@ function basculerVisibiliteOngletsAdmin() {
         alert("⚠️ Aucun fichier Excel n'est actuellement chargé ou la structure des onglets n'est pas disponible.");
     }
 }
+
+
+
+// --- GESTION DE L'INACTIVITÉ ET RECHARGEMENT AUTOMATIQUE ---
+
+// Durée d'inactivité avant rafraîchissement (15 minutes = 15 * 60 * 1000 ms)
+const DELAI_INACTIVITE = 1 * 60 * 1000; 
+let minuteurInactivite;
+
+function reinitialiserMinuteur() {
+    // Annule le compte à rebours précédent
+    clearTimeout(minuteurInactivite);
+    
+    // Relance un nouveau compte à rebours
+    minuteurInactivite = setTimeout(() => {
+        alert("⏱️ Session expirée suite à une longue inactivité. La page va se recharger pour garantir la fraîcheur des données.");
+        window.location.reload(); // Rafraîchit la page (équivalent à F5)
+    }, DELAI_INACTIVITE);
+}
+
+// Événements qui détectent que l'utilisateur est actif
+const evenementsUtilisateur = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+
+evenementsUtilisateur.forEach(evenement => {
+    window.addEventListener(evenement, reinitialiserMinuteur, true);
+});
+
+// Démarrage du minuteur dès le chargement du fichier JS
+reinitialiserMinuteur();
+
+
