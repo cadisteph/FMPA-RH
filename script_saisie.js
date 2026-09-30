@@ -2146,7 +2146,7 @@ function basculerVisibiliteOngletsAdmin() {
 // --- GESTION DE L'INACTIVITÉ ET RECHARGEMENT AUTOMATIQUE ---
 
 // Durée d'inactivité avant rafraîchissement (15 minutes = 15 * 60 * 1000 ms)
-const DELAI_INACTIVITE = 1 * 60 * 1000; 
+const DELAI_INACTIVITE = 5 * 60 * 1000; 
 let minuteurInactivite;
 
 function reinitialiserMinuteur() {
