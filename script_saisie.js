@@ -1213,7 +1213,7 @@ function afficherHistorique() {
     tbody.innerHTML = "";
 
     if (!Array.isArray(historiqueSaisiesFMPA) || historiqueSaisiesFMPA.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:20px;">Aucune donnée d'historique disponible.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:20px;">Aucune donnée d'historique disponible.</td></tr>`;
         return;
     }
 
@@ -1261,35 +1261,35 @@ function afficherHistorique() {
                 return `<option value="${escapeHtml(f.libelle)}" ${isSelected}>${escapeHtml(f.libelle)}</option>`;
             }).join("");
 
-tr.innerHTML = `
-    <td>${nomHtml}</td>
-    <td>${escapeHtml(equipeAgent)}</td>
-    <td>${escapeHtml(row.date)}</td>
-    <td>${escapeHtml(dateSaisieSeule)}</td>
-    <td id="edit-activite-${realIndex}"><strong>${escapeHtml(activite)}</strong></td>
-    <td>
-        <select id="edit-formation-${realIndex}" class="input-inline" onchange="majActiviteEdition(${realIndex})">
-            ${optionsFormations}
-        </select>
-    </td>
-    <td>
-        <textarea 
-            class="input-commentaire-libre" 
-            data-index="${realIndex}" 
-            rows="2" 
-            style="width: 100%; resize: vertical; font-size: 0.85rem; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px;"
-            placeholder="Commentaire formateur..."
-            onchange="mettreAJourCommentaireMemoire(${realIndex}, this.value)"
-        >${escapeHtml(row.commentaires || "")}</textarea>
-    </td>
-    <td><input type="time" id="edit-hdebut-${realIndex}" class="input-inline" value="${row.heureDebut || ''}" oninput="calculerDureeEdition(${realIndex})"></td>
-    <td><input type="time" id="edit-hfin-${realIndex}" class="input-inline" value="${row.heureFin || ''}" oninput="calculerDureeEdition(${realIndex})"></td>
-    <td><strong id="edit-duree-${realIndex}">${duree} h</strong></td>
-    <td>
-        <button type="button" class="btn-act-save" onclick="sauvegarderLigneHistorique(${realIndex})">💾 Enregistrer</button>
-        <button type="button" class="btn-act-cancel" onclick="annulerEditionHistorique()">✖ Fermer</button>
-    </td>
-`;
+            tr.innerHTML = `
+                <td>${nomHtml}</td>
+                <td>${escapeHtml(equipeAgent)}</td>
+                <td>${escapeHtml(row.date)}</td>
+                <td>${escapeHtml(dateSaisieSeule)}</td>
+                <td id="edit-activite-${realIndex}"><strong>${escapeHtml(activite)}</strong></td>
+                <td>
+                    <select id="edit-formation-${realIndex}" class="input-inline" onchange="majActiviteEdition(${realIndex})">
+                        ${optionsFormations}
+                    </select>
+                </td>
+                <td><input type="time" id="edit-hdebut-${realIndex}" class="input-inline" value="${row.heureDebut || ''}" oninput="calculerDureeEdition(${realIndex})"></td>
+                <td><input type="time" id="edit-hfin-${realIndex}" class="input-inline" value="${row.heureFin || ''}" oninput="calculerDureeEdition(${realIndex})"></td>
+                <td><strong id="edit-duree-${realIndex}">${duree} h</strong></td>
+                <td>
+                    <button type="button" class="btn-act-save" onclick="sauvegarderLigneHistorique(${realIndex})">💾 Enregistrer</button>
+                    <button type="button" class="btn-act-cancel" onclick="annulerEditionHistorique()">✖ Fermer</button>
+                </td>
+                <td>
+                    <textarea 
+                        class="input-commentaire-libre" 
+                        data-index="${realIndex}" 
+                        rows="2" 
+                        style="width: 100%; resize: vertical; font-size: 0.85rem; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px;"
+                        placeholder="Commentaire..."
+                        onchange="mettreAJourCommentaireMemoire(${realIndex}, this.value)"
+                    >${escapeHtml(row.commentaires || "")}</textarea>
+                </td>
+            `;
         } else {
             let colActions = "";
             if (estCloture) {
@@ -1303,6 +1303,17 @@ tr.innerHTML = `
                 `;
             }
 
+            const champCommentaire = !estCloture 
+                ? `<textarea 
+                        class="input-commentaire-libre" 
+                        data-index="${realIndex}" 
+                        rows="1" 
+                        style="width: 100%; resize: vertical; font-size: 0.82rem; padding: 3px; border: 1px solid #cbd5e1; border-radius: 4px;"
+                        placeholder="Saisir remarque..."
+                        onchange="mettreAJourCommentaireMemoire(${realIndex}, this.value)"
+                   >${escapeHtml(row.commentaires || "")}</textarea>`
+                : `<span style="font-size:0.85rem; color:#475569;">${escapeHtml(row.commentaires || "-")}</span>`;
+
             tr.innerHTML = `
                 <td>${nomHtml}</td>
                 <td>${escapeHtml(equipeAgent)}</td>
@@ -1314,6 +1325,7 @@ tr.innerHTML = `
                 <td>${escapeHtml(row.heureFin)}</td>
                 <td><strong>${duree} h</strong></td>
                 <td>${colActions}</td>
+                <td>${champCommentaire}</td>
             `;
         }
 
