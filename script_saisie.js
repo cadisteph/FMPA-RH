@@ -1136,9 +1136,18 @@ function ouvrirModalHistorique() {
 }
 
 async function fermerModalHistorique() {
+    // 1. Sauvegarder les commentaires en cours si l'utilisateur quitte sans flouter la zone
+    const inputsCommentaires = document.querySelectorAll('.input-commentaire-libre');
+    inputsCommentaires.forEach(input => {
+        const idx = input.getAttribute('data-index');
+        if (idx !== null && historiqueSaisiesFMPA[idx]) {
+            historiqueSaisiesFMPA[idx].commentaires = input.value.trim();
+        }
+    });
+
     indexEnEdition = null;
     estAdminDeverrouille = false; 
-    
+
     const inputCode = document.getElementById("hist-code-admin");
     const inputWact = document.getElementById("hist-ref-wact");
     const btnChangerCode = document.getElementById("btn-changer-code-admin");
@@ -1160,6 +1169,10 @@ async function fermerModalHistorique() {
     const modal = document.getElementById("modal-historique");
     if (modal) modal.style.display = "none";
 
+    // 2. Mettre à jour la feuille Excel d'historique avec les nouveaux commentaires
+    reconstruireFeuilleHistorique();
+
+    // 3. Sauvegarder les paramètres W@CT / Hash et écrire dans le fichier
     const dateRefWact = document.getElementById("hist-ref-wact")?.value || "";
 
     if (typeof classeurXLSX !== "undefined" && classeurXLSX.Sheets) {
@@ -1178,8 +1191,13 @@ async function fermerModalHistorique() {
             );
         }
 
+        // Écriture physique sur le disque via l'API File System Access
         if (typeof fichierHandleXLSX !== "undefined" && fichierHandleXLSX) {
-            await enregistrerFichierXLSX();
+            try {
+                await enregistrerFichierXLSX();
+            } catch (err) {
+                console.error("Erreur lors de la sauvegarde automatique des commentaires :", err);
+            }
         }
     }
 }
@@ -1243,25 +1261,35 @@ function afficherHistorique() {
                 return `<option value="${escapeHtml(f.libelle)}" ${isSelected}>${escapeHtml(f.libelle)}</option>`;
             }).join("");
 
-            tr.innerHTML = `
-                <td>${nomHtml}</td>
-                <td>${escapeHtml(equipeAgent)}</td>
-                <td>${escapeHtml(row.date)}</td>
-                <td>${escapeHtml(dateSaisieSeule)}</td>
-                <td id="edit-activite-${realIndex}"><strong>${escapeHtml(activite)}</strong></td>
-                <td>
-                    <select id="edit-formation-${realIndex}" class="input-inline" onchange="majActiviteEdition(${realIndex})">
-                        ${optionsFormations}
-                    </select>
-                </td>
-                <td><input type="time" id="edit-hdebut-${realIndex}" class="input-inline" value="${row.heureDebut || ''}" oninput="calculerDureeEdition(${realIndex})"></td>
-                <td><input type="time" id="edit-hfin-${realIndex}" class="input-inline" value="${row.heureFin || ''}" oninput="calculerDureeEdition(${realIndex})"></td>
-                <td><strong id="edit-duree-${realIndex}">${duree} h</strong></td>
-                <td>
-                    <button type="button" class="btn-act-save" onclick="sauvegarderLigneHistorique(${realIndex})">💾 Enregistrer</button>
-                    <button type="button" class="btn-act-cancel" onclick="annulerEditionHistorique()">✖ Fermer</button>
-                </td>
-            `;
+tr.innerHTML = `
+    <td>${nomHtml}</td>
+    <td>${escapeHtml(equipeAgent)}</td>
+    <td>${escapeHtml(row.date)}</td>
+    <td>${escapeHtml(dateSaisieSeule)}</td>
+    <td id="edit-activite-${realIndex}"><strong>${escapeHtml(activite)}</strong></td>
+    <td>
+        <select id="edit-formation-${realIndex}" class="input-inline" onchange="majActiviteEdition(${realIndex})">
+            ${optionsFormations}
+        </select>
+    </td>
+    <td>
+        <textarea 
+            class="input-commentaire-libre" 
+            data-index="${realIndex}" 
+            rows="2" 
+            style="width: 100%; resize: vertical; font-size: 0.85rem; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px;"
+            placeholder="Commentaire formateur..."
+            onchange="mettreAJourCommentaireMemoire(${realIndex}, this.value)"
+        >${escapeHtml(row.commentaires || "")}</textarea>
+    </td>
+    <td><input type="time" id="edit-hdebut-${realIndex}" class="input-inline" value="${row.heureDebut || ''}" oninput="calculerDureeEdition(${realIndex})"></td>
+    <td><input type="time" id="edit-hfin-${realIndex}" class="input-inline" value="${row.heureFin || ''}" oninput="calculerDureeEdition(${realIndex})"></td>
+    <td><strong id="edit-duree-${realIndex}">${duree} h</strong></td>
+    <td>
+        <button type="button" class="btn-act-save" onclick="sauvegarderLigneHistorique(${realIndex})">💾 Enregistrer</button>
+        <button type="button" class="btn-act-cancel" onclick="annulerEditionHistorique()">✖ Fermer</button>
+    </td>
+`;
         } else {
             let colActions = "";
             if (estCloture) {
@@ -1292,6 +1320,13 @@ function afficherHistorique() {
         tbody.appendChild(tr);
     });
 }
+
+function mettreAJourCommentaireMemoire(index, texte) {
+    if (historiqueSaisiesFMPA[index]) {
+        historiqueSaisiesFMPA[index].commentaires = texte.trim();
+    }
+}
+
 
 function filtrerHistorique() {
     afficherHistorique();
