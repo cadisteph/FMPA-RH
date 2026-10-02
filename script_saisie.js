@@ -1339,7 +1339,6 @@ function mettreAJourCommentaireMemoire(index, texte) {
     }
 }
 
-
 function filtrerHistorique() {
     afficherHistorique();
 }
@@ -2140,7 +2139,7 @@ function genererFicheAgent() {
  */
 function basculerVisibiliteOngletsAdmin() {
     if (!estAdminDeverrouille) {
-        alert("🔒 Veuillez d'abord saisir le code Administrateur valide.");
+        afficherStatut("🔒 Saisissez d'abord le code Administrateur valide.", true);
         return;
     }
 
@@ -2179,20 +2178,19 @@ function basculerVisibiliteOngletsAdmin() {
         }
 
         if (ongletsMasques) {
-            alert("🫣 Seul l'onglet 'Message Alerte' sera visible dans le fichier Excel.");
+            afficherStatut("🫣 Seul l'onglet 'Message Alerte' sera visible à l'ouverture d'Excel.");
         } else {
-            alert("👁️ Tous les onglets sont maintenant visibles dans le fichier Excel !");
+            afficherStatut("👁️ Tous les onglets sont maintenant démasqués pour Excel.");
         }
     } else {
-        alert("⚠️ Aucun fichier Excel n'est actuellement chargé ou la structure des onglets n'est pas disponible.");
+        afficherStatut("⚠️ Aucun fichier Excel chargé.", true);
     }
 }
 
 
-
 // --- GESTION DE L'INACTIVITÉ ET RECHARGEMENT AUTOMATIQUE ---
 
-// Durée d'inactivité avant rafraîchissement (15 minutes = 15 * 60 * 1000 ms)
+// Durée d'inactivité avant rafraîchissement (5 minutes = 5 * 60 * 1000 ms)
 const DELAI_INACTIVITE = 5 * 60 * 1000; 
 let minuteurInactivite;
 
@@ -2202,19 +2200,17 @@ function reinitialiserMinuteur() {
     
     // Relance un nouveau compte à rebours
     minuteurInactivite = setTimeout(() => {
-        alert("⏱️ Session expirée suite à une longue inactivité. La page va se recharger pour garantir la fraîcheur des données.");
-        window.location.reload(); // Rafraîchit la page (équivalent à F5)
+        console.log("⏱️ Session expirée suite à 5 min d'inactivité. Rechargement...");
+        window.location.reload(); // Rafraîchit la page
     }, DELAI_INACTIVITE);
 }
 
-// Événements qui détectent que l'utilisateur est actif
+// Événements qui détectent que l'utilisateur est actif (avec { passive: true } pour la réactivité)
 const evenementsUtilisateur = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
 
 evenementsUtilisateur.forEach(evenement => {
-    window.addEventListener(evenement, reinitialiserMinuteur, true);
+    window.addEventListener(evenement, reinitialiserMinuteur, { passive: true });
 });
 
-// Démarrage du minuteur dès le chargement du fichier JS
+// Démarrage initial du minuteur dès le chargement du script
 reinitialiserMinuteur();
-
-
