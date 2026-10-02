@@ -786,26 +786,26 @@ async function validerSaisieGroupee(e) {
         return;
     }
 
-    // --- CONTRÔLE DE VALIDITÉ DES FORMATIONS PAR AGENT ---
-    const agentsNonConcernes = [];
+    // --- CONTRÔLE DE VALIDITÉ : BLOQUER UNIQUEMENT LES AGENTS DISPENSÉS ---
+    const agentsDispenses = [];
 
     agentsSelectionnes.forEach(idAgent => {
         const agent = tableauAgentsRH.find(a => a.id === idAgent);
         if (!agent) return;
 
-        const estRequiseSocle = typeof estFormationRequiseSocle === "function" && estFormationRequiseSocle(agent, formationObj);
-        const estRequiseSpe = typeof estFormationRequiseSpe === "function" && estFormationRequiseSpe(agent, formationObj);
+        // Vérification de la dispense explicite de l'agent sur la formation
+        const estDispense = typeof verifierDispense === "function" ? verifierDispense(agent, formationObj) : false;
 
-        if (!estRequiseSocle && !estRequiseSpe) {
-            agentsNonConcernes.push(`${agent.nom} ${agent.prenom}`);
+        if (estDispense) {
+            agentsDispenses.push(`${agent.nom} ${agent.prenom}`);
         }
     });
 
-    if (agentsNonConcernes.length > 0) {
-        alert("❌ Saisie impossible !\nLa formation n'est pas requise ou est dispensée pour :\n\n- " + agentsNonConcernes.join("\n- "));
+    if (agentsDispenses.length > 0) {
+        alert("❌ Saisie impossible !\nLes agents suivants sont explicitement dispensés de cette formation :\n\n- " + agentsDispenses.join("\n- "));
         return;
     }
-    // ----------------------------------------------------
+    // -----------------------------------------------------------------------
 
     const conflits = [];
 
