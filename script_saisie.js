@@ -786,26 +786,35 @@ async function validerSaisieGroupee(e) {
         return;
     }
 
-    // --- CONTRÔLE DE VALIDITÉ : BLOQUER UNIQUEMENT LES AGENTS DISPENSÉS ---
-    const agentsDispenses = [];
+    // --- BLOQUER LES AGENTS NON SPÉCIALISTES POUR LES FORMATIONS DE SPÉCIALITÉ ---
+    const agentsNonAutorises = [];
 
-    agentsSelectionnes.forEach(idAgent => {
-        const agent = tableauAgentsRH.find(a => a.id === idAgent);
-        if (!agent) return;
+    // Détection : si la formation appartient au domaine / type Spécialité
+    const estDomaineSpe = formationObj.domaine && formationObj.domaine.toLowerCase().includes("spé");
+    const estTypeSpe = formationObj.type && formationObj.type.toLowerCase().includes("spe");
+    const aCleSpe = Boolean(formationObj.specialite || formationObj.codeSpe);
 
-        // Vérification de la dispense explicite de l'agent sur la formation
-        const estDispense = typeof verifierDispense === "function" ? verifierDispense(agent, formationObj) : false;
+    if (estDomaineSpe || estTypeSpe || aCleSpe) {
+        agentsSelectionnes.forEach(idAgent => {
+            const agent = tableauAgentsRH.find(a => a.id === idAgent);
+            if (!agent) return;
 
-        if (estDispense) {
-            agentsDispenses.push(`${agent.nom} ${agent.prenom}`);
-        }
-    });
+            // On vérifie si l'agent a cette spécialité à son programme
+            const aLaSpecialite = typeof estFormationRequiseSpe === "function" 
+                ? estFormationRequiseSpe(agent, formationObj)
+                : false;
 
-    if (agentsDispenses.length > 0) {
-        alert("❌ Saisie impossible !\nLes agents suivants sont explicitement dispensés de cette formation :\n\n- " + agentsDispenses.join("\n- "));
+            if (!aLaSpecialite) {
+                agentsNonAutorises.push(`${agent.nom} ${agent.prenom}`);
+            }
+        });
+    }
+
+    if (agentsNonAutorises.length > 0) {
+        alert("❌ Saisie impossible !\nLes agents suivants ne possèdent pas cette spécialité :\n\n- " + agentsNonAutorises.join("\n- "));
         return;
     }
-    // -----------------------------------------------------------------------
+    // -----------------------------------------------------------------------------
 
     const conflits = [];
 
@@ -900,7 +909,6 @@ async function validerSaisieGroupee(e) {
         alert(`Saisie enregistrée en mémoire.\nUtilisez la sauvegarde directe.`);
     }
 }
-
 function reconstruireFeuilleHistorique() {
     if (!classeurXLSX) return;
     const donnees = [
