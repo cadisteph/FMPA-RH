@@ -786,6 +786,27 @@ async function validerSaisieGroupee(e) {
         return;
     }
 
+    // --- CONTRÔLE DE VALIDITÉ DES FORMATIONS PAR AGENT ---
+    const agentsNonConcernes = [];
+
+    agentsSelectionnes.forEach(idAgent => {
+        const agent = tableauAgentsRH.find(a => a.id === idAgent);
+        if (!agent) return;
+
+        const estRequiseSocle = typeof estFormationRequiseSocle === "function" && estFormationRequiseSocle(agent, formationObj);
+        const estRequiseSpe = typeof estFormationRequiseSpe === "function" && estFormationRequiseSpe(agent, formationObj);
+
+        if (!estRequiseSocle && !estRequiseSpe) {
+            agentsNonConcernes.push(`${agent.nom} ${agent.prenom}`);
+        }
+    });
+
+    if (agentsNonConcernes.length > 0) {
+        alert("❌ Saisie impossible !\nLa formation n'est pas requise ou est dispensée pour :\n\n- " + agentsNonConcernes.join("\n- "));
+        return;
+    }
+    // ----------------------------------------------------
+
     const conflits = [];
 
     agentsSelectionnes.forEach(idAgent => {
