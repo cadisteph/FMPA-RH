@@ -786,7 +786,7 @@ async function validerSaisieGroupee(e) {
         return;
     }
 
-    // --- CONTRÔLE ROBUSTE SUR LES SPÉCIALITÉS ET SOCLE COMMUN (MODULATIONS) ---
+    // --- CONTRÔLE SUR LES MODULATIONS D'ENGAGEMENT ET SPÉCIALITÉS ---
     const agentsBloques = [];
     const estSpecialite = formationObj.type && String(formationObj.type).toLowerCase().includes("spé");
 
@@ -806,39 +806,28 @@ async function validerSaisieGroupee(e) {
             }
         }
 
-        // 2. CONTRÔLE SOCLE COMMUN (MODULATIONS DE L'ENGAGEMENT)
-        // Récupération de la valeur du champ modulation (nettoyée)
-        const modulationBrute = String(formationObj.modulations || formationObj.Modulations || "").trim();
+        // 2. CONTRÔLE SOCLE COMMUN / MODULATIONS (ex: "SUAP, SUAP/PPABE : 0")
+        const rawModulation = String(formationObj.modulations || "").trim();
 
-        if (modulationBrute.includes(":")) {
-            const [engagementsPart, quotaPart] = modulationBrute.split(":");
-            const quota = parseFloat(quotaPart.trim());
+        if (rawModulation.includes(":")) {
+            const parties = rawModulation.split(":");
+            const engagementsPart = parties[0].trim();
+            const quota = parseFloat(parties[1].trim());
 
             if (quota === 0) {
-                // Récupération souple de l'engagement de l'agent dans baseAgents
-                const valEngagementAgent = String(
-                    agent.engagement || 
-                    agent["Engagement"] || 
-                    agent.profil || 
-                    agent["Profil"] || 
-                    agent.statut || 
-                    ""
-                ).trim().toLowerCase();
+                // Engagement de l'agent nettoyé (ex: "complet", "suap", "suap/ppabe")
+                const engagementAgent = String(agent.engagement || "").trim().toLowerCase();
 
-                // Analyse des engagements dispensés (séparés par virgule)
-                const listeDispenses = engagementsPart.split(",").map(e => e.trim().toLowerCase());
+                // On extrait chaque engagement listé avant les deux-points (séparateurs: virgule ou slash)
+                const listeEngagementsDispenses = engagementsPart
+                    .split(",")
+                    .map(item => item.trim().toLowerCase());
 
-                // Détection tolérante aux espaces/tirets/majuscules
-                const estDispense = listeDispenses.some(dispense => {
-                    if (!valEngagementAgent || !dispense) return false;
-                    return valEngagementAgent === dispense || 
-                           valEngagementAgent.includes(dispense) || 
-                           dispense.includes(valEngagementAgent);
-                });
+                // Vérification si l'engagement de l'agent est dans la liste dispensée
+                const estDispense = engagementAgent && listeEngagementsDispenses.includes(engagementAgent);
 
                 if (estDispense) {
-                    const libelleEngagement = agent.engagement || agent["Engagement"] || "Profil spécifique";
-                    agentsBloques.push(`${agent.nom} ${agent.prenom} (Engagement "${libelleEngagement}" dispensé)`);
+                    agentsBloques.push(`${agent.nom} ${agent.prenom} (Engagement "${agent.engagement}" dispensé)`);
                     return;
                 }
             }
@@ -852,7 +841,7 @@ async function validerSaisieGroupee(e) {
 
     if (agentsBloques.length > 0) {
         alert("❌ Saisie impossible !\nCertains agents ne sont pas autorisés pour cette formation :\n\n- " + agentsBloques.join("\n- "));
-        return; // Interrompt la saisie
+        return; // Interrompt l'enregistrement
     }
     // --------------------------------------------------------------------------
 
