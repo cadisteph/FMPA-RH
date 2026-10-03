@@ -786,35 +786,61 @@ async function validerSaisieGroupee(e) {
         return;
     }
 
-    // --- BLOQUER LES AGENTS NON SPÉCIALISTES POUR LES FORMATIONS DE SPÉCIALITÉ ---
-    const agentsNonAutorises = [];
+    // --- CONTRÔLE SUR LES MODULATIONS D'ENGAGEMENT ET SPÉCIALITÉS ---
+    const agentsBloques = [];
+    const estSpecialite = formationObj.type && formationObj.type.toLowerCase().includes("spé");
 
-    // Détection : si la formation appartient au domaine / type Spécialité
-    const estDomaineSpe = formationObj.domaine && formationObj.domaine.toLowerCase().includes("spé");
-    const estTypeSpe = formationObj.type && formationObj.type.toLowerCase().includes("spe");
-    const aCleSpe = Boolean(formationObj.specialite || formationObj.codeSpe);
+    agentsSelectionnes.forEach(idAgent => {
+        const agent = tableauAgentsRH.find(a => a.id === idAgent);
+        if (!agent) return;
 
-    if (estDomaineSpe || estTypeSpe || aCleSpe) {
-        agentsSelectionnes.forEach(idAgent => {
-            const agent = tableauAgentsRH.find(a => a.id === idAgent);
-            if (!agent) return;
-
-            // On vérifie si l'agent a cette spécialité à son programme
-            const aLaSpecialite = typeof estFormationRequiseSpe === "function" 
+        // 1. DÉTECTION SPÉCIALITÉ : L'agent doit détenir la spécialité
+        if (estSpecialite) {
+            const aLaSpecialite = typeof estFormationRequiseSpe === "function"
                 ? estFormationRequiseSpe(agent, formationObj)
-                : false;
+                : (agent.specialites && agent.specialites.includes(formationObj.fmpa || formationObj.specialite));
 
             if (!aLaSpecialite) {
-                agentsNonAutorises.push(`${agent.nom} ${agent.prenom}`);
+                agentsBloques.push(`${agent.nom} ${agent.prenom} (Spécialité non détenue)`);
+                return;
             }
-        });
-    }
+        }
 
-    if (agentsNonAutorises.length > 0) {
-        alert("❌ Saisie impossible !\nLes agents suivants ne possèdent pas cette spécialité :\n\n- " + agentsNonAutorises.join("\n- "));
-        return;
+        // 2. DÉTECTION MODULATION D'ENGAGEMENT (ex: "SUAP:0" ou "SUAP/PPABE:0")
+        if (formationObj.modulations && typeof formationObj.modulations === "string") {
+            const regleModulation = formationObj.modulations.trim();
+
+            if (regleModulation.includes(":")) {
+                const [conditionsEngagement, quotaStr] = regleModulation.split(":");
+                const quota = parseFloat(quotaStr.trim());
+
+                // Si le quota prévu par la modulation est 0
+                if (quota === 0) {
+                    const listeEngagementsDispenses = conditionsEngagement.split("/").map(s => s.trim().toLowerCase());
+                    
+                    // On récupère l'engagement de l'agent (ajuste 'agent.engagement' si le champ a un autre nom)
+                    const engagementAgent = (agent.engagement || agent.profil || agent.statut || "").toLowerCase().trim();
+
+                    // Si l'engagement de l'agent fait partie des engagements dispensés
+                    if (engagementAgent && listeEngagementsDispenses.includes(engagementAgent)) {
+                        agentsBloques.push(`${agent.nom} ${agent.prenom} (Dispensé selon engagement : ${agent.engagement || agent.profil})`);
+                        return;
+                    }
+                }
+            }
+        }
+
+        // 3. VÉRIFICATION GLOBALE SI UNE FONCTION EXISTANTE DÉTECTE LA DISPENSE
+        if (typeof verifierDispense === "function" && verifierDispense(agent, formationObj)) {
+            agentsBloques.push(`${agent.nom} ${agent.prenom} (Dispensé)`);
+        }
+    });
+
+    if (agentsBloques.length > 0) {
+        alert("❌ Saisie impossible !\nCertains agents sélectionnés ne sont pas autorisés pour cette formation :\n\n- " + agentsBloques.join("\n- "));
+        return; // Bloque la validation
     }
-    // -----------------------------------------------------------------------------
+    // -----------------------------------------------------------------
 
     const conflits = [];
 
@@ -909,6 +935,7 @@ async function validerSaisieGroupee(e) {
         alert(`Saisie enregistrée en mémoire.\nUtilisez la sauvegarde directe.`);
     }
 }
+
 function reconstruireFeuilleHistorique() {
     if (!classeurXLSX) return;
     const donnees = [
