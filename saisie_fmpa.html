@@ -168,21 +168,21 @@
             <div class="filter-card">
                 <div class="filter-field">
                     <label for="hist-search-agent">👤Agent</label>
-                    <input type="text" id="hist-search-agent" placeholder="Nom..." oninput="filtrerHistorique()">
+                    <input type="text" id="hist-search-agent" placeholder="Nom..." oninput="filtrerHistorique()" style="max-width: 100px;">
                 </div>
                 <div class="filter-field">
                     <label for="hist-search-date">📅Date formation</label>
-                    <input type="date" id="hist-search-date" onchange="filtrerHistorique()">
+                    <input type="date" id="hist-search-date" onchange="filtrerHistorique()"style="max-width: 100px;">
                 </div>
                 
                 <div class="filter-field">
                     <label for="hist-ref-wact">📧Date Réf. W@ct</label>
-                    <input type="date" id="hist-ref-wact" onchange="enregistrerChangementDateWact(event)" disabled>
+                    <input type="date" id="hist-ref-wact" onchange="enregistrerChangementDateWact(event)" style="max-width: 100px;" disabled>
                 </div>
 
                 <div class="filter-field">
                     <label for="hist-code-admin">🔑Code Admin</label>
-                    <input type="password" id="hist-code-admin" placeholder="Saisir le code..." oninput="verifierCodeAdmin()">
+                    <input type="password" id="hist-code-admin" placeholder="Saisir le code..." oninput="verifierCodeAdmin()" style="max-width: 100px;">
                 </div>
 
 
