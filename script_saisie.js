@@ -786,9 +786,9 @@ async function validerSaisieGroupee(e) {
         return;
     }
 
-    // --- CONTRÔLE SUR LES MODULATIONS D'ENGAGEMENT ET SPÉCIALITÉS ---
+    // --- CONTRÔLE ROBUSTE SUR LES SPÉCIALITÉS ET SOCLE COMMUN (MODULATIONS) ---
     const agentsBloques = [];
-    const estSpecialite = formationObj.type && formationObj.type.toLowerCase().includes("spé");
+    const estSpecialite = formationObj.type && String(formationObj.type).toLowerCase().includes("spé");
 
     agentsSelectionnes.forEach(idAgent => {
         const agent = tableauAgentsRH.find(a => a.id === idAgent);
@@ -806,28 +806,45 @@ async function validerSaisieGroupee(e) {
             }
         }
 
-        // 2. CONTRÔLE SOCLE COMMUN (Analyse des modulations séparées par virgule/deux-points)
-        const modulationStr = formationObj.modulations ? String(formationObj.modulations).trim() : "";
+        // 2. CONTRÔLE SOCLE COMMUN (MODULATIONS DE L'ENGAGEMENT)
+        // Récupération de la valeur du champ modulation (nettoyée)
+        const modulationBrute = String(formationObj.modulations || formationObj.Modulations || "").trim();
 
-        if (modulationStr.includes(":")) {
-            const [engagementsPart, quotaPart] = modulationStr.split(":");
+        if (modulationBrute.includes(":")) {
+            const [engagementsPart, quotaPart] = modulationBrute.split(":");
             const quota = parseFloat(quotaPart.trim());
 
             if (quota === 0) {
-                // Récupération de l'engagement de l'agent dans baseAgents (ex: "SUAP/PPABE" ou "SUAP")
-                const engagementAgent = (agent.engagement || agent["Engagement"] || agent.profil || "").trim().toLowerCase();
+                // Récupération souple de l'engagement de l'agent dans baseAgents
+                const valEngagementAgent = String(
+                    agent.engagement || 
+                    agent["Engagement"] || 
+                    agent.profil || 
+                    agent["Profil"] || 
+                    agent.statut || 
+                    ""
+                ).trim().toLowerCase();
 
-                // Liste des engagements ciblés par le quota 0 (ex: ["suap", "suap/ppabe"])
-                const listeEngagementsDispenses = engagementsPart.split(",").map(e => e.trim().toLowerCase());
+                // Analyse des engagements dispensés (séparés par virgule)
+                const listeDispenses = engagementsPart.split(",").map(e => e.trim().toLowerCase());
 
-                if (engagementAgent && listeEngagementsDispenses.includes(engagementAgent)) {
-                    agentsBloques.push(`${agent.nom} ${agent.prenom} (Engagement "${agent.engagement || agent["Engagement"]}" dispensé de cette formation)`);
+                // Détection tolérante aux espaces/tirets/majuscules
+                const estDispense = listeDispenses.some(dispense => {
+                    if (!valEngagementAgent || !dispense) return false;
+                    return valEngagementAgent === dispense || 
+                           valEngagementAgent.includes(dispense) || 
+                           dispense.includes(valEngagementAgent);
+                });
+
+                if (estDispense) {
+                    const libelleEngagement = agent.engagement || agent["Engagement"] || "Profil spécifique";
+                    agentsBloques.push(`${agent.nom} ${agent.prenom} (Engagement "${libelleEngagement}" dispensé)`);
                     return;
                 }
             }
         }
 
-        // 3. AUTRE DISPENSE ÉVENTUELLE
+        // 3. CONTRÔLE COMPLÉMENTAIRE VIA FONCTION DE DISPENSE
         if (typeof verifierDispense === "function" && verifierDispense(agent, formationObj)) {
             agentsBloques.push(`${agent.nom} ${agent.prenom} (Dispensé)`);
         }
@@ -835,9 +852,9 @@ async function validerSaisieGroupee(e) {
 
     if (agentsBloques.length > 0) {
         alert("❌ Saisie impossible !\nCertains agents ne sont pas autorisés pour cette formation :\n\n- " + agentsBloques.join("\n- "));
-        return; // Interrompt l'enregistrement
+        return; // Interrompt la saisie
     }
-    // -----------------------------------------------------------------
+    // --------------------------------------------------------------------------
 
     const conflits = [];
 
