@@ -1003,13 +1003,27 @@ function obtenirDateSaisie() {
     return `${maintenant.getFullYear()}-${pad(maintenant.getMonth() + 1)}-${pad(maintenant.getDate())} ${pad(maintenant.getHours())}:${pad(maintenant.getMinutes())}:${pad(maintenant.getSeconds())}`;
 }
 
-function afficherStatut(message, erreur = false) {
-    const element = document.getElementById("xlsx-status");
-    if (!element) return;
+function afficherStatut(message, estErreur = false) {
+    // 1. Recherche d'une zone de statut (priorité à la modale si ouverte, sinon page principale)
+    const zoneStatutModale = document.getElementById("statut-modale-historique");
+    const zoneStatutPrincipale = document.getElementById("zone-statut") || document.getElementById("statut-message");
 
-    element.textContent = message;
-    element.style.background = erreur ? "#fee2e2" : "#f1f5f9";
-    element.style.color = erreur ? "#991b1b" : "#1d95d8";
+    const cible = zoneStatutModale || zoneStatutPrincipale;
+
+    if (cible) {
+        cible.textContent = message;
+        cible.style.color = estErreur ? "#dc3545" : "#198754"; // Rouge si erreur, vert si succès
+        cible.style.fontWeight = "bold";
+        cible.style.display = "block";
+
+        // Effacement automatique après 4 secondes
+        setTimeout(() => {
+            cible.textContent = "";
+        }, 4000);
+    } else {
+        // Sécurité si aucun élément HTML n'est prévu pour afficher le texte
+        alert((estErreur ? "❌ " : "ℹ️ ") + message);
+    }
 }
 
 function escapeHtml(value) {
@@ -2216,29 +2230,15 @@ function basculerVisibiliteOngletsAdmin() {
 
     const btn = document.getElementById("btn-toggle-onglets");
     if (btn) {
-        if (ongletsMasques) {
-            btn.innerHTML = "🫣 Onglets XL Cachés";
-            btn.style.color = "blue";
-        } else {
-            btn.innerHTML = "👁️ Onglets XL Visibles";
-            btn.style.color = "green";
-        }
+        btn.innerHTML = ongletsMasques ? "🫣 Onglets XL Cachés" : "👁️ Onglets XL Visibles";
+        btn.style.color = ongletsMasques ? "blue" : "green";
     }
 
     if (classeurXLSX && classeurXLSX.Workbook && Array.isArray(classeurXLSX.Workbook.Sheets)) {
-        
-        // 1. Appliquer le masquage/démasquage
         classeurXLSX.Workbook.Sheets.forEach(sheet => {
-            // Seul "Message Alerte" reste visible quand ongletsMasques est vrai
-            if (sheet.name === "Message Alerte") {
-                sheet.Hidden = 0; // Toujours visible
-            } else {
-                // Si masque = 2 (VeryHidden), sinon 0 (Visible)
-                sheet.Hidden = ongletsMasques ? 2 : 0;
-            }
+            sheet.Hidden = (sheet.name === "Message Alerte") ? 0 : (ongletsMasques ? 2 : 0);
         });
 
-        // 2. OBLIGATOIRE : Définir "Message Alerte" comme onglet actif à l'ouverture
         const indexMessageAlerte = classeurXLSX.Workbook.Sheets.findIndex(s => s.name === "Message Alerte");
         if (indexMessageAlerte !== -1) {
             classeurXLSX.Workbook.Views = classeurXLSX.Workbook.Views || [{}];
@@ -2246,11 +2246,11 @@ function basculerVisibiliteOngletsAdmin() {
             classeurXLSX.Workbook.Views[0].activeTab = indexMessageAlerte;
         }
 
-        if (ongletsMasques) {
-            afficherStatut("🫣 Seul l'onglet 'Message Alerte' sera visible à l'ouverture d'Excel.");
-        } else {
-            afficherStatut("👁️ Tous les onglets sont maintenant démasqués pour Excel.");
-        }
+        afficherStatut(
+            ongletsMasques 
+                ? "🫣 Seul l'onglet 'Message Alerte' sera visible à l'ouverture d'Excel." 
+                : "👁️ Tous les onglets sont maintenant démasqués pour Excel."
+        );
     } else {
         afficherStatut("⚠️ Aucun fichier Excel chargé.", true);
     }
