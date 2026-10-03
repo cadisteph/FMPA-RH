@@ -168,16 +168,16 @@
             <div class="filter-card">
                 <div class="filter-field">
                     <label for="hist-search-agent">👤Agent</label>
-                    <input type="text" id="hist-search-agent" placeholder="Nom..." oninput="filtrerHistorique()" style="max-width: 100px;">
+                    <input type="text" id="hist-search-agent" placeholder="Nom..." oninput="filtrerHistorique()" style="max-width: 110px;">
                 </div>
                 <div class="filter-field">
                     <label for="hist-search-date">📅Date formation</label>
-                    <input type="date" id="hist-search-date" onchange="filtrerHistorique()"style="max-width: 100px;">
+                    <input type="date" id="hist-search-date" onchange="filtrerHistorique()"style="max-width: 120px;">
                 </div>
                 
                 <div class="filter-field">
                     <label for="hist-ref-wact">📧Date Réf. W@ct</label>
-                    <input type="date" id="hist-ref-wact" onchange="enregistrerChangementDateWact(event)" style="max-width: 100px;" disabled>
+                    <input type="date" id="hist-ref-wact" onchange="enregistrerChangementDateWact(event)" style="max-width: 120px;" disabled>
                 </div>
 
                 <div class="filter-field">
@@ -186,13 +186,13 @@
                 </div>
 
 
-                <button type="button" class="btn-reset-hist" onclick="reinitialiserFiltresHistorique()">♻️Réinitialiser</button>
+                <button type="button" class="btn-reset-hist" onclick="reinitialiserFiltresHistorique()" style="max-width: 115px;">♻️Réinitialiser</button>
             </div>
             
             <button type="button" class="btn-print-hist" onclick="exporterHistoriquePDF()" style="background: #f30505; color: #ffffff; border: none; padding: 7px 7px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; margin-top: 14px">🖨️.Pdf</button>
             <button type="button" class="btn-close" onclick="fermerModalHistorique()" style="background: #1e293b; color: #ffffff; border: 2px solid #f30505; padding: 7px 7px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; margin-top: 14px">❌ Fermer</button>       
             <button type="button" id="btn-toggle-onglets" onclick="basculerVisibiliteOngletsAdmin()" style="background-color: transparent; color: #ed0606; border: 1px solid #0000ff00; padding: 2px 2px; border-radius: 6px; font-weight: normal; font-size: 0.85em; cursor: pointer;">🫣 Onglets XL Cachés</button>
-            <button type="button" class="btn btn-danger" onclick="purgerHistoriqueCompletAdmin()">🗑️ Vider tout l'historique (Admin)</button>
+            <button type="button" class="btn btn-danger" onclick="purgerHistoriqueCompletAdmin()" style="background: #1e293b; color: #ffffff; border: 2px solid #f30505; padding: 7px 7px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; margin-top: 14px">🗑️ Vider tout</button>
         </div>
         
         <div class="modal-body">
