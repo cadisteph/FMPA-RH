@@ -2257,7 +2257,69 @@ function basculerVisibiliteOngletsAdmin() {
 }
 
 
-// --- GESTION DE L'INACTIVITÉ ET RECHARGEMENT AUTOMATIQUE ---
+async function purgerHistoriqueCompletAdmin() {
+    // 1. Vérification du déverrouillage Administrateur
+    if (!estAdminDeverrouille) {
+        if (typeof afficherStatut === "function") {
+            afficherStatut("🔒 Saisissez d'abord le code Administrateur valide.", true);
+        } else {
+            alert("🔒 Saisissez d'abord le code Administrateur valide.");
+        }
+        return;
+    }
+
+    // 2. Vérification si l'historique contient des données
+    if (!historiqueSaisiesFMPA || historiqueSaisiesFMPA.length === 0) {
+        alert("L'historique est déjà complètement vide.");
+        return;
+    }
+
+    // 3. Confirmation de sécurité (action irréversible)
+    const nombreLignes = historiqueSaisiesFMPA.length;
+    const confirmation = confirm(
+        `⚠️ ACTION CRITIQUE ADMIN ⚠️\n\n` +
+        `Vous allez SUPPRIMER DÉFINITIVEMENT l'ensemble des ${nombreLignes} saisie(s) de l'historique.\n\n` +
+        `Cette opération va également réinitialiser les cumuls d'heures calculés pour les agents.\n\n` +
+        `Êtes-vous absolument sûr de vouloir tout effacer ?`
+    );
+
+    if (!confirmation) return;
+
+    // 4. Vidage des données en mémoire
+    historiqueSaisiesFMPA = [];
+
+    // Réinitialisation des cumuls par agent
+    if (typeof cumulHeuresParAgent !== "undefined") {
+        Object.keys(cumulHeuresParAgent).forEach(cle => delete cumulHeuresParAgent[cle]);
+    }
+
+    // 5. Reconstitution de la feuille Excel Historique et mise à jour de l'affichage
+    reconstruireFeuilleHistorique();
+
+    if (typeof afficherHistoriqueSaisies === "function") {
+        afficherHistoriqueSaisies(); // Rafraîchit le tableau interne de la modale
+    }
+
+    filtrerEtAfficherTableau(); // Rafraîchit le tableau principal de l'application
+
+    // 6. Sauvegarde dans le fichier FMPA-RH.xlsx si ouvert
+    if (fichierHandleXLSX) {
+        try {
+            await enregistrerFichierXLSX();
+            alert("✅ L'historique a été entièrement effacé et le fichier Excel sauvegardé.");
+        } catch (err) {
+            console.error(err);
+            alert("⚠️ Historique effacé en mémoire, mais échec lors de l'écriture dans Excel :\n" + err.message);
+        }
+    } else {
+        alert("✅ L'historique a été entièrement effacé de la mémoire.");
+    }
+}
+
+
+
+
+// TIMER DE FERMETURE --- GESTION DE L'INACTIVITÉ ET RECHARGEMENT AUTOMATIQUE ---
 
 // Durée d'inactivité avant rafraîchissement (5 minutes = 5 * 60 * 1000 ms)
 const DELAI_INACTIVITE = 5 * 60 * 1000; 
