@@ -786,13 +786,22 @@ async function validerSaisieGroupee(e) {
         return;
     }
 
-    // --- CONTRÔLE SUR LES MODULATIONS D'ENGAGEMENT ET SPÉCIALITÉS ---
+    // --- DEBUG TEMPORAIRE : À LIRE DANS LA CONSOLE (F12) ---
+    console.log("🔍 --- DÉBUT CONTRÔLE FMPA ---");
+    console.log("Objet Formation sélectionné :", formationObj);
+    // ------------------------------------------------------
+
     const agentsBloques = [];
     const estSpecialite = formationObj.type && String(formationObj.type).toLowerCase().includes("spé");
 
     agentsSelectionnes.forEach(idAgent => {
         const agent = tableauAgentsRH.find(a => a.id === idAgent);
         if (!agent) return;
+
+        // --- DEBUG TEMPORAIRE AGENT ---
+        console.log(`Agent contrôlé : ${agent.nom} ${agent.prenom}`);
+        console.log(`- Engagement agent : "${agent.engagement}"`);
+        // ------------------------------
 
         // 1. CONTRÔLE SPÉCIALITÉ
         if (estSpecialite) {
@@ -806,8 +815,17 @@ async function validerSaisieGroupee(e) {
             }
         }
 
-        // 2. CONTRÔLE SOCLE COMMUN / MODULATIONS (ex: "SUAP, SUAP/PPABE : 0")
-        const rawModulation = String(formationObj.modulations || "").trim();
+        // 2. CONTRÔLE SOCLE COMMUN / MODULATION
+        // Recherche de la propriété modulation peu importe sa casse
+        const rawModulation = String(
+            formationObj.modulations || 
+            formationObj.Modulations || 
+            formationObj.modulation || 
+            formationObj.Modulation || 
+            ""
+        ).trim();
+
+        console.log(`- Règle Modulation trouvée : "${rawModulation}"`);
 
         if (rawModulation.includes(":")) {
             const parties = rawModulation.split(":");
@@ -815,16 +833,21 @@ async function validerSaisieGroupee(e) {
             const quota = parseFloat(parties[1].trim());
 
             if (quota === 0) {
-                // Engagement de l'agent nettoyé (ex: "complet", "suap", "suap/ppabe")
                 const engagementAgent = String(agent.engagement || "").trim().toLowerCase();
 
-                // On extrait chaque engagement listé avant les deux-points (séparateurs: virgule ou slash)
+                // Découpage propre par virgule OU par slash si listé ainsi
                 const listeEngagementsDispenses = engagementsPart
-                    .split(",")
+                    .split(/[,/]/)
                     .map(item => item.trim().toLowerCase());
 
-                // Vérification si l'engagement de l'agent est dans la liste dispensée
-                const estDispense = engagementAgent && listeEngagementsDispenses.includes(engagementAgent);
+                console.log(`- Engagements dispensés (tableau) :`, listeEngagementsDispenses);
+
+                // On vérifie si l'engagement exact ou un sous-élément de l'agent est dedans
+                const estDispense = engagementAgent && listeEngagementsDispenses.some(disp => {
+                    return engagementAgent === disp || engagementAgent.includes(disp) || disp.includes(engagementAgent);
+                });
+
+                console.log(`- Résultat estDispense : ${estDispense}`);
 
                 if (estDispense) {
                     agentsBloques.push(`${agent.nom} ${agent.prenom} (Engagement "${agent.engagement}" dispensé)`);
@@ -833,7 +856,7 @@ async function validerSaisieGroupee(e) {
             }
         }
 
-        // 3. CONTRÔLE COMPLÉMENTAIRE VIA FONCTION DE DISPENSE
+        // 3. AUTRE VÉRIFICATION DISPENSE
         if (typeof verifierDispense === "function" && verifierDispense(agent, formationObj)) {
             agentsBloques.push(`${agent.nom} ${agent.prenom} (Dispensé)`);
         }
@@ -841,10 +864,10 @@ async function validerSaisieGroupee(e) {
 
     if (agentsBloques.length > 0) {
         alert("❌ Saisie impossible !\nCertains agents ne sont pas autorisés pour cette formation :\n\n- " + agentsBloques.join("\n- "));
-        return; // Interrompt l'enregistrement
+        return;
     }
-    // --------------------------------------------------------------------------
 
+    // --- SUITE DE TA LOGIQUE (CONFLITS ET SAISIE) ---
     const conflits = [];
 
     agentsSelectionnes.forEach(idAgent => {
