@@ -754,64 +754,199 @@ function reinitialiserFormulaire() {
     calculerDuree();
 }
 
-// Fonction universelle d'extraction du texte de la cellule modulations
-function obtenirTexteModulation(champ) {
-    if (!champ) return "";
-    
-    // Si c'est déjà une chaîne
-    if (typeof champ === "string") return champ.trim();
-    
-    // Si c'est un tableau (ex: [{v: "SUAP"}, {v: "SUAP/PPABE : 0"}] ou objets complexes)
-    if (Array.isArray(champ)) {
-        return champ
-            .map(item => obtenirTexteModulation(item))
-            .filter(Boolean)
-            .join(" ");
-    }
-    
-    // Si c me un objet SheetJS / Excel
-    if (typeof champ === "object") {
-        const val = champ.v || champ.w || champ.text || champ.formatted || champ.valeur || champ.label || "";
-        return String(val).trim();
-    }
-    
-    return String(champ).trim();
-}
-
 async function validerSaisieGroupee(e) {
     e.preventDefault();
 
-    const idFormation = document.getElementById("saisie-theme")?.value;
-    const formationObj = catalogueInitial.find(f => f.id === idFormation);
-
-    if (!formationObj) {
-        alert("⚠️ Formation non trouvée pour l'ID : " + idFormation);
+    if (!classeurXLSX) {
+        alert("Ouvrez d'abord FMPA-RH.xlsx.");
         return;
     }
 
-    // Récupération du premier agent sélectionné
-    const premierIdAgent = Array.from(agentsSelectionnes)[0];
-    const agentObj = tableauAgentsRH.find(a => a.id === premierIdAgent);
+    const duree = calculerDuree();
+    const dateFormation = document.getElementById("saisie-date")?.value;
+    const heureDebut = document.getElementById("saisie-heure-debut")?.value;
+    const heureFin = document.getElementById("saisie-heure-fin")?.value;
+    const idFormation = document.getElementById("saisie-theme")?.value;
+    const formateur = document.getElementById("saisie-formateur")?.value.trim() || "";
+    const commentaires = document.getElementById("saisie-commentaires")?.value.trim() || "";
+    
+    if (!agentsSelectionnes.size) {
+        alert("Veuillez sélectionner au moins un agent.");
+        return;
+    }
 
-    // CRÉATION DU RAPPORT D'INSPECTION
-    const rapport = [
-        "🔍 --- DIAGNOSTIC EN DIRECT ---",
-        "",
-        "1. FORMATION SÉLECTIONNÉE :",
-        "• Libellé : " + (formationObj.libelle || "N/A"),
-        "• ID : " + (formationObj.id || "N/A"),
-        "• Type : " + (formationObj.type || "N/A"),
-        "• Modulations (type) : " + typeof formationObj.modulations,
-        "• Modulations (contenu brut) : " + JSON.stringify(formationObj.modulations),
-        "",
-        "2. PREMIER AGENT SÉLECTIONNÉ :",
-        "• Nom/Prénom : " + (agentObj ? agentObj.nom + " " + agentObj.prenom : "AUCUN AGENT SÉLECTIONNÉ"),
-        "• Engagement (type) : " + typeof agentObj?.engagement,
-        "• Engagement (valeur) : " + JSON.stringify(agentObj?.engagement)
-    ].join("\n");
+    if (!dateFormation || !idFormation || duree <= 0) {
+        alert("Veuillez sélectionner une formation valide et renseigner les heures.");
+        return;
+    }
 
-    // Affichage dans une boîte d'alerte sur ton écran
-    alert(rapport);
+    const formationObj = catalogueInitial.find(f => f.id === idFormation);
+    if (!formationObj) {
+        alert("Formation non trouvée dans le catalogue.");
+        return;
+    }
+
+    // --- CONTRÔLE SUR LES MODULATIONS D'ENGAGEMENT ET SPÉCIALITÉS ---
+    const agentsBloques = [];
+    const estSpecialite = formationObj.type && String(formationObj.type).toLowerCase().includes("spé");
+
+    agentsSelectionnes.forEach(idAgent => {
+        const agent = tableauAgentsRH.find(a => a.id === idAgent);
+        if (!agent) return;
+
+        // 1. CONTRÔLE SPÉCIALITÉ
+        if (estSpecialite) {
+            const aLaSpecialite = typeof estFormationRequiseSpe === "function"
+                ? estFormationRequiseSpe(agent, formationObj)
+                : (agent.specialites && agent.specialites.includes(formationObj.fmpa || formationObj.specialite));
+
+            if (!aLaSpecialite) {
+                agentsBloques.push(`${agent.nom} ${agent.prenom} (Spécialité non détenue)`);
+                return;
+            }
+        }
+
+        // 2. CONTRÔLE SOCLE COMMUN (Modulation sous forme de tableau ou texte)
+        const engagementAgent = String(agent.engagement || "").trim().toLowerCase();
+
+        if (Array.isArray(formationObj.modulations)) {
+            // Cas 1 : Tableau d'objets JSON (ex: [{"profil":"SUAP/PPABE","quota":0,"dispense":true}])
+            const dispenseTrouvee = formationObj.modulations.some(mod => {
+                const profilMod = String(mod.profil || mod.engagement || "").trim().toLowerCase();
+                const estDispenseParQuota = mod.quota === 0 || mod.dispense === true;
+                
+                const correspondanceProfil = engagementAgent === profilMod || 
+                                              engagementAgent.includes(profilMod) || 
+                                              profilMod.includes(engagementAgent);
+
+                return correspondanceProfil && estDispenseParQuota;
+            });
+
+            if (dispenseTrouvee) {
+                agentsBloques.push(`${agent.nom} ${agent.prenom} (Engagement "${agent.engagement}" dispensé)`);
+                return;
+            }
+        } else if (typeof formationObj.modulations === "string" && formationObj.modulations.includes(":")) {
+            // Cas 2 : Chaîne de texte classique (ex: "SUAP, SUAP/PPABE : 0")
+            const parties = formationObj.modulations.split(":");
+            const engagementsPart = parties[0].trim();
+            const quota = parseFloat(parties[1].trim());
+
+            if (quota === 0) {
+                const listeEngagementsDispenses = engagementsPart.split(",").map(i => i.trim().toLowerCase());
+                const estDispense = listeEngagementsDispenses.some(disp => engagementAgent.includes(disp) || disp.includes(engagementAgent));
+
+                if (estDispense) {
+                    agentsBloques.push(`${agent.nom} ${agent.prenom} (Engagement "${agent.engagement}" dispensé)`);
+                    return;
+                }
+            }
+        }
+
+        // 3. AUTRE DISPENSE ÉVENTUELLE
+        if (typeof verifierDispense === "function" && verifierDispense(agent, formationObj)) {
+            agentsBloques.push(`${agent.nom} ${agent.prenom} (Dispensé)`);
+        }
+    });
+
+    if (agentsBloques.length > 0) {
+        alert("❌ Saisie impossible !\nCertains agents ne sont pas autorisés pour cette formation :\n\n- " + agentsBloques.join("\n- "));
+        return; // Interrompt la saisie
+    }
+
+    // --- SUITE DE LA LOGIQUE D'ENREGISTREMENT ---
+    const conflits = [];
+
+    agentsSelectionnes.forEach(idAgent => {
+        const agent = tableauAgentsRH.find(a => a.id === idAgent);
+        if (!agent) return;
+
+        const conflit = verifierChevauchementHoraire(agent.matricule, dateFormation, heureDebut, heureFin);
+        if (conflit) {
+            conflits.push(`Agent : ${agent.nom} ${agent.prenom} (déjà inscrit à "${conflit.formation}" de ${conflit.heureDebut} à ${conflit.heureFin})`);
+        }
+    });
+
+    let agentFormateur = null;
+    if (formateur) {
+        agentFormateur = tableauAgentsRH.find(a => {
+            const nomComplet = `${a.grade ? a.grade + ' ' : ''}${a.nom} ${a.prenom}`.toLowerCase();
+            return nomComplet.includes(formateur.toLowerCase()) || `${a.nom} ${a.prenom}`.toLowerCase() === formateur.toLowerCase();
+        });
+
+        if (agentFormateur) {
+            const conflitFormateur = verifierChevauchementHoraire(agentFormateur.matricule, dateFormation, heureDebut, heureFin);
+            if (conflitFormateur) {
+                conflits.push(`Formateur : ${agentFormateur.nom} ${agentFormateur.prenom} (déjà inscrit à "${conflitFormateur.formation}" de ${conflitFormateur.heureDebut} à ${conflitFormateur.heureFin})`);
+            }
+        }
+    }
+
+    if (conflits.length > 0) {
+        alert("❌ Impossible d'enregistrer la saisie, chevauchement d'horaires détecté :\n\n" + conflits.join("\n"));
+        return;
+    }
+
+    const dateSaisie = obtenirDateSaisie();
+
+    agentsSelectionnes.forEach(idAgent => {
+        const agent = tableauAgentsRH.find(a => a.id === idAgent);
+        if (!agent) return;
+
+        historiqueSaisiesFMPA.push({
+            matricule: agent.matricule,
+            date: dateFormation,
+            heureDebut,
+            heureFin,
+            formation: formationObj.libelle,
+            formateur,
+            commentaires: commentaires,
+            dateSaisie
+        });
+
+        if (!cumulHeuresParAgent[idAgent]) cumulHeuresParAgent[idAgent] = {};
+        const cle = formationObj.id;
+        cumulHeuresParAgent[idAgent][cle] = (cumulHeuresParAgent[idAgent][cle] || 0) + duree;
+    });
+
+    if (agentFormateur && !agentsSelectionnes.has(agentFormateur.id)) {
+        historiqueSaisiesFMPA.push({
+            matricule: agentFormateur.matricule,
+            date: dateFormation,
+            heureDebut,
+            heureFin,
+            formation: formationObj.libelle,
+            formateur: `${agentFormateur.nom} ${agentFormateur.prenom}`,
+            commentaires: `${commentaires ? commentaires + ' — ' : ''}(Animation / Formateur)`,
+            dateSaisie
+        });
+
+        if (!cumulHeuresParAgent[agentFormateur.id]) cumulHeuresParAgent[agentFormateur.id] = {};
+        const cle = formationObj.id;
+        cumulHeuresParAgent[agentFormateur.id][cle] = (cumulHeuresParAgent[agentFormateur.id][cle] || 0) + duree;
+    }
+
+    reconstruireFeuilleHistorique();
+
+    const nombreAgents = agentsSelectionnes.size;
+    agentsSelectionnes.clear();
+    const selectAll = document.getElementById("select-all");
+    if (selectAll) selectAll.checked = false;
+
+    reinitialiserFormulaire();
+    filtrerEtAfficherTableau();
+
+    if (fichierHandleXLSX) {
+        try {
+            await enregistrerFichierXLSX();
+            alert(`Saisie enregistrée et FMPA-RH.xlsx sauvegardé.\n${duree}h ajoutée(s) pour ${nombreAgents} agent(s).`);
+        } catch (err) {
+            console.error(err);
+            alert(`Saisie enregistrée en mémoire mais échec d'écriture Excel :\n${err.message}`);
+        }
+    } else {
+        alert(`Saisie enregistrée en mémoire.\nUtilisez la sauvegarde directe.`);
+    }
 }
 
 function reconstruireFeuilleHistorique() {
