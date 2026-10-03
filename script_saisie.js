@@ -754,6 +754,26 @@ function reinitialiserFormulaire() {
     calculerDuree();
 }
 
+// Fonction pour extraire proprement le texte, peu importe comment SheetJS/l'outil de parsing l'a stocké
+function extraireTexteModulation(valeur) {
+    if (!valeur) return "";
+    
+    // Si c'est déjà une chaîne de caractères
+    if (typeof valeur === "string") return valeur.trim();
+    
+    // Si c'est un tableau
+    if (Array.isArray(valeur)) {
+        return valeur.map(item => extraireTexteModulation(item)).join(", ");
+    }
+    
+    // Si c'est un objet (ex: { w: "SUAP, SUAP/PPABE:0", v: "SUAP, SUAP/PPABE:0" } ou { text: "..." })
+    if (typeof valeur === "object") {
+        return (valeur.v || valeur.w || valeur.text || valeur.formatted || JSON.stringify(valeur)).trim();
+    }
+    
+    return String(valeur).trim();
+}
+
 async function validerSaisieGroupee(e) {
     e.preventDefault();
 
@@ -786,22 +806,12 @@ async function validerSaisieGroupee(e) {
         return;
     }
 
-    // --- DEBUG TEMPORAIRE : À LIRE DANS LA CONSOLE (F12) ---
-    console.log("🔍 --- DÉBUT CONTRÔLE FMPA ---");
-    console.log("Objet Formation sélectionné :", formationObj);
-    // ------------------------------------------------------
-
     const agentsBloques = [];
     const estSpecialite = formationObj.type && String(formationObj.type).toLowerCase().includes("spé");
 
     agentsSelectionnes.forEach(idAgent => {
         const agent = tableauAgentsRH.find(a => a.id === idAgent);
         if (!agent) return;
-
-        // --- DEBUG TEMPORAIRE AGENT ---
-        console.log(`Agent contrôlé : ${agent.nom} ${agent.prenom}`);
-        console.log(`- Engagement agent : "${agent.engagement}"`);
-        // ------------------------------
 
         // 1. CONTRÔLE SPÉCIALITÉ
         if (estSpecialite) {
@@ -815,17 +825,13 @@ async function validerSaisieGroupee(e) {
             }
         }
 
-        // 2. CONTRÔLE SOCLE COMMUN / MODULATION
-        // Recherche de la propriété modulation peu importe sa casse
-        const rawModulation = String(
+        // 2. CONTRÔLE SOCLE COMMUN / MODULATIONS
+        // Extraction propre du texte de la cellule modulations
+        const rawModulation = extraireTexteModulation(
             formationObj.modulations || 
             formationObj.Modulations || 
-            formationObj.modulation || 
-            formationObj.Modulation || 
-            ""
-        ).trim();
-
-        console.log(`- Règle Modulation trouvée : "${rawModulation}"`);
+            formationObj.modulation
+        );
 
         if (rawModulation.includes(":")) {
             const parties = rawModulation.split(":");
@@ -835,19 +841,14 @@ async function validerSaisieGroupee(e) {
             if (quota === 0) {
                 const engagementAgent = String(agent.engagement || "").trim().toLowerCase();
 
-                // Découpage propre par virgule OU par slash si listé ainsi
+                // Découpage par virgule, slash ou deux-points
                 const listeEngagementsDispenses = engagementsPart
                     .split(/[,/]/)
                     .map(item => item.trim().toLowerCase());
 
-                console.log(`- Engagements dispensés (tableau) :`, listeEngagementsDispenses);
-
-                // On vérifie si l'engagement exact ou un sous-élément de l'agent est dedans
                 const estDispense = engagementAgent && listeEngagementsDispenses.some(disp => {
                     return engagementAgent === disp || engagementAgent.includes(disp) || disp.includes(engagementAgent);
                 });
-
-                console.log(`- Résultat estDispense : ${estDispense}`);
 
                 if (estDispense) {
                     agentsBloques.push(`${agent.nom} ${agent.prenom} (Engagement "${agent.engagement}" dispensé)`);
@@ -856,7 +857,7 @@ async function validerSaisieGroupee(e) {
             }
         }
 
-        // 3. AUTRE VÉRIFICATION DISPENSE
+        // 3. AUTRE DISPENSE ÉVENTUELLE
         if (typeof verifierDispense === "function" && verifierDispense(agent, formationObj)) {
             agentsBloques.push(`${agent.nom} ${agent.prenom} (Dispensé)`);
         }
@@ -867,7 +868,7 @@ async function validerSaisieGroupee(e) {
         return;
     }
 
-    // --- SUITE DE TA LOGIQUE (CONFLITS ET SAISIE) ---
+    // --- SUITE DE LA LOGIQUE ---
     const conflits = [];
 
     agentsSelectionnes.forEach(idAgent => {
