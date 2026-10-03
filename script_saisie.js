@@ -754,24 +754,28 @@ function reinitialiserFormulaire() {
     calculerDuree();
 }
 
-// Fonction pour extraire proprement le texte, peu importe comment SheetJS/l'outil de parsing l'a stocké
-function extraireTexteModulation(valeur) {
-    if (!valeur) return "";
+// Fonction universelle d'extraction du texte de la cellule modulations
+function obtenirTexteModulation(champ) {
+    if (!champ) return "";
     
-    // Si c'est déjà une chaîne de caractères
-    if (typeof valeur === "string") return valeur.trim();
+    // Si c'est déjà une chaîne
+    if (typeof champ === "string") return champ.trim();
     
-    // Si c'est un tableau
-    if (Array.isArray(valeur)) {
-        return valeur.map(item => extraireTexteModulation(item)).join(", ");
+    // Si c'est un tableau (ex: [{v: "SUAP"}, {v: "SUAP/PPABE : 0"}] ou objets complexes)
+    if (Array.isArray(champ)) {
+        return champ
+            .map(item => obtenirTexteModulation(item))
+            .filter(Boolean)
+            .join(" ");
     }
     
-    // Si c'est un objet (ex: { w: "SUAP, SUAP/PPABE:0", v: "SUAP, SUAP/PPABE:0" } ou { text: "..." })
-    if (typeof valeur === "object") {
-        return (valeur.v || valeur.w || valeur.text || valeur.formatted || JSON.stringify(valeur)).trim();
+    // Si c me un objet SheetJS / Excel
+    if (typeof champ === "object") {
+        const val = champ.v || champ.w || champ.text || champ.formatted || champ.valeur || champ.label || "";
+        return String(val).trim();
     }
     
-    return String(valeur).trim();
+    return String(champ).trim();
 }
 
 async function validerSaisieGroupee(e) {
@@ -806,8 +810,12 @@ async function validerSaisieGroupee(e) {
         return;
     }
 
+    // --- CONTRÔLE SUR LES MODULATIONS D'ENGAGEMENT ET SPÉCIALITÉS ---
     const agentsBloques = [];
     const estSpecialite = formationObj.type && String(formationObj.type).toLowerCase().includes("spé");
+
+    // Extraction robuste du texte brut de la colonne modulations
+    const rawModulation = obtenirTexteModulation(formationObj.modulations);
 
     agentsSelectionnes.forEach(idAgent => {
         const agent = tableauAgentsRH.find(a => a.id === idAgent);
@@ -825,29 +833,26 @@ async function validerSaisieGroupee(e) {
             }
         }
 
-        // 2. CONTRÔLE SOCLE COMMUN / MODULATIONS
-        // Extraction propre du texte de la cellule modulations
-        const rawModulation = extraireTexteModulation(
-            formationObj.modulations || 
-            formationObj.Modulations || 
-            formationObj.modulation
-        );
-
+        // 2. CONTRÔLE SOCLE COMMUN (Analyse de la modulation d'engagement)
         if (rawModulation.includes(":")) {
             const parties = rawModulation.split(":");
             const engagementsPart = parties[0].trim();
             const quota = parseFloat(parties[1].trim());
 
             if (quota === 0) {
+                // Engagement de l'agent (ex: "SUAP/PPABE" ou "SUAP")
                 const engagementAgent = String(agent.engagement || "").trim().toLowerCase();
 
-                // Découpage par virgule, slash ou deux-points
+                // Découpage des engagements dispensés par virgule
                 const listeEngagementsDispenses = engagementsPart
-                    .split(/[,/]/)
+                    .split(",")
                     .map(item => item.trim().toLowerCase());
 
-                const estDispense = engagementAgent && listeEngagementsDispenses.some(disp => {
-                    return engagementAgent === disp || engagementAgent.includes(disp) || disp.includes(engagementAgent);
+                // Vérification avec tolérance sur les espaces et séparateurs
+                const estDispense = engagementAgent && listeEngagementsDispenses.some(dispense => {
+                    return engagementAgent === dispense || 
+                           engagementAgent.includes(dispense) || 
+                           dispense.includes(engagementAgent);
                 });
 
                 if (estDispense) {
@@ -865,10 +870,10 @@ async function validerSaisieGroupee(e) {
 
     if (agentsBloques.length > 0) {
         alert("❌ Saisie impossible !\nCertains agents ne sont pas autorisés pour cette formation :\n\n- " + agentsBloques.join("\n- "));
-        return;
+        return; // Interrompt la saisie
     }
+    // -----------------------------------------------------------------
 
-    // --- SUITE DE LA LOGIQUE ---
     const conflits = [];
 
     agentsSelectionnes.forEach(idAgent => {
