@@ -794,7 +794,7 @@ async function validerSaisieGroupee(e) {
         const agent = tableauAgentsRH.find(a => a.id === idAgent);
         if (!agent) return;
 
-        // 1. DÉTECTION SPÉCIALITÉ : L'agent doit détenir la spécialité
+        // 1. CONTRÔLE SPÉCIALITÉ
         if (estSpecialite) {
             const aLaSpecialite = typeof estFormationRequiseSpe === "function"
                 ? estFormationRequiseSpe(agent, formationObj)
@@ -806,39 +806,36 @@ async function validerSaisieGroupee(e) {
             }
         }
 
-        // 2. DÉTECTION MODULATION D'ENGAGEMENT (ex: "SUAP:0" ou "SUAP/PPABE:0")
-        if (formationObj.modulations && typeof formationObj.modulations === "string") {
-            const regleModulation = formationObj.modulations.trim();
+        // 2. CONTRÔLE SOCLE COMMUN (Analyse des modulations séparées par virgule/deux-points)
+        const modulationStr = formationObj.modulations ? String(formationObj.modulations).trim() : "";
 
-            if (regleModulation.includes(":")) {
-                const [conditionsEngagement, quotaStr] = regleModulation.split(":");
-                const quota = parseFloat(quotaStr.trim());
+        if (modulationStr.includes(":")) {
+            const [engagementsPart, quotaPart] = modulationStr.split(":");
+            const quota = parseFloat(quotaPart.trim());
 
-                // Si le quota prévu par la modulation est 0
-                if (quota === 0) {
-                    const listeEngagementsDispenses = conditionsEngagement.split("/").map(s => s.trim().toLowerCase());
-                    
-                    // On récupère l'engagement de l'agent (ajuste 'agent.engagement' si le champ a un autre nom)
-                    const engagementAgent = (agent.engagement || agent.profil || agent.statut || "").toLowerCase().trim();
+            if (quota === 0) {
+                // Récupération de l'engagement de l'agent dans baseAgents (ex: "SUAP/PPABE" ou "SUAP")
+                const engagementAgent = (agent.engagement || agent["Engagement"] || agent.profil || "").trim().toLowerCase();
 
-                    // Si l'engagement de l'agent fait partie des engagements dispensés
-                    if (engagementAgent && listeEngagementsDispenses.includes(engagementAgent)) {
-                        agentsBloques.push(`${agent.nom} ${agent.prenom} (Dispensé selon engagement : ${agent.engagement || agent.profil})`);
-                        return;
-                    }
+                // Liste des engagements ciblés par le quota 0 (ex: ["suap", "suap/ppabe"])
+                const listeEngagementsDispenses = engagementsPart.split(",").map(e => e.trim().toLowerCase());
+
+                if (engagementAgent && listeEngagementsDispenses.includes(engagementAgent)) {
+                    agentsBloques.push(`${agent.nom} ${agent.prenom} (Engagement "${agent.engagement || agent["Engagement"]}" dispensé de cette formation)`);
+                    return;
                 }
             }
         }
 
-        // 3. VÉRIFICATION GLOBALE SI UNE FONCTION EXISTANTE DÉTECTE LA DISPENSE
+        // 3. AUTRE DISPENSE ÉVENTUELLE
         if (typeof verifierDispense === "function" && verifierDispense(agent, formationObj)) {
             agentsBloques.push(`${agent.nom} ${agent.prenom} (Dispensé)`);
         }
     });
 
     if (agentsBloques.length > 0) {
-        alert("❌ Saisie impossible !\nCertains agents sélectionnés ne sont pas autorisés pour cette formation :\n\n- " + agentsBloques.join("\n- "));
-        return; // Bloque la validation
+        alert("❌ Saisie impossible !\nCertains agents ne sont pas autorisés pour cette formation :\n\n- " + agentsBloques.join("\n- "));
+        return; // Interrompt l'enregistrement
     }
     // -----------------------------------------------------------------
 
