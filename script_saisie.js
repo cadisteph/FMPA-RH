@@ -1427,18 +1427,30 @@ function filtrerHistorique() {
 }
 
 function reinitialiserFiltresHistorique() {
-    if (document.getElementById("hist-search-agent")) document.getElementById("hist-search-agent").value = "";
-    if (document.getElementById("hist-search-date")) document.getElementById("hist-search-date").value = "";
-    if (document.getElementById("hist-ref-wact")) document.getElementById("hist-ref-wact").value = "";
-    
-    const inputCode = document.getElementById("hist-code-admin");
-    if (inputCode) {
-        inputCode.value = "";
-        inputCode.style.border = "";
-        inputCode.style.backgroundColor = "";
+    // 1. Réinitialisation des champs accessibles à tous
+    const inputAgent = document.getElementById("filtre-agent"); // ou l'ID de ton champ Agent
+    const inputDateFormation = document.getElementById("filtre-date-formation");
+
+    if (inputAgent) inputAgent.value = "";
+    if (inputDateFormation) inputDateFormation.value = "";
+
+    // 2. Le champ Date Réf. W@ct NE S'EFFACE QUE SI l'Admin est déverrouillé
+    const inputDateRef = document.getElementById("filtre-date-ref");
+    if (inputDateRef) {
+        if (estAdminDeverrouille) {
+            inputDateRef.value = ""; // Effacement autorisé pour l'Admin
+        } else {
+            // Optionnel : avertir si l'utilisateur essaie de réinitialiser alors qu'une date W@ct est saisie
+            if (inputDateRef.value !== "") {
+                afficherStatut("🔒 La date Réf. W@ct est conservée (code Admin requis pour la réinitialiser).", true);
+            }
+        }
     }
-    
-    verifierCodeAdmin();
+
+    // 3. Rafraîchir l'affichage du tableau
+    if (typeof filtrerEtAfficherTableau === "function") {
+        filtrerEtAfficherTableau();
+    }
 }
 
 function activerEditionHistorique(index) {
