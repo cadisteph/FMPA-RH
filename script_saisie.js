@@ -2379,11 +2379,7 @@ function exporterSyntheseHeuresRestantesXLSX() {
 
     // 2. Construction de l'en-tête du tableau (Ligne 1)
     const enTete = ["Agents", "Équipe"];
-    
-    // Ajout des colonnes Socle
     themesSocle.forEach(t => enTete.push(t.libelle || t.fmpa || t.id));
-    
-    // Ajout des colonnes Spécialité
     themesSpecialite.forEach(t => enTete.push(t.libelle || t.fmpa || t.id));
 
     const donneesMatrice = [enTete];
@@ -2397,13 +2393,13 @@ function exporterSyntheseHeuresRestantesXLSX() {
 
         // --- COLONNES SOCLE COMMUN ---
         themesSocle.forEach(formation => {
-            const resteAFaire = calculerResteAFaireAgent(agent, formation);
+            const resteAFaire = calculerResteAFaireAgentAvecMetier(agent, formation);
             ligneAgent.push(formaterHeuresEnHHMM(resteAFaire));
         });
 
         // --- COLONNES SPÉCIALITÉ ---
         themesSpecialite.forEach(formation => {
-            const resteAFaire = calculerResteAFaireAgent(agent, formation);
+            const resteAFaire = calculerResteAFaireAgentAvecMetier(agent, formation);
             ligneAgent.push(formaterHeuresEnHHMM(resteAFaire));
         });
 
@@ -2418,23 +2414,65 @@ function exporterSyntheseHeuresRestantesXLSX() {
 
     const ws = XLSX.utils.aoa_to_sheet(donneesMatrice);
 
-    // Ajustement automatique de la largeur des colonnes
+    // Ajustement de la largeur des colonnes
     ws['!cols'] = enTete.map((h, i) => ({ wch: i === 0 ? 25 : Math.max(h.length + 3, 12) }));
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Synthèse Reste à Faire");
 
-    // Téléchargement du fichier
     const dateAujourdhui = new Date().toISOString().split('T')[0];
     XLSX.writeFile(wb, `Synthese_Reste_A_Faire_FMPA_${dateAujourdhui}.xlsx`);
 }
 
-// --- FONCTIONS AUXILIAIRES DE CALCUL ET FORMATAGE ---
+// --- FONCTIONS DE CALCUL AVEC RÈGLES MÉTIER ---
 
-function calculerResteAFaireAgent(agent, formation) {
+function calculerResteAFaireAgentAvecMetier(agent, formation) {
+    const estSpecialite = formation.type && String(formation.type).toLowerCase().includes("spé");
+
+    // 1. VÉRIFICATION SPÉCIALITÉ : Si c'est une spécialité et que l'agent ne l'a pas -> 0h restant
+    if (estSpecialite) {
+        const aLaSpecialite = typeof estFormationRequiseSpe === "function"
+            ? estFormationRequiseSpe(agent, formation)
+            : (agent.specialites && agent.specialites.includes(formation.fmpa || formation.specialite));
+
+        if (!aLaSpecialite) return 0;
+    }
+
+    // 2. VÉRIFICATION DISPENSE D'ENGAGEMENT (Socle)
+    const engagementAgent = String(agent.engagement || "").trim().toLowerCase();
+
+    if (Array.isArray(formation.modulations)) {
+        const dispenseTrouvee = formation.modulations.some(mod => {
+            const profilMod = String(mod.profil || mod.engagement || "").trim().toLowerCase();
+            const estDispenseParQuota = mod.quota === 0 || mod.dispense === true;
+            const correspondance = engagementAgent === profilMod || engagementAgent.includes(profilMod) || profilMod.includes(engagementAgent);
+            return correspondance && estDispenseParQuota;
+        });
+
+        if (dispenseTrouvee) return 0;
+    } else if (typeof formation.modulations === "string" && formation.modulations.includes(":")) {
+        const parties = formation.modulations.split(":");
+        const engagementsPart = parties[0].trim();
+        const quota = parseFloat(parties[1].trim());
+
+        if (quota === 0) {
+            const listeDispenses = engagementsPart.split(",").map(i => i.trim().toLowerCase());
+            if (listeDispenses.some(disp => engagementAgent.includes(disp) || disp.includes(engagementAgent))) {
+                return 0;
+            }
+        }
+    }
+
+    // 3. AUTRES DISPENSES ÉVENTUELLES
+    if (typeof verifierDispense === "function" && verifierDispense(agent, formation)) {
+        return 0;
+    }
+
+    // 4. CALCUL DU RELIQUAT (SI NON DISPENSÉ ET SPÉCIALITÉ DÉTENUE)
     const quotaRequis = parseFloat(formation.quota) || 0;
     const cumulEffectue = (typeof cumulHeuresParAgent !== "undefined" && cumulHeuresParAgent[agent.id] && cumulHeuresParAgent[agent.id][formation.id]) || 0;
     const reste = quotaRequis - cumulEffectue;
+
     return reste > 0 ? reste : 0;
 }
 
