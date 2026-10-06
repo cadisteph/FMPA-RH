@@ -2357,3 +2357,95 @@ evenementsUtilisateur.forEach(evenement => {
 
 // Démarrage initial du minuteur dès le chargement du script
 reinitialiserMinuteur();
+
+
+
+
+
+
+
+
+
+
+function exporterSyntheseHeuresRestantesXLSX() {
+    if (!tableauAgentsRH || !catalogueInitial) {
+        alert("❌ Les données des agents ou du catalogue ne sont pas chargées.");
+        return;
+    }
+
+    // 1. Séparation des thèmes du catalogue entre Socle Commun et Spécialités
+    const themesSocle = catalogueInitial.filter(f => !f.type || !String(f.type).toLowerCase().includes("spé"));
+    const themesSpecialite = catalogueInitial.filter(f => f.type && String(f.type).toLowerCase().includes("spé"));
+
+    // 2. Construction de l'en-tête du tableau (Ligne 1)
+    const en Tete = ["Agents", "Équipe"];
+    
+    // Ajout des colonnes Socle
+    themesSocle.forEach(t => enTete.push(t.libelle || t.fmpa || t.id));
+    
+    // Ajout des colonnes Spécialité
+    themesSpecialite.forEach(t => enTete.push(t.libelle || t.fmpa || t.id));
+
+    const donneesMatrice = [enTete];
+
+    // 3. Remplissage des lignes par agent
+    tableauAgentsRH.forEach(agent => {
+        const nomComplet = `${agent.nom || ''} ${agent.prenom || ''}`.trim();
+        const equipe = agent.equipe || agent.groupe || "";
+
+        const ligneAgent = [nomComplet, equipe];
+
+        // --- COLONNES SOCLE COMMUN ---
+        themesSocle.forEach(formation => {
+            const resteAFaire = calculerResteAFaireAgent(agent, formation);
+            ligneAgent.push(formaterHeuresEnHHMM(resteAFaire));
+        });
+
+        // --- COLONNES SPÉCIALITÉ ---
+        themesSpecialite.forEach(formation => {
+            const resteAFaire = calculerResteAFaireAgent(agent, formation);
+            ligneAgent.push(formaterHeuresEnHHMM(resteAFaire));
+        });
+
+        donneesMatrice.push(ligneAgent);
+    });
+
+    // 4. Génération et téléchargement du fichier Excel (.xlsx)
+    const ws = XLSX.utils.aoa_to_sheet(donneesMatrice);
+
+    // Ajustement automatique de la largeur des colonnes
+    ws['!cols'] = enTete.map((h, i) => ({ wch: i === 0 ? 25 : Math.max(h.length + 3, 12) }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Synthèse Reste à Faire");
+
+    // Téléchargement du fichier
+    const dateAujourdhui = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `Synthese_Reste_A_Faire_FMPA_${dateAujourdhui}.xlsx`);
+}
+
+// --- FONCTIONS AUXILIAIRES DE CALCUL ET FORMATAGE ---
+
+// Calcule le quota d'heures restant à faire pour un agent et une formation donnée
+function calculerResteAFaireAgent(agent, formation) {
+    const quotaRequis = parseFloat(formation.quota) || 0;
+    
+    // Cumul déjà effectué par l'agent pour cette formation
+    const cumulEffectue = (cumulHeuresParAgent[agent.id] && cumulHeuresParAgent[agent.id][formation.id]) || 0;
+
+    const reste = quotaRequis - cumulEffectue;
+    return reste > 0 ? reste : 0; // Retourne 0 si l'agent a atteint ou dépassé le quota
+}
+
+// Convertit un nombre d'heures (ex: 1.5) au format texte "01h30" ou "00h00"
+function formaterHeuresEnHHMM(heuresDecimales) {
+    if (!heuresDecimales || heuresDecimales <= 0) return "00h00";
+
+    const heures = Math.floor(heuresDecimales);
+    const minutes = Math.round((heuresDecimales - heures) * 60);
+
+    const hStr = String(heures).padStart(2, '0');
+    const mStr = String(minutes).padStart(2, '0');
+
+    return `${hStr}h${mStr}`;
+}
