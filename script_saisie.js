@@ -2378,7 +2378,7 @@ function exporterSyntheseHeuresRestantesXLSX() {
     const themesSpecialite = catalogueInitial.filter(f => f.type && String(f.type).toLowerCase().includes("spé"));
 
     // 2. Construction de l'en-tête du tableau (Ligne 1)
-    const en Tete = ["Agents", "Équipe"];
+    const enTete = ["Agents", "Équipe"];
     
     // Ajout des colonnes Socle
     themesSocle.forEach(t => enTete.push(t.libelle || t.fmpa || t.id));
@@ -2411,6 +2411,11 @@ function exporterSyntheseHeuresRestantesXLSX() {
     });
 
     // 4. Génération et téléchargement du fichier Excel (.xlsx)
+    if (typeof XLSX === "undefined") {
+        alert("❌ La bibliothèque SheetJS (XLSX) n'est pas chargée.");
+        return;
+    }
+
     const ws = XLSX.utils.aoa_to_sheet(donneesMatrice);
 
     // Ajustement automatique de la largeur des colonnes
@@ -2426,18 +2431,13 @@ function exporterSyntheseHeuresRestantesXLSX() {
 
 // --- FONCTIONS AUXILIAIRES DE CALCUL ET FORMATAGE ---
 
-// Calcule le quota d'heures restant à faire pour un agent et une formation donnée
 function calculerResteAFaireAgent(agent, formation) {
     const quotaRequis = parseFloat(formation.quota) || 0;
-    
-    // Cumul déjà effectué par l'agent pour cette formation
-    const cumulEffectue = (cumulHeuresParAgent[agent.id] && cumulHeuresParAgent[agent.id][formation.id]) || 0;
-
+    const cumulEffectue = (typeof cumulHeuresParAgent !== "undefined" && cumulHeuresParAgent[agent.id] && cumulHeuresParAgent[agent.id][formation.id]) || 0;
     const reste = quotaRequis - cumulEffectue;
-    return reste > 0 ? reste : 0; // Retourne 0 si l'agent a atteint ou dépassé le quota
+    return reste > 0 ? reste : 0;
 }
 
-// Convertit un nombre d'heures (ex: 1.5) au format texte "01h30" ou "00h00"
 function formaterHeuresEnHHMM(heuresDecimales) {
     if (!heuresDecimales || heuresDecimales <= 0) return "00h00";
 
