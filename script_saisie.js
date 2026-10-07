@@ -2429,50 +2429,71 @@ function exporterSyntheseHeuresRestantesXLSX() {
 function calculerResteAFaireAgentAvecMetier(agent, formation) {
     const estSpecialite = formation.type && String(formation.type).toLowerCase().includes("spé");
 
-    // 1. VÉRIFICATION SPÉCIALITÉ : Si c'est une spécialité et que l'agent ne l'a pas -> 0h restant
+    // 1. VÉRIFICATION SPÉCIALITÉ
     if (estSpecialite) {
-        const aLaSpecialite = typeof estFormationRequiseSpe === "function"
-            ? estFormationRequiseSpe(agent, formation)
-            : (agent.specialites && agent.specialites.includes(formation.fmpa || formation.specialite));
+        let aLaSpecialite = false;
+        if (typeof estFormationRequiseSpe === "function") {
+            aLaSpecialite = estFormationRequiseSpe(agent, formation);
+        } else if (Array.isArray(agent.specialites)) {
+            const nomSpeFormation = (formation.fmpa || formation.specialite || formation.libelle || formation.id || "").toLowerCase();
+            aLaSpecialite = agent.specialites.some(spe => nomSpeFormation.includes(String(spe).toLowerCase()));
+        }
 
+        // Si l'agent n'a pas la spécialité, il ne doit rien faire
         if (!aLaSpecialite) return 0;
     }
 
-    // 2. VÉRIFICATION DISPENSE D'ENGAGEMENT (Socle)
+    // 2. DÉTERMINATION DU QUOTA REQUIS POUR L'AGENT (AVEC MODULATIONS)
+    let quotaRequisAgent = parseFloat(formation.quota) || 0;
     const engagementAgent = String(agent.engagement || "").trim().toLowerCase();
 
     if (Array.isArray(formation.modulations)) {
-        const dispenseTrouvee = formation.modulations.some(mod => {
+        // Recherche si une modulation spécifique s'applique à cet engagement
+        const modApplicable = formation.modulations.find(mod => {
             const profilMod = String(mod.profil || mod.engagement || "").trim().toLowerCase();
-            const estDispenseParQuota = mod.quota === 0 || mod.dispense === true;
-            const correspondance = engagementAgent === profilMod || engagementAgent.includes(profilMod) || profilMod.includes(engagementAgent);
-            return correspondance && estDispenseParQuota;
+            return engagementAgent === profilMod || engagementAgent.includes(profilMod) || profilMod.includes(engagementAgent);
         });
 
-        if (dispenseTrouvee) return 0;
+        if (modApplicable) {
+            if (modApplicable.dispense === true) return 0;
+            if (typeof modApplicable.quota !== "undefined") {
+                quotaRequisAgent = parseFloat(modApplicable.quota);
+            }
+        }
     } else if (typeof formation.modulations === "string" && formation.modulations.includes(":")) {
         const parties = formation.modulations.split(":");
         const engagementsPart = parties[0].trim();
-        const quota = parseFloat(parties[1].trim());
+        const quotaModule = parseFloat(parties[1].trim());
 
-        if (quota === 0) {
-            const listeDispenses = engagementsPart.split(",").map(i => i.trim().toLowerCase());
-            if (listeDispenses.some(disp => engagementAgent.includes(disp) || disp.includes(engagementAgent))) {
-                return 0;
-            }
+        const listeEngagements = engagementsPart.split(",").map(i => i.trim().toLowerCase());
+        if (listeEngagements.some(disp => engagementAgent.includes(disp) || disp.includes(engagementAgent))) {
+            if (quotaModule === 0) return 0;
+            quotaRequisAgent = quotaModule;
         }
     }
 
-    // 3. AUTRES DISPENSES ÉVENTUELLES
+    // 3. VÉRIFICATION AUTRES DISPENSES
     if (typeof verifierDispense === "function" && verifierDispense(agent, formation)) {
         return 0;
     }
 
-    // 4. CALCUL DU RELIQUAT (SI NON DISPENSÉ ET SPÉCIALITÉ DÉTENUE)
-    const quotaRequis = parseFloat(formation.quota) || 0;
-    const cumulEffectue = (typeof cumulHeuresParAgent !== "undefined" && cumulHeuresParAgent[agent.id] && cumulHeuresParAgent[agent.id][formation.id]) || 0;
-    const reste = quotaRequis - cumulEffectue;
+    // Si le quota requis est 0 (dispense)
+    if (quotaRequisAgent <= 0) return 0;
 
+    // 4. CALCUL DU CUMUL EFFECTUÉ
+    // Recherche de toutes les clés d'heures possibles (id, fmpa, libellé)
+    let cumulEffectue = 0;
+    if (typeof cumulHeuresParAgent !== "undefined" && cumulHeuresParAgent[agent.id]) {
+        const cumulsAgent = cumulHeuresParAgent[agent.id];
+        
+        cumulEffectue = cumulsAgent[formation.id] 
+            || (formation.fmpa && cumulsAgent[formation.fmpa]) 
+            || (formation.libelle && cumulsAgent[formation.libelle]) 
+            || 0;
+    }
+
+    // 5. CALCUL DU RELIQUAT RÉEL
+    const reste = quotaRequisAgent - cumulEffectue;
     return reste > 0 ? reste : 0;
 }
 
