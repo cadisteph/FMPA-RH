@@ -878,7 +878,7 @@ function afficherListeAlertesPL() {
 
     aRenouveler.sort((a, b) => new Date(formaterDatePourInput(a.datePL) || '9999-12-31') - new Date(formaterDatePourInput(b.datePL) || '9999-12-31'));
 
-    let message = `🚒 LISTE DES PERMIS PL À RENOUVELER DANS LES 6 MOIS (${aRenouveler.length} agent(s)) :\n\n`;
+    let message = `🚒 PERMIS PL À RENOUVELER DANS LES 6 MOIS (${aRenouveler.length} agent(s)) :\n\n`;
     aRenouveler.forEach((agent, index) => {
         message += `${index + 1}. ${agent.nom.toUpperCase()} ${agent.prenom} - Date PL : ${formaterDateFR(agent.datePL) || 'Inconnue'} (Période: ${agent.delaiPL || 60} mois)\n`;
     });
@@ -896,7 +896,7 @@ function afficherListeAlertesVMA() {
 
     aRenouveler.sort((a, b) => new Date(formaterDatePourInput(a.dateVMA) || '9999-12-31') - new Date(formaterDatePourInput(b.dateVMA) || '9999-12-31'));
 
-    let message = `🩺 LISTE DES VMA À RENOUVELER DANS LES 2 MOIS (${aRenouveler.length} agent(s)) :\n\n`;
+    let message = `🩺 VMA À RENOUVELER DANS LES 2 MOIS (${aRenouveler.length} agent(s)) :\n\n`;
     aRenouveler.forEach((agent, index) => {
         message += `${index + 1}. ${agent.nom.toUpperCase()} ${agent.prenom} - Date VMA : ${formaterDateFR(agent.dateVMA) || 'Inconnue'} (Période: ${agent.delaiVMA || 24} mois)\n`;
     });
@@ -922,7 +922,7 @@ function afficherListeAlertesSPV() {
         new Date(formaterDatePourInput(b.entreeSdis) || '9999-12-31')
     );
 
-    let message = `🪃 LISTE DES ENGAGEMENTS SPV À RENOUVELER DANS L'ANNEE (${aRenouveler.length} agent(s)) :\n\n`;
+    let message = `🪃 ENGAGEMENTS SPV À RENOUVELER DANS L'ANNEE (${aRenouveler.length} agent(s)) :\n\n`;
     aRenouveler.forEach((agent, index) => {
         message += `${index + 1}. ${agent.nom.toUpperCase()} ${agent.prenom} - Entrée SDIS : ${formaterDateFR(agent.entreeSdis) || 'Inconnue'}\n`;
     });
