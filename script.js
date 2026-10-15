@@ -872,13 +872,13 @@ function afficherListeAlertesPL() {
     const aRenouveler = listeAgents.filter(agent => doitRenouvelerPL(agent.datePL, agent.delaiPL || 60));
 
     if (aRenouveler.length === 0) {
-        alert("🚒 Aucun permis PL à renouveler.");
+        alert("🚒 Aucun permis PL à renouveler pour le moment.");
         return;
     }
 
     aRenouveler.sort((a, b) => new Date(formaterDatePourInput(a.datePL) || '9999-12-31') - new Date(formaterDatePourInput(b.datePL) || '9999-12-31'));
 
-    let message = `🚒 LISTE DES PERMIS PL À RENOUVELER (${aRenouveler.length} agent(s)) :\n\n`;
+    let message = `🚒 LISTE DES PERMIS PL À RENOUVELER DANS LES 6 MOIS (${aRenouveler.length} agent(s)) :\n\n`;
     aRenouveler.forEach((agent, index) => {
         message += `${index + 1}. ${agent.nom.toUpperCase()} ${agent.prenom} - Date PL : ${formaterDateFR(agent.datePL) || 'Inconnue'} (Période: ${agent.delaiPL || 60} mois)\n`;
     });
@@ -890,13 +890,13 @@ function afficherListeAlertesVMA() {
     const aRenouveler = listeAgents.filter(agent => doitRenouvelerVMA(agent.dateVMA, agent.delaiVMA || 24));
 
     if (aRenouveler.length === 0) {
-        alert("🩺 Aucune VMA à renouveler.");
+        alert("🩺 Aucune VMA à renouveler pour le moement.");
         return;
     }
 
     aRenouveler.sort((a, b) => new Date(formaterDatePourInput(a.dateVMA) || '9999-12-31') - new Date(formaterDatePourInput(b.dateVMA) || '9999-12-31'));
 
-    let message = `🩺 LISTE DES VMA À RENOUVELER (${aRenouveler.length} agent(s)) :\n\n`;
+    let message = `🩺 LISTE DES VMA À RENOUVELER DANS LES 2 MOIS (${aRenouveler.length} agent(s)) :\n\n`;
     aRenouveler.forEach((agent, index) => {
         message += `${index + 1}. ${agent.nom.toUpperCase()} ${agent.prenom} - Date VMA : ${formaterDateFR(agent.dateVMA) || 'Inconnue'} (Période: ${agent.delaiVMA || 24} mois)\n`;
     });
@@ -912,7 +912,7 @@ function afficherListeAlertesSPV() {
     );
 
     if (aRenouveler.length === 0) {
-        alert("🪃 Aucun engagement SPV à renouveler.");
+        alert("🪃 Aucun engagement SPV à renouveler pour le moment.");
         return;
     }
 
@@ -922,7 +922,7 @@ function afficherListeAlertesSPV() {
         new Date(formaterDatePourInput(b.entreeSdis) || '9999-12-31')
     );
 
-    let message = `🪃 LISTE DES ENGAGEMENTS SPV À RENOUVELER (${aRenouveler.length} agent(s)) :\n\n`;
+    let message = `🪃 LISTE DES ENGAGEMENTS SPV À RENOUVELER DANS L'ANNEE (${aRenouveler.length} agent(s)) :\n\n`;
     aRenouveler.forEach((agent, index) => {
         message += `${index + 1}. ${agent.nom.toUpperCase()} ${agent.prenom} - Entrée SDIS : ${formaterDateFR(agent.entreeSdis) || 'Inconnue'}\n`;
     });
