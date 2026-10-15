@@ -171,7 +171,7 @@ function doitRenouvelerPL(datePLStr, delaiMois = 60) {
     const aujourdhui = new Date();
     const moisEcoules = (datePL.getFullYear()) * 12 - aujourdhui.getFullYear()  + (datePL.getMonth() - aujourdhui.getMonth());
     
-    const seuilAlert = parseInt(delaiMois, 10) - 6; // Alerte 6 mois avant terme
+    const seuilAlert = parseInt(delaiMois, 10) - 54; // Alerte 6 mois avant terme
     return moisEcoules >= seuilAlert;
 }
 
