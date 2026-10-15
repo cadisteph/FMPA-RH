@@ -169,7 +169,7 @@ function doitRenouvelerPL(datePLStr, delaiMois = 60) {
     if (isNaN(datePL.getTime())) return false;
     
     const aujourdhui = new Date();
-    const moisRestants = (datePL.getFullYear()) - aujourdhui.getFullYear() * 12 + (datePL.getMonth() - aujourdhui.getMonth());
+    const moisRestants = (datePL.getFullYear() - aujourdhui.getFullYear()) * 12 + (datePL.getMonth() - aujourdhui.getMonth());
     
     const seuilAlert = 6; // Alerte 6 mois avant terme
     return moisRestants <= seuilAlert;
