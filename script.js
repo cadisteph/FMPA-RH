@@ -890,7 +890,7 @@ function afficherListeAlertesVMA() {
     const aRenouveler = listeAgents.filter(agent => doitRenouvelerVMA(agent.dateVMA, agent.delaiVMA || 24));
 
     if (aRenouveler.length === 0) {
-        alert("🩺 Aucune VMA à renouveler pour le moement.");
+        alert("🩺 Aucune VMA à renouveler pour le moment.");
         return;
     }
 
