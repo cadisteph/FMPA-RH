@@ -2357,6 +2357,53 @@ evenementsUtilisateur.forEach(evenement => {
 reinitialiserMinuteur();
 
 
+// Fonction dédiée à la vérification souple des spécialités (ignore les numéros de niveau 1-2-3)
+function estFormationRequiseSpe(agent, formationObj) {
+    if (!agent || !formationObj) return false;
+
+    // Récupération de la liste des spécialités de l'agent
+    let listeSpeAgent = [];
+    if (Array.isArray(agent.specialites)) {
+        listeSpeAgent = agent.specialites;
+    } else if (typeof agent.specialites === "string" && agent.specialites.trim() !== "") {
+        listeSpeAgent = agent.specialites.split(",").map(s => s.trim());
+    }
+
+    if (listeSpeAgent.length === 0) return false;
+
+    // Intitulé de la spécialité cherchée pour la formation
+    const speCherchee = String(
+        formationObj.fmpa || formationObj.specialite || formationObj.libelle || formationObj.id || ""
+    ).trim().toLowerCase();
+
+    if (!speCherchee) return false;
+
+    // Extraction du radical (ex: "sav" depuis "sav 1" ou "sav_2")
+    const racineCherchee = speCherchee.replace(/[\s\-_]*\d+$/, "").trim();
+
+    return listeSpeAgent.some(speAgent => {
+        const speAgentStr = String(speAgent).trim().toLowerCase();
+        
+        // 1. Correspondance exacte ou inclusion directe
+        if (speAgentStr === speCherchee || speAgentStr.includes(speCherchee) || speCherchee.includes(speAgentStr)) {
+            return true;
+        }
+
+        // 2. Extraction du radical de l'agent (ex: "sav" depuis "sav 2")
+        const racineAgent = speAgentStr.replace(/[\s\-_]*\d+$/, "").trim();
+
+        if (racineAgent && racineCherchee && (racineAgent === racineCherchee || racineCherchee.includes(racineAgent) || racineAgent.includes(racineCherchee))) {
+            return true;
+        }
+
+        return false;
+    });
+}
+
+
+
+
+
 
 
 
@@ -2505,50 +2552,4 @@ function formaterHeuresEnHHMM(heuresDecimales) {
     const mStr = String(minutes).padStart(2, '0');
 
     return `${hStr}h${mStr}`;
-}
-
-
-
-
-// Fonction dédiée à la vérification souple des spécialités (ignore les numéros de niveau 1-2-3)
-function estFormationRequiseSpe(agent, formationObj) {
-    if (!agent || !formationObj) return false;
-
-    // Récupération de la liste des spécialités de l'agent
-    let listeSpeAgent = [];
-    if (Array.isArray(agent.specialites)) {
-        listeSpeAgent = agent.specialites;
-    } else if (typeof agent.specialites === "string" && agent.specialites.trim() !== "") {
-        listeSpeAgent = agent.specialites.split(",").map(s => s.trim());
-    }
-
-    if (listeSpeAgent.length === 0) return false;
-
-    // Intitulé de la spécialité cherchée pour la formation
-    const speCherchee = String(
-        formationObj.fmpa || formationObj.specialite || formationObj.libelle || formationObj.id || ""
-    ).trim().toLowerCase();
-
-    if (!speCherchee) return false;
-
-    // Extraction du radical (ex: "sav" depuis "sav 1" ou "sav_2")
-    const racineCherchee = speCherchee.replace(/[\s\-_]*\d+$/, "").trim();
-
-    return listeSpeAgent.some(speAgent => {
-        const speAgentStr = String(speAgent).trim().toLowerCase();
-        
-        // 1. Correspondance exacte ou inclusion directe
-        if (speAgentStr === speCherchee || speAgentStr.includes(speCherchee) || speCherchee.includes(speAgentStr)) {
-            return true;
-        }
-
-        // 2. Extraction du radical de l'agent (ex: "sav" depuis "sav 2")
-        const racineAgent = speAgentStr.replace(/[\s\-_]*\d+$/, "").trim();
-
-        if (racineAgent && racineCherchee && (racineAgent === racineCherchee || racineCherchee.includes(racineAgent) || racineAgent.includes(racineCherchee))) {
-            return true;
-        }
-
-        return false;
-    });
 }
