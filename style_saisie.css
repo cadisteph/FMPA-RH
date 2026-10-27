@@ -611,45 +611,49 @@ body {
 
 
 /* ==========================================
-   STYLE IMPRESSION POUR LA MODALE ÉQUIPE
+   STYLE IMPRESSION POUR LES MODALES
    ========================================== */
 @media print {
-    body * {
+    /* 1. Masquer toute la page principale proprement sans casser la mise en page */
+    body {
         visibility: hidden !important;
+        background: white !important;
     }
 
-    /* Rendre visible la modale équipe OU la modale agent */
-    #modal-equipe, #modal-equipe *,
-    #modal-agent, #modal-agent * {
+    /* 2. Rendre uniquement le CONTENU de la zone d'impression visible */
+    #zone-impression-equipe, 
+    #zone-impression-equipe *,
+    #zone-impression-agent, 
+    #zone-impression-agent * {
         visibility: visible !important;
     }
 
-    #modal-equipe.modal-overlay,
-    #modal-agent.modal-overlay {
+    /* 3. Positionner la zone d'impression tout en haut de la page imprimée */
+    #zone-impression-equipe,
+    #zone-impression-agent {
         position: absolute !important;
         left: 0 !important;
         top: 0 !important;
         width: 100% !important;
         height: auto !important;
-        background: transparent !important;
-        display: block !important;
-    }
-
-    #modal-equipe .modal-content,
-    #modal-agent .modal-content {
-        position: relative !important;
-        width: 100% !important;
-        max-width: 100% !important;
         max-height: none !important;
-        height: auto !important;
         overflow: visible !important;
-        box-shadow: none !important;
-        border: none !important;
         padding: 0 !important;
+        margin: 0 !important;
     }
 
-    #zone-impression-equipe,
-    #zone-impression-agent,
+    /* 4. Masquer complètement l'en-tête (Boutons, Select, Labels) pour l'impression */
+    .modal-header, 
+    .modal-header *,
+    .btn-primary, 
+    .btn-close, 
+    #modal-select-equipe, 
+    #modal-select-agent {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* 5. Gestion des coupures de pages pour les modules */
     #conteneur-modules-equipe,
     #conteneur-modules-agent {
         max-height: none !important;
@@ -657,17 +661,10 @@ body {
         overflow: visible !important;
     }
 
-    .modal-header button,
-    .modal-header select,
-    .modal-header label,
-    #modal-agent input,
-    #modal-equipe input {
-        display: none !important;
-    }
-
     #conteneur-modules-equipe > div,
     #conteneur-modules-agent > div {
-        page-break-inside: avoid;
-        break-inside: avoid;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
     }
 }
+
