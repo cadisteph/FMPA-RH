@@ -244,7 +244,7 @@
         <!-- En-tête avec bouton Impression -->
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px;">
             <div>
-                <button type="button" class="btn-primary" onclick="window.print()" style="padding: 8px 14px; background-color: #0284c7; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">🖨️ Imprimer la fiche</button>
+                <button type="button" class="btn-primary" onclick="document.body.classList.add('print-mode-equipe'); window.print(); document.body.classList.remove('print-mode-equipe');" style="padding: 8px 14px; background-color: #0284c7; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">🖨️ Imprimer la fiche</button>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <label for="modal-select-equipe" style="font-weight: bold;">Équipe :</label>
@@ -329,7 +329,7 @@
         <!-- En-tête avec bouton Impression & Sélecteur Agent -->
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px;">
             <div>
-                <button type="button" class="btn-primary" onclick="window.print()" style="padding: 8px 14px; background-color: #0284c7; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">🖨️ Imprimer la fiche agent</button>
+                <button type="button" class="btn-primary" onclick="document.body.classList.add('print-mode-agent'); window.print(); document.body.classList.remove('print-mode-agent');" ...>🖨️ Imprimer la fiche</button>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <label for="modal-select-agent" style="font-weight: bold;">Agent :</label>
