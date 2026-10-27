@@ -611,26 +611,33 @@ body {
 
 
 /* ==========================================
-   STYLE IMPRESSION NETTOYÉ ET SANS CHEVAUCHEMENT
+   STYLE IMPRESSION NETTOYÉ ET MULTI-PAGES
    ========================================== */
 @media print {
-    /* 1. Masquer l'intégralité des éléments de l'application en arrière-plan */
+    /* 1. FORCE TOUS LES CONTENEURS DE LA PAGE À SE DÉPLIER (Brise le blocage d'une seule page) */
+    html, body, div, main, section, article {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    /* 2. Masquer tous les éléments en arrière-plan du site */
     body > *:not(#modal-equipe):not(#modal-agent) {
         display: none !important;
     }
 
-    /* 2. Forcer la modale active à occuper tout l'espace proprement (Flux naturel) */
+    /* 3. Forcer la modale active à s'écouler naturellement */
     body.print-mode-equipe #modal-equipe,
     body.print-mode-agent #modal-agent {
         display: block !important;
-        position: relative !important; /* REPASSE EN FLUX NATUREL : empêche l'empilement */
+        position: relative !important;
         width: 100% !important;
         height: auto !important;
         overflow: visible !important;
         background: white !important;
     }
 
-    /* 3. Supprimer les fenêtres modales d'origine (pas de fond sombre, pas de centrage) */
+    /* 4. Nettoyer les styles de la fenêtre modale */
     .modal-overlay {
         position: relative !important;
         display: block !important;
@@ -638,7 +645,7 @@ body {
         min-height: auto !important;
     }
 
-    /* 4. Déplier totalement le contenu (Supprime le scroll et les limites de hauteur en ligne) */
+    /* 5. Configuration de la zone d'impression (Sans chevauchement) */
     .modal-content, 
     .modal-body,
     #zone-impression-equipe, 
@@ -649,15 +656,15 @@ body {
         position: relative !important;
         width: 100% !important;
         height: auto !important;
-        max-height: none !important; /* Écrase le max-height inline du HTML */
-        overflow: visible !important;  /* Casse définitivement la scrollbar */
+        max-height: none !important;
+        overflow: visible !important;
         padding: 0 !important;
         margin: 0 !important;
         border: none !important;
         box-shadow: none !important;
     }
 
-    /* 5. Masquer les éléments interactifs inutiles sur le papier */
+    /* 6. Masquer les en-têtes interactifs (Boutons, listes, etc.) */
     .modal-header,
     .btn-primary, 
     .btn-close, 
@@ -667,7 +674,7 @@ body {
         display: none !important;
     }
 
-    /* 6. Empêcher la coupure vilaine des blocs de modules au milieu d'une ligne */
+    /* 7. Empêcher la coupure des blocs thématiques */
     #conteneur-modules-equipe > div,
     #conteneur-modules-agent > div {
         page-break-inside: avoid !important;
