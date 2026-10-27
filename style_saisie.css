@@ -611,70 +611,60 @@ body {
 
 
 /* ==========================================
-   STYLE IMPRESSION NETTOYÉ ET INTÉGRAL
+   STYLE IMPRESSION ANTI-BLOCAGE MULTI-PAGES
    ========================================== */
 @media print {
-    /* 1. Masquer le site et l'autre modale */
-    body > *, 
-    .modal-overlay {
-        display: none !important;
-    }
-
-    /* 2. Forcer la modale active à devenir la page principale */
-    body.print-mode-equipe #modal-equipe,
-    body.print-mode-agent #modal-agent {
-        display: block !important;
-        position: relative !important;
-        width: 100% !important;
-        height: auto !important;
-        min-height: 100% !important;
-        overflow: visible !important;
-        background: white !important;
-    }
-
-    /* 3. BRISER LA SCROLLBAR EN LIGNE (Annule le CSS écrit dans le HTML) */
-    .modal-content, 
-    .modal-body,
-    #zone-impression-equipe, 
-    #zone-impression-agent,
-    #conteneur-modules-equipe, 
-    #conteneur-modules-agent {
-        display: block !important;
-        position: relative !important;
-        width: 100% !important;
-        
-        /* Ces trois lignes forcent l'annulation des styles inline bloquants : */
+    /* 1. Masquer absolument TOUT le site par défaut */
+    html, body, body * {
+        visibility: hidden !important;
         height: auto !important;
         max-height: none !important;
-        overflow: visible !important; 
-        
+        overflow: visible !important;
+    }
+
+    /* 2. Rendre uniquement visible la zone d'impression active (Équipe ou Agent) */
+    body.print-mode-equipe #zone-impression-equipe,
+    body.print-mode-equipe #zone-impression-equipe *,
+    body.print-mode-agent #zone-impression-agent,
+    body.print-mode-agent #zone-impression-agent * {
+        visibility: visible !important;
+    }
+
+    /* 3. L'ARME ABSOLUE : Sortir la zone du calque de la modale pour l'imprimer normalement */
+    body.print-mode-equipe #zone-impression-equipe,
+    body.print-mode-agent #zone-impression-agent {
+        display: block !important;
+        position: absolute !important; /* Devient le flux principal de la page imprimée */
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        background: white !important;
         padding: 0 !important;
         margin: 0 !important;
+    }
+
+    /* 4. Masquer drastiquement tous les éléments de contrôle encombrants */
+    .modal-overlay,
+    .modal-content,
+    .modal-header,
+    .btn-primary, 
+    .btn-close, 
+    select, 
+    label {
+        background: transparent !important;
         border: none !important;
         box-shadow: none !important;
     }
 
-    /* 4. Forcer la réinitialisation de tout conteneur parent caché ou limité */
-    div {
-        max-height: none !important;
-        overflow: visible !important;
-    }
-
-    /* 5. Masquer les éléments de contrôle (Boutons, Select, Labels) */
-    .modal-header,
-    .btn-primary, 
-    .btn-close, 
-    #modal-select-equipe, 
-    #modal-select-agent,
-    label {
-        display: none !important;
-    }
-
-    /* 6. Éviter de couper un module de formation en deux au changement de page */
+    /* 5. Empêcher qu'un module de formation ne soit coupé en deux au changement de page */
     #conteneur-modules-equipe > div,
     #conteneur-modules-agent > div {
         page-break-inside: avoid !important;
         break-inside: avoid !important;
-        margin-bottom: 15px !important;
+        margin-bottom: 20px !important;
     }
 }
+
