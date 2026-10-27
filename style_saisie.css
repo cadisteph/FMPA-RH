@@ -611,16 +611,16 @@ body {
 
 
 /* ==========================================
-   STYLE IMPRESSION NETTOYÉ ET FIABLE
+   STYLE IMPRESSION NETTOYÉ ET INTÉGRAL
    ========================================== */
 @media print {
-    /* 1. Masquer toute la structure du site et l'autre modale */
+    /* 1. Masquer le site et l'autre modale */
     body > *, 
     .modal-overlay {
         display: none !important;
     }
 
-    /* 2. Afficher UNIQUEMENT la modale concernée selon le mode actif */
+    /* 2. Forcer la modale active à devenir la page principale */
     body.print-mode-equipe #modal-equipe,
     body.print-mode-agent #modal-agent {
         display: block !important;
@@ -632,7 +632,7 @@ body {
         background: white !important;
     }
 
-    /* 3. Forcer le contenu à se dérouler sur plusieurs pages (Pas de scrollbar) */
+    /* 3. BRISER LA SCROLLBAR EN LIGNE (Annule le CSS écrit dans le HTML) */
     .modal-content, 
     .modal-body,
     #zone-impression-equipe, 
@@ -640,18 +640,27 @@ body {
     #conteneur-modules-equipe, 
     #conteneur-modules-agent {
         display: block !important;
-        position: relative !important; /* Laisse le flux HTML naturel pour afficher l'en-tête */
+        position: relative !important;
         width: 100% !important;
+        
+        /* Ces trois lignes forcent l'annulation des styles inline bloquants : */
         height: auto !important;
         max-height: none !important;
-        overflow: visible !important;
+        overflow: visible !important; 
+        
         padding: 0 !important;
         margin: 0 !important;
         border: none !important;
         box-shadow: none !important;
     }
 
-    /* 4. Masquer uniquement les éléments de contrôle (Boutons, Select, Labels) */
+    /* 4. Forcer la réinitialisation de tout conteneur parent caché ou limité */
+    div {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    /* 5. Masquer les éléments de contrôle (Boutons, Select, Labels) */
     .modal-header,
     .btn-primary, 
     .btn-close, 
@@ -661,7 +670,7 @@ body {
         display: none !important;
     }
 
-    /* 5. Éviter de couper un module de formation en deux au changement de page */
+    /* 6. Éviter de couper un module de formation en deux au changement de page */
     #conteneur-modules-equipe > div,
     #conteneur-modules-agent > div {
         page-break-inside: avoid !important;
@@ -669,5 +678,3 @@ body {
         margin-bottom: 15px !important;
     }
 }
-
-
