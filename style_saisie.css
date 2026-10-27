@@ -611,63 +611,57 @@ body {
 
 
 /* ==========================================
-   STYLE IMPRESSION POUR LES MODALES
+   STYLE IMPRESSION NETTOYÉ ET SANS CONFLIT
    ========================================== */
 @media print {
-    /* 1. Masquer les éléments de l'application qui ne doivent PAS être imprimés */
-    body > *:not(#modal-equipe):not(#modal-agent),
-    .modal-header,
-    .btn-primary,
-    .btn-close,
-    #modal-select-equipe,
-    #modal-select-agent {
-        display: none !important;
+    /* 1. Masquer tout par défaut */
+    body * {
+        visibility: hidden !important;
     }
 
-    /* 2. Forcer le body et la page à s'étendre à l'infini */
-    html, body {
-        height: auto !important;
-        min-height: 100% !important;
-        overflow: visible !important;
-        background: white !important;
-    }
-
-    /* 3. Réinitialiser COMPLETEMENT les contraintes de hauteur et de défilement des modales */
-    #modal-equipe,
-    #modal-agent,
-    #modal-equipe .modal-content,
-    #modal-agent .modal-content,
-    #zone-impression-equipe,
-    #zone-impression-agent,
-    #conteneur-modules-equipe,
-    #conteneur-modules-agent {
-        display: block !important;
-        position: relative !important;
-        overflow: visible !important; /* Supprime la scrollbar et affiche le contenu caché */
-        max-height: none !important;  /* Annule toute limitation de hauteur */
-        height: auto !important;      /* Laisse le bloc grandir selon son contenu */
-        width: 100% !important;
-        max-width: 100% !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        border: none !important;
-        box-shadow: none !important;
-        transform: none !important;   /* Annule les centrage CSS qui peuvent décaler l'impression */
-    }
-
-    /* 4. Forcer la visibilité des textes de la zone d'impression */
-    #zone-impression-equipe,
-    #zone-impression-equipe *,
-    #zone-impression-agent,
-    #zone-impression-agent * {
+    /* 2. Si on imprime l'ÉQUIPE : afficher uniquement sa zone */
+    body.print-mode-equipe #modal-equipe,
+    body.print-mode-equipe #zone-impression-equipe,
+    body.print-mode-equipe #zone-impression-equipe * {
         visibility: visible !important;
     }
 
-    /* 5. Éviter qu'un module de formation ne soit coupé en deux au milieu d'une page */
+    /* 3. Si on imprime l'AGENT : afficher uniquement sa zone */
+    body.print-mode-agent #modal-agent,
+    body.print-mode-agent #zone-impression-agent,
+    body.print-mode-agent #zone-impression-agent * {
+        visibility: visible !important;
+    }
+
+    /* 4. Forcer le déploiement complet (pas de scrollbar, pas de coupure) */
+    #modal-equipe, #modal-agent,
+    .modal-content, .modal-body,
+    #zone-impression-equipe, #zone-impression-agent,
+    #conteneur-modules-equipe, #conteneur-modules-agent {
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* 5. Masquer l'en-tête (boutons, listes déroulantes) */
+    .modal-header, .modal-header * {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* 6. Éviter de couper un module en deux */
     #conteneur-modules-equipe > div,
     #conteneur-modules-agent > div {
         page-break-inside: avoid !important;
         break-inside: avoid !important;
-        margin-bottom: 15px !important;
     }
 }
