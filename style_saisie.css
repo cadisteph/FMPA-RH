@@ -611,10 +611,10 @@ body {
 
 
 /* ==========================================
-   STYLE IMPRESSION NETTOYÉ ET SANS CONFLIT
+   STYLE IMPRESSION NETTOYÉ (AVEC EN-TÊTES)
    ========================================== */
 @media print {
-    /* 1. Masquer tout par défaut */
+    /* 1. Masquer tout le site par défaut */
     body * {
         visibility: hidden !important;
     }
@@ -633,7 +633,7 @@ body {
         visibility: visible !important;
     }
 
-    /* 4. Forcer le déploiement complet (pas de scrollbar, pas de coupure) */
+    /* 4. Déploiement complet des conteneurs pour éviter les scrollbars et coupures */
     #modal-equipe, #modal-agent,
     .modal-content, .modal-body,
     #zone-impression-equipe, #zone-impression-agent,
@@ -652,16 +652,23 @@ body {
         margin: 0 !important;
     }
 
-    /* 5. Masquer l'en-tête (boutons, listes déroulantes) */
-    .modal-header, .modal-header * {
+    /* 5. MASQUAGE CIBLÉ : Uniquement les boutons et le menu de sélection */
+    .modal-header,
+    .btn-primary, 
+    .btn-close, 
+    #modal-select-equipe, 
+    #modal-select-agent,
+    label[for="modal-select-equipe"],
+    label[for="modal-select-agent"] {
         display: none !important;
         visibility: hidden !important;
     }
 
-    /* 6. Éviter de couper un module en deux */
+    /* 6. Gestion propre des sauts de page pour les modules */
     #conteneur-modules-equipe > div,
     #conteneur-modules-agent > div {
         page-break-inside: avoid !important;
         break-inside: avoid !important;
     }
 }
+
