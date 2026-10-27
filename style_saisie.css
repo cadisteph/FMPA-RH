@@ -611,48 +611,45 @@ body {
 
 
 /* ==========================================
-   STYLE IMPRESSION NETTOYÉ ET MULTI-PAGES
+   STYLE IMPRESSION SANS CONFLIT (ÉQUIPE vs AGENT)
    ========================================== */
 @media print {
-    /* 1. FORCE TOUS LES CONTENEURS DE LA PAGE À SE DÉPLIER (Brise le blocage d'une seule page) */
+    /* 1. Déverrouiller la hauteur de TOUS les conteneurs pour permettre le multi-pages */
     html, body, div, main, section, article {
         height: auto !important;
         max-height: none !important;
         overflow: visible !important;
     }
 
-    /* 2. Masquer tous les éléments en arrière-plan du site */
-    body > *:not(#modal-equipe):not(#modal-agent) {
+    /* 2. Masquer TOUT le site par défaut (y compris les deux modales) */
+    body > *, 
+    .modal-overlay {
         display: none !important;
     }
 
-    /* 3. Forcer la modale active à s'écouler naturellement */
-    body.print-mode-equipe #modal-equipe,
+    /* 3. MODE ÉQUIPE : Si on imprime l'Équipe, on affiche UNIQUEMENT sa modale */
+    body.print-mode-equipe #modal-equipe {
+        display: block !important;
+    }
+    /* Et on s'assure que la modale agent reste totalement masquée */
+    body.print-mode-equipe #modal-agent {
+        display: none !important;
+    }
+
+    /* 4. MODE AGENT : Si on imprime l'Agent, on affiche UNIQUEMENT sa modale */
     body.print-mode-agent #modal-agent {
         display: block !important;
-        position: relative !important;
-        width: 100% !important;
-        height: auto !important;
-        overflow: visible !important;
-        background: white !important;
+    }
+    /* Et on s'assure que la modale équipe reste totalement masquée */
+    body.print-mode-agent #modal-equipe {
+        display: none !important;
     }
 
-    /* 4. Nettoyer les styles de la fenêtre modale */
-    .modal-overlay {
-        position: relative !important;
-        display: block !important;
-        background: transparent !important;
-        min-height: auto !important;
-    }
-
-    /* 5. Configuration de la zone d'impression (Sans chevauchement) */
-    .modal-content, 
-    .modal-body,
-    #zone-impression-equipe, 
-    #zone-impression-agent,
-    #conteneur-modules-equipe, 
-    #conteneur-modules-agent {
-        display: block !important;
+    /* 5. Fluidité du flux d'impression pour la modale active (Pas de chevauchement) */
+    #modal-equipe, #modal-agent,
+    .modal-content, .modal-body,
+    #zone-impression-equipe, #zone-impression-agent,
+    #conteneur-modules-equipe, #conteneur-modules-agent {
         position: relative !important;
         width: 100% !important;
         height: auto !important;
@@ -662,19 +659,19 @@ body {
         margin: 0 !important;
         border: none !important;
         box-shadow: none !important;
+        background: transparent !important;
     }
 
-    /* 6. Masquer les en-têtes interactifs (Boutons, listes, etc.) */
+    /* 6. Masquer les éléments interactifs (Boutons, menus de sélection, fenêtres d'en-tête) */
     .modal-header,
     .btn-primary, 
     .btn-close, 
-    #modal-select-equipe, 
-    #modal-select-agent,
+    select, 
     label {
         display: none !important;
     }
 
-    /* 7. Empêcher la coupure des blocs thématiques */
+    /* 7. Empêcher la coupure vilaine des blocs de modules au changement de page */
     #conteneur-modules-equipe > div,
     #conteneur-modules-agent > div {
         page-break-inside: avoid !important;
@@ -683,4 +680,3 @@ body {
         display: block !important;
     }
 }
-
