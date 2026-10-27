@@ -611,64 +611,63 @@ body {
 
 
 /* ==========================================
-   STYLE IMPRESSION NETTOYÉ (AVEC EN-TÊTES)
+   STYLE IMPRESSION NETTOYÉ ET FIABLE
    ========================================== */
 @media print {
-    /* 1. Masquer tout le site par défaut */
-    body * {
-        visibility: hidden !important;
+    /* 1. Masquer toute la structure du site et l'autre modale */
+    body > *, 
+    .modal-overlay {
+        display: none !important;
     }
 
-    /* 2. Si on imprime l'ÉQUIPE : afficher uniquement sa zone */
+    /* 2. Afficher UNIQUEMENT la modale concernée selon le mode actif */
     body.print-mode-equipe #modal-equipe,
-    body.print-mode-equipe #zone-impression-equipe,
-    body.print-mode-equipe #zone-impression-equipe * {
-        visibility: visible !important;
-    }
-
-    /* 3. Si on imprime l'AGENT : afficher uniquement sa zone */
-    body.print-mode-agent #modal-agent,
-    body.print-mode-agent #zone-impression-agent,
-    body.print-mode-agent #zone-impression-agent * {
-        visibility: visible !important;
-    }
-
-    /* 4. Déploiement complet des conteneurs pour éviter les scrollbars et coupures */
-    #modal-equipe, #modal-agent,
-    .modal-content, .modal-body,
-    #zone-impression-equipe, #zone-impression-agent,
-    #conteneur-modules-equipe, #conteneur-modules-agent {
+    body.print-mode-agent #modal-agent {
         display: block !important;
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 100% !important;
+        overflow: visible !important;
+        background: white !important;
+    }
+
+    /* 3. Forcer le contenu à se dérouler sur plusieurs pages (Pas de scrollbar) */
+    .modal-content, 
+    .modal-body,
+    #zone-impression-equipe, 
+    #zone-impression-agent,
+    #conteneur-modules-equipe, 
+    #conteneur-modules-agent {
+        display: block !important;
+        position: relative !important; /* Laisse le flux HTML naturel pour afficher l'en-tête */
         width: 100% !important;
         height: auto !important;
         max-height: none !important;
         overflow: visible !important;
-        border: none !important;
-        box-shadow: none !important;
         padding: 0 !important;
         margin: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
     }
 
-    /* 5. MASQUAGE CIBLÉ : Uniquement les boutons et le menu de sélection */
+    /* 4. Masquer uniquement les éléments de contrôle (Boutons, Select, Labels) */
     .modal-header,
     .btn-primary, 
     .btn-close, 
     #modal-select-equipe, 
     #modal-select-agent,
-    label[for="modal-select-equipe"],
-    label[for="modal-select-agent"] {
+    label {
         display: none !important;
-        visibility: hidden !important;
     }
 
-    /* 6. Gestion propre des sauts de page pour les modules */
+    /* 5. Éviter de couper un module de formation en deux au changement de page */
     #conteneur-modules-equipe > div,
     #conteneur-modules-agent > div {
         page-break-inside: avoid !important;
         break-inside: avoid !important;
+        margin-bottom: 15px !important;
     }
 }
+
 
